@@ -6,7 +6,7 @@
 DataOS is a **unified data operating system** that transforms complex multi-cloud infrastructure into a single, manageable platform through five architectural tiers. At its core sits the **DataOS Lakehouse**—native Iceberg storage with ACID transactions, intelligent data policies (masking, row filtering), and automated table lifecycle management driven by usage analytics and cost optimization.
 
 **How It Works:**
-The platform operates through **declarative management** where infrastructure and data products are defined via GitOps workflows. A **semantic compiler** translates business intent into optimized execution plans across any compute engine (Spark, Trino, BigQuery), while the **multi-tenant scheduler** dynamically places workloads based on cost and performance requirements. The underlying **metadata graph** maintains complete lineage, schema evolution, and dependency resolution across all data assets.
+The platform operates through **declarative management** where infrastructure and data products are defined via GitOps workflows. A **semantic compiler** translates business intent into optimized execution plans across any compute engine (Spark, Trino, BigQuery, SnowFlake, DataBricks, Starrocks, etc.), while the **multi-tenant scheduler** dynamically places workloads based on cost and performance requirements. The underlying **metadata graph** maintains complete lineage, schema evolution, and dependency resolution across all data assets.
 
 **What It Delivers:**
 - **Operational simplicity**: Replace 10+ fragmented tools with unified declarative infrastructure
