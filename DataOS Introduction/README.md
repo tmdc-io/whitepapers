@@ -19,16 +19,6 @@ The platform operates through **declarative management** where infrastructure an
 
 DataOS solves the fundamental challenge of modern data infrastructure: **architectural complexity**. While traditional approaches require integrating 10+ specialized tools, each with unique APIs, security models, and operational overhead, DataOS delivers equivalent capabilities through a **unified five-tier architecture** that abstracts complexity without sacrificing functionality.
 
-The key architectural insight is **progressive abstraction**: each tier provides higher-level primitives while maintaining full control over lower-level optimizations. This enables DataOS to eliminate tool sprawl and data movement overhead while preserving the performance characteristics and specialized capabilities that drive enterprise adoption of best-of-breed solutions.
-
-**Core Architectural Principles:**
-- **Separation of Concerns**: Each tier has distinct responsibilities with clean interfaces
-- **Composable Design**: Components can be extended or replaced without affecting other tiers  
-- **Declarative Management**: Infrastructure and data products defined as code with GitOps workflows
-- **Multi-Cloud Native**: Portable abstractions that leverage cloud-specific optimizations
-
-
-
 **DataOS Five-Tier Architecture:**
 
 ![DataOS Five-Tier Architecture](dataos_tier_diagram.jpeg)
@@ -51,6 +41,14 @@ DataOS addresses the evolution of [the semantic layer movement [4]](https://mode
 
 **Tier 5: Consumption Layer**
 Multi-modal access interfaces including **REST/GraphQL APIs** for programmatic access, **Natural Language Query Engine** for business users, and **Model Context Protocol (MCP)** for AI/ML integration. This tier provides consistent authentication, authorization, and audit trails across all access patterns. The platform ensures [LLM accuracy through governed data access [5]](https://moderndata101.substack.com/p/does-your-llms-speak-the-truth-ensure), preventing AI hallucinations by maintaining data quality and context throughout the AI integration pipeline.
+
+The key architectural insight is **progressive abstraction**: each tier provides higher-level primitives while maintaining full control over lower-level optimizations. This enables DataOS to eliminate tool sprawl and data movement overhead while preserving the performance characteristics and specialized capabilities that drive enterprise adoption of best-of-breed solutions.
+
+**Core Architectural Principles:**
+- **Separation of Concerns**: Each tier has distinct responsibilities with clean interfaces
+- **Composable Design**: Components can be extended or replaced without affecting other tiers  
+- **Declarative Management**: Infrastructure and data products defined as code with GitOps workflows
+- **Multi-Cloud Native**: Portable abstractions that leverage cloud-specific optimizations
 
 > **Technical Deep Dive**: For detailed technical specifications, microservices architecture, and implementation details of each tier, see the [DataOS Official Architecture Documentation [2]](https://dataos.info/architecture/).
 
