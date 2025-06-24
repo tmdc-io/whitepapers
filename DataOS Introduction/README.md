@@ -1,5 +1,41 @@
 # DataOS Architecture: Highlights
 
+## Table of Contents
+
+- [Introducing DataOS](#introducing-dataos)
+- [Architecture Deep Dive](#architecture-deep-dive)
+  - [DataOS Five-Tier Architecture](#dataos-five-tier-architecture)
+  - [Core Architectural Principles](#core-architectural-principles)
+- [What Makes DataOS Different](#what-makes-dataos-different)
+  - [The Modern Data Stack Challenge](#the-modern-data-stack-challenge)
+  - [The DataOS Solution](#the-dataos-solution)
+  - [Strategic Value Drivers](#strategic-value-drivers)
+- [Strategic Competitive Advantages](#strategic-competitive-advantages)
+  - [Unique Technology Stack](#unique-technology-stack)
+  - [Moats & Barriers to Entry](#moats--barriers-to-entry)
+  - [Innovation Velocity Advantage](#innovation-velocity-advantage)
+  - [Strategic Decentralization Through Data Products](#strategic-decentralization-through-data-products)
+  - [Integration Economics](#integration-economics)
+- [The Bottom Line](#the-bottom-line)
+- [Data Products: From Data to Strategic Business Assets](#data-products-from-data-to-strategic-business-assets)
+  - [The Transformation Challenge](#the-transformation-challenge)
+  - [Architectural Integration](#architectural-integration)
+  - [Enterprise Integration Standards](#enterprise-integration-standards)
+  - [AI-First Architecture](#ai-first-architecture)
+  - [Development Velocity](#development-velocity)
+  - [Strategic Business Impact](#strategic-business-impact)
+- [Where DataOS is Headed: A Foundation for AI-Native Systems](#where-dataos-is-headed-a-foundation-for-ai-native-systems)
+  - [Governed AI Access via Model Context Protocol (MCP)](#governed-ai-access-via-model-context-protocol-mcp)
+  - [Semantic Memory for Enterprise Agents](#semantic-memory-for-enterprise-agents)
+  - [How DataOS Enables AI Agent Success](#how-dataos-enables-ai-agent-success)
+  - [Closed-Loop Intelligence with Intent Feedback](#closed-loop-intelligence-with-intent-feedback)
+  - [Composable Agents Across Business Domains](#composable-agents-across-business-domains)
+  - [Long-Term Vision: The Operating System for Autonomous Enterprises](#long-term-vision-the-operating-system-for-autonomous-enterprises)
+- [Open Specification Leadership](#open-specification-leadership)
+- [References](#references)
+
+---
+
 ## **Introducing DataOS**
 
 **What DataOS Is:**
