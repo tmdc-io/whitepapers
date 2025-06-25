@@ -265,13 +265,14 @@ DataOS enables AI-native systems by extending each architectural tier with AI-sp
 - **Natural Language Query Engine**: Enhanced with context-aware AI interpretation
 - **AI Agent APIs**: Secure, policy-enforced interfaces for autonomous systems
 
-**Tier 4 (User Space) - AI-Enhanced Orchestration:**
+**Tier 4 (User Space) - AI-Enhanced Semantic Layer:**
+- **Semantic Memory**: AI agents access institutional knowledge through the established Semantic Layer
 - **Intent Feedback Loops**: AI agents propose data product improvements through GitOps workflows
 - **AI-Driven Data Products**: Self-optimizing products that adapt based on usage patterns
 - **Cross-Domain Agent Coordination**: Multi-agent workflows orchestrated through existing pipeline infrastructure
 
-**Tier 3 (Core Kernel) - AI-Ready Metadata & Semantics:**
-- **Semantic Memory**: Enhanced metadata registry with institutional knowledge encoding
+**Tier 3 (Core Kernel) - AI-Ready Data Operations:**
+- **Enhanced Metadata Registry**: Institutional knowledge encoding for AI applications
 - **Lineage-Aware AI Context**: Complete audit trails that enable explainable AI decisions
 - **AI-Safe Data Validation**: Built-in quality frameworks preventing AI hallucinations
 
@@ -296,27 +297,27 @@ Building on DataOS's existing REST/GraphQL APIs and Natural Language Query Engin
 This architecture enables safe, explainable, and traceable AI behavior while eliminating the data quality issues that plague current AI implementations.
 
 **Semantic Memory for Enterprise Agents**
-*Enhanced Tier 3 (Core Kernel) Metadata Registry for AI applications*
+*AI-Enhanced Tier 4 (User Space) Semantic Layer for enterprise AI applications*
 
-The existing metadata graph and schema evolution capabilities in DataOS's Core Kernel are extended to support AI agents. Because all data products in DataOS are semantically versioned with complete lineage tracking, AI agents can maintain institutional memory that includes:
+The established Tier 4 Semantic Layer, which maps business concepts to physical data structures, is enhanced to support AI agents. Because all data products in DataOS are semantically versioned with complete lineage tracking through the Semantic Layer, AI agents can maintain institutional memory that includes:
 
 - **Historical Understanding**: How metrics and business definitions have evolved over time
 - **Schema Evolution Awareness**: Automatic adaptation to data structure changes without breaking agent workflows  
 - **Business Logic Reasoning**: Decisions grounded in validated business rules rather than statistical patterns alone
 
-DataOS functions as a semantic memory layer for AI—enabling agents that can reason, plan, and act based on institutional knowledge encoded directly in data products.
+The Tier 4 Semantic Layer functions as semantic memory for AI—enabling agents that can reason, plan, and act based on institutional knowledge encoded directly in data products through the established semantic mapping infrastructure.
 
 **How DataOS Enables AI Agent Success**
 
 DataOS addresses the core challenges that limit AI agent effectiveness through its integrated data product platform:
 
 - **AI-Ready Data**: [Data products provide purpose-driven, quality-approved data with governance built-in [16]](https://moderndata101.substack.com/p/the-power-combo-of-ai-agents), eliminating the data quality issues that cause AI hallucinations and unreliable outcomes
-- **Context Cushioning**: DataOS's semantic layer foundation provides rich context around data that enables AI agents to achieve higher levels of reasoning—addressing the fundamental deficiency where most LLMs lack reliable reasoning due to insufficient contextual understanding
+- **Context Cushioning**: The Tier 4 Semantic Layer foundation provides rich context around data that enables AI agents to achieve higher levels of reasoning—addressing the fundamental deficiency where most LLMs lack reliable reasoning due to insufficient contextual understanding
 - **Complexity Abstraction**: Self-service infrastructure enables rapid development and deployment of AI agents without requiring teams to manage complex database integrations, API creation, and infrastructure provisioning
 - **Standardized Interoperability**: OpenAPI standards ensure seamless interaction between AI agents and various data sources, promoting compatibility across diverse enterprise systems while enabling enhanced scalability through template-driven approaches
 
 **Closed-Loop Intelligence with Intent Feedback**
-*AI-enhanced Tier 4 (User Space) workflow orchestration*
+*AI-enhanced Tier 4 (User Space) Semantic Layer and workflow orchestration*
 
 Leveraging DataOS's existing GitOps workflows and Data Product management, DataOS roadmap includes "intent feedback" capabilities—allowing AI agents to propose improvements to data products based on usage patterns and business outcomes. These proposals flow through the same GitOps validation and testing processes as human-generated changes, creating a closed loop between:
 
@@ -343,7 +344,7 @@ This enables business intelligence such as: "_Campaign X boosted demand for Supp
 - **Finance agents** reconcile cost optimization across both marketing spend and supply chain efficiency
 - **Operations agents** coordinate inventory based on marketing-driven demand predictions
 
-All agents operate through DataOS's [unified semantic layer that standardizes terminology [17]](https://moderndata101.substack.com/p/how-ai-agents-and-data-products-work) across domains—ensuring "target_region" from marketing data and "geo_state" from sales assets are understood as the same information, eliminating the context fragmentation that limits traditional AI implementations.
+All agents operate through the Tier 4 Semantic Layer's [unified semantic mapping that standardizes terminology [17]](https://moderndata101.substack.com/p/how-ai-agents-and-data-products-work) across domains—ensuring "target_region" from marketing data and "geo_state" from sales assets are understood as the same information, eliminating the context fragmentation that limits traditional AI implementations.
 
 **Architectural Integration Summary**
 
@@ -351,7 +352,7 @@ Unlike platforms that bolt AI capabilities on top of existing infrastructure, Da
 
 - **Unified Governance**: AI agents operate under the same security, compliance, and audit frameworks as human users
 - **Seamless Resource Management**: AI workloads leverage the same multi-cloud optimization and cost management
-- **Consistent Interfaces**: AI agents access data through the same APIs and semantic layer foundation as business applications
+- **Consistent Interfaces**: AI agents access data through the same APIs and Tier 4 Semantic Layer foundation as business applications
 - **Integrated Monitoring**: AI operations appear in the same observability and lineage tracking as traditional data workflows
 
 This architectural integration ensures AI capabilities scale with business requirements while maintaining enterprise reliability and governance standards.
@@ -397,7 +398,7 @@ This foundation enables the next generation of autonomous business systems: inte
 **Faster Innovation Through:**
 - **Composable Architecture**: Add capabilities without breaking existing workflows
 - **Unified Testing**: Single platform = faster iteration cycles
-- **Shared Context**: The platform's semantic layer accelerates feature development
+- **Shared Context**: The platform's Tier 4 Semantic Layer accelerates feature development
 - **API-First**: External developers extend platform capabilities
 
 **Strategic Decentralization Through Data Products**
