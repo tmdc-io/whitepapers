@@ -26,25 +26,11 @@ You have 3 configuration params, related to connection management:
 | `send_timeout` | Query data transmission to Postern | Handle varying query complexity |
 | `read_timeout` | Response waiting from Postern | Accommodate complex analytical queries |
 
-You can define them via Service Annotations:
-```yaml
-serviceAnnotations:
-    konghq.com/connect-timeout: "300000" # 5 minutes - plenty of time to connect
-    konghq.com/read-timeout: "300000"    # 5 minutes - good for most queries
-    konghq.com/send-timeout: "300000"    # 5 minutes - handles large result sets
-```
 
 #### Postern (Transparent Proxy)
-Think of Postern as your smart traffic controller! It sits between Kong and your Lens instances, making sure your database connections get routed to exactly the right place.
+Think of Postern as your smart traffic controller! It sits between Kong and your Lens instances, making sure your connections get routed to exactly the right Lens.
 
-Here's how Postern makes your life easier:
-- **Smart routing**: When you connect with a database name like "sales-lens" in your connection string, Postern knows exactly which Lens instance to send you to
-- **Transparent operation**: Once connected, it just passes everything through - you won't even know it's there
-- **Connection management**: Handles the backend connection to Lens so you don't have to worry about it
-- **Kubernetes-aware**: Automatically adapts when Kubernetes does its pod shuffling magic
-
-**What this means for you:**
-Your PowerBI or Tableau just connects using a database name, and Postern figures out all the routing complexity behind the scenes. It's like having GPS for your database connections!
+**Smart routing**: When you connect with a database name like "sales-lens" in your connection string, Postern knows exactly which Lens instance to send you to. **Transparent operation**: Once connected, it just passes everything through - you won't even know it's there. Your PowerBI or Tableau just connects using a database name, and Postern figures out all the routing complexity behind the scenes. It's like having GPS for your database connections!
 
 **The only time you might see issues** is during Kubernetes pod restarts (when the platform is updating or scaling), but even then, your client tools will typically just reconnect automatically. It's pretty resilient! 
 
@@ -65,12 +51,11 @@ Lens is distributed across three components that work together:
 **Timeout Configuration:**
 Lens gives you control over two important timeouts that you'll want to tune based on your use case. These environment variables need to be applied to all three Lens components (api, worker, and router):
 
-```yaml
-LENS2SQL_QUERY_TIMEOUT: 3600      # 1 hour - perfect for those heavy analytical queries
-LENS2SQL_AUTH_EXPIRE_SECS: 86400  # 24 hours - keeps you logged in for the whole workday
-```
+| Parameter | Purpose |
+|-----------|---------|
+| `LENS2SQL_QUERY_TIMEOUT` | Maximum time for query execution | 
+| `LENS2SQL_AUTH_EXPIRE_SECS` | Session timeout duration |
 
-**Pro tip**: If you're running long analytical queries, you might want to bump up that query timeout. For interactive dashboards, the defaults usually work great!
 
 ### PgWire Connection Flow (Port: 6432)
 
@@ -109,4 +94,26 @@ sequenceDiagram
     P->>C: Forward Results
 ```
 
-## Connection Management & Timeouts
+## Configuration Management
+
+Kong - 
+
+You can define them via Service Annotations, in Postern service deployment artefacts.
+
+```yaml
+serviceAnnotations:
+    konghq.com/connect-timeout: "300000" # 5 minutes - plenty of time to connect
+    konghq.com/read-timeout: "300000"    # 5 minutes - good for most queries
+    konghq.com/send-timeout: "300000"    # 5 minutes - handles large result sets
+```
+
+Lens -
+
+Via environment variables. Make sure you set these varaible in all the components: `api`, `worker` and `router`.
+
+```yaml
+envs:
+    LENS2SQL_QUERY_TIMEOUT: 3600 # 1 hour in seconds
+    LENS2SQL_AUTH_EXPIRE_SECS: 60 # 24 hours in seconds    (To kill connection)
+
+ ```
