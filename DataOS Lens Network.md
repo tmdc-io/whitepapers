@@ -1,6 +1,6 @@
 DataOS Lens provides a PgWire Protocol (https://www.postgresql.org/docs/current/protocol.html) compatible semantic layer that enables SQL querying through a sophisticated network architecture. 
 
-> Network Flow Diagram
+### Network Flow
 
 ```mermaid
 graph LR
@@ -49,7 +49,7 @@ Lens is distributed across three components that work together:
 - **Router**: Figures out how to best execute your queries across data sources
 
 **Timeout Configuration:**
-Lens gives you control over two important timeouts that you'll want to tune based on your use case. These environment variables need to be applied to all three Lens components (api, worker, and router):
+Lens gives you control over two important timeouts that you'll want to tune based on your use case:
 
 | Parameter | Purpose |
 |-----------|---------|
@@ -57,7 +57,7 @@ Lens gives you control over two important timeouts that you'll want to tune base
 | `LENS2SQL_AUTH_EXPIRE_SECS` | Session timeout duration |
 
 
-### PgWire Connection Flow (Port: 6432)
+## Connection Flow (Port: 6432)
 
 ```mermaid
 sequenceDiagram
@@ -78,7 +78,7 @@ sequenceDiagram
     P->>C: Authentication OK
 ```
 
-### PgWire Query Execution Flow (Port: 6432)
+## Query Execution Flow (Port: 6432)
 
 ```mermaid
 sequenceDiagram
@@ -96,24 +96,22 @@ sequenceDiagram
 
 ## Configuration Management
 
-Kong - 
+Here's how to tune your timeout settings when things aren't working quite right:
 
-You can define them via Service Annotations, in Postern service deployment artefacts.
+**For Kong timeouts** - Add these service annotations to your Postern deployment:
 
 ```yaml
 serviceAnnotations:
-    konghq.com/connect-timeout: "300000" # 5 minutes - plenty of time to connect
-    konghq.com/read-timeout: "300000"    # 5 minutes - good for most queries
-    konghq.com/send-timeout: "300000"    # 5 minutes - handles large result sets
+    konghq.com/connect-timeout: "300000" # 5 minutes
+    konghq.com/read-timeout: "300000"    # 5 minutes
+    konghq.com/send-timeout: "300000"    # 5 minutes
 ```
 
-Lens -
-
-Via environment variables. Make sure you set these varaible in all the components: `api`, `worker` and `router`.
+**For Lens timeouts** - Set these environment variables in all three Lens components (`api`, `worker`, and `router`):
 
 ```yaml
 envs:
     LENS2SQL_QUERY_TIMEOUT: 3600 # 1 hour in seconds
-    LENS2SQL_AUTH_EXPIRE_SECS: 60 # 24 hours in seconds    (To kill connection)
+    LENS2SQL_AUTH_EXPIRE_SECS: 3600 # 1 hour in seconds
+```
 
- ```
