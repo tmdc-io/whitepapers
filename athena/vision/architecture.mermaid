@@ -1,0 +1,172 @@
+```mermaid
+graph TD
+    subgraph "Data Sources Layer"
+        SF[Snowflake Depot]
+        BQ[BigQuery Depot]  
+        DB[Databricks Depot]
+        PG[PostgreSQL Depot]
+        TR[Trino Depot]
+        OTHER[Other Depots...]
+    end
+    
+    subgraph "DataOS Platform Services"
+        subgraph "Nilus - Universal Query Collection"
+            QLC[Query Log Collector]
+            QLP[Query Log Parser]
+            QLS[Query Log Standardizer]
+            DLT[Data Lineage Tracker]
+        end
+        
+        subgraph "DataOS Core Services"
+            WB[Workbench]
+            LENS[Lens]
+            CLUSTER[Clusters]
+            WORKFLOW[Workflows]
+        end
+    end
+    
+    subgraph "Athena Data Product"
+        subgraph "Real-Time Processing"
+            RSI[Raw Signal Ingestion]
+            QF[Query Fingerprinting]
+            SE[Semantic Extraction]
+            AA[Anomaly Analysis]
+            RT_ALERT[Real-Time Alerts]
+        end
+        
+        subgraph "Batch Intelligence Processing"
+            PA[Pattern Analysis]
+            XP[Cross-Platform Learning]
+            PRED[Predictive Analytics Engine]
+            COST[Cost Optimization Engine]
+            DM[Data Movement Analyzer]
+            KB[Knowledge Base Builder]
+        end
+        
+        subgraph "AI/ML Intelligence Layer"
+            LLM[LLM Processing]
+            ML_TRAIN[ML Model Training]
+            ML_INFERENCE[ML Inference]
+            NLP[Natural Language Processing]
+        end
+        
+        subgraph "Intelligence Data Storage"
+            QIT[Query Intelligence Table]
+            UBT[Usage Behavior Table]
+            OPT[Cross-Platform Patterns Table]
+            ANT[Anomaly Detection Table]
+            SEM[Semantic Models Table]
+            PRED_T[Predictive Models Table]
+            DM_T[Data Movement Intelligence Table]
+            KB_T[Knowledge Base Table]
+            LINEAGE[Data Lineage Graph]
+        end
+        
+        subgraph "Intelligence APIs"
+            UAPI[Universal Intelligence API]
+            CAPI[Cost Optimization API]
+            PAPI[Predictive Intelligence API]
+            CDAPI[Cold Data Detection API]
+            AAPI[Anomaly Detection API]
+            PRAPI[Performance Recommendations API]
+            NLAPI[Natural Language API]
+            DMAPI[Data Movement API]
+            SEMAPI[Semantic Intelligence API]
+            COLAPI[Collaboration API]
+        end
+    end
+    
+    subgraph "Consumer Applications"
+        DSUI[DataOS UI]
+        DASH[Dashboards]
+        ALERT[Alert Systems]
+        EXT[External Tools]
+        WORK[Workbench Integration]
+        AUTO[Automated Optimizations]
+    end
+    
+    %% Vertical Data Flow
+    SF --> QLC
+    BQ --> QLC
+    DB --> QLC
+    PG --> QLC
+    TR --> QLC
+    OTHER --> QLC
+    
+    QLC --> QLP
+    QLP --> QLS
+    QLS --> DLT
+    QLS --> RSI
+    DLT --> LINEAGE
+    
+    RSI --> QF
+    RSI --> SE
+    RSI --> AA
+    AA --> RT_ALERT
+    AA --> ANT
+    
+    QF --> PA
+    SE --> XP
+    PA --> PRED
+    PA --> COST
+    PA --> DM
+    XP --> KB
+    
+    SE --> LLM
+    PA --> ML_TRAIN
+    ML_TRAIN --> ML_INFERENCE
+    LLM --> NLP
+    
+    QF --> QIT
+    PA --> UBT
+    XP --> OPT
+    PRED --> PRED_T
+    DM --> DM_T
+    KB --> KB_T
+    SE --> SEM
+    
+    QIT --> UAPI
+    UBT --> CAPI
+    PRED_T --> PAPI
+    UBT --> CDAPI
+    ANT --> AAPI
+    QIT --> PRAPI
+    NLP --> NLAPI
+    DM_T --> DMAPI
+    SEM --> SEMAPI
+    KB_T --> COLAPI
+    
+    UAPI --> DSUI
+    CAPI --> DASH
+    AAPI --> ALERT
+    SEMAPI --> EXT
+    COLAPI --> WORK
+    PRAPI --> AUTO
+    
+    %% DataOS Services Integration
+    UAPI --> WB
+    SEMAPI --> LENS
+    PRAPI --> CLUSTER
+    DMAPI --> WORKFLOW
+    
+    %% Styling with blue, yellow, and pink color families
+    classDef lightBlue fill:#E3F2FD,stroke:#1976D2,stroke-width:3px
+    classDef mediumBlue fill:#BBDEFB,stroke:#1565C0,stroke-width:3px
+    classDef darkBlue fill:#90CAF9,stroke:#0D47A1,stroke-width:3px
+    classDef lightYellow fill:#FFF9C4,stroke:#F57F17,stroke-width:3px
+    classDef mediumYellow fill:#FFF176,stroke:#F9A825,stroke-width:3px
+    classDef darkYellow fill:#FFEB3B,stroke:#FF8F00,stroke-width:3px
+    classDef lightPink fill:#FCE4EC,stroke:#C2185B,stroke-width:3px
+    classDef mediumPink fill:#F8BBD9,stroke:#AD1457,stroke-width:3px
+    classDef darkPink fill:#F48FB1,stroke:#880E4F,stroke-width:3px
+    
+    class SF,BQ,DB,PG,TR,OTHER lightBlue
+    class QLC,QLP,QLS,DLT mediumBlue
+    class WB,LENS,CLUSTER,WORKFLOW darkBlue
+    class RSI,QF,SE,AA,RT_ALERT lightYellow
+    class PA,XP,PRED,COST,DM,KB mediumYellow
+    class LLM,ML_TRAIN,ML_INFERENCE,NLP darkYellow
+    class QIT,UBT,OPT,ANT,SEM,PRED_T,DM_T,KB_T,LINEAGE lightPink
+    class UAPI,CAPI,PAPI,CDAPI,AAPI,PRAPI,NLAPI,DMAPI,SEMAPI,COLAPI mediumPink
+    class DSUI,DASH,ALERT,EXT,WORK,AUTO darkPink
+```
