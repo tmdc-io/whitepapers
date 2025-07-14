@@ -1,6 +1,6 @@
 # DataOS Athena
 
-## 🚀 EXECUTIVE SUMMARY
+## EXECUTIVE SUMMARY
 
 Modern data platforms have conquered connectivity, processing, and storage, yet remain fundamentally static—executing queries without learning, optimizing nothing automatically, and treating every interaction as isolated from the last. Organizations waste millions annually on this hidden crisis, where the same inefficient patterns repeat endlessly because platforms lack organizational memory. DataOS Athena transforms this reality by making DataOS the first truly AI-native data platform that learns from every interaction to continuously optimize your entire data landscape through universal query intelligence APIs.
 
@@ -8,7 +8,7 @@ While competitors offer fragmented point solutions or single-cloud intelligence 
 
 ---
 
-## 📑 TABLE OF CONTENTS
+## TABLE OF CONTENTS
 
 1. [**THE INTELLIGENCE GAP: Setting the Stage**](#1-the-intelligence-gap-setting-the-stage)
    - 1.1 The Current Data Platform Reality
@@ -63,8 +63,6 @@ While competitors offer fragmented point solutions or single-cloud intelligence 
    - 9.3 Customer Success Metrics
 
 ---
-
-## 📋 INTRODUCTION
 
 > **"Transform DataOS from a data platform into the first truly intelligent data platform - one that learns from every interaction to continuously optimize your entire data landscape."**
 
