@@ -2972,6 +2972,7 @@ outputs:
     partitioning: 
       - column: date
         type: daily
+```
 
 ### MCP Server Implementation
 
@@ -3406,8 +3407,11 @@ if __name__ == "__main__":
     
     # Start server
     asyncio.run(server.start_server())
-Self-Healing Architecture Implementation
-python# Self-Healing Data Product Architecture
+```
+
+### Self-Healing Architecture Implementation
+```python
+# Self-Healing Data Product Architecture
 import asyncio
 import logging
 from typing import Dict, List, Optional, Any
@@ -3755,6 +3759,5 @@ class RecoveryEngine:
                     parameters={"scale_factor": 1.5},
                     estimated_duration=120,
                     success_probability=0.9
-                ),
-                RecoveryAction(
-                    name="optimize_queries",# The AI-Native Data Revolution: DataOS's Strategic Framework for Enterprise AI Success
+                )
+```
