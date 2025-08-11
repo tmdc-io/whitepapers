@@ -3,19 +3,19 @@
 **Authors:** Darpan Vyas, Rakesh Vishvakarma, Darshan Ajmera <br/>
 **Date:** August 11, 2025
 
-If you've worked on data platforms lately, you've felt the squeeze: more sources, tighter SLAs, and higher expectations around governance and cost. The outcome is predictable—fragile ingestion scripts, expensive full refreshes, and long tail "one-off" jobs that become permanent. Nilus was built for this world.
+If you've worked on data platforms lately, you've felt the squeeze: more sources, tighter SLAs, and higher expectations around governance and cost. The outcome is predictable - fragile ingestion scripts, expensive full refreshes, and long tail "one-off" jobs that become permanent. Nilus was built for this world.
 
-Nilus is a developer-friendly EL/ELT layer that reliably moves data, metadata, and query/audit logs from anywhere to your warehouse or lakehouse—with first-class observability. It's designed by [The Modern Data Company](https://themoderndatacompany.com/index.html) and runs on [DataOS](https://www.themoderndatacompany.com/dataos), a converged data platform that brings software engineering discipline to data products ([DataOS documentation](https://dataos.info/)). This aligns with the [Converged Data Platform](https://www.gartner.com/en/documents/6329547) model described by Gartner.
+Nilus is a developer-friendly EL/ELT layer that reliably moves data, metadata, and query/audit logs from anywhere to your warehouse or lakehouse - with first-class observability. It's designed by [The Modern Data Company](https://themoderndatacompany.com/index.html) and runs on [DataOS](https://www.themoderndatacompany.com/dataos), a converged data platform that brings software engineering discipline to data products ([DataOS documentation](https://dataos.info/)). This aligns with the [Converged Data Platform](https://www.gartner.com/en/documents/6329547) model described by Gartner.
 
 ## The challenge: modern data integration at scale
 
 Real platforms face three fundamental pressures that traditional ETL tools struggle to address:
 
-**Source sprawl and complexity.** Teams need to ingest from SQL databases, SaaS APIs, log files, message streams, and change data capture (CDC)—each with unique authentication, pagination, schemas, and rate limits. They also need metadata for catalogs and query/audit logs for governance, not just row data.
+**Source sprawl and complexity.** Teams need to ingest from SQL databases, SaaS APIs, log files, message streams, and change data capture (CDC) - each with unique authentication, pagination, schemas, and rate limits. They also need metadata for catalogs and query/audit logs for governance, not just row data.
 
 **Cost and performance constraints.** Full refreshes don't scale economically. Incremental loading and CDC are essential to hit SLAs while controlling compute and egress costs. But most teams lack the engineering bandwidth to implement these patterns reliably across dozens of sources.
 
-**Operational complexity.** Pipelines are production software. Teams need metrics, run history, health endpoints, and structured error handling—so operations are boring (in the best possible way). Without standardized telemetry and APIs, incident response and capacity planning suffer.
+**Operational complexity.** Pipelines are production software. Teams need metrics, run history, health endpoints, and structured error handling - so operations are boring (in the best possible way). Without standardized telemetry and APIs, incident response and capacity planning suffer.
 
 ```mermaid
 graph LR
@@ -48,7 +48,7 @@ graph LR
 
 ## The Nilus approach: focus on Extract and Load
 
-Nilus tackles these challenges by focusing on the E and L of ETL—and deliberately pushing the T downstream. This separation isn't academic; it's practical and economically driven.
+Nilus tackles these challenges by focusing on the E and L of ETL - and deliberately pushing the T downstream. This separation isn't academic; it's practical and economically driven.
 
 ```mermaid
 flowchart LR
@@ -96,7 +96,7 @@ sink:
     interval-end: "2023-01-31"
 ```
 
-The `delete+insert` strategy removes existing January 2023 transactions and replaces them with fresh data—perfect for handling late-arriving transactions, refunds, or data corrections.
+The `delete+insert` strategy removes existing January 2023 transactions and replaces them with fresh data - perfect for handling late-arriving transactions, refunds, or data corrections.
 
 ### 2. Custom queries with safe parameterization
 
@@ -117,7 +117,7 @@ sink:
     interval-end: "2023-01-31"
 ```
 
-Nilus safely substitutes `:interval_start` and `:interval_end` variables while preserving incrementality—no SQL injection risks.
+Nilus safely substitutes `:interval_start` and `:interval_end` variables while preserving incrementality - no SQL injection risks.
 
 ### 3. Real-time change data capture
 
@@ -138,7 +138,7 @@ sink:
     dest-table: dev.sales
 ```
 
-Every insert, update, and delete in the `ecom.sales` table streams to your lakehouse within seconds—ideal for dashboards, alerting, or downstream systems that need fresh data.
+Every insert, update, and delete in the `ecom.sales` table streams to your lakehouse within seconds - ideal for dashboards, alerting, or downstream systems that need fresh data.
 
 ### Incremental strategies that just work
 
@@ -163,7 +163,7 @@ Building a custom source for Nilus requires surprisingly little code. The patter
 
 ### The CustomSource interface
 
-The base class is minimal—just two methods:
+The base class is minimal - just two methods:
 
 ```python
 class CustomSource:
@@ -269,9 +269,9 @@ Testing on a 1M-row PostgreSQL table with mixed data types shows Nilus's multi-w
 |--------------------|---------|-----------------|----------------------|-------------------------|
 | Nilus (via dlt)    | 1       | 10.9 min       | ~92K                 | 1.0×                    |
 | **Nilus (via dlt)** | **5**   | **3.5 min**    | **~286K**            | **3.1×**                |
-| Fivetran           | —       | ~22 min        | ~45K                 | 0.5×                    |
-| Airbyte            | —       | ~65-110 min    | ~9-15K               | 0.1-0.2×                |
-| Stitch             | —       | ~65-110 min    | ~9-15K               | 0.1-0.2×                |
+| Fivetran           |  -        | ~22 min        | ~45K                 | 0.5×                    |
+| Airbyte            |  -        | ~65-110 min    | ~9-15K               | 0.1-0.2×                |
+| Stitch             |  -        | ~65-110 min    | ~9-15K               | 0.1-0.2×                |
 
 *Source: [dlt SQL benchmark](https://dlthub.com/blog/sql-benchmark-saas) using ConnectorX and PyArrow backends*
 
@@ -285,7 +285,7 @@ For change data capture, Nilus integrates Debezium connectors that process milli
 | Oracle snapshot    | Tuned threads + fetch size           | Full table scan   | 25% faster (8h → 6h)          |
 | MySQL binlog       | Parallel processing enabled          | Continuous stream | <1 sec lag at 10K events/sec  |
 
-*Without batching, the same 1M events took 9.5 hours—a 80x improvement. See [Debezium JDBC sink performance](https://debezium.io/blog/2023/12/20/JDBC-sink-connector-batch-support/) for configuration details.*
+*Without batching, the same 1M events took 9.5 hours - a 80x improvement. See [Debezium JDBC sink performance](https://debezium.io/blog/2023/12/20/JDBC-sink-connector-batch-support/) for configuration details.*
 
 ```mermaid
 sequenceDiagram
@@ -301,7 +301,7 @@ sequenceDiagram
 
 ## Built for operations and governance
 
-Raw speed is just the beginning—Nilus was designed for production environments where observability and governance aren't optional. High performance means nothing if you can't monitor, debug, and manage pipelines at scale.
+Raw speed is just the beginning - Nilus was designed for production environments where observability and governance aren't optional. High performance means nothing if you can't monitor, debug, and manage pipelines at scale.
 
 **Metrics and monitoring.** Pipelines emit [Prometheus](https://prometheus.io/) metrics and push to Pushgateway, creating instant visibility into data operations. Key metrics include:
 - `nilus_extraction_rate_rows_per_second` - Real-time throughput monitoring
@@ -315,7 +315,7 @@ Raw speed is just the beginning—Nilus was designed for production environments
 - `GET /api/v1/cdc/offsets/{connector}` - Real-time CDC lag monitoring and offset management
 - `POST /api/v1/health/check` - Automated health monitoring for orchestration systems
 
-**Metadata and audit trails.** Nilus doesn't just move data—it captures the context that governance teams need for compliance and optimization. This includes extracting table schemas, column lineage, query execution logs, and data access patterns that feed directly into data catalogs and observability platforms.
+**Metadata and audit trails.** Nilus doesn't just move data - it captures the context that governance teams need for compliance and optimization. This includes extracting table schemas, column lineage, query execution logs, and data access patterns that feed directly into data catalogs and observability platforms.
 
 ```mermaid
 graph LR
@@ -356,7 +356,7 @@ Sources (batch/CDC/streams) → Nilus (E+L) → Warehouse/Lakehouse → Transfor
 
 - **Apache Iceberg Integration**: Nilus writes directly to Iceberg tables in the DataOS lakehouse, enabling time travel, schema evolution, and efficient incremental processing at petabyte scale.
 
-This converged approach eliminates the integration complexity that plagues traditional data stacks—no more stitching together separate tools for ingestion, cataloging, governance, and consumption ([learn more about DataOS](https://www.themoderndatacompany.com/dataos)).
+This converged approach eliminates the integration complexity that plagues traditional data stacks - no more stitching together separate tools for ingestion, cataloging, governance, and consumption ([learn more about DataOS](https://www.themoderndatacompany.com/dataos)).
 
 ## The competitive landscape
 
@@ -373,8 +373,8 @@ Nilus competes with managed ELT providers (Fivetran, Hevo), open-source framewor
 | **Cost Model** | Per-row pricing | Self-managed overhead | Platform efficiency |
 | **Governance** | Vendor-specific | DIY integration | Native DataOS policies |
 
-**The Nilus advantage:** Rather than forcing trade-offs between performance, flexibility, and operational maturity, Nilus combines all three through its converged platform approach—one tool for batch, CDC, and streaming ingestion with enterprise-grade observability built in.
+**The Nilus advantage:** Rather than forcing trade-offs between performance, flexibility, and operational maturity, Nilus combines all three through its converged platform approach - one tool for batch, CDC, and streaming ingestion with enterprise-grade observability built in.
 
-The landscape is moving fast. [Cloudflare's JetFlow](https://blog.cloudflare.com/building-jetflow-a-framework-for-flexible-performant-data-pipelines-at-cloudflare/) reports more than a hundred‑fold efficiency improvements and multi‑million rows per second per database connection, cutting a 19‑billion‑row job from roughly 48 hours/300 GB RAM to roughly 5.5 hours/4 GB RAM. That trajectory signals where the space is headed—and why high‑performance ingestion will matter even more for Gen‑AI use cases that demand fresh, rich context across domains.
+The landscape is moving fast. [Cloudflare's JetFlow](https://blog.cloudflare.com/building-jetflow-a-framework-for-flexible-performant-data-pipelines-at-cloudflare/) reports more than a hundred‑fold efficiency improvements and multi‑million rows per second per database connection, cutting a 19‑billion‑row job from roughly 48 hours/300 GB RAM to roughly 5.5 hours/4 GB RAM. That trajectory signals where the space is headed - and why high‑performance ingestion will matter even more for Gen‑AI use cases that demand fresh, rich context across domains.
 
 If you're looking for a Converged Data Platform, or want ingestion that keeps up with your ambitions, Nilus on DataOS is ready.
