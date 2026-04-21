@@ -1,4 +1,5 @@
 # (Vesta) In-Flight Query Deduplication - Low-Level Requirements Design Document
+Date: Aug 13, 2025
 
 ## Table of Contents
 

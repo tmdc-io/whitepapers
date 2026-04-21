@@ -1,4 +1,5 @@
 # DataOS Technical Architecture Deep Dive
+Date: Jul 14, 2025
 
 ## **Architectural Foundation: The Tier 4 Semantic Layer**
 
