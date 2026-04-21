@@ -2,10 +2,10 @@
 
 *A companion to the Data Products manifesto, describing how DataOS implements the path a Data Product travels from first question to active consumption. Read the manifesto first for the position; read this for the implementation.*
 
-**Version:** 0.9 (for internal review)
-**Last updated:** 22 April 2026
-**Owner:** [Name / role]
-**Status:** Draft, companion to the Data Products manifesto.
+- **Version:** 0.9 (for internal review)
+- **Last updated:** 22 April 2026
+- **Owner:** [Name / role]
+- **Status:** Draft, companion to the Data Products manifesto.
 
 ---
 
