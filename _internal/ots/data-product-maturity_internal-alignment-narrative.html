@@ -477,9 +477,10 @@ original pitch implied:</p>
 <li><strong>What they gain.</strong> An authoritative, declarative,
 auditable, reversible lifecycle for every data product. The tenth
 dimension, addressed by design.</li>
-<li><strong>What they give up.</strong> &quot;Pure&quot; Snowflake-native
-architecture where every artifact is a directly-authored DDL statement.
-Some of that authoring now flows through DataOS Vulcan.</li>
+<li><strong>What they give up.</strong> Hand-authored DDL and
+Snowflake-native orchestration as the way data products get built. Data
+still lives in Snowflake. Workloads still execute in Snowflake. Only
+authoring and orchestration shift to DataOS Vulcan.</li>
 <li><strong>What stays available as an exit path.</strong> Every object
 DataOS Vulcan creates in Snowflake remains queryable directly. The data
 is not stranded. If Otis ever leaves DataOS Vulcan, they lose the
@@ -524,15 +525,18 @@ DataOS:</p>
 <li>What metadata, comments, tags, and constraints are in place</li>
 <li>What lineage and access patterns are observable</li>
 </ul>
-<p>This is a knowledge layer, available to anyone building a new product
-before they start. It is not a claim that the scanned objects are the
-data products.</p>
-<p>With Hera&#39;s knowledge in hand, a developer building a new data
-product knows what raw material exists, what shape it&#39;s in, what
-semantics are already documented. They use that knowledge to build the
-right product, as software, with the instruction types described in
-Section 5, in DataOS Vulcan. The existing estate continues to do what it
-has always done. The new data product is what gets built, and built
+<p>This is a knowledge layer for the engineer building a new data
+product. The purpose is informed design: making decisions about what to
+build, what to reuse, what to leave alone, with the existing estate in
+plain view. It is not a claim that the scanned objects are themselves
+the data products.</p>
+<p>With Hera&#39;s knowledge in hand, the engineer building a new data
+product can design against reality rather than from scratch. They know
+what raw material exists, what shape it is in, what semantics are
+already documented. That informs every choice they make in DataOS
+Vulcan: what to read, what to derive, what to leave to existing assets,
+what to build fresh. The existing estate continues to do what it has
+always done. The new data product is what gets built, and built
 right.</p>
 <p>Worth saying openly: yes, Hera scans Snowflake, and we have argued
 that scan-and-surface is insufficient. The distinction is what the
@@ -544,10 +548,11 @@ output.</p>
 <blockquote>
 <p><strong>AM framing, say this in the room:</strong></p>
 <p>Otis has built a tremendous amount in Snowflake. None of that work is
-wasted. DataOS Hera surfaces it as the foundation developers need to
-build the right products. DataOS Vulcan is where those products get
-shaped: as software, with lifecycle, audit, and reversibility built in.
-The existing estate stays useful. New products are built right.</p>
+wasted. DataOS Hera surfaces it as the context developers need to make
+informed design choices while building a new data product. DataOS Vulcan
+is where those products get shaped: as software, with lifecycle, audit,
+and reversibility built in. The existing estate stays useful. New
+products are built informed by what already exists.</p>
 </blockquote>
 <hr />
 <h2 id="5-how-dataos-vulcan-works-what-it-contains-and-what-it-does">5.
@@ -1076,6 +1081,22 @@ across a sprint.&quot;</p>
 <p><strong>Note.</strong> Confirming current pilot evidence for the
 &quot;working session&quot; timing and the enablement program details.</p>
 </blockquote>
+<h3 id="97-why-dataos-vulcan-when-we-already-have-horizon-catalog">9.7
+&quot;Why DataOS Vulcan when we already have Horizon Catalog?&quot;</h3>
+<p><strong>Honest answer.</strong> Horizon and DataOS Vulcan are not the
+same kind of thing. Horizon is Snowflake&#39;s catalog and governance layer.
+It does what catalogs do: tagging, lineage, classification, discovery,
+access governance. DataOS Vulcan is a control plane. It handles the
+lifecycle of data products as software: declarative definitions,
+orchestration, plan and run audit, perspectives, logic rollback. These
+are different categories of capability, sitting in parallel above
+Snowflake. Neither depends on the other.</p>
+<p><strong>Talk track.</strong> &quot;Horizon stays. We are not pitching
+against it. Horizon does what catalogs do, and Snowflake has built it
+well. The question we are putting to Otis is at a different layer: who
+owns the lifecycle of the data products that run on top of Snowflake?
+Horizon does not own that lifecycle. DataOS Vulcan does. The two operate
+in parallel; neither replaces the other.&quot;</p>
 <hr />
 <h2 id="10-recommended-pilot-path">10. Recommended pilot path</h2>
 <p>Once internal alignment is in place, the conversation with Otis
