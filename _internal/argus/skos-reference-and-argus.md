@@ -1,8 +1,8 @@
 # Argus — The Knowledge System (SKOS Layer in Depth)
 
-> Internal codenames: **Vulcan** (per-product semantic *model*), **Argus** (the cross-product knowledge system that collects the Vulcan models and acts as a holistic, org-wide semantic *layer*, built bottom-up). External brand: DataOS.
+> Internal codenames: **Vulcan** (a per-product project, also called a **data product**, containing physical models, a semantic *model*, metrics, and perspectives), **Argus** (the cross-product knowledge system that harvests the data products and acts as a holistic, org-wide semantic *layer*, built bottom-up). "Data product" and "Vulcan project" are the same thing. External brand: DataOS.
 >
-> Argus is a two-layer system. Its inner layer is a SKOS knowledge model (meaning); its outer layer is where that meaning meets data (asset attachment, term mapping, and workflow). Both layers are Argus — the SKOS layer is built in-house, not outsourced to a third-party store. This document specifies the **SKOS layer** in full. Sections 1 and 2 cover SKOS as the W3C standard defines it, with enough detail that you should not need to consult the spec separately. Sections 3 and 4 are where Argus shapes SKOS to its needs: term-to-concept resolution, and the mapping of concept schemes onto business domains. The meaning↔data layer (binding, term mapping with human-facing confidence, governance workflow) is specified in a companion document. The architecture overview below frames how the two layers relate.
+> Argus is a two-layer knowledge system fed by a sensory subsystem. The inner layer is a SKOS knowledge model (**meaning**); the outer layer grounds that meaning in real data — asset attachment, term mapping, and governance workflow (the **grounding layer**). Beneath both sits **Harvest**, the subsystem that automatically pulls metadata from every data product and makes the organization's data searchable and lineage-connected; it feeds the knowledge layers but is not itself a curated layer. All of it is Argus, built in-house, not outsourced to a third-party store. This document specifies the **two knowledge layers and the Harvest subsystem**. Sections 1 and 2 cover SKOS as the W3C standard defines it, with enough detail that you should not need to consult the spec separately. Sections 3 and 4 are where Argus shapes SKOS to its needs: term-to-concept resolution, and the mapping of concept schemes onto business domains. Section 5 specifies the grounding layer: bindings, binding kinds, the resolver, and governance workflow. Section 6 specifies Harvest. The architecture overview below frames how the pieces relate before the detail begins.
 
 ---
 
@@ -24,20 +24,26 @@
   - [2.11 Concept collections](#211-concept-collections)
   - [2.12 Mapping properties](#212-mapping-properties)
   - [2.13 Integrity conditions — consolidated checklist](#213-integrity-conditions--consolidated-checklist)
-- [3. Labels as Glossary Terms, and GenAI Resolution](#3-labels-as-glossary-terms-and-genai-resolution)
+- [3. Labels as Glossary Terms, and Term Resolution](#3-labels-as-glossary-terms-and-term-resolution)
 - [4. Concept Schemes as Business Domains](#4-concept-schemes-as-business-domains)
-- [5. The Meaning↔Data Layer](#5-the-meaningdata-layer)
+- [5. The Grounding Layer](#5-the-grounding-layer)
   - [5.1 Asset attachment (bindings)](#51-asset-attachment-bindings)
   - [5.2 Binding kinds](#52-binding-kinds)
   - [5.3 dependsOn vs derivedFrom — the endpoint-type rule](#53-dependson-vs-derivedfrom--the-endpoint-type-rule)
   - [5.4 Term mapping and the resolver](#54-term-mapping-and-the-resolver)
   - [5.5 Workflow and governance](#55-workflow-and-governance)
+- [6. The Harvest Subsystem](#6-the-harvest-subsystem)
+  - [6.1 What Harvest is](#61-what-harvest-is)
+  - [6.2 The harvested picture](#62-the-harvested-picture)
+  - [6.3 Two kinds of lineage](#63-two-kinds-of-lineage)
+  - [6.4 Discovery](#64-discovery)
+  - [6.5 Seams to the knowledge layers](#65-seams-to-the-knowledge-layers)
 
 ---
 
 ## Argus System Architecture
 
-Argus is the whole knowledge system, not a layer bolted onto something else. It is built from two internal layers, both owned and implemented by Argus.
+Argus is the whole system: two curated knowledge layers fed by an automated sensory subsystem. All three parts are owned and implemented by Argus.
 
 ```mermaid
 graph TD
@@ -48,44 +54,55 @@ graph TD
 
     subgraph ARGUS["ARGUS"]
         direction TB
-        subgraph L2["Meaning ↔ Data layer (reality)"]
-            BIND["Asset attachment<br/>concept → physical asset<br/>(asserted fact, no confidence)"]
-            MAP["Term mapping<br/>free-style term → concept label<br/>(resolver proposes + confidence,<br/>human approves; confidence ephemeral)"]
-            WF["Workflow / governance<br/>lifecycle, stewards, approval gates,<br/>mutual-exclusivity, canonical-flag"]
+        subgraph KNOW["Knowledge layers (curated, governed)"]
+            direction TB
+            subgraph L2["Grounding layer"]
+                BIND["Asset attachment<br/>concept → asset<br/>(asserted fact, no confidence)"]
+                MAP["Term mapping<br/>term → concept label<br/>(resolver proposes + confidence,<br/>human approves; confidence ephemeral)"]
+                WF["Workflow / governance<br/>lifecycle, stewards, approval gates,<br/>mutual-exclusivity, canonical-flag"]
+            end
+            subgraph L1["Meaning layer (SKOS)"]
+                SK["Concepts · label trio · schemes-as-domains<br/>semantic relations + custom relations<br/>mapping properties · historyNote/changeNote"]
+            end
+            L2 -->|references, never modifies| L1
         end
-        subgraph L1["SKOS layer (meaning)"]
-            SK["Concepts · label trio · schemes-as-domains<br/>semantic relations + custom relations<br/>mapping properties · historyNote/changeNote"]
+        subgraph HARVEST["Harvest subsystem (automated, ungoverned)"]
+            HV["Harvested data products · models · columns/measures<br/>physical &amp; cross-product lineage · discovery/search"]
         end
-        L2 -->|references, never modifies| L1
+        HARVEST -->|"feeds: terms, lineage, asset targets"| KNOW
     end
 
     AG -->|tools| ARGUS
     HU -->|author / approve| ARGUS
-    L2 -.->|binds to| DATA["Vulcan semantic models<br/>measures · columns · tables"]
+    HARVEST -.->|pulls metadata from| DATA["Data products (Vulcan projects)<br/>models · columns · measures · perspectives"]
 
     classDef agents fill:#1e3a5f,stroke:#3b82f6,color:#dbeafe;
     classDef l2 fill:#422006,stroke:#f59e0b,color:#fef3c7;
     classDef l1 fill:#14532d,stroke:#22c55e,color:#dcfce7;
+    classDef harvest fill:#3f1d38,stroke:#a855f7,color:#f3e8ff;
     classDef data fill:#1e293b,stroke:#64748b,color:#e2e8f0;
     class AG,HU agents;
     class BIND,MAP,WF l2;
     class SK l1;
+    class HV harvest;
     class DATA data;
 ```
 
-**Layer 1 — SKOS layer (meaning).** The knowledge-organization core specified in this document: concepts with stable opaque identity, the label trio, concept schemes as business domains, the semantic-relation tree with the Argus custom relations (`extendsFrom`, `hasMany`/`hasOne`/`belongsTo`, `dependsOn`/`feedsInto`), mapping properties for cross-scheme alignment, and `historyNote`/`changeNote` for the change record. This layer is *about concepts relating to concepts*. It never references a physical table. Argus implements it natively rather than stretching it to do things it was not designed for.
+**Layer 1 — Meaning layer (SKOS).** The knowledge-organization core specified in this document: concepts with stable opaque identity, the label trio, concept schemes as business domains, the semantic-relation tree with the Argus custom relations (`extendsFrom`, `hasMany`/`hasOne`/`belongsTo`, `dependsOn`/`feedsInto`), mapping properties for cross-scheme alignment, and `historyNote`/`changeNote` for the change record. This layer is *about concepts relating to concepts*. It never references a physical table. Argus implements it natively rather than stretching it to do things it was not designed for.
 
-**Layer 2 — meaning↔data layer (reality).** Where SKOS meaning meets actual data. Three concerns live here, and none of them are SKOS vocabulary — they reference SKOS concepts but never add to the SKOS model:
+**Layer 2 — Grounding layer.** Where meaning is grounded in real data. Three concerns live here, and none of them are SKOS vocabulary — they reference SKOS concepts but never add to the SKOS model:
 
-- **Asset attachment** — binding a concept to a physical asset (a Vulcan measure, column, or table). A plain asserted fact: *this thing implements this concept*. No confidence score; it is either bound or not.
+- **Asset attachment** — binding a concept to a physical asset (a model, column, or measure in a data product). A plain asserted fact relating the concept to where it lives in data, qualified by a binding *kind* (`implements`, `derivedFrom`, `tagged` — see section 5.2). No confidence score; it is either bound or not.
 - **Term mapping** — resolving a free-style term to a concept label. The resolver computes a confidence score shown *to a human to decide* whether to attach the label. The confidence is ephemeral decision-scaffolding for curation; once the human approves, the label is just a label and the score is gone. AI proposes, human approves.
 - **Workflow / governance** — lifecycle (Draft / Active / Deprecated), stewards, approval gates, mutual-exclusivity, canonical-flag: the machinery governing how concepts and bindings move through their lives.
 
-**The dividing principle.** Facts about *meaning* live in the SKOS layer. Facts about *meaning-applied-to-data*, and the *process of curating and governing it*, live in the meaning↔data layer. Binding is meaning-applied-to-data, so it is Layer 2. Lifecycle is process, so it is Layer 2. Confidence is curation-scaffolding, so it is Layer 2 and ephemeral. Concepts, labels, and relations are meaning, so they are Layer 1, untouched.
+**The Harvest subsystem.** Beneath the two knowledge layers, Harvest automatically pulls structural metadata from every registered data product (Vulcan project) and stitches it into one searchable, lineage-connected picture (section 6). It is the *sensory apparatus* — the hundred eyes — and it differs from the knowledge layers in kind: it is automated, ungoverned, and reflects whatever the data products emit, where the knowledge layers are curated and human-approved. Harvest is not a curated layer; it *feeds* the knowledge layers, supplying the raw terms the resolver maps, the physical lineage that corroborates conceptual dependency, and the assets that bindings point at.
+
+**The dividing principle.** Facts about *meaning* live in the meaning layer (Layer 1). Facts about *meaning grounded in data*, and the *process of curating and governing it*, live in the grounding layer (Layer 2). Observed structural facts about what physically exists across data products live in Harvest, ungoverned. Binding is grounding, so it is Layer 2. Lifecycle is process, so it is Layer 2. Confidence is curation-scaffolding, so it is Layer 2 and ephemeral. Concepts, labels, and relations are meaning, so they are Layer 1, untouched. What a data product actually contains is observation, so it is Harvest.
 
 **Operating model and consumer.** The primary consumer is AI agents reasoning about the organization's data through tools; humans author and approve at the edges. The flow is decentralized generation, centralized convergence: each product team builds its own Vulcan semantic *model* locally, where the domain expertise lives; Argus collects those models and converges them — AI inferring and proposing alignments and mappings, humans approving — into a single holistic semantic *layer* across the organization, built bottom-up. The semantic-model-versus-semantic-layer distinction is deliberate and load-bearing: a Vulcan model is local and per-product; the Argus semantic layer is the cross-product integration tier above the collection of them. The result is a reasoning surface no single-product model could offer.
 
-The remainder of this document specifies Layer 1 in depth. The meaning↔data layer is the companion deliverable.
+The remainder of this document specifies all three parts: the meaning layer in sections 1–4, the grounding layer in section 5, and the Harvest subsystem in section 6.
 
 ---
 
@@ -581,11 +598,11 @@ Things that are **consistent** and therefore *not* caught by SKOS validation —
 
 ---
 
-## 3. Labels as Glossary Terms, and GenAI Resolution
+## 3. Labels as Glossary Terms, and Term Resolution
 
 This is where Argus applies SKOS rather than restates it. SKOS supplies the target; Argus supplies the resolver.
 
-> **Layer note.** This section sits at the boundary between the two Argus layers. The *target* of resolution — concepts and their labels — is the SKOS layer (Layer 1). The *resolver* itself, and the confidence score it produces, belong to the meaning↔data layer (Layer 2): the score is ephemeral decision-scaffolding shown to a human to approve a term-to-label match, not a durable property of any SKOS edge. It is described here because the resolution target is SKOS; its full mechanics are specified in the meaning↔data companion.
+> **Layer note.** This section sits at the boundary between the two knowledge layers. The *target* of resolution — concepts and their labels — is the meaning layer (Layer 1) and is what this section explains. The *resolver* itself, and the confidence score it produces, belong to the grounding layer (Layer 2): the score is ephemeral decision-scaffolding shown to a human to approve a term-to-label match, not a durable property of any SKOS edge. This section introduces resolution because its target is SKOS; the resolver's full mechanics, the three proposal jobs, and the term-acceptance-to-binding flow are specified in section 5.4, which is authoritative.
 
 The model from section 2.4 does the structural work: a concept holds its `prefLabel`, its `altLabel` synonyms, and its `hiddenLabel` misspellings/deprecated forms, while the concept's *identity* is the opaque URI. A glossary term, in this framing, is just a label — and because the SKOS labeling properties have no stated domain, a free-floating term can exist as a label before it is ever attached to a settled concept.
 
@@ -666,23 +683,23 @@ This buys three things directly from the SKOS model:
 
 **Cross-domain links use mapping properties.** Within a domain scheme, concepts link with the plain semantic relations (`broader`, `related`, and the Argus extensions). Across domain schemes, they link with the mapping properties (`exactMatch`, `closeMatch`, `relatedMatch`). The choice of property tells you at a glance whether a link is internal to a domain or a cross-domain alignment — which is exactly the provenance distinction Argus needs when it converges the per-product Vulcan semantic models into a single org-wide semantic layer.
 
-The hundred eyes of Argus, then, are the domain schemes: each watches its own concepts, the mapping properties are the gaze that crosses between them, and no single eye is asked to see everything.
+Within the meaning layer, then, each domain scheme tends its own concepts, and the mapping properties are what cross between them, so no single scheme is asked to hold everything.
 
 ---
 
-## 5. The Meaning↔Data Layer
+## 5. The Grounding Layer
 
-Layer 1 (sections 1–4) organizes meaning: concepts relating to concepts. This layer is where that meaning meets reality. It references SKOS concepts by their opaque URIs and never adds to the SKOS vocabulary. Three concerns live here: asset attachment, term mapping, and workflow.
+The meaning layer (sections 1–4) organizes meaning: concepts relating to concepts. This layer grounds that meaning in real data. It references SKOS concepts by their opaque URIs and never adds to the SKOS vocabulary. Three concerns live here: asset attachment, term mapping, and workflow.
 
 ### 5.1 Asset attachment (bindings)
 
-A **binding** is an asserted edge from a SKOS concept to a physical asset in a Vulcan semantic model — a measure, column, or table. It states a fact: *this physical thing realizes this concept*.
+A **binding** is an asserted edge from a SKOS concept to a physical asset in a data product — a model, column, or measure. It states a fact: *this physical thing realizes this concept*.
 
 A binding is **not** a SKOS construct. SKOS concepts bind only to other concepts; a concept-to-table edge has no home in the SKOS vocabulary by design, because SKOS is about meaning, not about where meaning is realized. So bindings live in Layer 2, referencing the concept but never modifying it.
 
 A binding carries **no confidence score**. It is an assertion, not an inference — either someone (or a deploy-time process) declared that this asset realizes this concept, or they did not. This is the clean separation from term mapping (section 5.4), where confidence does appear. Binding is a fact about reality; term mapping is an inference proposed for human approval.
 
-Bindings are many-to-many: one concept can be realized by several assets across products (the same metric built in three Vulcan models), and one asset can realize several concepts. A concept's bindings *are* the set of places it is realized across the organization — this is what makes Argus a cross-product semantic layer rather than a single-product model.
+Bindings are many-to-many: one concept can be realized by several assets across products (the same metric built in three data products), and one asset can realize several concepts. A concept's bindings *are* the set of places it is realized across the organization — this is what makes Argus a cross-product semantic layer rather than a single-product model.
 
 Each binding stores a structural fingerprint of its asset at bind time, so that later divergence can be detected as drift (section 5.5).
 
@@ -746,3 +763,58 @@ Workflow governs how concepts and bindings move through their lives. It operates
 **Canonical flag:** when two domains hold legitimately-distinct-but-aligned concepts (revenue's ARR and finance's ARR, linked by `closeMatch`), one may be flagged enterprise-canonical. The variants coexist in their schemes, the mapping property records their relationship, and the flag tells an agent which to prefer when several aligned concepts match. A Layer-2 annotation, not a SKOS property.
 
 **Drift detection:** each binding's stored fingerprint (section 5.1) is compared against the asset over time. On divergence, the workflow surfaces one of three cases for human judgement — the implementation drifted (re-confirm or demote the binding), the concept's meaning changed (propose a new version), or the asset now realizes a *different* concept (propose a new binding). The system detects and surfaces; humans judge. "AI proposes, human approves" applied to evolution, not just creation.
+
+---
+
+## 6. The Harvest Subsystem
+
+Argus Panoptes was the hundred-eyed giant — Hera's all-seeing guardian, whose eyes never all slept at once, so nothing across his domain escaped notice. Harvest is those eyes. Where the knowledge layers *curate* meaning, Harvest *observes* reality: it automatically pulls structural metadata from every registered data product and stitches it into one searchable, lineage-connected picture that no single data product can see on its own.
+
+### 6.1 What Harvest is
+
+Individual data products (Vulcan projects) run in isolation. Each knows only its own models, its own lineage, its own runs. Harvest sits above all of them and asks the question no single product can: *what does all our data look like, and how does it connect?* It pulls each product's metadata on a schedule, detects what has changed, and maintains a unified view across the whole estate.
+
+Harvest differs from the knowledge layers in kind, and the difference is the reason it is a subsystem rather than a third curated layer:
+
+- It is **automated** — metadata is pulled and processed without human involvement.
+- It is **ungoverned** — it reflects whatever the data products emit. There are no stewards, no approval gates, no lifecycle. If a product publishes a model, Harvest records it; if the product removes it, Harvest drops it. Truth here is "what the products say," not "what has been approved."
+- It is **structural, not semantic** — it captures the shape of data (models, columns, measures, physical tables, lineage, run health), not the meaning of it. Meaning is the knowledge layers' job, curated from what Harvest observes.
+
+This separation is deliberate. Folding Harvest into the grounding layer would hide that the harvester has no governance while everything beside it does. Keeping it a distinct subsystem keeps that boundary honest: Harvest is the raw, high-volume, always-current sensory feed; the knowledge layers are the considered, low-volume, human-approved understanding built on top of it.
+
+### 6.2 The harvested picture
+
+Harvest models the estate at three conceptual levels, each named here without committing to storage (the implementation is specified separately):
+
+- **Data product** — a registered Vulcan project, identified by its tenant, name, and environment. It carries product-level descriptors: domain, alignment (source- or consumer-aligned), version, discoverability, and a health/active status. A product can be marked inactive, in which case it is excluded from discovery and lineage results by default.
+- **Model** — a unit within a data product: a physical SQL or seed table, an external reference to another product's table, a semantic model, a metric, or a perspective (a published consumption artifact). The *kind* and *source type* of a model are what let Harvest tell a physical table apart from a semantic definition apart from a published output.
+- **Column / measure / dimension / segment** — the fields within a model. Measures carry a measure type (sum, count, ratio, and so on); dimensions and segments describe the analytical structure; physical columns describe the raw shape.
+
+Every level carries free-form **tags** and **terms** — and those term streams are the seam to the knowledge layers (section 6.5).
+
+### 6.3 Two kinds of lineage
+
+Harvest tracks lineage at the model and column level, and it is essential not to confuse this with the meaning layer's `dependsOn`. They are different in nature:
+
+- **Intra-product lineage** is *declared*: a model states what it depends on, and Harvest records those edges directly.
+- **Cross-product lineage** is *resolved, not declared*. When a model in product B references the same physical table (same gateway, same table name) as a model in product A, B depends on A — and Harvest discovers this by matching physical table references, with no annotation required. The dependency falls out of the shared physical location. This is the connection no single product can see: product B only knows it reads "some external table"; only Harvest, seeing both products, knows that table is produced by product A.
+
+This is **data-flow lineage** — which physical output feeds which physical input. It is distinct from the meaning layer's `dependsOn`, which is **semantic dependency** — which concept's meaning rests on which. The endpoint-type rule of section 5.3 is the bridge: a concept-to-concept dependency is `dependsOn` (meaning layer); a concept-to-asset derivation is a `derivedFrom` binding (grounding layer); and the asset-to-asset flow Harvest computes is what lets Argus check whether the two agree (section 6.5).
+
+### 6.4 Discovery
+
+Because Harvest holds the whole estate in one place, it can answer questions no single product can: find a measure by tag across every product, search models and columns by name or description, surface similar entities by meaning, and browse the estate by facet (kind, source type, tag, term, domain). Discovery spans structured filtering, full-text search, and similarity search, always scoped to active products by default. This is the capability that turns a scattered set of isolated products into a single searchable body of organizational data knowledge.
+
+### 6.5 Seams to the knowledge layers
+
+Harvest is the sensory feed; the knowledge layers reason over it. Four seams connect them, and together they are what make Argus one system rather than two.
+
+1. **Terms → resolver queue.** Every tag and term Harvest pulls from a data product is a free-style string. As products are synced, newly discovered terms enter the resolver queue (section 5.4): the resolver proposes a mapping to an existing concept, a brand-new concept, or an alignment between concepts, and a steward approves. This is the discover-then-converge loop in motion — *term appears in sync → enters resolver queue → proposal → steward*. Harvest supplies the raw vocabulary; the grounding layer converges it onto meaning.
+
+2. **Cross-product lineage → `dependsOn` corroboration.** The asset-to-asset data-flow lineage Harvest resolves is the physical evidence that confirms or contradicts the meaning layer's conceptual `dependsOn`. When a concept is `derivedFrom` an asset and that asset feeds another via Harvest lineage, a stated conceptual dependency is corroborated; when the lineage and the concept graph disagree, Argus can surface the discrepancy (a claimed dependency with no physical basis, or physical flow implying an unstated dependency).
+
+3. **Harvested assets → binding targets.** The models, columns, and measures Harvest catalogs are the very things the grounding layer's bindings point at (section 5.1). Without Harvest, a binding would have nothing concrete to attach to; Harvest is what makes the binding target real and current.
+
+4. **Discovery → workflow triggers.** Beyond terms, structural changes Harvest detects can trigger knowledge-layer workflows: a new measure appearing across several products may signal an emerging concept; a model going stale or failing may flag bindings that now rest on unhealthy data; a removed model may orphan a binding and prompt review. Harvest observes the change; the workflow decides what it means.
+
+The throughline: Harvest is automated breadth, the knowledge layers are curated depth, and the seams are where breadth becomes depth — observed reality flowing upward into approved meaning, one proposal at a time.

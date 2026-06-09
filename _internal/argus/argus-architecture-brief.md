@@ -20,13 +20,25 @@ The other defining choice is the **primary consumer: AI agents.** Argus is not p
 
 **Layer 1 — Meaning.** A knowledge graph of *concepts* — "ARR," "active customer," "churn rate" — and how they relate. A concept has a stable identity that never changes even when its name does, so renaming never breaks anything downstream. Concepts carry their definitions, their synonyms, and their relationships: which concept is a kind of which, which depends on which, and which concept in one team's vocabulary aligns with another team's. This layer is built on **SKOS**, a mature W3C standard for exactly this kind of knowledge organization, which means we adopt a proven model instead of inventing one. This layer is purely about *meaning*; it never touches a physical table.
 
-**Layer 2 — Meaning meets data.** Where concepts connect to reality. Three things happen here:
+**Layer 2 — Grounding (meaning meets data).** Where concepts connect to reality. Three things happen here:
 
 - **Asset attachment** — linking a concept to the actual table or measure that realizes it. This is what turns an abstract definition into something an agent can run a query against. A concept can be realized in several places across the org; that set of links *is* the cross-product picture.
 - **Term mapping** — when a team's raw term (a column name like `arr_total`) needs to be matched to a concept, AI proposes the match with a confidence score, and a human decides. This is the convergence engine: it is how the scattered local vocabulary gets pulled onto shared concepts cheaply, without a central team authoring it all by hand.
 - **Workflow & governance** — the lifecycle of concepts (proposed → active → deprecated), who approves them, and the rules that keep the system trustworthy.
 
-The clean rule between the layers: meaning lives in Layer 1; *meaning applied to actual data*, and the work of curating and governing it, lives in Layer 2.
+The clean rule between the layers: meaning lives in Layer 1; *meaning grounded in actual data*, and the work of curating and governing it, lives in Layer 2.
+
+## The eyes: Harvest
+
+Beneath both knowledge layers sits **Harvest** — the part of Argus that earns the name. Argus Panoptes was the hundred-eyed giant who saw everything across his domain at once. Harvest is the automated subsystem that pulls structural metadata from every data product and stitches it into one searchable, lineage-connected picture of the whole organization's data.
+
+This is the most tangible part of Argus, and the part that delivers value on day one, before a single concept is curated:
+
+- **Search across everything.** Find a measure, model, or column by name, tag, or meaning across every product at once — not product by product.
+- **Cross-product lineage.** See that a finance forecast secretly depends on a marketing table, trace data flow across product boundaries, and answer "what breaks if we change this" across the whole estate — connections no single product can see on its own.
+- **Health and discovery.** Know what's stale, what failed, what exists, and how it all connects.
+
+Harvest is automated and ungoverned — it reflects whatever the products emit, with no approval step. That's deliberate: it's the fast, always-current sensory feed. The knowledge layers are the considered, human-approved understanding built on top of it. Harvest also *feeds* the knowledge layers: the terms it discovers across products are exactly what the resolver maps onto concepts, and the physical lineage it resolves is what confirms (or contradicts) the conceptual dependencies people assert. Observed breadth flows upward into curated meaning.
 
 ## The operating principle that makes it work
 
@@ -43,7 +55,7 @@ This also means Argus is useful immediately, with imperfect inputs. It does not 
 
 ## What's true today vs. ahead
 
-The meaning layer (Layer 1) is fully specified. The meaning↔data layer (Layer 2) — bindings, the resolver, governance workflow — is specified in design and is where build effort concentrates next. The agent-facing tool surface (how agents actually call Argus) is the next design step and the thing that will validate the whole system end-to-end.
+The meaning layer (Layer 1) is fully specified. The grounding layer (Layer 2) — bindings, the resolver, governance workflow — is specified in design and is where curation effort concentrates next. Harvest — the search and cross-product lineage subsystem — is the most build-ready piece and delivers value independently of the curated layers. The agent-facing tool surface (how agents actually call Argus) is the next design step and the thing that will validate the whole system end-to-end.
 
 ---
 
