@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Evolution of data engineering design patterns</title>
+<style>
+:root{
+  --bg:#0f1117; --surface:#161922; --surface2:#1c2030;
+  --text:#e6e8ee; --muted:#9aa3b2; --border:#2a2f3e;
+  --accent:#5dcaa5; --accent2:#9d7cd8; --amber:#e0af68; --green:#9ece6a; --code:#f7768e;
+  --maxw:820px; --sidew:280px;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#ffffff; --surface:#f7f8fa; --surface2:#eef1f6;
+    --text:#1a1d24; --muted:#5b6472; --border:#dce0e8;
+    --accent:#0f6e56; --accent2:#7c3aed; --amber:#b7791f; --green:#2f855a; --code:#c02626;
+  }
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth; -webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:18px; line-height:1.7;
+}
+.layout{display:flex; max-width:calc(var(--maxw) + var(--sidew) + 80px); margin:0 auto; gap:40px; padding:0 24px;}
+.sidebar{
+  width:var(--sidew); flex:0 0 var(--sidew); position:sticky; top:0; align-self:flex-start;
+  height:100vh; overflow-y:auto; padding:28px 8px 40px 0; border-right:1px solid var(--border);
+}
+.sidebar-title{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:12px; font-weight:700;}
+.sidebar ul{list-style:none; margin:0; padding:0;}
+.sidebar li{margin:0;}
+.sidebar a{display:block; color:var(--muted); text-decoration:none; padding:4px 10px; border-radius:6px; font-size:14.5px; line-height:1.4;}
+.sidebar a:hover{background:var(--surface2); color:var(--text);}
+.sidebar .toc-l3 a{padding-left:24px; font-size:13.5px;}
+.sidebar a.active{color:var(--accent); background:var(--surface2); font-weight:600;}
+.content{flex:1 1 auto; min-width:0; max-width:var(--maxw); padding:36px 0 120px;}
+
+h1{font-size:2.2rem; line-height:1.2; margin:.2em 0 .6em; letter-spacing:-.01em;}
+h2{font-size:1.55rem; line-height:1.25; margin:2em 0 .6em; padding-top:.5em; border-top:1px solid var(--border);}
+h3{font-size:1.25rem; line-height:1.3; margin:1.6em 0 .5em;}
+h4{font-size:1.08rem; margin:1.4em 0 .4em;}
+h1,h2,h3,h4{scroll-margin-top:20px; font-weight:700;}
+p{margin:0 0 1.1em;}
+a{color:var(--accent);}
+strong{color:var(--text); font-weight:700;}
+em{color:var(--text);}
+ul,ol{margin:0 0 1.1em; padding-left:1.4em;}
+li{margin:.3em 0;}
+
+code{
+  font-family:"SF Mono",ui-monospace,Menlo,Monaco,"Cascadia Code","Roboto Mono",monospace;
+  font-size:.86em; background:var(--surface2); color:var(--code);
+  padding:.12em .4em; border-radius:5px; word-break:break-word;
+}
+pre{
+  background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--accent2);
+  border-radius:10px; padding:16px 18px; overflow-x:auto; margin:0 0 1.3em; font-size:.82rem; line-height:1.55;
+}
+pre code{background:none; color:var(--text); padding:0; font-size:inherit; word-break:normal;}
+
+blockquote{
+  background:color-mix(in srgb, var(--amber) 12%, transparent);
+  border-left:4px solid var(--amber); margin:0 0 1.3em; padding:12px 18px; border-radius:0 8px 8px 0;
+}
+blockquote p{margin:0 0 .5em;} blockquote p:last-child{margin:0;}
+
+table{border-collapse:collapse; width:100%; margin:0 0 1.4em; font-size:.84rem; line-height:1.45; display:block; overflow-x:auto;}
+th,td{border:1px solid var(--border); padding:8px 11px; text-align:left; vertical-align:top;}
+th{background:var(--surface2); font-weight:700;}
+tr:nth-child(even) td{background:var(--surface);}
+
+hr{border:none; border-top:1px solid var(--border); margin:2.2em 0;}
+
+.subtitle{color:var(--muted); font-size:1.05rem; margin:-.3em 0 .3em;}
+.byline{color:var(--muted); font-size:.92rem; margin:0 0 1.6em;}
+
+.mermaid-wrap{
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:18px; margin:0 0 1.5em; overflow-x:auto; text-align:center;
+}
+.mermaid{display:flex; justify-content:center;}
+.mermaid svg{max-width:100%; height:auto;}
+.mermaid > pre{border:none; background:none; padding:0; margin:0;}
+
+.menu-toggle{display:none;}
+@media (max-width: 920px){
+  body{font-size:17px;}
+  .layout{display:block; padding:0 18px;}
+  .sidebar{
+    position:fixed; top:0; left:0; bottom:0; width:82%; max-width:320px; z-index:50;
+    background:var(--surface); border-right:1px solid var(--border); height:100vh;
+    transform:translateX(-105%); transition:transform .25s ease; padding:64px 14px 40px 18px;
+    box-shadow:0 0 40px rgba(0,0,0,.4);
+  }
+  .sidebar.open{transform:translateX(0);}
+  .content{max-width:none; padding:64px 0 100px;}
+  .menu-toggle{
+    display:flex; align-items:center; gap:8px; position:fixed; top:12px; left:12px; z-index:60;
+    background:var(--surface2); color:var(--text); border:1px solid var(--border);
+    border-radius:8px; padding:8px 12px; font-size:14px; cursor:pointer; font-weight:600;
+  }
+  .scrim{display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:40;}
+  .scrim.open{display:block;}
+  h1{font-size:1.7rem;} h2{font-size:1.35rem;} h3{font-size:1.15rem;}
+}
+</style>
+</head>
+<body>
+<button class="menu-toggle" id="menuToggle">☰ Contents</button>
+<div class="scrim" id="scrim"></div>
+<div class="layout">
+<nav class="sidebar" id="sidebar"><div class="sidebar-title">Contents</div><ul>
+<li class="toc-l3"><a href="#definitions">Definitions</a></li>
+<li class="toc-l2"><a href="#pattern-1-etl">Pattern 1: ETL</a></li>
+<li class="toc-l2"><a href="#pattern-2-elt">Pattern 2: ELT</a></li>
+<li class="toc-l3"><a href="#the-operations-defined-precisely">The operations, defined precisely</a></li>
+<li class="toc-l3"><a href="#where-elt-stops-short">Where ELT stops short</a></li>
+<li class="toc-l2"><a href="#pattern-3-elp">Pattern 3: ELP</a></li>
+<li class="toc-l3"><a href="#how-the-product-holds-itself-together">How the product holds itself together</a></li>
+<li class="toc-l3"><a href="#the-boundary">The boundary</a></li>
+</ul></nav>
+<main class="content">
+<h1 id="evolution-of-data-engineering-design-patterns">Evolution of data engineering design patterns</h1>
+<p class="subtitle">How the field moved from ETL to ELT, and why the next move is to ELP.</p>
+<p class="byline">Author: Animesh Kumar, 10 June 2026</p>
+<h3 id="definitions">Definitions</h3>
+<ul>
+<li><strong>Extract</strong> — pull records out of a source.</li>
+<li><strong>Scrub</strong> — mask, tokenize, or pseudonymize sensitive fields; field-level, produces no new meaning.</li>
+<li><strong>Load</strong> — write records into a destination, unchanged.</li>
+<li><strong>Transform</strong> — produce meaning that wasn&#39;t in the source: joins, business logic, aggregates, derived measures.</li>
+<li><strong>Productize</strong> — turn transformed data into an owned, contracted, discoverable product fit for human and machine consumption.</li>
+<li><strong>Raw</strong> — the unmodified copy of source data as it was loaded, before any transform runs. Not the source system itself; the landed copy sitting in the warehouse.</li>
+</ul>
+<hr>
+<p>Data engineering patterns don&#39;t change for fashion. They change when a constraint that justified the old pattern lifts, or when a need outgrows what the pattern can express. ETL gave way to ELT because cloud warehouses removed the cost constraint that made pre-load transformation necessary. ELT is now the correct default, but it solves only the production of transformed data, not its consumption. That gap is what ELP exists to close.</p>
+<p>Each pattern here gets the same treatment: what it is, why it arose, and where it breaks. The breaking point matters most, because one pattern&#39;s drawback is the next pattern&#39;s reason to exist. ETL discards its inputs, which is why ELT arose. ELT produces a table nobody but its author can safely use, and that turns blocking the moment you want AI to consume it, which is why ELP arises.</p>
+<hr>
+<h2 id="pattern-1-etl">Pattern 1: ETL</h2>
+<p>Extract from sources, transform in a separate engine, then load only the finished, modeled result into the warehouse. Transformation happens before the data lands.</p>
+<p>ETL was a rational response to its economics. Warehouse storage and compute were expensive and coupled: you paid for them together and couldn&#39;t scale one without the other. Under that cost structure, loading raw source data and sorting it out later was waste. You&#39;d pay premium warehouse rates to store and scan tables far larger than the modeled output anyone actually queried. So you transformed first, in a cheaper external engine, and loaded only the clean result.</p>
+<div class="mermaid-wrap"><pre class="mermaid">
+flowchart LR
+    S[(Sources)] -->|extract| TE[Transform engine<br/>joins, modeling, cleanup]
+    TE -->|load modeled only| W[(Warehouse<br/>scarce, expensive)]
+    TE -.raw thrown away.-> G[(gone)]
+
+    style W fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style TE fill:#FAECE7,stroke:#993C1D,color:#712B13
+    style G fill:#FCEBEB,stroke:#A32D2D,color:#791F1F
+</pre></div>
+<p>Because ETL transforms before loading and keeps only the modeled output, the raw is gone the moment the pipeline runs, and two failures follow.</p>
+<p>The first is that every transform is bet-the-pipeline. If the logic was wrong you can&#39;t re-derive, because the inputs are gone. You re-ingest from source, assuming the source still has the data in the same form, which for event streams and mutable upstreams it often doesn&#39;t. The source is under no obligation to wait for you either. Retention policies, GDPR deletion, log rotation, and operational databases that keep only a rolling window all prune history on their own schedule. The day you discover a join bug and go to re-run the fix, the rows you need may no longer exist anywhere.</p>
+<p>The second is that ingestion becomes a coupling point. Since the pipeline must produce final modeled output, it has to know every downstream use case in advance, and each new requirement edits the ingestion path. That path is the most fragile thing to keep editing.</p>
+<p>ETL is an anti-pattern. Avoid it by default, and treat any pre-load transformation as a red flag that needs explicit justification. The justification space is small and known, and two things commonly get mistaken for ETL or genuinely require pre-load work.</p>
+<p>Scrubbing is not ETL. Masking, tokenization, and pseudonymization are field-level operations that produce no new meaning and depend on nothing outside the field itself. They belong before load as a data-handling policy and stay compatible with the next pattern: <code>Extract → scrub → Load → Transform</code>. Calling scrub a &quot;transform&quot; is the most common way this debate gets muddled, and the next section pins down why it isn&#39;t one.</p>
+<p>A few cases genuinely force pre-load transform. Streaming-to-serving has no land step, so you transform in flight by definition. Some regulatory regimes forbid sensitive data landing in the warehouse at all, even scrubbed, which forces a controlled pre-load stage. These are narrow and don&#39;t undermine the default. A pipeline doing pre-load transformation that isn&#39;t one of these is the red flag firing.</p>
+<hr>
+<h2 id="pattern-2-elt">Pattern 2: ELT</h2>
+<p>Extract from sources, load the raw data into the warehouse first, then transform it in place. The order of the last two steps flips, and the raw layer is preserved.</p>
+<p>The constraint that created ETL lifted. Cloud warehouses separated storage from compute and made compute elastic and on-demand. Storage became cheap enough that keeping the full raw copy cost almost nothing, and compute became something you could burst for a transform and release. The economic reason to transform before loading stopped existing, so the order flipped.</p>
+<div class="mermaid-wrap"><pre class="mermaid">
+flowchart LR
+    S[(Sources)] -->|load raw| RAW[Raw layer<br/>preserved, queryable]
+    RAW -->|transform in place| MOD[Modeled tables<br/>joins, business logic]
+
+    subgraph WH["Cloud warehouse: elastic compute, cheap storage"]
+        RAW
+        MOD
+    end
+
+    style RAW fill:#E1F5EE,stroke:#0F6E56,color:#085041
+    style MOD fill:#EEEDFE,stroke:#534AB7,color:#3C3489
+</pre></div>
+<p>With raw preserved, ETL&#39;s two failures vanish. Transforms become re-runnable code, so a wrong join is an edit-and-rebuild against the same raw rather than a re-ingestion. And ingestion decouples from use: the load step needs to know nothing about downstream questions, so a new requirement is a new transform, not a change to the fragile ingestion path.</p>
+<h3 id="the-operations-defined-precisely">The operations, defined precisely</h3>
+<p>ELT is where the three operations finally sit in the right place. The split that does the work is inside Extract, between scrubbing and transformation.</p>
+<div class="mermaid-wrap"><pre class="mermaid">
+flowchart TB
+    subgraph EX["Extract: pull records from a source"]
+        S1[Scrub: mask, tokenize, pseudonymize]
+        S2[No new meaning, a handling policy]
+    end
+
+    subgraph LD["Load: write records as-is"]
+        L1[No logic, no derivation. Output is the raw layer.]
+    end
+
+    subgraph TR["Transform: produce new meaning"]
+        T1[Joins, revenue logic,<br/>rolling averages, SCD resolution]
+        T2[Irreversible if raw is lost:<br/>this is the operation that needs raw]
+    end
+
+    EX --> LD --> TR
+
+    style EX fill:#FAEEDA,stroke:#854F0B,color:#633806
+    style S1 fill:#FAEEDA,stroke:#854F0B,color:#633806
+    style S2 fill:#FAEEDA,stroke:#854F0B,color:#633806
+    style LD fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style L1 fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style TR fill:#EEEDFE,stroke:#534AB7,color:#3C3489
+    style T1 fill:#CECBF6,stroke:#534AB7,color:#26215C
+    style T2 fill:#FCEBEB,stroke:#A32D2D,color:#791F1F
+</pre></div>
+<p>Extract pulls records out of a source. Scrubbing, if required, happens here. It&#39;s field-level, reversible by design (you substitute or hide a value, not derive a new fact), and needs no knowledge of any other table. A handling policy attached to extraction, not a transform.</p>
+<p>Load writes records into the destination exactly as they are, with no logic, no joins, no derivation. The output of load is the raw layer.</p>
+<p>Transform produces meaning that didn&#39;t exist in the raw layer: joining orders to customers to products, applying revenue-recognition rules, computing a 90-day rolling average, resolving a slowly changing dimension. The defining property is irreversibility. Run these and discard the raw, and you can&#39;t get back. That&#39;s why transform belongs after load, on preserved raw, never as a destructive pre-load step. It&#39;s also the precise reason scrub-before-load is fine and pre-load transform is the anti-pattern: scrub isn&#39;t the irreversible operation, transform is.</p>
+<h3 id="where-elt-stops-short">Where ELT stops short</h3>
+<p>ELT isn&#39;t flawed the way ETL is. Its output is correct and its raw is safe. It&#39;s insufficient. It solves producing transformed data and does nothing for consuming it. You&#39;ve transformed correctly and you have a table with the right numbers. Hand it to a team that didn&#39;t build it and almost everything that makes data usable is missing: discovery, a trust signal, governed access, a freshness commitment, a channel to report breakage. None of it is in the table.</p>
+<p>So everyone stacks tools on top. An entire commercial category exists precisely because transformed tables aren&#39;t usable on their own: catalogs like Alation and Collibra for discovery and metadata, quality platforms like Monte Carlo for freshness and anomalies, access governance like Immuta for policy and masking at query time. Each is a real product solving a real gap. But each was built as its own system with its own model of the world, and stacking them above the transform introduces two problems that no amount of integration removes.</p>
+<div class="mermaid-wrap"><pre class="mermaid">
+flowchart TB
+    T[Transform<br/>tables, MVs, views, changes often]
+
+    T --> CAT[Catalog<br/>Alation / Collibra]
+    T --> DQ[Quality + observability<br/>Monte Carlo]
+    T --> GOV[Access governance<br/>Immuta]
+
+    CAT -.connectors,<br/>own cadence.-> DRIFT[Drift<br/>layers describe a table<br/>that no longer exists]
+    DQ -.connectors,<br/>own cadence.-> DRIFT
+    GOV -.connectors,<br/>own cadence.-> DRIFT
+
+    style T fill:#EEEDFE,stroke:#534AB7,color:#3C3489
+    style CAT fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style DQ fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style GOV fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style DRIFT fill:#FCEBEB,stroke:#A32D2D,color:#791F1F
+</pre></div>
+<p>The first is impedance mismatch. The catalog&#39;s notion of a dataset, the quality tool&#39;s notion of a monitored asset, and the governance tool&#39;s notion of a protected resource are three different models of the same table, disagreeing on identity, grain, and how lineage and policy are represented. Connecting them is a lossy translation between models that were never meant to align. A masking rule has no clean home in the catalog; a metric definition has no home in the quality tool. Every connector approximates one tool&#39;s idea of the table in another&#39;s vocabulary, and the approximation is where meaning leaks.</p>
+<p>The second is drift, and it&#39;s the real killer. Each tool has its own change cadence, and nothing holds them in lock-step with the transform underneath. The transform is the thing that actually changes (someone renames a column, splits a measure, changes a grain), and the correct order is to edit it first, then update everything downstream to match. Across four systems with four owners and four release cycles, nothing enforces that order. One rename plays out like this:</p>
+<ul>
+<li><strong>Monday:</strong> column renamed in the model.</li>
+<li><strong>Monday onward:</strong> the quality check passes on the old shape, so the number is wrong but green.</li>
+<li><strong>Monday onward:</strong> a policy still guards a column by its old name, so it protects nothing.</li>
+<li><strong>Thursday:</strong> the catalog finally re-crawls and catches up.</li>
+</ul>
+<p>For three days the layers describe a table that no longer exists, and they never say so. Drift doesn&#39;t fail loudly; it stays invisible until someone trusts a stale definition and ships a wrong decision.</p>
+<p>You can fight it, but only with people, and at that point reconciliation stops being a task and becomes a program: Jira boards, tickets, sprints, priorities, a governance function whose job is keeping the tools agreeing with each other. Every transform change spawns downstream work in three other systems, tracked and scheduled and argued over like any other backlog. That raises headcount and slows every change to the speed of the slowest cross-team sync, and it never converges. The system is fragile by construction, because consistency is maintained by human effort against four models that have no reason to agree, rather than guaranteed by one model that can&#39;t disagree with itself.</p>
+<p>AI raises the bar past anything this stack reaches. To answer a question correctly without a human in the loop, an agent needs context that lives in none of these tools as a queryable definition: what a measure means, what grain it&#39;s at, which dimensions are valid, what a &quot;customer&quot; is here versus in the next table, what&#39;s trustworthy enough to answer from, and what the consumer is allowed to see. A catalog has a text description a human reads. A quality tool has a freshness check. A governance tool has a policy. None holds the semantic contract an AI needs, and because the pieces live in separate, drifting systems, there&#39;s nowhere to assemble one. An AI reading a drifted catalog doesn&#39;t hesitate the way a human might. It answers confidently from the stale definition. The half-product problem, merely expensive for human consumers, turns dangerous for AI ones.</p>
+<p>That&#39;s where ELT stops short. Its output is correct and unusable by anyone, or anything, that didn&#39;t build it, and every attempt to make it usable by layering tools above it buys coherence it can&#39;t keep.</p>
+<hr>
+<h2 id="pattern-3-elp">Pattern 3: ELP</h2>
+<p>Extract, load raw, then Productize: make the data a coherent product in one step rather than a table you surround with tools afterward. Productize consolidates discovery, trust, governed access, SLAs, lifecycle, and the semantic context underneath them into one owned surface, served through APIs and ready for both application and AI consumption. The acronym lands at E → L → P.</p>
+<p>A data product is the unit Productize produces. It&#39;s data treated the way a software team treats a service: a named owner accountable for it, a published contract (schema, SLA, freshness, quality as machine-readable guarantees), named consumers both human and machine, and a versioned lifecycle. The property that matters most for what follows is that its semantics travel with it. What a column means, how a measure is defined, what&#39;s trustworthy, who may see which rows are part of the product, not notes in a system alongside it. That&#39;s the difference between something an AI can consume safely and a table it has to guess at. This is a pattern, not a product; the rest of this section describes one way to implement it.</p>
+<p>The drawbacks of ELT aren&#39;t fixable by adding more tools, because the problem is the separate tools. Drift is what you get when semantics, quality, and security are their own layers with their own change cadence, and no amount of integration removes it. The only way to kill drift is to remove the separation: author the semantics, the contracts, and the access policy with the data, as one object, so they can&#39;t fall out of sync because there&#39;s nothing to sync. One model can&#39;t disagree with itself. Coherence by construction rather than by coordination is what makes Productize a distinct pattern rather than a procurement checklist.</p>
+<p>The deeper move is that P absorbs the transform itself. Transform stops being a separate phase and becomes a responsibility inside the product. This holds for any implementation that authors the physical asset and its semantic model as one object: physical assets (tables, materialized views, views) with a semantic model authored on top of them, the two dealt with together under a single intent. They affect each other. A change to a measure can imply a change to the physical asset beneath it; a change to the physical model reshapes what the semantic model can express.</p>
+<div class="mermaid-wrap"><pre class="mermaid">
+flowchart LR
+    E[Extract] --> L[Load] --> P
+
+    subgraph P["Productize: one authored object"]
+        direction TB
+        SEM[Semantic model<br/>measures, dimensions, contracts<br/>transform meaning]
+        PHY[Physical assets<br/>tables, materialized views, views<br/>transform executes]
+        GOV[Governance, SLAs, subscription,<br/>serving: API + AI]
+
+        SEM <-->|one intent:<br/>each affects the other| PHY
+        PHY --- GOV
+    end
+
+    style E fill:#F1EFE8,stroke:#5F5E5A,color:#2C2C2A
+    style L fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style P fill:#E1F5EE,stroke:#0F6E56,color:#085041
+    style SEM fill:#CECBF6,stroke:#534AB7,color:#3C3489
+    style PHY fill:#CECBF6,stroke:#534AB7,color:#3C3489
+    style GOV fill:#9FE1CB,stroke:#0F6E56,color:#04342C
+</pre></div>
+<p>The two-way link is the point. Physical and semantic aren&#39;t stacked layers with a handoff; they&#39;re one object, authored and reasoned about as a unit. There&#39;s no clean line where transform ends and product begins, because the same authored object decides what the transform means, how it&#39;s materialized, who sees which rows, and how it&#39;s served. That&#39;s also what solves the change-order problem behind drift. When the transform and its semantics are one object, editing the transform is editing the semantic definition. There&#39;s no window where the model has changed and the description hasn&#39;t, because they&#39;re the same edit. The rename can&#39;t ship ahead of the catalog, the quality contract can&#39;t validate a shape the measure no longer has, and the access policy can&#39;t reference a dropped column, because all of them are expressed against the one definition that just changed. Order is enforced by structure, not by a review board.</p>
+<p>The three-phase split in ELT was an artifact of tooling, not of the data. Transform&#39;s meaning (what a metric is, who it&#39;s for, how fresh it must be) was separated from transform&#39;s execution only because no single tool authored them together. You built the table in one place and described it across four others. Author them as one object and the separation goes away, and the phase boundary it created disappears with it. &quot;P absorbs T&quot; is a structural consequence, not a rename.</p>
+<h3 id="how-the-product-holds-itself-together">How the product holds itself together</h3>
+<p>The drift case was a list of things that go stale independently: descriptions, quality checks, access policies, semantic measures, each in its own system. When all of them are part of the one authored object, a change to the data propagates through them instead of leaving them behind.</p>
+<p>Access policy is part of the product, not a downstream tool. Masking and row-level rules are authored against the product&#39;s own definition, so they&#39;re enforced wherever the product is served and they move with the columns they protect. Rename or drop a protected column and the policy is evaluated against the new definition in the same change. No separate governance system holds a policy that now points at nothing.</p>
+<p>Description, terms, tags, and metadata are attributes of the product, not rows in a catalog that has to re-crawl to notice an edit. Change the asset and its metadata is already attached to the thing that changed.</p>
+<p>Quality rules run on change, not on a timer. The contract is bound to the product, so it executes when the data changes and when the schema evolves, not on a crawl schedule that lags the edit. A check can&#39;t keep validating a shape the measure no longer has, because the check is defined against the same measure.</p>
+<p>Semantic measures reflect schema evolution. A measure is defined in terms of the physical asset beneath it, so when that asset evolves compatibly (a column added, a type widened), the measure resolves against the new shape with no separate update step.</p>
+<p>Breaking changes are caught before they reach the warehouse, which the layered stack can never do. Because the product knows its own semantic and policy surface, an edit that would break it (dropping a column a measure depends on, changing a grain a contract relies on, removing a field a policy protects) is detected at author time, and the developer is alerted before the transform is planned against the warehouse. The failure surfaces as a blocked change, not as a silently drifted catalog discovered weeks later.</p>
+<div class="mermaid-wrap"><pre class="mermaid">
+flowchart LR
+    DEV[Developer edits<br/>the transform] --> CHK{Product validates<br/>against its own<br/>semantic + policy surface}
+
+    CHK -->|compatible| PROP[Measures, metadata,<br/>quality rules, policy<br/>reflect the change]
+    PROP --> WH[(Plan + apply<br/>to warehouse)]
+
+    CHK -->|breaking| ALERT[Developer alerted<br/>before warehouse run]
+    ALERT -.fix.-> DEV
+
+    style DEV fill:#F1EFE8,stroke:#5F5E5A,color:#2C2C2A
+    style CHK fill:#FAEEDA,stroke:#854F0B,color:#633806
+    style PROP fill:#E1F5EE,stroke:#0F6E56,color:#085041
+    style WH fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style ALERT fill:#FCEBEB,stroke:#A32D2D,color:#791F1F
+</pre></div>
+<p>In the layered stack, the transform runs and the rest of the world finds out later. Here the order is inverted. The product validates the change against everything it owns first, propagates it where it&#39;s compatible, and refuses it where it isn&#39;t. Drift never gets a chance to open, because there&#39;s no gap between the data changing and its description, contracts, and policy changing with it.</p>
+<h3 id="the-boundary">The boundary</h3>
+<p>P doesn&#39;t reach upstream. Extract pulls from sources and scrubs sensitive fields. Load writes raw. Raw is preserved. None of that moves into P.</p>
+<p>P owns the transform&#39;s meaning and execution, the semantic model, governance and access, freshness and uptime commitments, serving, discovery, and the change-and-breakage lifecycle.</p>
+<p>The test for whether something belongs in P is whether it requires knowing who the consumer is. Extract and load don&#39;t; they&#39;re identical regardless of who uses the data. Everything that depends on the consumer (what a metric should mean for them, which rows they may see, what freshness they&#39;re promised, how they find and subscribe) is P. Transform sits inside P because you can&#39;t define the transform without also defining those things. They&#39;re one object.</p>
+<p>That&#39;s the evolution. ETL transformed before loading to protect a scarce warehouse and discarded its inputs doing it, an anti-pattern once the warehouse stopped being scarce. ELT loaded raw and transformed in place, which is correct but reaches only as far as a table. ELP productizes in one step and absorbs the transform, because once the physical asset and its semantic, governance, and serving layers are authored as one object, there&#39;s no separate transform phase left to name, and there&#39;s finally a coherent product a human or an AI can consume.</p>
+<hr>
+<p>The data-product standard referenced here, including ownership, contracts, tiers, and roles, is defined in detail in <a href="https://github.com/tmdc-io/whitepapers/blob/main/guides/April%2024%2C%202026/data-products-standard-and-dataos-implementation.md">Data Products in DataOS: An Internal Guide</a>.</p>
+
+</main>
+
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad:true,
+  theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'neutral',
+  themeVariables:{ fontSize:'15px' },
+  flowchart:{ useMaxWidth:true, htmlLabels:true }
+});
+const sb=document.getElementById('sidebar');
+const scrim=document.getElementById('scrim');
+function toggle(){ sb.classList.toggle('open'); scrim.classList.toggle('open'); }
+document.getElementById('menuToggle').addEventListener('click',toggle);
+scrim.addEventListener('click',toggle);
+sb.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{ if(sb.classList.contains('open')) toggle(); }));
+const links=[...sb.querySelectorAll('a')];
+const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+const heads=[...document.querySelectorAll('h2[id],h3[id]')];
+const obs=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){ links.forEach(l=>l.classList.remove('active')); const a=map.get(e.target.id); if(a)a.classList.add('active'); }});
+},{rootMargin:'-10% 0px -80% 0px',threshold:0});
+heads.forEach(h=>obs.observe(h));
+</script>
+</body>
+</html>

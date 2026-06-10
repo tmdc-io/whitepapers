@@ -2,15 +2,9 @@
 
 *How the field moved from ETL to ELT, and why the next move is to ELP.*
 
----
+*Author: Animesh Kumar, 10 June 2026*
 
-- **Version:** 0.1
-- **Last updated:** 10 June 2026
-- **Author:** Animesh Kumar
-
----
-
-## Glossary
+### Definitions
 
 - **Extract** — pull records out of a source.
 - **Scrub** — mask, tokenize, or pseudonymize sensitive fields; field-level, produces no new meaning.
@@ -24,30 +18,6 @@
 Data engineering patterns don't change for fashion. They change when a constraint that justified the old pattern lifts, or when a need outgrows what the pattern can express. ETL gave way to ELT because cloud warehouses removed the cost constraint that made pre-load transformation necessary. ELT is now the correct default, but it solves only the production of transformed data, not its consumption. That gap is what ELP exists to close.
 
 Each pattern here gets the same treatment: what it is, why it arose, and where it breaks. The breaking point matters most, because one pattern's drawback is the next pattern's reason to exist. ETL discards its inputs, which is why ELT arose. ELT produces a table nobody but its author can safely use, and that turns blocking the moment you want AI to consume it, which is why ELP arises.
-
-```mermaid
-flowchart LR
-    subgraph ETL["ETL: transform before load"]
-        direction LR
-        E1[Extract] --> T1[Transform] --> L1[Load]
-        T1 -.discards.-> X1[(raw lost)]
-    end
-
-    subgraph ELT["ELT: transform after load"]
-        direction LR
-        E2[Extract] --> L2[Load] --> T2[Transform]
-        L2 --> R2[(raw kept)]
-    end
-
-    subgraph ELP["ELP: productize after load"]
-        direction LR
-        E3[Extract] --> L3[Load] --> P3[Productize<br/>transform inside]
-        L3 --> R3[(raw kept)]
-    end
-
-    ETL ==>|compute got cheap| ELT
-    ELT ==>|tables aren't products| ELP
-```
 
 ---
 
