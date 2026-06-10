@@ -25,7 +25,29 @@ Data engineering patterns don't change for fashion. They change when a constrain
 
 Each pattern here gets the same treatment: what it is, why it arose, and where it breaks. The breaking point matters most, because one pattern's drawback is the next pattern's reason to exist. ETL discards its inputs, which is why ELT arose. ELT produces a table nobody but its author can safely use, and that turns blocking the moment you want AI to consume it, which is why ELP arises.
 
-![ETL, ELT, ELP progression](diagrams/01-arc.svg)
+```mermaid
+flowchart LR
+    subgraph ETL["ETL: transform before load"]
+        direction LR
+        E1[Extract] --> T1[Transform] --> L1[Load]
+        T1 -.discards.-> X1[(raw lost)]
+    end
+
+    subgraph ELT["ELT: transform after load"]
+        direction LR
+        E2[Extract] --> L2[Load] --> T2[Transform]
+        L2 --> R2[(raw kept)]
+    end
+
+    subgraph ELP["ELP: productize after load"]
+        direction LR
+        E3[Extract] --> L3[Load] --> P3[Productize<br/>transform inside]
+        L3 --> R3[(raw kept)]
+    end
+
+    ETL ==>|compute got cheap| ELT
+    ELT ==>|tables aren't products| ELP
+```
 
 ---
 
@@ -35,7 +57,16 @@ Extract from sources, transform in a separate engine, then load only the finishe
 
 ETL was a rational response to its economics. Warehouse storage and compute were expensive and coupled: you paid for them together and couldn't scale one without the other. Under that cost structure, loading raw source data and sorting it out later was waste. You'd pay premium warehouse rates to store and scan tables far larger than the modeled output anyone actually queried. So you transformed first, in a cheaper external engine, and loaded only the clean result.
 
-![ETL data flow](diagrams/02-etl-flow.svg)
+```mermaid
+flowchart LR
+    S[(Sources)] -->|extract| TE[Transform engine<br/>joins, modeling, cleanup]
+    TE -->|load modeled only| W[(Warehouse<br/>scarce, expensive)]
+    TE -.raw thrown away.-> G[(gone)]
+
+    style W fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style TE fill:#FAECE7,stroke:#993C1D,color:#712B13
+    style G fill:#FCEBEB,stroke:#A32D2D,color:#791F1F
+```
 
 Because ETL transforms before loading and keeps only the modeled output, the raw is gone the moment the pipeline runs, and two failures follow.
 
@@ -57,7 +88,19 @@ Extract from sources, load the raw data into the warehouse first, then transform
 
 The constraint that created ETL lifted. Cloud warehouses separated storage from compute and made compute elastic and on-demand. Storage became cheap enough that keeping the full raw copy cost almost nothing, and compute became something you could burst for a transform and release. The economic reason to transform before loading stopped existing, so the order flipped.
 
-![ELT data flow](diagrams/03-elt-flow.svg)
+```mermaid
+flowchart LR
+    S[(Sources)] -->|load raw| RAW[Raw layer<br/>preserved, queryable]
+    RAW -->|transform in place| MOD[Modeled tables<br/>joins, business logic]
+
+    subgraph WH["Cloud warehouse: elastic compute, cheap storage"]
+        RAW
+        MOD
+    end
+
+    style RAW fill:#E1F5EE,stroke:#0F6E56,color:#085041
+    style MOD fill:#EEEDFE,stroke:#534AB7,color:#3C3489
+```
 
 With raw preserved, ETL's two failures vanish. Transforms become re-runnable code, so a wrong join is an edit-and-rebuild against the same raw rather than a re-ingestion. And ingestion decouples from use: the load step needs to know nothing about downstream questions, so a new requirement is a new transform, not a change to the fragile ingestion path.
 
@@ -65,7 +108,33 @@ With raw preserved, ETL's two failures vanish. Transforms become re-runnable cod
 
 ELT is where the three operations finally sit in the right place. The split that does the work is inside Extract, between scrubbing and transformation.
 
-![Extract, Load, Transform defined](diagrams/04-operations.svg)
+```mermaid
+flowchart TB
+    subgraph EX["Extract: pull records from a source"]
+        S1[Scrub: mask, tokenize, pseudonymize]
+        S2[No new meaning, a handling policy]
+    end
+
+    subgraph LD["Load: write records as-is"]
+        L1[No logic, no derivation. Output is the raw layer.]
+    end
+
+    subgraph TR["Transform: produce new meaning"]
+        T1[Joins, revenue logic,<br/>rolling averages, SCD resolution]
+        T2[Irreversible if raw is lost:<br/>this is the operation that needs raw]
+    end
+
+    EX --> LD --> TR
+
+    style EX fill:#FAEEDA,stroke:#854F0B,color:#633806
+    style S1 fill:#FAEEDA,stroke:#854F0B,color:#633806
+    style S2 fill:#FAEEDA,stroke:#854F0B,color:#633806
+    style LD fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style L1 fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style TR fill:#EEEDFE,stroke:#534AB7,color:#3C3489
+    style T1 fill:#CECBF6,stroke:#534AB7,color:#26215C
+    style T2 fill:#FCEBEB,stroke:#A32D2D,color:#791F1F
+```
 
 Extract pulls records out of a source. Scrubbing, if required, happens here. It's field-level, reversible by design (you substitute or hide a value, not derive a new fact), and needs no knowledge of any other table. A handling policy attached to extraction, not a transform.
 
@@ -79,7 +148,24 @@ ELT isn't flawed the way ETL is. Its output is correct and its raw is safe. It's
 
 So everyone stacks tools on top. An entire commercial category exists precisely because transformed tables aren't usable on their own: catalogs like Alation and Collibra for discovery and metadata, quality platforms like Monte Carlo for freshness and anomalies, access governance like Immuta for policy and masking at query time. Each is a real product solving a real gap. But each was built as its own system with its own model of the world, and stacking them above the transform introduces two problems that no amount of integration removes.
 
-![Drift across stacked tools](diagrams/05-drift.svg)
+```mermaid
+flowchart TB
+    T[Transform<br/>tables, MVs, views, changes often]
+
+    T --> CAT[Catalog<br/>Alation / Collibra]
+    T --> DQ[Quality + observability<br/>Monte Carlo]
+    T --> GOV[Access governance<br/>Immuta]
+
+    CAT -.connectors,<br/>own cadence.-> DRIFT[Drift<br/>layers describe a table<br/>that no longer exists]
+    DQ -.connectors,<br/>own cadence.-> DRIFT
+    GOV -.connectors,<br/>own cadence.-> DRIFT
+
+    style T fill:#EEEDFE,stroke:#534AB7,color:#3C3489
+    style CAT fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style DQ fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style GOV fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style DRIFT fill:#FCEBEB,stroke:#A32D2D,color:#791F1F
+```
 
 The first is impedance mismatch. The catalog's notion of a dataset, the quality tool's notion of a monitored asset, and the governance tool's notion of a protected resource are three different models of the same table, disagreeing on identity, grain, and how lineage and policy are represented. Connecting them is a lossy translation between models that were never meant to align. A masking rule has no clean home in the catalog; a metric definition has no home in the quality tool. Every connector approximates one tool's idea of the table in another's vocabulary, and the approximation is where meaning leaks.
 
@@ -110,7 +196,27 @@ The drawbacks of ELT aren't fixable by adding more tools, because the problem is
 
 The deeper move is that P absorbs the transform itself. Transform stops being a separate phase and becomes a responsibility inside the product. This holds for any implementation that authors the physical asset and its semantic model as one object: physical assets (tables, materialized views, views) with a semantic model authored on top of them, the two dealt with together under a single intent. They affect each other. A change to a measure can imply a change to the physical asset beneath it; a change to the physical model reshapes what the semantic model can express.
 
-![Productize as one authored object](diagrams/06-productize.svg)
+```mermaid
+flowchart LR
+    E[Extract] --> L[Load] --> P
+
+    subgraph P["Productize: one authored object"]
+        direction TB
+        SEM[Semantic model<br/>measures, dimensions, contracts<br/>transform meaning]
+        PHY[Physical assets<br/>tables, materialized views, views<br/>transform executes]
+        GOV[Governance, SLAs, subscription,<br/>serving: API + AI]
+
+        SEM <-->|one intent:<br/>each affects the other| PHY
+        PHY --- GOV
+    end
+
+    style E fill:#F1EFE8,stroke:#5F5E5A,color:#2C2C2A
+    style L fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style P fill:#E1F5EE,stroke:#0F6E56,color:#085041
+    style SEM fill:#CECBF6,stroke:#534AB7,color:#3C3489
+    style PHY fill:#CECBF6,stroke:#534AB7,color:#3C3489
+    style GOV fill:#9FE1CB,stroke:#0F6E56,color:#04342C
+```
 
 The two-way link is the point. Physical and semantic aren't stacked layers with a handoff; they're one object, authored and reasoned about as a unit. There's no clean line where transform ends and product begins, because the same authored object decides what the transform means, how it's materialized, who sees which rows, and how it's served. That's also what solves the change-order problem behind drift. When the transform and its semantics are one object, editing the transform is editing the semantic definition. There's no window where the model has changed and the description hasn't, because they're the same edit. The rename can't ship ahead of the catalog, the quality contract can't validate a shape the measure no longer has, and the access policy can't reference a dropped column, because all of them are expressed against the one definition that just changed. Order is enforced by structure, not by a review board.
 
@@ -130,7 +236,22 @@ Semantic measures reflect schema evolution. A measure is defined in terms of the
 
 Breaking changes are caught before they reach the warehouse, which the layered stack can never do. Because the product knows its own semantic and policy surface, an edit that would break it (dropping a column a measure depends on, changing a grain a contract relies on, removing a field a policy protects) is detected at author time, and the developer is alerted before the transform is planned against the warehouse. The failure surfaces as a blocked change, not as a silently drifted catalog discovered weeks later.
 
-![Validate before warehouse](diagrams/07-validate.svg)
+```mermaid
+flowchart LR
+    DEV[Developer edits<br/>the transform] --> CHK{Product validates<br/>against its own<br/>semantic + policy surface}
+
+    CHK -->|compatible| PROP[Measures, metadata,<br/>quality rules, policy<br/>reflect the change]
+    PROP --> WH[(Plan + apply<br/>to warehouse)]
+
+    CHK -->|breaking| ALERT[Developer alerted<br/>before warehouse run]
+    ALERT -.fix.-> DEV
+
+    style DEV fill:#F1EFE8,stroke:#5F5E5A,color:#2C2C2A
+    style CHK fill:#FAEEDA,stroke:#854F0B,color:#633806
+    style PROP fill:#E1F5EE,stroke:#0F6E56,color:#085041
+    style WH fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    style ALERT fill:#FCEBEB,stroke:#A32D2D,color:#791F1F
+```
 
 In the layered stack, the transform runs and the rest of the world finds out later. Here the order is inverted. The product validates the change against everything it owns first, propagates it where it's compatible, and refuses it where it isn't. Drift never gets a chance to open, because there's no gap between the data changing and its description, contracts, and policy changing with it.
 
