@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BI · AI · AI + Argus — one question, three ways</title>
+<script>
+  (function () {
+    var saved = localStorage.getItem('markitecture-theme');
+    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (saved === 'dark' || (!saved && prefersDark)) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  })();
+</script>
+<style>
+  :root {
+    --ivory:#FAF9F5; --paper:#FFFFFF; --slate:#141413;
+    --clay:#D97757; --clay-d:#B85C3E; --oat:#E3DACC;
+    --olive:#788C5D; --olive-d:#5F7049; --rust:#B04A3F; --sky:#6A8CAF;
+    --g100:#F0EEE6; --g200:#E6E3DA; --g300:#D1CFC5; --g400:#B7B4A8;
+    --g500:#87867F; --g700:#3D3D3A;
+    --serif: ui-serif, Georgia, "Times New Roman", Times, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  }
+  :root[data-theme="dark"]{
+    --ivory:#1A1815; --paper:#242220; --slate:#F4EFE6;
+    --clay:#E58B6F; --clay-d:#C6705A; --oat:#3A332A;
+    --olive:#9DB082; --olive-d:#B4C79A; --rust:#D26C5F; --sky:#95B4D1;
+    --g100:#26241F; --g200:#2F2C27; --g300:#3D3A33; --g400:#55524A;
+    --g500:#908E85; --g700:#C7C4BA;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--ivory); color:var(--slate);
+    font-family:var(--sans); font-size:15.5px; line-height:1.6;
+    padding:0 24px 80px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto;}
+  h1,h2,h3{font-family:var(--serif); font-weight:500; letter-spacing:-0.015em; color:var(--slate); line-height:1.08;}
+  h1{font-size:clamp(34px,5vw,56px); margin:0 0 14px; max-width:20ch;}
+  h2{font-size:clamp(20px,2.4vw,27px); margin:0 0 4px;}
+  h3{font-size:16px; margin:0; letter-spacing:0;}
+  p{margin:0 0 12px; color:var(--g700);}
+  .mono{font-family:var(--mono);}
+  em{font-style:italic; color:var(--slate);}
+  a{color:var(--clay-d);}
+
+  /* top bar */
+  .topbar{display:flex; align-items:center; justify-content:space-between;
+    padding:22px 0 0; margin-bottom:34px;}
+  .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--g500);}
+  .stamp{display:inline-flex; align-items:center; gap:7px; font-family:var(--mono);
+    font-size:10.5px; letter-spacing:.13em; text-transform:uppercase;
+    color:var(--rust); border:1px solid var(--g300); border-radius:100px;
+    padding:5px 12px; background:var(--paper);}
+  .stamp .dot{width:6px; height:6px; border-radius:50%; background:var(--rust);}
+  .theme-toggle{border:1px solid var(--g300); background:var(--paper); color:var(--g500);
+    font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    border-radius:100px; padding:6px 13px; cursor:pointer;}
+  .theme-toggle:hover{color:var(--slate); border-color:var(--g400);}
+
+  /* masthead */
+  .masthead{margin-bottom:16px;}
+  .kicker{font-family:var(--mono); font-size:12px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--clay-d); margin-bottom:18px;}
+  .deck{font-size:17px; color:var(--g700); max-width:66ch;}
+
+  hr.rule{border:0; border-top:1px solid var(--g300); margin:38px 0;}
+
+  /* predicament */
+  .predicament{display:grid; grid-template-columns:1.55fr 1fr; gap:34px; align-items:start;}
+  .money{background:var(--paper); border:1px solid var(--g300); border-radius:14px;
+    padding:24px 26px;}
+  .money .fig{font-family:var(--serif); font-size:clamp(46px,7vw,72px); line-height:.95;
+    color:var(--clay-d); letter-spacing:-.02em;}
+  .money .cap{font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--g500);
+    text-transform:uppercase; margin-top:10px; line-height:1.5;}
+  .money .q{margin-top:18px; padding-top:16px; border-top:1px dashed var(--g300);
+    font-family:var(--serif); font-style:italic; font-size:18px; color:var(--slate);}
+
+  /* section head */
+  .shead{display:flex; align-items:baseline; gap:12px; margin-bottom:6px;}
+  .shead .n{font-family:var(--mono); font-size:12px; color:var(--clay); letter-spacing:.1em;}
+  .sub{color:var(--g500); font-size:14px; max-width:70ch; margin-bottom:22px;}
+
+  /* question set */
+  .qset{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+  .qcard{background:var(--paper); border:1px solid var(--g300); border-radius:11px;
+    padding:15px 16px; position:relative;}
+  .qcard .qi{font-family:var(--mono); font-size:11px; color:var(--g400);}
+  .qcard p{margin:6px 0 0; font-size:14px; color:var(--slate); line-height:1.45;}
+  .qcard.abstract{border-color:var(--clay); box-shadow:0 0 0 1px var(--clay) inset;}
+  .qcard.abstract .tag{position:absolute; top:-9px; left:14px; background:var(--clay);
+    color:#fff; font-family:var(--mono); font-size:9px; letter-spacing:.12em;
+    text-transform:uppercase; padding:3px 8px; border-radius:100px;}
+  :root[data-theme="dark"] .qcard.abstract .tag{color:#1A1815;}
+
+  /* three lanes */
+  .lanes{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-items:stretch;}
+  .lane{background:var(--paper); border:1px solid var(--g300); border-radius:14px;
+    padding:0; overflow:hidden; display:flex; flex-direction:column;}
+  .lane.win{border-color:var(--olive); box-shadow:0 1px 0 var(--olive), 0 0 0 1px var(--olive) inset;}
+  .lane-h{padding:18px 20px 16px; border-bottom:1px solid var(--g200);}
+  .lane.win .lane-h{background:color-mix(in srgb, var(--olive) 12%, var(--paper));}
+  .lane-tag{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--g500); margin-bottom:8px;}
+  .lane.win .lane-tag{color:var(--olive-d);}
+  .lane-h h3{font-family:var(--serif); font-size:21px; font-weight:500;}
+  .lane-h .role{font-size:13px; color:var(--g500); margin-top:4px;}
+  .lane-body{padding:16px 20px 20px; display:flex; flex-direction:column; gap:14px; flex:1;}
+  .block .lbl{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--g500); margin-bottom:5px;}
+  .block p{margin:0; font-size:13.5px; line-height:1.5; color:var(--g700);}
+  .block p .hi{color:var(--slate); font-weight:600; font-style:normal;}
+
+  /* plan quality mini-bar */
+  .plan{margin-top:auto; border-top:1px dashed var(--g300); padding-top:14px;}
+  .plan .lbl{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--g500); margin-bottom:8px;}
+  .branches{display:flex; flex-direction:column; gap:5px; margin-bottom:10px;}
+  .br{display:flex; align-items:center; gap:8px; font-size:12px; font-family:var(--mono);}
+  .br .pip{width:9px; height:9px; border-radius:2px; flex:none;}
+  .br.hit .pip{background:var(--olive);}
+  .br.miss{color:var(--g400);}
+  .br.miss .pip{background:transparent; border:1px solid var(--g300);}
+  .br .txt{color:var(--g700);}
+  .br.miss .txt{color:var(--g400); text-decoration:line-through; text-decoration-thickness:1px;}
+  .cover{display:flex; align-items:baseline; gap:8px;}
+  .cover .pct{font-family:var(--serif); font-size:30px; line-height:1;}
+  .cover .of{font-family:var(--mono); font-size:11px; color:var(--g500);}
+  .lane.l-bi .cover .pct{color:var(--sky);}
+  .lane.l-ai .cover .pct{color:var(--rust);}
+  .lane.l-ax .cover .pct{color:var(--olive-d);}
+
+  /* prose-vs-executable callout */
+  .prose-gap{background:var(--paper); border:1px solid var(--sky);
+    border-radius:14px; padding:26px 30px; margin-top:20px;}
+  .prose-gap .pg-lbl{font-family:var(--mono); font-size:11px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--sky); margin-bottom:14px;}
+  .prose-gap p{font-size:14.5px; line-height:1.65; margin:0 0 12px; max-width:80ch; color:var(--g700);}
+  .prose-gap p:last-child{margin-bottom:0;}
+  .prose-gap code{font-family:var(--mono); font-size:12px; background:var(--g100);
+    padding:1px 4px; border-radius:3px;}
+  .prose-gap strong{color:var(--slate);}
+
+  /* question-by-question */
+  .qbq{display:flex; flex-direction:column; gap:12px;}
+  .qrow{background:var(--paper); border:1px solid var(--g300); border-radius:12px; overflow:hidden;}
+  .qrow-h{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+    padding:13px 18px; border-bottom:1px solid var(--g200); background:var(--g100);}
+  .qrow-h .qn{font-family:var(--mono); font-size:12px; color:var(--g500);}
+  .qrow-h h3{font-family:var(--serif); font-size:17px; font-weight:500; flex:1 1 auto; min-width:200px;}
+  .qtype{font-family:var(--mono); font-size:9.5px; letter-spacing:.11em; text-transform:uppercase;
+    padding:3px 8px; border-radius:100px; border:1px solid var(--g300); color:var(--g500);}
+  .qtype.abstract{color:var(--clay-d); border-color:var(--clay);}
+  .qrow-h .dps{flex-basis:100%; font-family:var(--mono); font-size:11px; color:var(--g500); margin-top:2px;}
+  .qrow-h .dps b{color:var(--g700); font-weight:500;}
+  .qcmp{display:grid; grid-template-columns:repeat(3,1fr);}
+  .cell{padding:14px 18px; border-right:1px solid var(--g200);}
+  .cell:last-child{border-right:0;}
+  .cell .ch{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    margin-bottom:6px; display:flex; align-items:center; gap:6px;}
+  .cell .ch::before{content:""; width:8px; height:8px; border-radius:2px; background:var(--g400);}
+  .cell.bi .ch{color:var(--sky);} .cell.bi .ch::before{background:var(--sky);}
+  .cell.ai .ch{color:var(--rust);} .cell.ai .ch::before{background:var(--rust);}
+  .cell.ax .ch{color:var(--olive-d);} .cell.ax .ch::before{background:var(--olive);}
+  .cell p{margin:0; font-size:13px; line-height:1.48; color:var(--g700);}
+  .cell p code{font-size:11px; padding:0 3px;}
+  .cell.ax{background:color-mix(in srgb, var(--olive) 7%, var(--paper));}
+  .qlegend{font-family:var(--mono); font-size:11px; color:var(--g500); margin:-8px 0 20px; line-height:1.6;}
+
+  @media (max-width:860px){ .qcmp{grid-template-columns:1fr;} .cell{border-right:0; border-bottom:1px solid var(--g200);} }
+
+  /* reasoning dropdown */
+  .rz{border-top:1px solid var(--g200);}
+  .rz>summary{list-style:none; cursor:pointer; padding:10px 18px; user-select:none;
+    font-family:var(--mono); font-size:11px; letter-spacing:.05em; color:var(--g500);
+    display:flex; align-items:center; gap:8px;}
+  .rz>summary::-webkit-details-marker{display:none;}
+  .rz>summary::before{content:"\203A"; font-size:15px; line-height:1; color:var(--clay); transition:transform .15s;}
+  .rz[open]>summary::before{transform:rotate(90deg);}
+  .rz>summary:hover{color:var(--slate);}
+  .rz-body{display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--g200);}
+  .rz-col{padding:13px 18px; border-right:1px solid var(--g200);}
+  .rz-col:last-child{border-right:0;}
+  .rz-col.ax{background:color-mix(in srgb, var(--olive) 7%, var(--paper));}
+  .rz-col .ch{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    margin-bottom:8px; display:flex; align-items:center; gap:6px;}
+  .rz-col .ch::before{content:""; width:8px; height:8px; border-radius:2px; background:var(--g400);}
+  .rz-col.bi .ch{color:var(--sky);} .rz-col.bi .ch::before{background:var(--sky);}
+  .rz-col.ai .ch{color:var(--rust);} .rz-col.ai .ch::before{background:var(--rust);}
+  .rz-col.ax .ch{color:var(--olive-d);} .rz-col.ax .ch::before{background:var(--olive);}
+  .rz-col p{margin:0 0 9px; font-size:12.5px; line-height:1.5; color:var(--g700);}
+  .rz-col p:last-child{margin-bottom:0;}
+  .rz-col .k{display:block; font-family:var(--mono); font-size:9.5px; letter-spacing:.07em;
+    text-transform:uppercase; color:var(--g500); margin-bottom:2px;}
+  .rz-col p code{font-size:11px; padding:0 3px;}
+  .rz-col ol.steps{margin:0 0 10px; padding-left:17px;}
+  .rz-col ol.steps li{font-size:12px; line-height:1.5; color:var(--g700); margin:0 0 6px; padding-left:2px;}
+  .rz-col ol.steps li:last-child{margin-bottom:0;}
+  .rz-col ol.steps li::marker{font-family:var(--mono); font-size:10px; color:var(--g500);}
+  .rz-col ol.steps code{font-size:10.5px; padding:0 3px; word-break:break-word;}
+  .rz-col .why{margin:0; font-size:12px; line-height:1.5; color:var(--g700);
+    border-top:1px dashed var(--g300); padding-top:9px;}
+  .rz-col .why .k{color:var(--olive-d);}
+  .rz-col.bi .why .k{color:var(--sky);} .rz-col.ai .why .k{color:var(--rust);}
+  @media (max-width:860px){ .rz-body{grid-template-columns:1fr;} .rz-col{border-right:0; border-bottom:1px solid var(--g200);} }
+
+  /* correct-plan + why + diff dropdowns */
+  .rec,.xtra{border:1px solid var(--g300); border-radius:10px; background:var(--paper); margin:9px 0 0; overflow:hidden;}
+  .rec{border-color:var(--olive);}
+  .rec>summary,.xtra>summary{cursor:pointer; list-style:none; font-family:var(--mono);
+    font-size:11.5px; font-weight:600; padding:10px 18px;}
+  .rec>summary::-webkit-details-marker,.xtra>summary::-webkit-details-marker{display:none;}
+  .rec>summary::before,.xtra>summary::before{content:"\203A"; display:inline-block; margin-right:8px; transition:transform .15s;}
+  .rec[open]>summary::before,.xtra[open]>summary::before{transform:rotate(90deg);}
+  .rec>summary{color:var(--olive-d);}
+  .rec[open]>summary{border-bottom:1px solid var(--olive);}
+  .xtra.why>summary{color:var(--sky);}
+  .xtra.diff>summary{color:var(--clay-d);}
+  .xtra.why[open]>summary{border-bottom:1px solid var(--sky);}
+  .xtra.diff[open]>summary{border-bottom:1px solid var(--clay);}
+  .rec-body{padding:6px 18px 16px;}
+  .rec-note{font-size:13px; color:var(--g700); margin:10px 0 2px;}
+  .rblk{padding:12px 0; border-top:1px dashed var(--g300);}
+  .rblk-h{font-family:var(--mono); font-size:12px; color:var(--slate); margin-bottom:8px;
+    display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;}
+  .rblk-h .bn{color:var(--olive-d); font-weight:700;}
+  .rblk-h .dp{font-family:var(--mono); font-size:9.5px; color:var(--g500);
+    border:1px solid var(--g300); border-radius:100px; padding:1px 7px;}
+  .rbody{white-space:pre-wrap; word-break:break-word; font-family:var(--mono); font-size:11px;
+    line-height:1.5; color:var(--g700); background:var(--g100); border:1px solid var(--g300);
+    border-radius:8px; padding:9px 11px; margin:0 0 8px;}
+  .rwhy{display:grid; grid-template-columns:88px 1fr; gap:3px 12px; font-size:12px;}
+  .rwhy .wl{font-family:var(--mono); font-size:9.5px; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--olive-d); padding-top:2px;}
+  .rwhy .wv{color:var(--g700);}
+  .xbody{padding:12px 18px 16px; font-size:13px; line-height:1.62;}
+  .xbody p{margin:0 0 10px;} .xbody p:last-child{margin-bottom:0;}
+  .xbody .hl-ax{color:var(--olive-d); font-weight:600;} .xbody .hl-ai{color:var(--rust); font-weight:600;} .xbody .hl-bi{color:var(--sky); font-weight:600;}
+  .darm{margin:10px 0; padding-left:12px; border-left:2px solid var(--g300);}
+  .darm:last-child{margin-bottom:0;}
+  .darm .an{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px;}
+  .darm.bi{border-color:var(--sky);} .darm.bi .an{color:var(--sky);}
+  .darm.ai{border-color:var(--rust);} .darm.ai .an{color:var(--rust);}
+  .darm.ax{border-color:var(--olive);} .darm.ax .an{color:var(--olive-d);}
+  .darm .dv{color:var(--g700); font-size:12.5px; line-height:1.55;}
+  @media (max-width:680px){ .rwhy{grid-template-columns:1fr; gap:1px;} .rwhy .wv{margin-bottom:8px;} }
+
+  /* verdict */
+  .verdict{background:var(--slate); color:var(--ivory); border-radius:16px;
+    padding:32px 34px; margin-top:8px; display:grid; grid-template-columns:1fr 1.4fr; gap:30px; align-items:center;}
+  :root[data-theme="dark"] .verdict{background:var(--paper); border:1px solid var(--g300);}
+  .verdict .vlbl{font-family:var(--mono); font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--clay); margin-bottom:10px;}
+  .verdict h2{color:var(--ivory); font-size:clamp(22px,2.6vw,30px);}
+  :root[data-theme="dark"] .verdict h2{color:var(--slate);}
+  .verdict p{color:color-mix(in srgb, var(--ivory) 78%, transparent); font-size:14.5px; margin:0;}
+  :root[data-theme="dark"] .verdict p{color:var(--g700);}
+  .vpoints{display:flex; flex-direction:column; gap:14px;}
+  .vp{display:flex; gap:13px; align-items:flex-start;}
+  .vp .vi{font-family:var(--serif); font-size:24px; color:var(--clay); line-height:1; flex:none; width:26px;}
+  .vp .vt strong{color:var(--ivory); font-weight:600;}
+  :root[data-theme="dark"] .vp .vt strong{color:var(--slate);}
+  .vp .vt{font-size:14px; color:color-mix(in srgb, var(--ivory) 74%, transparent); line-height:1.45;}
+  :root[data-theme="dark"] .vp .vt{color:var(--g700);}
+
+  footer{margin-top:40px; padding-top:20px; border-top:1px solid var(--g300);
+    font-family:var(--mono); font-size:11px; color:var(--g500); letter-spacing:.03em;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;}
+
+  /* reveal */
+  .rv{opacity:0; transform:translateY(10px); animation:rv .6s ease forwards;}
+  @keyframes rv{to{opacity:1; transform:none;}}
+  @media (prefers-reduced-motion:reduce){.rv{animation:none; opacity:1; transform:none;}}
+
+  @media (max-width:860px){
+    .predicament{grid-template-columns:1fr;}
+    .qset{grid-template-columns:1fr;}
+    .lanes{grid-template-columns:1fr;}
+    .verdict{grid-template-columns:1fr; gap:22px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar rv">
+    <span class="eyebrow">DataOS · Ontology track · internal readout</span>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <span class="stamp"><span class="dot"></span>Internal alignment — not for distribution</span>
+      <button class="theme-toggle" onclick="(function(){var d=document.documentElement;var n=d.getAttribute('data-theme')==='dark'?'light':'dark';d.setAttribute('data-theme',n);localStorage.setItem('markitecture-theme',n);})()">Theme</button>
+    </div>
+  </div>
+
+  <!-- MASTHEAD -->
+  <div class="masthead rv" style="animation-delay:.05s">
+    <div class="kicker">Query-plan construction · three approaches</div>
+    <h1>AI with Argus: Bringing Meaning to Data</h1>
+    <p class="deck">Storing, moving, and documenting data is no longer the hard part. The harder problem is meaning: how terms, assets, and concepts are understood across teams, products, and workflows. Without that layer, discovery stays shallow, reasoning breaks, and AI systems can only operate on the surface of what the data contains.</p>
+  </div>
+
+  <hr class="rule">
+
+  <!-- PREDICAMENT -->
+  <div class="predicament rv" style="animation-delay:.1s">
+    <div>
+      <div class="shead"><span class="n">01</span><h2>An Example of Improved Reasoning with Argus</h2></div>
+      <p><strong>Helix Industrial</strong> — B2B manufacturer of electronics; parts embedded in third-party medical devices (MRI scanners, surgical robots). 56 strategic accounts hold most of the revenue.</p>
+      <p>February 2026: a supplier substitutes a sub-component. It passes incoming inspection but drifts under operating conditions. Propagation over three months — incoming-quality drift → production rework → defect-rate increase → pullback by five strategic medical customers → receivables aging. Each signal sits in a separate data product; read in isolation, each stays within control limits.</p>
+      <p>The CRO's question is a business question, not a metric. The data spans supplier, production, quality, delivery, carrier, receivables, and revenue — no single owner, no dashboard scoped to it.</p>
+    </div>
+    <div class="money">
+      <div class="fig">$16.4M</div>
+      <div class="cap">revenue at risk, concentrated in five<br>strategic accounts</div>
+      <div class="q">"How much revenue is at risk of walking, and what is causing it?"</div>
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <!-- QUESTION SET -->
+  <div class="rv" style="animation-delay:.12s">
+    <div class="shead"><span class="n">02</span><h2>Question set</h2></div>
+    <p class="sub">Six questions, each spanning multiple domains; none maps to a single metric or a single data product. Questions marked Abstract require the agent to resolve a composite concept before it can identify what data to read. Q6, the confidence question, is the sharpest structural test: it is the only question where no amount of richer metadata changes the result.</p>
+    <div class="qset">
+      <div class="qcard"><span class="qi">Q1</span><p>How many open orders are currently late for a strategic customer?</p></div>
+      <div class="qcard"><span class="qi">Q2</span><p>What is total open AR exposure by aging bucket this quarter?</p></div>
+      <div class="qcard abstract"><span class="tag">Abstract</span><span class="qi">Q3</span><p>How much revenue is at risk of walking?</p></div>
+      <div class="qcard abstract"><span class="tag">Abstract</span><span class="qi">Q4</span><p>Are we losing the wrong customers?</p></div>
+      <div class="qcard abstract"><span class="tag">Abstract</span><span class="qi">Q5</span><p>What's actually causing it — and where do I invest to stop it?</p></div>
+      <div class="qcard abstract"><span class="tag">Abstract</span><span class="qi">Q6</span><p>How confident should I be? What am I not seeing?</p></div>
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <!-- LANES -->
+  <div class="rv" style="animation-delay:.14s">
+    <div class="shead"><span class="n">03</span><h2>Query plan, by approach</h2></div>
+    <p class="sub">Comparison is on the plan, not the answer. Input question: "How much revenue is at risk of walking?". Each approach decides which data products to read before any value is computed. Plan scope determines accuracy on abstract questions.</p>
+
+    <div class="lanes">
+
+      <!-- BI -->
+      <div class="lane l-bi">
+        <div class="lane-h">
+          <div class="lane-tag">Case A</div>
+          <h3>BI investigation</h3>
+          <div class="role">Analyst-led</div>
+        </div>
+        <div class="lane-body">
+          <div class="block">
+            <div class="lbl">Basis of reasoning</div>
+            <p><span class="hi">Institutional knowledge, socially inherited.</span> The analyst treats "at risk" as a composite: customer value, churn signals, operational friction across delivery, quality, suppliers, production and carriers, and financial distress. Dataset owners are known.</p>
+          </div>
+          <div class="block">
+            <div class="lbl">Dynamics</div>
+            <p>Serial, human-paced. Hypothesis → extract per domain → manual assembly → interpretation. Days to weeks. Dependent on one person holding the full model.</p>
+          </div>
+          <div class="plan">
+            <div class="lbl">Plan produced</div>
+            <div class="branches">
+              <div class="br hit"><span class="pip"></span><span class="txt">value + exposure</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">pullback / churn</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">delivery friction</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">quality friction</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">supplier friction</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">production friction</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">carrier friction</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">financial distress</span></div>
+            </div>
+            <div class="cover"><span class="pct">8 of 8</span><span class="of">branches, contingent on analyst availability. Tacit, non-reproducible.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI -->
+      <div class="lane l-ai">
+        <div class="lane-h">
+          <div class="lane-tag">Case B</div>
+          <h3>AI</h3>
+          <div class="role">Agent over table and column metadata</div>
+        </div>
+        <div class="lane-body">
+          <div class="block">
+            <div class="lbl">Basis of reasoning</div>
+            <p><span class="hi">Surface labels.</span> Matches question terms to table and column names. No representation links supplier quality and receivables aging as one concept, so the agent does not cross those boundaries.</p>
+          </div>
+          <div class="block">
+            <div class="lbl">Dynamics</div>
+            <p>Literal. "Revenue at risk" resolves to the nearest-label metric, open-order exposure, and returns a single-branch result. The composite model is not represented in the metadata.</p>
+          </div>
+          <div class="plan">
+            <div class="lbl">Plan produced</div>
+            <div class="branches">
+              <div class="br hit"><span class="pip"></span><span class="txt">value + exposure</span></div>
+              <div class="br miss"><span class="pip"></span><span class="txt">pullback / churn</span></div>
+              <div class="br miss"><span class="pip"></span><span class="txt">delivery friction</span></div>
+              <div class="br miss"><span class="pip"></span><span class="txt">quality friction</span></div>
+              <div class="br miss"><span class="pip"></span><span class="txt">supplier friction</span></div>
+              <div class="br miss"><span class="pip"></span><span class="txt">production friction</span></div>
+              <div class="br miss"><span class="pip"></span><span class="txt">carrier friction</span></div>
+              <div class="br miss"><span class="pip"></span><span class="txt">financial distress</span></div>
+            </div>
+            <div class="cover"><span class="pct">1 of 8</span><span class="of">branches, and only the exposure measure within it. Omits the remaining seven.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI + ARGUS -->
+      <div class="lane l-ax win">
+        <div class="lane-h">
+          <div class="lane-tag">Case C</div>
+          <h3>AI + Argus</h3>
+          <div class="role">Agent over the ontology</div>
+        </div>
+        <div class="lane-body">
+          <div class="block">
+            <div class="lbl">Basis of reasoning</div>
+            <p><span class="hi">Meaning.</span> Argus is the ontology: a knowledge graph of business concepts, grounded to the data. The institutional model is represented as data. "Revenue at Risk" is a concept with dependencies — customer value, pullback/churn, delivery, quality, supplier, production and carrier friction, and financial distress — each mapped to measures across the seven products.</p>
+          </div>
+          <div class="block">
+            <div class="lbl">Dynamics</div>
+            <p>Resolve concept → expand dependencies → ground each to data → traverse across products → assemble. Reproducible, at machine speed, no person in the loop.</p>
+          </div>
+          <div class="block">
+            <div class="lbl">How the model stays current</div>
+            <p>Authors tag evolving business concepts using <strong>#Terms</strong>. Those tags map to organisational definitions that update over time — when the business changes how it measures something, the author updates the term, and every question that depends on it inherits the update without re-engineering the graph.</p>
+          </div>
+          <div class="plan">
+            <div class="lbl">Plan produced</div>
+            <div class="branches">
+              <div class="br hit"><span class="pip"></span><span class="txt">value + exposure</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">pullback / churn</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">delivery friction</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">quality friction</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">supplier friction</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">production friction</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">carrier friction</span></div>
+              <div class="br hit"><span class="pip"></span><span class="txt">financial distress</span></div>
+            </div>
+            <div class="cover"><span class="pct">8 of 8</span><span class="of">branches, grounded. Reproducible across runs.</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PROSE-VS-EXECUTABLE CALLOUT -->
+    <div class="prose-gap rv" style="animation-delay:.15s">
+      <div class="pg-lbl">Why better documentation doesn't close the gap</div>
+      <p>The AI case above uses an agent over table and column metadata — names, descriptions, basic schema. The obvious objection: that's a weak baseline. Write better documentation and the gap closes.</p>
+      <p>It doesn't. The difference between metadata and an ontology is not documentation quality — it's structure. <strong>Documentation is prose. The ontology is executable.</strong></p>
+      <p>A perfectly written schema could tell an agent that <code>receivables_identity_coverage_pct</code> exists and what it measures. It cannot tell the agent that this metric is the coverage measure for the identity bridge a prior answer's AR branch depended on — and therefore what to read when the question is "how confident should I be?" That relationship has to be represented as structure. Prose cannot be traversed; a graph can.</p>
+      <p>This is why Q6 is the sharpest test in this document. Every gap in Q3–Q5 could in principle be narrowed with richer documentation. Q6 cannot — reporting branch-specific confidence requires identity paths and their coverage measures to be encoded as structure. There is no documentation equivalent to that query.</p>
+    </div>
+
+  </div>
+
+  <hr class="rule">
+
+  <!-- QUESTION BY QUESTION -->
+  <div class="rv" style="animation-delay:.15s">
+    <div class="shead"><span class="n">04</span><h2>Question by question</h2></div>
+    <p class="sub">Six questions from the run, each across the three approaches. Cells state result and plan scope. The first dropdown traces the reasoning step by step for all three cases; the abstract questions carry three more — the correct query plan with members and rationale, why the ontology produces it (the reasoning gap), and each approach measured against that plan.</p>
+    <p class="qlegend">Type — Direct: question terms name the required metric. Abstract: they do not; the answer is a composite across products.<br>DPs — data products the full answer draws on, of seven (supplier-performance, production-performance, product-quality, customer-delivery-reliability, carrier-performance, receivables-health, customer-account-health).</p>
+
+    <div class="qbq">
+
+      <!-- Q1 -->
+      <div class="qrow">
+        <div class="qrow-h">
+          <span class="qn">Q1</span><h3>How many open orders are currently late for a strategic customer?</h3>
+          <span class="qtype">Direct · 1 DP</span>
+          <div class="dps">DP: <b>customer-delivery-reliability</b> · metric <code>late_orders_count</code></div>
+        </div>
+        <div class="qcmp">
+          <div class="cell bi"><div class="ch">BI</div><p>Direct pull. <code>late_orders_count</code> by <code>customer_name</code>, <code>account_tier=Strategic</code>.</p></div>
+          <div class="cell ai"><div class="ch">AI</div><p>Question terms name the metric. Resolves to <code>late_orders_count</code>. Match.</p></div>
+          <div class="cell ax"><div class="ch">AI + Argus</div><p>Same single metric. No composite required. Match.</p></div>
+        </div>
+        <details class="rz">
+          <summary>Reasoning — what each setup makes available</summary>
+          <div class="rz-body">
+            <div class="rz-col bi"><div class="ch">BI</div>
+              <ol class="steps">
+                <li>Read "late open orders" as a delivery-reliability question.</li>
+                <li>Open <code>customer-delivery-reliability</code>; select <code>late_orders_count</code>.</li>
+                <li>Filter <code>account_tier=Strategic</code>, group by customer.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>One metric names the answer; the analyst's composite knowledge is not invoked.</p></div>
+            <div class="rz-col ai"><div class="ch">AI</div>
+              <ol class="steps">
+                <li>Match the terms "late" / "orders" to <code>late_orders_count</code>, "strategic" to <code>account_tier</code>.</li>
+                <li>Emit one query: <code>late_orders_count</code> by customer, <code>account_tier=Strategic</code>.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>The question terms name the metric, so label-matching reaches the correct single-DP plan.</p></div>
+            <div class="rz-col ax"><div class="ch">AI + Argus</div>
+              <ol class="steps">
+                <li>Resolve "late open orders" to its concept; the concept grounds to one measure, <code>late_orders_count</code>.</li>
+                <li>No dependency edges to expand; emit the one query.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>With a single measure behind the concept, the graph adds nothing over label-matching. Control case.</p></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Q2 -->
+      <div class="qrow">
+        <div class="qrow-h">
+          <span class="qn">Q2</span><h3>What is total open AR exposure by aging bucket this quarter?</h3>
+          <span class="qtype">Direct · 1 DP</span>
+          <div class="dps">DP: <b>receivables-health</b> · metrics <code>total_open_ar_amount</code>, <code>ar_31_60_amount</code>, <code>ar_90_plus_amount</code></div>
+        </div>
+        <div class="qcmp">
+          <div class="cell bi"><div class="ch">BI</div><p>Open AR by bucket for the quarter. Reads 90+ as flat.</p></div>
+          <div class="cell ai"><div class="ch">AI</div><p>Resolves to the aging-bucket metrics. Match. Reads each bucket in isolation.</p></div>
+          <div class="cell ax"><div class="ch">AI + Argus</div><p>Same query. 31–60 rise is also registered as one input to the revenue-at-risk composite.</p></div>
+        </div>
+        <details class="rz">
+          <summary>Reasoning — what each setup makes available</summary>
+          <div class="rz-body">
+            <div class="rz-col bi"><div class="ch">BI</div>
+              <ol class="steps">
+                <li>Read as an AR-aging question → <code>receivables-health</code>.</li>
+                <li>Select <code>total_open_ar_amount</code>, <code>ar_31_60_amount</code>, <code>ar_90_plus_amount</code> by bucket, current quarter.</li>
+                <li>Observe 90+ flat; read as no alarm.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>The buckets name the answer; the question as asked does not trigger cross-DP recall.</p></div>
+            <div class="rz-col ai"><div class="ch">AI</div>
+              <ol class="steps">
+                <li>Match "AR" / "aging bucket" to the receivables bucket measures.</li>
+                <li>Emit one query returning the buckets.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>Terms name the metrics; label-matching suffices for a single-DP total. Buckets read in isolation.</p></div>
+            <div class="rz-col ax"><div class="ch">AI + Argus</div>
+              <ol class="steps">
+                <li>Resolve to the same bucket measures.</li>
+                <li>Grounding marks <code>ar_31_60_amount</code> as a dependency of Revenue at Risk (financial distress).</li>
+                <li>Emit the same query; retain the 31–60 rise as a stored input.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>Same numbers, but the graph carries the relationship that makes the 31–60 rise reusable in Q3.</p></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Q3 -->
+      <div class="qrow">
+        <div class="qrow-h">
+          <span class="qn">Q3</span><h3>How much revenue is at risk of walking?</h3>
+          <span class="qtype abstract">Abstract · 7 DPs</span>
+          <div class="dps">DPs: <b>customer-delivery-reliability, customer-account-health, product-quality, supplier-performance, production-performance, carrier-performance, receivables-health</b></div>
+        </div>
+        <div class="qcmp">
+          <div class="cell bi"><div class="ch">BI</div><p>Composite. Trailing-12-month order value across the five accounts ≈ <b>$16.4M</b>. 8 of 8 branches.</p></div>
+          <div class="cell ai"><div class="ch">AI</div><p><code>forward_revenue_exposure_open_orders</code> ≈ <b>$3.37M</b>. One metric, one DP. 1 of 8 branches.</p></div>
+          <div class="cell ax"><div class="ch">AI + Argus</div><p>Composite ≈ <b>$16.4M</b>. Concept dependencies grounded across seven DPs. 8 of 8 branches.</p></div>
+        </div>
+        <details class="rz">
+          <summary>Reasoning — what each setup makes available</summary>
+          <div class="rz-body">
+            <div class="rz-col bi"><div class="ch">BI</div>
+              <ol class="steps">
+                <li>Recall the working definition: "at risk" = customer value + churn/pullback + operational friction + financial distress — not open-order exposure alone.</li>
+                <li>Enumerate the components from experience; recall which team owns each dataset.</li>
+                <li>Request per-customer extracts: order value + <code>forward_revenue_exposure_open_orders</code>; account pullback; delivery, quality, supplier, production, carrier friction; AR distress.</li>
+                <li>Assemble by hand across the five accounts → ≈$16.4M.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>The composite lives in the analyst's memory; scope is complete but serial, tacit, and dependent on that person.</p></div>
+            <div class="rz-col ai"><div class="ch">AI</div>
+              <ol class="steps">
+                <li>Tokenize the question; search metric and column names for the nearest match.</li>
+                <li>"revenue" + "at risk" ranks <code>forward_revenue_exposure_open_orders</code> highest.</li>
+                <li>Nothing states the phrase decomposes, and no label links it to churn, quality, supplier, or AR — no further branches are generated.</li>
+                <li>Emit one query → ≈$3.37M (visible exposure).</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>Metadata exposes labels, not relationships; the composite cannot be traversed, so the plan stops at the closest single metric.</p></div>
+            <div class="rz-col ax"><div class="ch">AI + Argus</div>
+              <ol class="steps">
+                <li>Resolve "revenue at risk of walking" to the concept Revenue at Risk.</li>
+                <li>Read its note: open-order exposure is not the whole concept.</li>
+                <li>Expand its dependency edges: customer value, pullback/churn, delivery, quality, supplier, production, carrier friction, financial distress.</li>
+                <li>Ground each edge to measures — value (derived from the <code>net_order_value_usd</code> dimension) + <code>forward_revenue_exposure_open_orders</code>; <code>recent_nonactive_customer_count</code> + <code>forward_purchase_forecast_change_pct</code>; <code>late_orders_count</code>; <code>customer_traceable_failed_inspection_count</code>; <code>customer_traceable_supplier_issue_count</code>; <code>customer_traceable_work_order_count</code>; <code>customer_linked_late_shipment_count</code>; <code>financial_distress_score</code> + <code>ar_31_60_amount</code>.</li>
+                <li>Order the branches (value+exposure → pullback → five frictions → distress contrast); use identity bridges to hold everything at customer grain.</li>
+                <li>Assemble → ≈$16.4M.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>The concept supplies the meaning (walking ≠ exposure) and the grounding supplies the map (meaning → measures across seven DPs), turning the phrase into an ordered multi-branch plan without the analyst.</p></div>
+          </div>
+        </details>
+        <details class="rec">
+          <summary>Correct query plan · 8 blocks — members &amp; rationale</summary>
+          <div class="rec-body">
+            <p class="rec-note">"Revenue at risk of walking" is a composite, not one metric. The plan sizes each customer, confirms who is pulling away, gathers every operational cause, then subtracts customers whose risk is purely financial so the total is not overstated. Every block holds at customer grain via the identity bridges.</p>
+            <div class="rblk"><div class="rblk-h"><span class="bn">1</span>Customer value &amp; visible exposure<span class="dp">customer-delivery-reliability</span></div>
+              <pre class="rbody">measures:  forward_revenue_exposure_open_orders, orders_at_risk_count,
+           orders_count, forward_purchase_forecast_change_pct
+dimensions: net_order_value_usd, customer_id, customer_name,
+           account_tier, account_status, industry
+order:     forward_revenue_exposure_open_orders desc</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Forward exposure and orders-at-risk are the portion already visible; forecast change is the leading pullback signal. Trailing value is derived from the net_order_value_usd dimension — it is not a published measure.</div><div class="wl">dimensions</div><div class="wv">Customer grain so risk is per-account; tier / status / industry to weight strategic accounts; net_order_value_usd carried as the value dimension.</div><div class="wl">feeds next</div><div class="wv">The ranked value base every later branch attaches to.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">2</span>Account pullback signal<span class="dp">customer-account-health</span></div>
+              <pre class="rbody">measures:  recent_nonactive_customer_count, status_transition_count,
+           strategic_customer_count
+dimensions: customer_id, account_tier, account_status, recent_nonactive_flag</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Account-state movement is the evidence a customer is actually leaving, not merely exposed.</div><div class="wl">feeds next</div><div class="wv">Separates "walking" from "exposed" — the distinction a single exposure metric misses.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">3</span>Delivery friction<span class="dp">customer-delivery-reliability</span></div>
+              <pre class="rbody">measures:  late_orders_count, on_time_to_promise_pct,
+           late_delivery_days_avg, order_release_split_count
+dimensions: customer_id, account_tier, industry</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Late orders, promise miss, days-late, split releases — the delivery pains that push accounts away.</div><div class="wl">feeds next</div><div class="wv">Operational cause 1: did delivery push them?</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">4</span>Quality friction<span class="dp">product-quality</span></div>
+              <pre class="rbody">measures:  fail_rate_pct, customer_traceable_failed_inspection_count,
+           product_family_defect_rate_change_pct, customer_side_inspection_request_count
+dimensions: customer_id, account_tier, industry</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Fail rate and customer-traceable failed inspections tie defects to accounts; defect-rate change catches drift; inspection requests show the customer is already escalating.</div><div class="wl">feeds next</div><div class="wv">Operational cause 2: did quality push them?</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">5</span>Supplier friction<span class="dp">supplier-performance</span></div>
+              <pre class="rbody">measures:  customer_traceable_supplier_issue_count, critical_material_late_po_count,
+           supplier_on_time_pct, incoming_rejection_rate
+dimensions: customer_id, account_tier, industry</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Customer-traceable supplier issues connect upstream supply problems to the account; on-time and rejection rate quantify supplier health.</div><div class="wl">feeds next</div><div class="wv">Operational cause 3: did suppliers push them?</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">6</span>Production friction<span class="dp">production-performance</span></div>
+              <pre class="rbody">measures:  customer_traceable_work_order_count, downtime_minutes_total,
+           unplanned_downtime_pct, first_pass_yield_pct
+dimensions: customer_id, account_tier, industry</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Customer-traceable work orders link plant problems to the account; downtime and first-pass yield quantify manufacturing instability.</div><div class="wl">feeds next</div><div class="wv">Operational cause 4 — the branch label-matching has no way to reach.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">7</span>Carrier friction<span class="dp">carrier-performance</span></div>
+              <pre class="rbody">measures:  customer_linked_late_shipment_count, carrier_on_time_pct,
+           transit_time_variance_days, damage_reported_rate
+dimensions: customer_id, account_tier, industry</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Customer-linked late shipments tie logistics failures to the account; on-time, transit variance, damage rate quantify carrier reliability.</div><div class="wl">feeds next</div><div class="wv">Operational cause 5: did logistics push them?</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">8</span>Financial-distress contrast<span class="dp">receivables-health</span></div>
+              <pre class="rbody">measures:  financial_distress_score, ar_90_plus_amount, ar_90_plus_pct,
+           ar_31_60_amount, open_dispute_amount
+dimensions: customer_id</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Distress score plus aged AR and disputes measure "can't pay"; 31–60 is the early-warning bucket before 90+.</div><div class="wl">feeds next</div><div class="wv">Down-weight accounts whose risk is financial, so the walking number is not overstated.</div></div></div>
+          </div>
+        </details>
+        <details class="xtra why">
+          <summary>Why the ontology produces this plan — the reasoning gap</summary>
+          <div class="xbody">
+            <p>The concept <span class="hl-ax">Revenue at Risk</span> carries a note that open-order exposure is only the visible surface, plus dependency edges to customer value, pullback/churn, five operational-friction sub-concepts, and financial distress. Each edge is grounded to specific measures across seven data products, and the identity bridges let every branch resolve to the same customers. The agent inherits a map from the phrase "walking revenue" to eight evidence branches — it does not have to know the domain, only to read the graph.</p>
+            <p><span class="hl-ai">Metadata has none of this.</span> "Walking" lexically matches the metric name <code>forward_revenue_exposure_open_orders</code>, and with no edges to follow, the plan stops there — the ≈$3.37M visible slice, which by the answer key misses roughly 80% of the at-risk base. The reasoning does not fail; it has nothing to traverse.</p>
+            <p><strong>The gap is two-part: meaning</strong> (walking ≠ exposure) <strong>and grounding</strong> (meaning → measures across DPs). Remove either and the plan collapses back toward the single-metric answer.</p>
+          </div>
+        </details>
+        <details class="xtra diff">
+          <summary>Each approach vs the correct plan</summary>
+          <div class="xbody">
+            <div class="darm bi"><div class="an">BI vs correct</div><div class="dv">Reconstructs the same eight branches from memory. Deviation is human variance — a rushed or junior analyst drops branches — and the plan is neither reproducible nor auditable.</div></div>
+            <div class="darm ai"><div class="an">AI vs correct</div><div class="dv">Block 1 only, reduced to a single exposure measure. Seven of eight branches absent: pullback, all five frictions, and the distress contrast.</div></div>
+            <div class="darm ax"><div class="an">AI + Argus vs correct</div><div class="dv">All eight branches, grounded and ordered; matches. Residual gap is member-naming discipline (aliases vs governed names), not scope.</div></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Q4 -->
+      <div class="qrow">
+        <div class="qrow-h">
+          <span class="qn">Q4</span><h3>Are we losing the wrong customers?</h3>
+          <span class="qtype abstract">Abstract · 4 DPs</span>
+          <div class="dps">DPs: <b>customer-account-health, customer-delivery-reliability, product-quality, receivables-health</b></div>
+        </div>
+        <div class="qcmp">
+          <div class="cell bi"><div class="ch">BI</div><p>Five Active Strategic Medical Devices accounts, each with ≥2 pullback signals.</p></div>
+          <div class="cell ai"><div class="ch">AI</div><p><code>recent_nonactive_customer_count</code> → 15 already Inactive/Churned accounts (Building Controls, Telecom). Different set.</p></div>
+          <div class="cell ax"><div class="ch">AI + Argus</div><p>The five Active at-risk accounts — the silently-at-risk composite, not a single metric.</p></div>
+        </div>
+        <details class="rz">
+          <summary>Reasoning — what each setup makes available</summary>
+          <div class="rz-body">
+            <div class="rz-col bi"><div class="ch">BI</div>
+              <ol class="steps">
+                <li>Interpret "wrong customers" as high-value accounts leaving now, not accounts already lost.</li>
+                <li>Recall that early pullback shows differently per customer — delivery cadence, customer-run inspections, unscheduled engineering visits, fresh AR aging.</li>
+                <li>Pull the Active + Strategic + Medical base; overlay the pullback signals per account.</li>
+                <li>Return the five accounts showing ≥2 signals.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>Experience defines "silently at risk" and where each signal lives; that definition is not encoded anywhere.</p></div>
+            <div class="rz-col ai"><div class="ch">AI</div>
+              <ol class="steps">
+                <li>Match "losing customers" to the nearest metric, <code>recent_nonactive_customer_count</code>.</li>
+                <li>Return accounts already flagged nonactive → 15 Inactive/Churned (Building Controls, Telecom).</li>
+                <li>No at-risk-but-active composite exists; the five differing signal-shapes are not linked, so no cluster forms.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>Label-matching finds "already lost," not "leaving"; the composite that defines the right cohort is absent from metadata.</p></div>
+            <div class="rz-col ax"><div class="ch">AI + Argus</div>
+              <ol class="steps">
+                <li>Resolve "wrong customers to lose" to the silently-at-risk concept.</li>
+                <li>Read its definition: Active + tier/industry + ≥2 of four pullback shapes {delivery cadence/lateness, customer-run inspections, unscheduled engagement, fresh AR aging}.</li>
+                <li>Ground each shape to its measure/DP — <code>order_release_split_count</code> + <code>late_orders_count</code>, <code>customer_traceable_failed_inspection_count</code>, <code>unscheduled_engineering_visit_count</code>, <code>ar_31_60_amount</code>; resolve customers across systems via identity bridges.</li>
+                <li>Intersect → five Active accounts.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>The concept encodes the cohort definition and its per-DP grounding, so the cluster no single metric holds is built directly.</p></div>
+          </div>
+        </details>
+        <details class="rec">
+          <summary>Correct query plan · 7 blocks — members &amp; rationale</summary>
+          <div class="rec-body">
+            <p class="rec-note">The right cohort is "silently at risk": still Active, strategic, in a priority industry, showing at least two pullback shapes — and explicitly not the accounts already lost. The plan builds the still-active base, ranks it by value, gathers the four signal-shapes from four DPs, then subtracts the already-lost decoy.</p>
+            <div class="rblk"><div class="rblk-h"><span class="bn">1</span>Strategic active base<span class="dp">customer-account-health</span></div>
+              <pre class="rbody">measures:  active_customer_count, strategic_customer_count
+dimensions: customer_id, customer_name, account_tier, account_status, industry
+filters:   account_tier = Strategic, account_status = Active</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Restricts to accounts that can still be saved, before any risk test.</div><div class="wl">feeds next</div><div class="wv">The population every signal-shape is overlaid onto.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">2</span>Value ranking<span class="dp">customer-delivery-reliability</span></div>
+              <pre class="rbody">measures:  orders_count
+dimensions: net_order_value_usd, customer_id, account_tier, industry</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Trailing order value (derived from the net_order_value_usd dimension) ranks the base by what a loss would cost, so "wrong" means high-value.</div><div class="wl">feeds next</div><div class="wv">Prioritizes which at-risk accounts matter most.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">3</span>Signal-shape · delivery<span class="dp">customer-delivery-reliability</span></div>
+              <pre class="rbody">measures:  order_release_split_count, late_orders_count,
+           on_time_to_promise_pct, forward_purchase_forecast_change_pct
+dimensions: customer_id, industry</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Cadence splitting, lateness, and a falling forecast are the delivery-shaped pullback (Vertex, Falcon, Terra).</div><div class="wl">feeds next</div><div class="wv">Signal-shape 1 of 4.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">4</span>Signal-shape · quality<span class="dp">product-quality</span></div>
+              <pre class="rbody">measures:  customer_traceable_failed_inspection_count,
+           customer_side_inspection_request_count
+dimensions: customer_id, industry</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">A customer running its own incoming inspection is a quality-shaped pullback (Ridge).</div><div class="wl">feeds next</div><div class="wv">Signal-shape 2 of 4.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">5</span>Signal-shape · engagement<span class="dp">customer-account-health</span></div>
+              <pre class="rbody">measures:  unscheduled_engineering_visit_count, status_transition_count
+dimensions: customer_id</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">An unscheduled engineering visit is an engagement-shaped pullback (Quantum).</div><div class="wl">feeds next</div><div class="wv">Signal-shape 3 of 4.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">6</span>Signal-shape · receivables<span class="dp">receivables-health</span></div>
+              <pre class="rbody">measures:  ar_31_60_amount, dso_days, ar_90_plus_amount
+dimensions: customer_id</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Fresh 31–60 aging with 90+ still flat is the receivables-shaped pullback — early, not yet a default.</div><div class="wl">feeds next</div><div class="wv">Signal-shape 4 of 4; a customer with ≥2 shapes enters the cohort.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">7</span>Already-lost exclusion<span class="dp">customer-account-health</span></div>
+              <pre class="rbody">measures:  recent_nonactive_customer_count
+dimensions: customer_id, account_status, recent_nonactive_flag</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">The already Inactive/Churned accounts — the decoy the literal metric returns.</div><div class="wl">feeds next</div><div class="wv">Subtracted, so the answer is who is leaving, not who has left.</div></div></div>
+          </div>
+        </details>
+        <details class="xtra why">
+          <summary>Why the ontology produces this plan — the reasoning gap</summary>
+          <div class="xbody">
+            <p>The concept <span class="hl-ax">silently-at-risk customer</span> is defined as Active + strategic tier + priority industry + at least two pullback shapes, and each shape is grounded to a measure in a different data product. Building the cohort therefore means intersecting four DPs and explicitly excluding the already-lost — a rule that only exists in the graph.</p>
+            <p><span class="hl-ai">Metadata offers one literal metric</span> that reads like the question: <code>recent_nonactive_customer_count</code>. So "losing customers" resolves to accounts already flagged nonactive — the 15 Inactive/Churned in the wrong industries — and the five active, still-savable accounts never enter the plan. The five pullback shapes differ per customer, so no single measure would have found them anyway.</p>
+            <p><strong>The gap is the composite cohort definition</strong> (the ≥2-of-4 rule spanning four DPs) <strong>and the exclusion step.</strong> Both are relationships, and relationships are what metadata does not carry.</p>
+          </div>
+        </details>
+        <details class="xtra diff">
+          <summary>Each approach vs the correct plan</summary>
+          <div class="xbody">
+            <div class="darm bi"><div class="an">BI vs correct</div><div class="dv">Builds the Active + ≥2-signal cohort from experience and knows to exclude the already-lost. Result matches; it depends on the individual doing the overlay by hand.</div></div>
+            <div class="darm ai"><div class="an">AI vs correct</div><div class="dv"><code>recent_nonactive_customer_count</code> only → the 15 already-lost accounts. The target five-account cohort is entirely absent, and the exclusion step is inverted (it returns the decoy).</div></div>
+            <div class="darm ax"><div class="an">AI + Argus vs correct</div><div class="dv">Intersects the four signal DPs and applies the exclusion → the five active accounts; matches.</div></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Q5 -->
+      <div class="qrow">
+        <div class="qrow-h">
+          <span class="qn">Q5</span><h3>What's actually causing it — and where do I invest to stop it?</h3>
+          <span class="qtype abstract">Abstract · 4 DPs</span>
+          <div class="dps">DPs: <b>customer-delivery-reliability, product-quality, production-performance, supplier-performance</b> · chain metric <code>customer_traceable_supplier_issue_count</code></div>
+        </div>
+        <div class="qcmp">
+          <div class="cell bi"><div class="ch">BI</div><p>Traces upstream to Apex / <code>HX-VR-204</code> component drift → HX-7000 → five customers, if the chain is followed.</p></div>
+          <div class="cell ai"><div class="ch">AI</div><p>Attributes to internal fulfillment-handoff. Recommends handoff redesign. Root cause not upstream.</p></div>
+          <div class="cell ax"><div class="ch">AI + Argus</div><p>Supplier-drift chain end-to-end: Apex → HX-VR-204 → HX-7000 → five customers. Supplier-drift intervention.</p></div>
+        </div>
+        <details class="rz">
+          <summary>Reasoning — what each setup makes available</summary>
+          <div class="rz-body">
+            <div class="rz-col bi"><div class="ch">BI</div>
+              <ol class="steps">
+                <li>Take the visible symptom (customer lateness / pullback) as the start, not the cause.</li>
+                <li>Recall the traceability path from customer back to work order, product, material, supplier.</li>
+                <li>Walk upstream: <code>customer_traceable_work_order_count</code> → defect (<code>fail_rate_pct</code>, <code>product_family_defect_rate_change_pct</code>) → supplier (<code>customer_traceable_supplier_issue_count</code>, <code>incoming_rejection_rate</code>).</li>
+                <li>Land on Apex / <code>HX-VR-204</code> drift; recommend the supplier-drift sequence.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>The causal direction and the customer→supplier chain are held by the analyst; the result depends on the chain being walked, not stopped at the symptom.</p></div>
+            <div class="rz-col ai"><div class="ch">AI</div>
+              <ol class="steps">
+                <li>Match the visible symptom to nearest internal explanations (fulfillment / handoff metrics).</li>
+                <li>No label links supplier quality drift to customer pullback; the supplier → material → work-order → customer path spans DPs it cannot traverse.</li>
+                <li>Attribute the cause internally; recommend handoff redesign.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>Without an encoded causal relationship or a cross-DP chain, label-matching stops at the nearest visible internal cause.</p></div>
+            <div class="rz-col ax"><div class="ch">AI + Argus</div>
+              <ol class="steps">
+                <li>Resolve the question to the causal hypothesis in the graph: supplier drift → product defect → customer pullback.</li>
+                <li>Ground the chain to <code>customer_traceable_supplier_issue_count</code> linking supplier/material to the five customers, corroborated by <code>incoming_rejection_rate</code>, <code>product_family_defect_rate_change_pct</code>, <code>customer_traceable_work_order_count</code>.</li>
+                <li>Traverse end-to-end; confirm concentration on the five accounts (Apex → HX-VR-204 → HX-7000).</li>
+                <li>Recommend the supplier-drift intervention.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>The graph encodes both the causal edge and the chain grounding, so the agent traverses upstream instead of stopping at the internal symptom.</p></div>
+          </div>
+        </details>
+        <details class="rec">
+          <summary>Correct query plan · 6 blocks — members &amp; rationale</summary>
+          <div class="rec-body">
+            <p class="rec-note">Cause is a direction, not a metric. The plan starts at the visible symptom and walks upstream — product, production, supplier — then tests lateness against quality to fix the mechanism, and ends by ranking the intervention.</p>
+            <div class="rblk"><div class="rblk-h"><span class="bn">1</span>Symptom localization<span class="dp">customer-delivery-reliability</span></div>
+              <pre class="rbody">measures:  late_orders_count, on_time_to_promise_pct
+dimensions: customer_id, industry
+filters:   industry = Medical Devices, account_tier = Strategic</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Confirms the visible symptom sits on the five medical customers, not the whole book.</div><div class="wl">feeds next</div><div class="wv">Anchors the chain on a specific customer set.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">2</span>Product-quality link<span class="dp">product-quality</span></div>
+              <pre class="rbody">measures:  fail_rate_pct, product_family_defect_rate_change_pct,
+           customer_traceable_failed_inspection_count
+dimensions: material_number, customer_id</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Ties the symptom to a rising defect on the HX-7000 family reaching those customers.</div><div class="wl">feeds next</div><div class="wv">Moves the cause one step upstream, from delivery to product.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">3</span>Production propagation<span class="dp">production-performance</span></div>
+              <pre class="rbody">measures:  rework_rate_pct, customer_traceable_work_order_count
+dimensions: material_number</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Shows the defect enters through production rework — it is a build problem, not a fulfillment one.</div><div class="wl">feeds next</div><div class="wv">Rules out the internal handoff explanation.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">4</span>Supplier origin<span class="dp">supplier-performance</span></div>
+              <pre class="rbody">measures:  customer_traceable_supplier_issue_count, incoming_rejection_rate
+dimensions: supplier_name, material_id</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">Traces the defect to Apex / HX-VR-204 inbound drift, linked back to the five customers.</div><div class="wl">feeds next</div><div class="wv">Reaches the root; one step remains — which failure mode.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">5</span>Lateness-vs-quality test<span class="dp">supplier-performance</span></div>
+              <pre class="rbody">measures:  critical_material_late_po_count, supplier_on_time_pct
+filters:   supplier_name = Apex Precision Components, material_id = HX-VR-204</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">On-time is high and late POs are zero → not a lateness story. The mechanism is quality drift.</div><div class="wl">feeds next</div><div class="wv">Fixes the intervention type: inspection and sourcing, not expediting.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">6</span>Investment ranking<span class="dp">composite</span></div>
+              <pre class="rbody">inputs:    exposure (Q3 · block 1) × causal concentration (blocks 2–5)
+output:    ranked interventions</pre>
+              <div class="rwhy"><div class="wl">logic</div><div class="wv">Weight each intervention by the revenue it protects: dual-source HX-VR-204, tighten incoming inspection, engage the five customers.</div><div class="wl">feeds next</div><div class="wv">Answers the "where do I invest" half of the question.</div></div></div>
+          </div>
+        </details>
+        <details class="xtra why">
+          <summary>Why the ontology produces this plan — the reasoning gap</summary>
+          <div class="xbody">
+            <p>The graph encodes a causal hypothesis as <span class="hl-ax">edges</span> — supplier drift → product defect → customer pullback — and grounds the chain through <code>customer_traceable_supplier_issue_count</code>, which links a supplier and material back to specific customers. The agent can therefore walk from the visible symptom to the upstream cause across four DPs, and test lateness against quality to name the mechanism.</p>
+            <p><span class="hl-ai">Metadata has no causal edge</span> and no representation of the supplier → material → work-order → customer path. So the visible symptom lexically matches internal fulfillment metrics, and the answer stops at a handoff redesign — the wrong direction and the wrong intervention. It answers a question one hop from the one asked.</p>
+            <p><strong>The gap is the causal relationship plus the cross-DP traceability chain.</strong> A metric can be looked up; a direction has to be encoded.</p>
+          </div>
+        </details>
+        <details class="xtra diff">
+          <summary>Each approach vs the correct plan</summary>
+          <div class="xbody">
+            <div class="darm bi"><div class="an">BI vs correct</div><div class="dv">Walks the chain to the supplier origin if the analyst knows the traceability path. Risk is stopping at the internal symptom, or never reaching the lateness-vs-quality test.</div></div>
+            <div class="darm ai"><div class="an">AI vs correct</div><div class="dv">Attributes cause to internal fulfillment/handoff and recommends a redesign. Blocks 2–6 never happen; the upstream origin is not reached.</div></div>
+            <div class="darm ax"><div class="an">AI + Argus vs correct</div><div class="dv">Traverses the encoded chain to Apex / HX-VR-204 drift, rules out lateness, and ranks the intervention; matches.</div></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Q6 -->
+      <div class="qrow">
+        <div class="qrow-h">
+          <span class="qn">Q6</span><h3>How confident should I be? What am I not seeing?</h3>
+          <span class="qtype abstract">Abstract · 4 DPs</span>
+          <div class="dps">DPs: <b>customer-account-health, customer-delivery-reliability, product-quality, receivables-health</b> · four identity-coverage metrics</div>
+        </div>
+        <div class="qcmp">
+          <div class="cell bi"><div class="ch">BI</div><p>Analyst-stated confidence. Depends on the individual's knowledge of the bridges.</p></div>
+          <div class="cell ai"><div class="ch">AI</div><p>Generic cross-product disclaimer. No coverage figures.</p></div>
+          <div class="cell ax"><div class="ch">AI + Argus</div><p>Reports customer / promise-to-shipment / quality / receivables coverage %; separates robust from extrapolated; names gaps.</p></div>
+        </div>
+        <details class="rz">
+          <summary>Reasoning — what each setup makes available</summary>
+          <div class="rz-body">
+            <div class="rz-col bi"><div class="ch">BI</div>
+              <ol class="steps">
+                <li>Recall which identity bridges (customer↔ERP, promise↔shipment, quality↔customer, AR↔customer) are reliable and which are thin.</li>
+                <li>State confidence per part of the prior answer from experience.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>Coverage knowledge is tacit; not quantified, and varies by who is asked.</p></div>
+            <div class="rz-col ai"><div class="ch">AI</div>
+              <ol class="steps">
+                <li>No representation of identity paths or coverage exists to query.</li>
+                <li>Emit a generic cross-product disclaimer.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>Nothing in metadata expresses how well entities resolve across DPs, so no specific confidence can be formed.</p></div>
+            <div class="rz-col ax"><div class="ch">AI + Argus</div>
+              <ol class="steps">
+                <li>Read the identity paths the prior answers depended on from the graph.</li>
+                <li>Query the four coverage measures: <code>customer_identity_coverage_pct</code>, <code>promise_to_shipment_identity_coverage_pct</code>, <code>quality_traceability_coverage_pct</code>, <code>receivables_identity_coverage_pct</code> (restricted to Strategic).</li>
+                <li>Map each coverage % to the answer parts it supports; mark robust vs extrapolated; name the gaps.</li>
+              </ol>
+              <p class="why"><span class="k">Why this plan</span>The graph names the paths in use and each has a published coverage measure, so confidence is reported as specific numbers instead of a caveat.</p></div>
+          </div>
+        </details>
+        <details class="rec">
+          <summary>Correct query plan · 5 blocks — members &amp; rationale</summary>
+          <div class="rec-body">
+            <p class="rec-note">Confidence is computable here: every earlier answer rode on an identity bridge, and each bridge has a published coverage measure. The plan reads the four coverage percentages, then maps them onto the branches used in Q3–Q5 to mark each robust or extrapolated.</p>
+            <div class="rblk"><div class="rblk-h"><span class="bn">1</span>Customer identity coverage<span class="dp">customer-account-health</span></div>
+              <pre class="rbody">measures:  customer_identity_coverage_pct
+dimensions: account_tier
+filters:   account_tier = Strategic</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">How well CRM customers resolve to the other systems — the bridge every cross-DP branch depends on.</div><div class="wl">feeds next</div><div class="wv">If this is high on Strategic accounts, the cohort work is sound even where general coverage is not.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">2</span>Promise-to-shipment coverage<span class="dp">customer-delivery-reliability</span></div>
+              <pre class="rbody">measures:  promise_to_shipment_identity_coverage_pct
+dimensions: account_tier</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">How well customer promises resolve to shipments — the lowest-coverage bridge in this data.</div><div class="wl">feeds next</div><div class="wv">Flags the delivery-lateness branch as the least complete.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">3</span>Quality traceability coverage<span class="dp">product-quality</span></div>
+              <pre class="rbody">measures:  quality_traceability_coverage_pct
+dimensions: account_tier</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">How well inspections resolve to customers — underwrites the quality branch and the Q5 chain.</div><div class="wl">feeds next</div><div class="wv">Confirms the supplier→customer chain is traceable for the five accounts.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">4</span>Receivables identity coverage<span class="dp">receivables-health</span></div>
+              <pre class="rbody">measures:  receivables_identity_coverage_pct
+dimensions: account_tier</pre>
+              <div class="rwhy"><div class="wl">measures</div><div class="wv">How well AR resolves to customers — underwrites the financial-distress contrast.</div><div class="wl">feeds next</div><div class="wv">Completes the four bridges the earlier answers stand on.</div></div></div>
+            <div class="rblk"><div class="rblk-h"><span class="bn">5</span>Robust-vs-extrapolated mapping<span class="dp">composite</span></div>
+              <pre class="rbody">inputs:    coverage % (blocks 1–4) × branches used (Q3–Q5)
+output:    per-branch confidence + named gaps</pre>
+              <div class="rwhy"><div class="wl">logic</div><div class="wv">Any branch resting on a low-coverage bridge is marked extrapolated; the rest robust. Name the gaps rather than disclaim the whole.</div><div class="wl">feeds next</div><div class="wv">Answers "what am I not seeing" with specific, located gaps.</div></div></div>
+          </div>
+        </details>
+        <details class="xtra why">
+          <summary>Why the ontology produces this plan — the reasoning gap</summary>
+          <div class="xbody">
+            <p>The graph <span class="hl-ax">names the identity paths</span> each earlier answer relied on, and every path has a published coverage measure. Confidence is therefore a query, not a judgment: read the four coverage percentages, restrict to Strategic accounts, and mark any branch resting on a thin bridge as extrapolated.</p>
+            <p><span class="hl-ai">Metadata has no representation of identity paths at all</span> — it lists tables and columns, not how entities resolve between them. With nothing to measure, the agent cannot say which parts of its answer are grounded and falls back to a generic disclaimer that is equally true of any answer.</p>
+            <p><strong>The gap is the explicit identity paths and their coverage measures.</strong> The same structure that let the earlier questions cross DPs is what lets this one report how far it can be trusted. This is the one gap no improvement in documentation quality can close — the relationship between a prior answer's branches and the bridges they depended on must be represented as structure to be queryable at all.</p>
+          </div>
+        </details>
+        <details class="xtra diff">
+          <summary>Each approach vs the correct plan</summary>
+          <div class="xbody">
+            <div class="darm bi"><div class="an">BI vs correct</div><div class="dv">States confidence qualitatively from knowledge of which bridges hold. Directionally right, not quantified, and varies by who is asked.</div></div>
+            <div class="darm ai"><div class="an">AI vs correct</div><div class="dv">Generic cross-product disclaimer. None of the five blocks are produced; no coverage figures exist to it.</div></div>
+            <div class="darm ax"><div class="an">AI + Argus vs correct</div><div class="dv">Reports the four coverage percentages and separates robust from extrapolated branches, with named gaps; matches.</div></div>
+          </div>
+        </details>
+      </div>
+
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <!-- VERDICT -->
+  <div class="verdict rv" style="animation-delay:.16s">
+    <div>
+      <div class="vlbl">Summary</div>
+      <h2>Accuracy on abstract cross-product questions is set at plan construction.</h2>
+      <p>Plan scope on the revenue-at-risk question: AI without ontology, 1 of 8 branches; BI and AI + Argus, 8 of 8. The determinant is whether the composite concept is represented.</p>
+    </div>
+    <div class="vpoints">
+      <div class="vp"><span class="vi">→</span><span class="vt"><strong>AI + Argus matches BI plan scope.</strong> The same branches, because the institutional model is encoded in the ontology rather than held by a person.</span></div>
+      <div class="vp"><span class="vi">→</span><span class="vt"><strong>Difference from BI is durability.</strong> The BI score in this comparison assumes the right analyst is available. Remove that person — promotion, departure, unavailable — and the score resets to zero. AI + Argus encodes the same institutional model as executable structure: reproducible, auditable, available to anyone.</span></div>
+      <div class="vp"><span class="vi">→</span><span class="vt"><strong>Difference from AI is coverage.</strong> On the revenue-at-risk question, metadata resolves 1 branch; the ontology resolves 8.</span></div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Helix Industrial — illustrative scenario · query plans and coverage measures validated against production data structures</span>
+    <span>Internal alignment only · DataOS Ontology track</span>
+  </footer>
+
+</div>
+</body>
+</html>
