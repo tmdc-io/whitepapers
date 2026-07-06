@@ -1,0 +1,788 @@
+<title>Data Contracts &amp; Data Products — A Vulcan Field Guide</title>
+<style>
+  @import url();
+  :root{
+    --paper:#f1f2f5;
+    --paper-raised:#ffffff;
+    --ink:#14181f;
+    --muted:#5b6472;
+    --faint:#8890a0;
+    --line:#dadde3;
+    --line-strong:#b9bec8;
+    --contract:#0e7a6b;
+    --contract-ink:#0a5348;
+    --contract-soft:#e3f1ee;
+    --product:#b1741a;
+    --product-ink:#8a5910;
+    --product-soft:#f7ecd8;
+    --mesh:#5142a6;
+    --mesh-soft:#ece9f8;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono","Liberation Mono",monospace;
+    --sans:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{background:var(--paper);}
+  body{
+    margin:0;
+    font-family:var(--serif);
+    color:var(--ink);
+    background:var(--paper);
+    line-height:1.6;
+  }
+  ::selection{background:var(--contract-soft);color:var(--contract-ink);}
+  a{color:var(--contract-ink);text-decoration-thickness:1px;text-underline-offset:2px;}
+  a:hover{color:var(--ink);}
+  a:focus-visible, button:focus-visible, summary:focus-visible{outline:2px solid var(--contract);outline-offset:2px;}
+
+  .page{
+    max-width:1240px;
+    margin:0 auto;
+    padding:0 32px 120px;
+    display:grid;
+    grid-template-columns:220px minmax(0,760px);
+    gap:56px;
+    justify-content:center;
+  }
+  @media (max-width:980px){
+    .page{grid-template-columns:minmax(0,1fr);padding:0 20px 80px;}
+    .toc{display:none;}
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    grid-column:1/-1;
+    max-width:820px;
+    margin:0 auto;
+    padding:76px 0 40px;
+    text-align:left;
+  }
+  .hero .kicker{
+    font-family:var(--mono);
+    font-size:12.5px;
+    letter-spacing:.11em;
+    text-transform:uppercase;
+    color:var(--muted);
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-bottom:18px;
+  }
+  .hero .kicker .dot{width:6px;height:6px;border-radius:50%;background:var(--contract);}
+  .hero .kicker .dot.product{background:var(--product);}
+  .hero h1{
+    font-size:clamp(34px,5vw,52px);
+    line-height:1.08;
+    margin:0 0 22px;
+    text-wrap:balance;
+    font-weight:600;
+    letter-spacing:-.01em;
+  }
+  .hero h1 em{font-style:italic;color:var(--contract-ink);}
+  .hero p.lede{
+    font-size:19px;
+    color:var(--muted);
+    max-width:640px;
+    margin:0 0 28px;
+  }
+  .hero .stamp-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .stamp{
+    font-family:var(--mono);
+    font-size:11.5px;
+    letter-spacing:.03em;
+    padding:5px 10px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    color:var(--muted);
+    background:var(--paper-raised);
+  }
+
+  /* ---------- TOC ---------- */
+  .toc{
+    position:sticky;
+    top:36px;
+    align-self:start;
+    padding-top:76px;
+    font-family:var(--sans);
+  }
+  .toc .toc-label{
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--faint);
+    margin-bottom:12px;
+  }
+  .toc ol{list-style:none;margin:0;padding:0;}
+  .toc li{margin-bottom:2px;}
+  .toc a{
+    display:block;
+    padding:5px 0 5px 12px;
+    border-left:2px solid var(--line);
+    font-size:13px;
+    color:var(--muted);
+    text-decoration:none;
+    line-height:1.35;
+  }
+  .toc a:hover{color:var(--ink);border-left-color:var(--line-strong);}
+  .toc .part-label{
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--faint);
+    margin:18px 0 6px;
+  }
+
+  /* ---------- Content column ---------- */
+  main{min-width:0;}
+  section{margin-bottom:64px;scroll-margin-top:28px;}
+  section > .sec-eyebrow{
+    font-family:var(--mono);
+    font-size:11.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--faint);
+    margin-bottom:10px;
+  }
+  h2{
+    font-size:29px;
+    font-weight:600;
+    letter-spacing:-.01em;
+    margin:0 0 18px;
+    text-wrap:balance;
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+  }
+  h2 .num{color:var(--faint);font-size:20px;font-family:var(--mono);font-weight:400;}
+  h3{
+    font-size:19px;
+    font-weight:600;
+    margin:34px 0 12px;
+    letter-spacing:-.005em;
+  }
+  h4{
+    font-family:var(--mono);
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--muted);
+    margin:26px 0 10px;
+    font-weight:600;
+  }
+  p{margin:0 0 16px;max-width:66ch;}
+  ul,ol{margin:0 0 16px;padding-left:22px;}
+  li{margin-bottom:6px;max-width:64ch;}
+  strong{font-weight:650;}
+  .muted{color:var(--muted);}
+
+  /* divider between Part A / Part B */
+  .part-divider{
+    grid-column:1/-1;
+    max-width:820px;
+    margin:8px auto 8px;
+    padding:40px 0;
+    border-top:1px solid var(--line-strong);
+    border-bottom:1px solid var(--line-strong);
+    display:flex;
+    align-items:center;
+    gap:22px;
+  }
+  .part-divider .tag{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    padding:6px 11px;
+    border-radius:3px;
+    white-space:nowrap;
+  }
+  .part-divider .tag.a{background:var(--mesh-soft);color:var(--mesh);}
+  .part-divider .tag.b{background:var(--contract-soft);color:var(--contract-ink);}
+  .part-divider p{margin:0;color:var(--muted);font-size:15px;max-width:none;}
+
+  /* ---------- Code blocks ---------- */
+  .code{
+    background:#171b22;
+    color:#dfe4ee;
+    border-radius:8px;
+    padding:18px 20px;
+    overflow-x:auto;
+    font-family:var(--mono);
+    font-size:12.6px;
+    line-height:1.62;
+    margin:0 0 22px;
+    box-shadow:inset 0 0 0 1px #262c37;
+  }
+  .code .fn{color:#7fd4c1;}
+  .code .field{color:#8bb4f0;}
+  .code .str{color:#e3c586;}
+  .code .cm{color:#6b7383;font-style:italic;}
+  .code-label{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.05em;
+    color:var(--faint);
+    margin:0 0 8px;
+    display:flex;
+    justify-content:space-between;
+  }
+
+  /* ---------- Tables ---------- */
+  .table-wrap{overflow-x:auto;margin:0 0 24px;border:1px solid var(--line);border-radius:8px;}
+  table{border-collapse:collapse;width:100%;font-size:14px;background:var(--paper-raised);}
+  th,td{
+    text-align:left;
+    padding:10px 14px;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+  th{
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+    background:#f7f8fa;
+    white-space:nowrap;
+  }
+  tr:last-child td{border-bottom:none;}
+  td code, li code, p code{
+    font-family:var(--mono);
+    font-size:.86em;
+    background:#e9ebef;
+    padding:1.5px 5px;
+    border-radius:3px;
+    color:var(--contract-ink);
+  }
+  .status-yes{color:var(--contract-ink);font-weight:600;}
+  .status-partial{color:var(--product-ink);font-weight:600;}
+  .status-no{color:var(--faint);}
+
+  /* ---------- Callouts ---------- */
+  .callout{
+    border-left:3px solid var(--line-strong);
+    background:var(--paper-raised);
+    border-radius:0 8px 8px 0;
+    padding:14px 18px;
+    margin:0 0 22px;
+    font-size:14.5px;
+  }
+  .callout p{margin:0;max-width:none;}
+  .callout p + p{margin-top:8px;}
+  .callout .callout-label{
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    margin-bottom:6px;
+    display:block;
+  }
+  .callout.contract{border-left-color:var(--contract);}
+  .callout.contract .callout-label{color:var(--contract-ink);}
+  .callout.product{border-left-color:var(--product);}
+  .callout.product .callout-label{color:var(--product-ink);}
+  .callout.warn{border-left-color:#a83a3a;}
+  .callout.warn .callout-label{color:#a83a3a;}
+
+  /* ---------- Facet grid (Dehghani) ---------- */
+  .facet-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+    margin:0 0 22px;
+  }
+  .facet{background:var(--paper-raised);padding:16px 18px;}
+  .facet .fnum{font-family:var(--mono);font-size:11px;color:var(--faint);}
+  .facet h5{margin:4px 0 6px;font-size:15px;font-family:var(--sans);font-weight:650;}
+  .facet p{font-size:13px;color:var(--muted);margin:0;max-width:none;}
+
+  /* ---------- endpoint cards ---------- */
+  .endpoint{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    gap:4px 14px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px 18px;
+    margin:0 0 14px;
+    background:var(--paper-raised);
+    align-items:baseline;
+  }
+  .endpoint .verb{
+    font-family:var(--mono);
+    font-size:11px;
+    font-weight:700;
+    color:var(--contract-ink);
+    background:var(--contract-soft);
+    padding:2px 8px;
+    border-radius:3px;
+    align-self:start;
+  }
+  .endpoint .path{font-family:var(--mono);font-size:14px;grid-column:2;}
+  .endpoint .desc{grid-column:2;font-size:13.5px;color:var(--muted);margin-top:2px;}
+
+  /* ---------- footer ---------- */
+  footer{
+    grid-column:1/-1;
+    max-width:820px;
+    margin:20px auto 0;
+    padding-top:28px;
+    border-top:1px solid var(--line);
+    font-family:var(--sans);
+    font-size:13px;
+    color:var(--faint);
+  }
+
+  @media (prefers-reduced-motion:no-preference){
+    section{animation:rise .5s ease both;}
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+</style>
+
+<div class="hero">
+  <div class="kicker"><span class="dot"></span> data contract <span class="dot product"></span> data product — field guide for vulcan</div>
+  <h1>Two words the industry keeps confusing — and a spec for each <em>one</em>.</h1>
+  <p class="lede">A data contract is the interface agreement for a single dataset. A data product is the discoverable, owned package built from one or more contracts. This guide covers the standards that formalize both, and maps every field onto what Vulcan already has — and doesn't.</p>
+  <div class="stamp-row">
+    <span class="stamp">ODCS v3.1.0 · Dec 2025</span>
+    <span class="stamp">ODPS v1.0.0 · Sep 2025</span>
+    <span class="stamp">Bitol · Linux Foundation AI &amp; Data</span>
+  </div>
+</div>
+
+<div class="page">
+<nav class="toc">
+  <div class="toc-label">Contents</div>
+  <div class="part-label">Part A — The specs</div>
+  <ol>
+    <li><a href="#origins">1. Where "data product" comes from</a></li>
+    <li><a href="#distinction">2. Contract vs. product</a></li>
+    <li><a href="#odcs">3. Open Data Contract Standard</a></li>
+    <li><a href="#dcs">4. Data Contract Specification</a></li>
+    <li><a href="#odps">5. Open Data Product Standard</a></li>
+    <li><a href="#vendors">6. How vendors do this today</a></li>
+    <li><a href="#compare">7. Spec-to-spec comparison</a></li>
+  </ol>
+  <div class="part-label">Part B — Vulcan</div>
+  <ol>
+    <li><a href="#today">8. What Vulcan already has</a></li>
+    <li><a href="#gaps">9. Gap analysis</a></li>
+    <li><a href="#mapping">10. Field-by-field mapping</a></li>
+    <li><a href="#api">11. Proposed API surface</a></li>
+    <li><a href="#plan">12. Build order</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="origins">
+  <div class="sec-eyebrow">Part A · 01</div>
+  <h2><span class="num">§1</span> Where "data product" comes from</h2>
+  <p>Before either spec existed, Zhamak Dehghani defined the term in her 2019 data mesh articles on martinfowler.com. Her second principle of data mesh — "data as a product" — treats each domain's dataset the way a software team treats a shipped product: something built for named consumers, held to a quality bar, and supported after release rather than dumped into a lake and forgotten.</p>
+  <p>Her original text names six characteristics a domain dataset needs before it earns the label "product." These six — not the "PACT" or "DATSIS" acronyms sometimes attributed to her — are the actual source text, and everything ODCS and ODPS formalize below traces back to one of them.</p>
+  <div class="facet-grid">
+    <div class="facet"><span class="fnum">1</span><h5>Discoverable</h5><p>Listed in a registry or catalogue with its own metadata, so consumers can find it without asking around.</p></div>
+    <div class="facet"><span class="fnum">2</span><h5>Addressable</h5><p>Reachable at a stable, global address a program can hit — not a moving target buried in a folder structure.</p></div>
+    <div class="facet"><span class="fnum">3</span><h5>Trustworthy &amp; truthful</h5><p>Backed by an explicit SLO on truthfulness, so no one has to double-check it before use.</p></div>
+    <div class="facet"><span class="fnum">4</span><h5>Self-describing</h5><p>Understandable and consumable without hand-holding from the team that built it.</p></div>
+    <div class="facet"><span class="fnum">5</span><h5>Interoperable</h5><p>Follows shared standards and harmonization rules so it can be correlated with data from other domains.</p></div>
+    <div class="facet"><span class="fnum">6</span><h5>Secure</h5><p>Access control applied at the granularity of the product itself, not just the underlying warehouse.</p></div>
+  </div>
+  <p>Dehghani's follow-up article goes further: a data product assumes the role of an <strong>architectural quantum</strong> — a term she borrows directly from Ford, Parsons &amp; Kua's <em>Building Evolutionary Architectures</em> ("the smallest unit of architecture that can be independently deployed with high functional cohesion") — bundling code, data-and-metadata, and infrastructure into one independently deployable unit. The idea: a data product isn't just a table, it's closer to a small service. ODPS doesn't go that far, but its <code>inputPorts</code>/<code>outputPorts</code> model is a direct, if lighter-weight, descendant of the same idea.</p>
+</section>
+
+<section id="distinction">
+  <div class="sec-eyebrow">Part A · 02</div>
+  <h2><span class="num">§2</span> Contract vs. product: the granularity split</h2>
+  <p>Every spec below sorts into one of two buckets, and mixing them up is the single most common confusion in this space (helped along by the fact that two entirely unrelated standards both go by the initialism "ODPS" — more on that in §5).</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Data contract</th><th>Data product</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Unit</strong></td><td>One dataset, table, topic, or file</td><td>One or more contracts, bundled</td></tr>
+        <tr><td><strong>Answers</strong></td><td>"What does this dataset look like, and what do I promise about it?"</td><td>"What can I discover, subscribe to, and get support for?"</td></tr>
+        <tr><td><strong>Carries</strong></td><td>Schema, types, quality rules, SLA, pricing, servers</td><td>Ports (each pointing at a contract), team, support channels</td></tr>
+        <tr><td><strong>Analogy</strong></td><td>An OpenAPI document for one endpoint</td><td>A developer-portal listing for a whole API</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>In the Bitol ecosystem this split is explicit and literal: an ODPS <em>product</em> document doesn't embed a schema at all — it just points, via <code>contractId</code>, at one or more ODCS <em>contract</em> documents that do.</p>
+</section>
+
+<section id="odcs">
+  <div class="sec-eyebrow">Part A · 03</div>
+  <h2><span class="num">§3</span> Open Data Contract Standard (ODCS)</h2>
+  <p>ODCS is the schema-level agreement between a producer and its consumers — the closest thing this space has to OpenAPI. It's governed by <strong>Bitol</strong>, a Linux Foundation AI &amp; Data project, currently at Incubation stage.</p>
+
+  <h3>History</h3>
+  <p>PayPal's internal data-contract template, built by Jean-Georges Perrin's team for PayPal's own data-mesh rollout, was open-sourced in May 2023. Four months later it was contributed into the newly-formed Bitol project and renamed the Open Data Contract Standard. Bitol was jointly stood up by the nonprofit AIDA User Group and Linux Foundation AI &amp; Data on November 30, 2023, and now hosts both ODCS and ODPS under one TSC, chaired by Perrin.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Version</th><th>Date</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td><code>v2.2.0</code></td><td>2023-07-27</td><td>PayPal template renamed ODCS</td></tr>
+        <tr><td><code>v3.0.0</code></td><td>2024-10-20</td><td>Breaking redesign; stripped remaining PayPal-specific elements</td></tr>
+        <tr><td><code>v3.0.2</code></td><td>2025-03-31</td><td>Patch release</td></tr>
+        <tr><td><code>v3.1.0</code></td><td>2025-12-08</td><td><strong>Current.</strong> Adds relationships (FKs), reworks <code>team</code>, deprecates <code>dataProduct</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Two version numbers, not one</h3>
+  <p><code>apiVersion</code> is the spec version (<code>v3.1.0</code>); <code>version</code> is the contract's own semver, bumped independently as the underlying dataset evolves. <code>status</code> carries the lifecycle: <code>proposed → draft → active → deprecated → retired</code>.</p>
+
+  <h4>Fundamentals</h4>
+  <div class="code-label"><span>fundamentals</span><span>odcs v3.1.0</span></div>
+  <pre class="code">apiVersion: v3.1.0
+<span class="field">kind</span>: DataContract
+<span class="field">id</span>: 53581432-6c55-4ba2-a65f-72344a91553a
+<span class="field">name</span>: seller_payments_v1
+<span class="field">version</span>: 1.1.0            <span class="cm"># the contract's own semver</span>
+<span class="field">status</span>: active
+<span class="field">domain</span>: seller
+<span class="field">tenant</span>: ClimateQuantumInc
+
+<span class="field">description</span>:
+  <span class="field">purpose</span>: Views built on top of the seller tables.
+  <span class="field">limitations</span>: Cannot be used in conjunction with days with full moons.
+  <span class="field">usage</span>: Twice a day, preferable before meals.
+
+<span class="field">tags</span>: [<span class="str">'finance'</span>]</pre>
+
+  <h4>Schema — objects, properties, quality</h4>
+  <p>ODCS calls a table/topic/document an <strong>object</strong> and a column/field a <strong>property</strong>. Quality rules attach at either level.</p>
+  <pre class="code"><span class="field">schema</span>:
+  - <span class="field">id</span>: tbl_obj
+    <span class="field">name</span>: tbl
+    <span class="field">logicalType</span>: object
+    <span class="field">physicalType</span>: table
+    <span class="field">physicalName</span>: tbl_1
+    <span class="field">description</span>: Provides core payment metrics
+    <span class="field">properties</span>:
+      - <span class="field">id</span>: rcvr_id_prop
+        <span class="field">name</span>: rcvr_id
+        <span class="field">primaryKey</span>: true
+        <span class="field">primaryKeyPosition</span>: 1
+        <span class="field">businessName</span>: receiver id
+        <span class="field">logicalType</span>: string
+        <span class="field">physicalType</span>: varchar(18)
+        <span class="field">required</span>: false
+        <span class="field">unique</span>: true
+        <span class="field">classification</span>: restricted
+        <span class="field">quality</span>:
+          - <span class="field">id</span>: rcvr_id_no_nulls
+            <span class="field">type</span>: library
+            <span class="field">metric</span>: nullValues
+            <span class="field">mustBe</span>: 0
+            <span class="field">unit</span>: rows</pre>
+  <p><code>logicalType</code> is one of <code>string, date, timestamp, time, number, integer, object, array, boolean</code>. Quality <code>type</code> is one of <code>library</code> (built-in metrics like <code>nullValues</code>, <code>duplicateValues</code>, <code>rowCount</code>), <code>text</code>, <code>sql</code>, or <code>custom</code> (a named engine like Soda, with an inline <code>implementation</code> block). Every quality rule also carries a <code>dimension</code>: <code>accuracy, completeness, conformity, consistency, coverage, timeliness, uniqueness</code>.</p>
+  <p>New in v3.1.0: a <code>relationships</code> block lets one object declare a foreign key against another, using dot-path notation for composite keys — the first time ODCS has modeled cross-table structure rather than treating every object as an island.</p>
+
+  <h4>Team, support, SLA, price</h4>
+  <pre class="code"><span class="field">team</span>:
+  <span class="field">id</span>: tsc_team
+  <span class="field">name</span>: TSC
+  <span class="field">members</span>:
+    - <span class="field">username</span>: daustin
+      <span class="field">role</span>: Owner
+      <span class="field">name</span>: David Austin
+      <span class="field">dateIn</span>: 2022-10-01
+
+<span class="field">support</span>:
+  - <span class="field">channel</span>: data-payments
+    <span class="field">tool</span>: slack
+    <span class="field">scope</span>: interactive
+
+<span class="field">slaProperties</span>:
+  - <span class="field">property</span>: latency
+    <span class="field">value</span>: 4
+    <span class="field">unit</span>: d
+    <span class="field">element</span>: tab1.txn_ref_dt
+    <span class="field">scheduler</span>: cron
+    <span class="field">schedule</span>: <span class="str">"0 30 * * *"</span>
+
+<span class="field">price</span>:
+  <span class="field">priceAmount</span>: 9.95
+  <span class="field">priceCurrency</span>: USD
+  <span class="field">priceUnit</span>: megabyte</pre>
+  <p>Valid SLA <code>property</code> values read like a QoS periodic table: <code>availability, throughput, errorRate, generalAvailability, endOfSupport, endOfLife, retention, frequency, latency, timeToDetect, timeToNotify, timeToRepair</code>. As of v3.1.0, <code>team</code> is an object with a <code>members</code> array, not the flat array older contracts used — a breaking-but-mechanical migration if Vulcan ever needs to read older contracts.</p>
+  <div class="callout contract">
+    <span class="callout-label">Correction worth flagging</span>
+    <p>The <code>dataProduct</code> field that used to sit at the top of an ODCS document — a bare string naming the parent product — is <strong>deprecated as of v3.1.0</strong>. Don't build a new integration around it. The relationship between a contract and its product now flows the other way: the product (ODPS) points at the contract, not the reverse.</p>
+  </div>
+</section>
+
+<section id="dcs">
+  <div class="sec-eyebrow">Part A · 04</div>
+  <h2><span class="num">§4</span> Data Contract Specification (datacontract.com)</h2>
+  <p>A second, independently-invented spec covering the same ground. Created by Jochen Christ and Dr. Simon Harrer of the German consultancy INNOQ, publicly launched September 2023 — unrelated to the PayPal/Bitol lineage. Its YAML shape is recognizably similar to ODCS (an <code>info</code> block, keyed <code>servers</code>, <code>models</code> with typed <code>fields</code>, inline SQL-based <code>quality</code> checks, ISO-8601 <code>servicelevels</code>), and it shipped with a genuinely useful CLI — <code>datacontract-cli</code> — with commands like <code>test</code> (run quality checks against a live connection), <code>export</code>/<code>import</code> (to dbt, Avro, JSON Schema, Terraform, and more), and <code>breaking</code> (diff two contract versions and flag consumer-breaking changes).</p>
+  <div class="callout warn">
+    <span class="callout-label">This matters for anything Vulcan builds today</span>
+    <p>On <strong>December 8, 2025</strong> — the same day ODCS v3.1.0 shipped — the Data Contract Specification's own maintainers (by then operating as Entropy Data) added a formal deprecation notice to their README:</p>
+    <p style="font-style:italic;">"With the release of the Open Data Contract Standard v3.1.0, we deprecate the Data Contract Specification in line with our commitment to focus on a single industry standard for data contracts. […] The Data Contract Specification will be supported in Data Contract CLI and Entropy Data until the end of 2026."</p>
+    <p>This isn't a rebrand or a merge — it's a sunset. The two rival camps converged on ODCS as the one standard. <strong>Build against ODCS, not the Data Contract Specification.</strong> If Vulcan ever needs to import a legacy <code>datacontract.yaml</code>, treat it purely as a migration path (the CLI even ships <code>datacontract export --format odcs</code> for exactly this).</p>
+  </div>
+</section>
+
+<section id="odps">
+  <div class="sec-eyebrow">Part A · 05</div>
+  <h2><span class="num">§5</span> Open Data Product Standard (ODPS)</h2>
+  <div class="callout warn">
+    <span class="callout-label">Disambiguation — two unrelated specs share this acronym</span>
+    <p>There is a <em>second</em>, older, and completely unrelated "Open Data Product Specification" from the independent Open Data Product Initiative (Moilanen &amp; Niilahti, <code>opendataproducts.org</code>, a separate Linux Foundation project since 2024). It has its own <code>pricingPlans</code>, <code>dataQuality</code>, <code>dataHolder</code>, and <code>license</code> fields, and is not designed to pair with ODCS. Everything below is <strong>Bitol's</strong> ODPS — the one built as ODCS's sibling — since that's the one Vulcan's own quality-dimension taxonomy already echoes (see §8).</p>
+  </div>
+  <p>ODPS v1.0.0 shipped September 24, 2025 under the same Bitol/TSC governance as ODCS. Structurally it's much thinner than ODCS — a product document doesn't carry a schema, quality rules, SLA, or pricing at all. It's purely a wrapper: identity, ports, team, support.</p>
+  <pre class="code">apiVersion: v1.0.0
+<span class="field">kind</span>: DataProduct
+<span class="field">id</span>: <span class="str">a1b2c3d4-...</span>
+<span class="field">name</span>: customer-data-product
+<span class="field">status</span>: active
+<span class="field">domain</span>: customer
+
+<span class="field">outputPorts</span>:
+  - <span class="field">name</span>: rawtransactions
+    <span class="field">description</span>: <span class="str">"Raw Transactions"</span>
+    <span class="field">type</span>: tables
+    <span class="field">version</span>: 2.0.0
+    <span class="field">contractId</span>: c2798941-1b7e-4b03-9e0d-955b1a872b33
+    <span class="field">tags</span>: [<span class="str">"transactions"</span>]
+
+<span class="field">team</span>:
+  <span class="field">members</span>:
+    - <span class="field">username</span>: jchen
+      <span class="field">role</span>: owner
+
+<span class="field">support</span>:
+  - <span class="field">channel</span>: customer-data
+    <span class="field">tool</span>: slack
+    <span class="field">scope</span>: interactive</pre>
+  <p>The link to a contract is nothing more than <code>contractId</code> + <code>version</code> — an opaque pointer your platform resolves against its own ODCS store. There's no embedded schema, and — this trips a lot of first reads — <strong>no SLA or pricing field on the product at all</strong>. Those stay exactly where ODCS put them, inside the referenced contract. A product can also declare <code>inputPorts</code> (what it consumes) and <code>managementPorts</code> (discoverability/observability/control endpoints), but <code>outputPorts</code> is the one that matters for "what does this product expose."</p>
+</section>
+
+<section id="vendors">
+  <div class="sec-eyebrow">Part A · 06</div>
+  <h2><span class="num">§6</span> How the incumbents handle this today</h2>
+  <p>Worth knowing mainly so Vulcan doesn't reinvent a worse version of something a bigger vendor already tried and abandoned.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Vendor</th><th>What they call it</th><th>Native "data contract"?</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Databricks</strong></td><td>No formal object; "one data product = one Unity Catalog schema" by convention. Metric views (2025) are a separate semantic-layer feature.</td><td class="status-no">No — blog explicitly recommends bringing your own ODCS YAML</td></tr>
+        <tr><td><strong>AWS DataZone</strong></td><td>Formal <code>DataProduct</code> API object bundling one or more <code>assets</code>; subscription/approval workflow governs access.</td><td class="status-no">No native term; Glue Data Quality scores surface in the catalog instead</td></tr>
+        <tr><td><strong>Snowflake</strong></td><td>"A data product is the share or the app attached to your listing" — official definition.</td><td class="status-no">No — own quickstart delegates contracts to dbt's model-contracts feature</td></tr>
+        <tr><td><strong>dbt</strong></td><td><code>exposures</code> (lightweight downstream-dependency declarations) + <code>model contracts</code> (enforced column name/type/constraint checks on one model)</td><td class="status-partial">Partial — schema-only, no SLA/quality/pricing</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The pattern is consistent: every major warehouse vendor has a "data product" concept (a governed, discoverable bundle), and <em>none</em> of them have shipped a native "data contract" object — they either point at ODCS directly or leave the gap to dbt. That's a reasonable signal that ODCS is genuinely becoming the shared substrate, not just Bitol's aspiration.</p>
+</section>
+
+<section id="compare">
+  <div class="sec-eyebrow">Part A · 07</div>
+  <h2><span class="num">§7</span> Spec-to-spec comparison</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th></th><th>Data Contract Spec</th><th>ODCS</th><th>ODPS (Bitol)</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Scope</strong></td><td>Schema, quality, SLOs — one dataset</td><td>Schema, quality, SLA, price, servers, team — one dataset</td><td>Ports, team, support — bundles contracts</td></tr>
+        <tr><td><strong>Granularity</strong></td><td>One model per file</td><td>One object/table per contract</td><td>One product = N ports = N contracts</td></tr>
+        <tr><td><strong>Governance</strong></td><td>Entropy Data (ex-INNOQ)</td><td>Bitol / LF AI &amp; Data</td><td>Bitol / LF AI &amp; Data</td></tr>
+        <tr><td><strong>Status</strong></td><td class="status-no">Deprecated Dec 2025</td><td class="status-yes">Active, v3.1.0</td><td class="status-yes">Active, v1.0.0</td></tr>
+        <tr><td><strong>Use it for</strong></td><td>Legacy imports only</td><td>Primary contract format</td><td>Product/catalog wrapper</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="part-divider">
+  <span class="tag a">Part A · concepts</span>
+  <span class="tag b">Part B · Vulcan</span>
+  <p>The rest of this guide maps every field above onto what Vulcan's Model, semantic layer, and metadata API already produce — and proposes the endpoints to close the gap.</p>
+</div>
+
+<section id="today">
+  <div class="sec-eyebrow">Part B · 08</div>
+  <h2><span class="num">§8</span> What Vulcan already has</h2>
+  <p>The honest starting point: Vulcan's core already implements a surprising amount of contract-shaped metadata, largely because it inherited a SQLMesh-style model layer. The gaps are almost entirely at the <em>product</em> layer, not the schema layer.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Concept</th><th>Where it lives</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Physical schema (columns, types, descriptions, masks)</td><td><code>sqlmesh/core/model/meta.py</code> — <code>columns_to_types_</code>, <code>column_descriptions_</code>, <code>column_mask_expressions_</code></td><td class="status-yes">Implemented</td></tr>
+        <tr><td>Grain / primary keys</td><td><code>ModelMeta.grains</code></td><td class="status-yes">Implemented</td></tr>
+        <tr><td>Logical schema (dimensions, measures, joins)</td><td><code>sqlmesh/core/model/semantic.py</code>, loaded from <code>semantics/*.yml</code></td><td class="status-yes">Implemented</td></tr>
+        <tr><td>Data quality rules, mapped to dimensions</td><td><code>sqlmesh/core/soda3/spec.py</code> — <code>QualityRule.dimension</code> already cites <strong>ODPS v3.1</strong> naming: completeness, uniqueness, timeliness, validity, accuracy, consistency, conformity</td><td class="status-yes">Implemented — already spec-aligned</td></tr>
+        <tr><td>Owner (single string), cron schedule, tags, terms</td><td><code>sqlmesh/core/node.py</code> (<code>_Node</code> base)</td><td class="status-yes">Implemented, but single-owner only</td></tr>
+        <tr><td>Basic product metadata (domain, tags, terms, usage)</td><td><code>schema/metadata.py</code> — <code>ProductInfo</code></td><td class="status-partial">Partial</td></tr>
+        <tr><td>Lineage / dependency graph</td><td><code>Metadata.graph</code> (nodes, edges, parent/child maps)</td><td class="status-yes">Implemented</td></tr>
+        <tr><td>REST metadata API</td><td><code>api/endpoints/metadata.py</code> — <code>/metadata</code>, <code>/metadata/semantic</code>, PowerBI/Tableau exports</td><td class="status-yes">Implemented, no ODCS/ODPS emitter yet</td></tr>
+        <tr><td>Owners, stewardship, access policy, SLA, compliance, links</td><td>Documented in <code>readings/DP-REAMDE/product_authoring_guide.md</code> only</td><td class="status-no">Design doc — no Pydantic model, no loader, no API</td></tr>
+        <tr><td>Glossary (terms, synonyms, relationships)</td><td>ERD only, in <code>readings/glossary_technical_design.md</code></td><td class="status-no">Design doc — zero implementation</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The single most interesting finding: Vulcan's <code>QualityRule.dimension</code> enum already borrows its taxonomy from the Bitol quality-dimension vocabulary. That's a strong hint that whoever built the DQ layer was already reading these specs — emitting ODCS <code>quality[]</code> blocks from that data is close to a direct field copy, not a redesign.</p>
+</section>
+
+<section id="gaps">
+  <div class="sec-eyebrow">Part B · 09</div>
+  <h2><span class="num">§9</span> Gap analysis</h2>
+  <p>What ODCS/ODPS expect that Vulcan has no field for at all — the honest list, not a sugar-coated one.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Missing concept</th><th>Spec field</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Multi-party ownership / stewardship roles</td><td>ODCS <code>team</code>, ODPS <code>team</code></td><td>Vulcan's <code>owner</code> is one string. Authoring-pack doc proposes <code>owners[]</code> + role-keyed <code>stewardship</code>, unimplemented.</td></tr>
+        <tr><td>SLA (freshness, availability, latency)</td><td>ODCS <code>slaProperties[]</code></td><td>Vulcan has <code>cron</code> (intent) but nothing that publishes an SLO or measures it against reality.</td></tr>
+        <tr><td>Access classification / PII handling</td><td>ODCS property-level <code>classification</code></td><td>Vulcan has column masking (<code>column_mask_expressions_</code>) — enforcement exists, but no declarative classification label to publish.</td></tr>
+        <tr><td>Compliance metadata (regimes, residency, retention)</td><td>Not in ODCS/ODPS core — a custom-property pattern</td><td>Authoring-pack doc proposes this; both specs leave room for it via <code>customProperties</code>.</td></tr>
+        <tr><td>Support channels</td><td>ODCS <code>support[]</code>, ODPS <code>support[]</code></td><td>No structured equivalent; only free-text links in the aspirational doc.</td></tr>
+        <tr><td>Product-level ports (input/output)</td><td>ODPS <code>inputPorts</code> / <code>outputPorts</code></td><td>Vulcan's dependency graph captures the equivalent relationships implicitly, but nothing packages a product's exposed surface as ports.</td></tr>
+        <tr><td>Foreign-key relationships between objects</td><td>ODCS <code>relationships[]</code> (new in v3.1.0)</td><td>Vulcan's semantic <code>joins</code> already carry this information logically — needs translation, not new data.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="mapping">
+  <div class="sec-eyebrow">Part B · 10</div>
+  <h2><span class="num">§10</span> Field-by-field mapping</h2>
+
+  <h3>A Vulcan Model → an ODCS contract</h3>
+  <p>This direction is nearly mechanical — every ODCS field below already has a source in <code>ModelMeta</code>/<code>_Node</code>, with one exception (SLA) flagged.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ODCS field</th><th>Vulcan source</th></tr></thead>
+      <tbody>
+        <tr><td><code>id</code>, <code>name</code></td><td><code>_Node.name</code></td></tr>
+        <tr><td><code>description.purpose</code></td><td><code>_Node.description</code></td></tr>
+        <tr><td><code>schema[].properties[]</code></td><td><code>columns_to_types_</code> + <code>column_descriptions_</code></td></tr>
+        <tr><td><code>properties[].businessName</code></td><td><code>column_terms_</code></td></tr>
+        <tr><td><code>properties[].classification</code></td><td><code>column_mask_expressions_</code> presence → <code>restricted</code>, else <code>public</code></td></tr>
+        <tr><td><code>properties[].primaryKey</code></td><td><code>ModelMeta.grains</code></td></tr>
+        <tr><td><code>schema[].quality[]</code></td><td><code>QualityRule</code> (already dimension-tagged — near 1:1)</td></tr>
+        <tr><td><code>relationships[]</code></td><td><code>JoinSpec</code> from the semantic layer</td></tr>
+        <tr><td><code>tags</code></td><td><code>_Node.tags_</code></td></tr>
+        <tr><td><code>team</code></td><td><code>_Node.owner</code> (single member, role <code>owner</code> — until multi-owner lands)</td></tr>
+        <tr><td><code>slaProperties[]</code> (<code>frequency</code>)</td><td><code>_Node.cron</code> — the schedule the SLA promise is derived from</td></tr>
+        <tr><td><code>version</code>, <code>status</code></td><td>No direct source yet — see §11 for the proposed derivation from snapshot fingerprints</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>A Vulcan data product → an ODPS document</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ODPS field</th><th>Vulcan source</th></tr></thead>
+      <tbody>
+        <tr><td><code>id</code>, <code>name</code>, <code>domain</code></td><td><code>config.yaml</code> — <code>name</code>, <code>metadata.domain</code></td></tr>
+        <tr><td><code>description</code></td><td><code>config.yaml</code> — <code>description</code></td></tr>
+        <tr><td><code>outputPorts[]</code></td><td>One port per published Model, <code>contractId</code> = that model's emitted ODCS <code>id</code></td></tr>
+        <tr><td><code>team</code></td><td><code>ProductInfo.users</code> today; <code>owners[]</code>/<code>stewardship</code> from the authoring pack once implemented</td></tr>
+        <tr><td><code>support[]</code></td><td>Authoring pack's <code>links[]</code> filtered to <code>slack</code>/<code>pagerduty</code>/<code>ticket</code> types</td></tr>
+        <tr><td><code>tags</code></td><td><code>config.yaml</code> — <code>tags</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Note what doesn't map: <code>accessPolicy</code>, <code>compliance</code>, and <code>sla</code> from the authoring-pack design doc have no home in ODPS proper. They'd land as <code>customProperties</code> on the product document, or simply live in Vulcan's own store and get surfaced through a Vulcan-specific extension endpoint rather than forced into someone else's schema.</p>
+</section>
+
+<section id="api">
+  <div class="sec-eyebrow">Part B · 11</div>
+  <h2><span class="num">§11</span> Proposed API surface</h2>
+  <p>Additive to the existing <code>/metadata</code> family in <code>api/endpoints/metadata.py</code> — nothing here requires changing current responses.</p>
+
+  <div class="endpoint">
+    <span class="verb">GET</span>
+    <span class="path">/metadata/contracts</span>
+    <span class="desc">List every model available as an ODCS contract: <code>id</code>, <code>name</code>, current <code>version</code>, <code>status</code>.</span>
+  </div>
+  <div class="endpoint">
+    <span class="verb">GET</span>
+    <span class="path">/metadata/contracts/{model_name}</span>
+    <span class="desc">Emit one model as a full ODCS v3.1.0 document. Content-negotiated: <code>Accept: application/odcs+yaml;version=3.1.0</code> for YAML, <code>application/json</code> for the JSON-Schema-validated equivalent.</span>
+  </div>
+  <div class="endpoint">
+    <span class="verb">GET</span>
+    <span class="path">/metadata/contracts/{model_name}/versions</span>
+    <span class="desc">History of contract versions for one model, keyed to SQLMesh snapshot fingerprints (see below).</span>
+  </div>
+  <div class="endpoint">
+    <span class="verb">GET</span>
+    <span class="path">/metadata/product</span>
+    <span class="desc">Emit the whole project as one ODPS v1.0.0 document — one <code>outputPort</code> per published model, each <code>contractId</code> resolving back to <code>/metadata/contracts/{model_name}</code>.</span>
+  </div>
+
+  <h3>Versioning: reuse what SQLMesh already computes</h3>
+  <p>This is the one place a genuinely novel idea, rather than a field copy, pays off. SQLMesh's planning phase already classifies every model change as <strong>breaking</strong> or <strong>non-breaking</strong> via content fingerprinting, in order to decide whether a virtual-environment rebuild is needed. That's precisely the signal <code>datacontract-cli breaking</code> exists to compute after the fact for the Data Contract Specification — Vulcan already has it, for free, at plan time.</p>
+  <div class="callout contract">
+    <span class="callout-label">Proposal</span>
+    <p>Bump a contract's ODCS <code>version</code> major/minor/patch component using SQLMesh's existing breaking-change classification at the moment a plan is applied, instead of asking model authors to hand-maintain a semver. <code>status</code> transitions (<code>draft → active → deprecated</code>) follow the model's own lifecycle state, not a separate manual field.</p>
+  </div>
+
+  <h3>New schema classes required</h3>
+  <p>A thin translation layer, not a new subsystem — <code>schema/metadata.py</code> already has 90% of the source data:</p>
+  <pre class="code"><span class="cm"># schema/contract.py — new</span>
+<span class="fn">class</span> OdcsProperty(BaseModel):
+    id: str
+    name: str
+    logicalType: str
+    physicalType: str
+    businessName: str | None
+    primaryKey: bool = False
+    classification: str | None
+    quality: list[QualityRule] = []
+
+<span class="fn">class</span> OdcsContract(BaseModel):
+    apiVersion: str = <span class="str">"v3.1.0"</span>
+    kind: str = <span class="str">"DataContract"</span>
+    id: str
+    name: str
+    version: str
+    status: str
+    schema_: list[OdcsSchemaObject] = Field(alias=<span class="str">"schema"</span>)
+    team: OdcsTeam | None
+    slaProperties: list[OdcsSlaProperty] = []
+
+<span class="cm"># schema/product_spec.py — new</span>
+<span class="fn">class</span> OdpsOutputPort(BaseModel):
+    name: str
+    type: str
+    version: str
+    contractId: str
+
+<span class="fn">class</span> OdpsProduct(BaseModel):
+    apiVersion: str = <span class="str">"v1.0.0"</span>
+    kind: str = <span class="str">"DataProduct"</span>
+    id: str
+    name: str
+    domain: str | None
+    outputPorts: list[OdpsOutputPort]
+    team: OdcsTeam | None</pre>
+</section>
+
+<section id="plan">
+  <div class="sec-eyebrow">Part B · 12</div>
+  <h2><span class="num">§12</span> Build order</h2>
+  <ol>
+    <li><strong>ODCS emitter for one model.</strong> A pure function, <code>Model → OdcsContract</code>, covering fundamentals + schema + quality — everything in §10's first table already exists in <code>ModelMeta</code>. No new stored fields required.</li>
+    <li><strong><code>GET /metadata/contracts/{model_name}</code>.</strong> Wire the emitter into the existing FastAPI app; content-negotiate YAML vs. JSON.</li>
+    <li><strong>Version derivation.</strong> Hook contract <code>version</code>/<code>status</code> to snapshot fingerprint + breaking-change classification, so the field is computed, not authored.</li>
+    <li><strong>ODPS emitter for the whole project.</strong> One <code>outputPort</code> per published model; trivial once step 1–2 exist, since <code>contractId</code> is just the model's own contract <code>id</code>.</li>
+    <li><strong>Implement the authoring-pack fields for real</strong> (<code>owners</code>, <code>stewardship</code>, <code>accessPolicy</code>, <code>sla</code>, <code>compliance</code>, <code>links</code>) as an actual Pydantic model loaded from project config, closing the gap in §9 — this is the only step that needs genuinely new data, not just translation of existing data.</li>
+    <li><strong>GraphQL parity.</strong> Mirror both new REST resources as GraphQL query types alongside the existing <code>SemanticSchema</code>/<code>SemanticEntry</code> types in <code>graphql/src/types/semantic.ts</code>.</li>
+  </ol>
+</section>
+
+</main>
+</div>
+
+<footer>
+  Sources: bitol.io, github.com/bitol-io/open-data-contract-standard, github.com/bitol-io/open-data-product-standard, datacontract.com, github.com/paypal/data-contract-template, martinfowler.com (Dehghani), plus a full read of Vulcan's own <code>sqlmesh/core/model/</code>, <code>schema/metadata.py</code>, and <code>api/endpoints/metadata.py</code>.
+</footer>
