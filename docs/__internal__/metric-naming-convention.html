@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metric definitions: one query surface for every metric</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a18;
+    --muted: #6b6a63;
+    --rule: #e6e4dc;
+    --code-bg: #f6f5f0;
+    --code-fg: #2c2b28;
+    --kw: #9a3d1c;
+    --str: #3b6d11;
+    --com: #97968d;
+    --accent: #185fa5;
+    --add-bg: #eaf3de;
+    --add-bar: #639922;
+    --del-bg: #fbeaef;
+    --del-bar: #c0335a;
+    --pill-bg: #e6f1fb;
+    --pill-fg: #0c447c;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Menlo", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17171a;
+      --fg: #e8e6dd;
+      --muted: #9c9a90;
+      --rule: #2e2e30;
+      --code-bg: #1f1f22;
+      --code-fg: #d6d4ca;
+      --kw: #e0997b;
+      --str: #97c459;
+      --com: #6a6960;
+      --accent: #6fa8e0;
+      --add-bg: #1c2a12;
+      --add-bar: #639922;
+      --del-bg: #2c1119;
+      --del-bar: #d4537e;
+      --pill-bg: #0c2338;
+      --pill-fg: #85b7eb;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    line-height: 1.65;
+    font-size: 17px;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 72px 28px 120px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-size: 32px;
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 28px;
+  }
+  h2 {
+    font-size: 21px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    margin: 52px 0 16px;
+    padding-top: 26px;
+    border-top: 1px solid var(--rule);
+  }
+  h2:first-of-type { border-top: none; padding-top: 0; }
+  p { margin: 0 0 18px; }
+  .muted { color: var(--muted); }
+  .rule-box {
+    border-left: 3px solid var(--accent);
+    background: var(--pill-bg);
+    padding: 16px 20px;
+    border-radius: 0 6px 6px 0;
+    margin: 0 0 32px;
+  }
+  .rule-box p { margin: 0; }
+  .rule-box strong { color: var(--pill-fg); }
+  code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    margin: 0 0 24px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+    color: var(--code-fg);
+  }
+  pre .cap {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .kw { color: var(--kw); }
+  .str { color: var(--str); }
+  .com { color: var(--com); }
+  .diff { margin: 0 0 24px; }
+  .diff pre { margin: 0; border-radius: 8px; }
+  .diff .del { background: var(--del-bg); border-left: 3px solid var(--del-bar); border-radius: 0; display: block; padding: 2px 16px; margin: 0 -20px; }
+  .diff .add { background: var(--add-bg); border-left: 3px solid var(--add-bar); border-radius: 0; display: block; padding: 2px 16px; margin: 0 -20px; }
+  .opt-name {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  em { font-style: italic; }
+  .contract {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin: 8px 0 28px;
+  }
+  .contract strong { display: block; margin-bottom: 4px; }
+  .footer-note {
+    margin-top: 56px;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule);
+    font-size: 14px;
+    color: var(--muted);
+  }
+  @media (max-width: 600px) {
+    .wrap { padding: 44px 20px 80px; }
+    h1 { font-size: 26px; }
+    body { font-size: 16px; }
+    pre { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Product engineering · naming convention · 23 July 2026 · Animesh</p>
+  <h1>Metric definitions: one query surface for every metric</h1>
+
+  <div class="rule-box">
+    <p><strong>The rule:</strong> every metric exposes its aggregate under the same column name, <code>value</code>, no matter what it wraps underneath. Right now it doesn't, and that's the whole reason this doc exists.</p>
+  </div>
+
+  <h2>What a metric is for us</h2>
+  <p>A metric is a definition layered on top of our semantic models. It picks one measure to aggregate, one time field to filter and bucket on, a grain, and a set of dimensions to slice by. The semantic model does the heavy lifting (the joins, the physical columns); the metric just names what we care about and how to cut it.</p>
+  <p>Two live examples:</p>
+
+  <pre><code><span class="kw">kind</span>: metric
+<span class="kw">name</span>: on_time_delivery_rate
+<span class="kw">measure</span>: shipments.on_time_pct
+<span class="kw">ts</span>: shipments.delivered_at
+<span class="kw">granularity</span>: month
+<span class="kw">description</span>: <span class="str">Share of shipments delivered within the promised window</span>
+
+<span class="kw">dimensions</span>:
+  - <span class="kw">name</span>: lane
+    <span class="kw">ref</span>: shipments.origin_dest_lane
+  - <span class="kw">name</span>: carrier
+    <span class="kw">ref</span>: shipments.carrier_name</code></pre>
+
+  <pre><code><span class="kw">kind</span>: metric
+<span class="kw">name</span>: fleet_utilization
+<span class="kw">measure</span>: vehicles.active_ratio
+<span class="kw">ts</span>: vehicles.reading_at
+<span class="kw">granularity</span>: day
+<span class="kw">description</span>: <span class="str">Fraction of the fleet in active service</span>
+
+<span class="kw">dimensions</span>:
+  - <span class="kw">name</span>: depot
+    <span class="kw">ref</span>: vehicles.home_depot
+  - <span class="kw">name</span>: vehicle_class
+    <span class="kw">ref</span>: vehicles.class</code></pre>
+
+  <p>Notice these two disagree about what <code>ts</code> even means. <code>on_time_delivery_rate</code> buckets by a delivery window (a span, anchored to month end). <code>fleet_utilization</code> is a point-in-time reading taken each day. Same field name, different time semantics. Hold that thought.</p>
+
+  <h2>How we query it</h2>
+  <pre><code><span class="kw">select</span> MEASURE(measure), lane
+<span class="kw">from</span> on_time_delivery_rate
+<span class="kw">where</span> &lt;ts filter&gt;
+  <span class="kw">and</span> carrier = <span class="str">'temp'</span>
+<span class="kw">group by</span> 2;</code></pre>
+  <p><code>MEASURE()</code> is the virtual aggregation function. It resolves the metric's declared aggregate and rolls it up over whatever dimensions survive the <code>group by</code>. This is the surface every one of us touches, and it's the same shape for every metric, which is the point of having a metric layer at all.</p>
+
+  <h2>The problem</h2>
+  <p>Look at that query again: <code>MEASURE(measure)</code>. We're aggregating a column called <code>measure</code>. The name restates that it's a measure and tells you nothing about the number coming back. Is it a rate? A count? Dollars? The column name shrugs.</p>
+  <p>It's an artifact of the definition. <code>measure:</code> is the fixed keyword in the metric kind, so the aggregate gets exposed under the literal word "measure." Every metric, every query, reads <code>MEASURE(measure)</code>. It parses fine and it's completely uninformative, the SQL equivalent of a variable named <code>variable</code>.</p>
+  <p><code>ts</code> doesn't have this problem, for what it's worth. It's a neutral name we already alias well, and the two examples above show why keeping it neutral is correct: it has to cover both a delivery window and a daily instant. Grain and anchor live in the definition (<code>granularity</code>, and a <code>period_anchor</code> field if we want to make start-vs-end explicit), not in the column name. <code>ts</code> stays.</p>
+
+  <h2>The fix</h2>
+  <p>Rename the keyword from <code>measure:</code> to <code>value:</code>.</p>
+
+  <div class="diff">
+    <pre><code><span class="del"><span class="kw">measure</span>: shipments.on_time_pct</span>
+<span class="add"><span class="kw">value</span>: shipments.on_time_pct</span></code></pre>
+  </div>
+
+  <p>The query becomes:</p>
+  <pre><code><span class="kw">select</span> MEASURE(value), lane
+<span class="kw">from</span> on_time_delivery_rate
+<span class="kw">where</span> &lt;ts filter&gt;
+  <span class="kw">and</span> carrier = <span class="str">'temp'</span>
+<span class="kw">group by</span> 2;</code></pre>
+  <p><code>MEASURE(value)</code> reads as what it is: aggregate the value of this metric. One word changed. <code>ts</code> untouched. The convention we get for free is that every metric now exposes exactly two fixed names, <code>value</code> and <code>ts</code>, regardless of which semantic model or column sits underneath. Nothing to memorize per metric.</p>
+
+  <h2>Why <code>value</code> and not something else</h2>
+  <p>Options considered:</p>
+  <p><span class="opt-name">metric_value</span> — accurate but redundant. You're always selecting <code>from &lt;metric_name&gt;</code>, so the metric is already in scope. The prefix adds characters and says nothing new.</p>
+  <p><span class="opt-name">result</span> — collides with a computation-status reading. "Result" sounds like it could tell you whether the calc succeeded, not what the number is.</p>
+  <p><span class="opt-name">amount / qty</span> — wrong for rates and ratios. <code>on_time_delivery_rate</code> isn't an amount of anything.</p>
+  <p><span class="opt-name">value</span> — neutral across every metric type (rate, count, ratio, dollar figure), short, and reads correctly inside <code>MEASURE()</code>. The metric name carries the "of what," so <code>value</code> carrying the "the number" is all we need.</p>
+
+  <h2>Why <code>ts</code> and not something else</h2>
+  <p>We already use <code>ts</code>, so this is a defense of keeping it, not a change. It came up because a few of the alternatives read cleaner in isolation, but each one lies about at least one of our metrics.</p>
+  <p><span class="opt-name">period</span> — implies a duration, a span with a start and an end. Fine for <code>on_time_delivery_rate</code> (a monthly window), wrong for <code>fleet_utilization</code> (a daily instant, not a range). Naming a point-in-time reading <code>period</code> misleads.</p>
+  <p><span class="opt-name">period_start</span> — worse. It hard-codes a start anchor into the name, but <code>on_time_delivery_rate</code> anchors to month <em>end</em> while <code>fleet_utilization</code> anchors to a daily reading. Bake <code>_start</code> in and the name is wrong for half the metrics. Anchor is real metadata; it belongs in the definition (a <code>period_anchor</code> field), not smuggled into a column name.</p>
+  <p><span class="opt-name">time</span> — fully neutral on duration-vs-instant, which is what we want, but it's a reserved or typed keyword in several engines (Postgres, MySQL, others). You'd be quoting it or hitting parser friction in generated SQL. Not worth the constant escaping.</p>
+  <p><span class="opt-name">ts</span> — neutral, short, collision-free everywhere, and it makes no claim about whether the number describes a span or a moment. That neutrality is the feature: one metric's <code>ts</code> is a delivery window, another's is a daily snapshot, and the name is honest about both because it commits to neither. Grain and anchor carry the real semantics in the definition.</p>
+  <p>The only knock on <code>ts</code> is that it whispers "raw timestamp" when some metrics are bucketed. That's cosmetic, and <code>granularity</code> in the same YAML block already tells the reader it's bucketed. Keeping <code>ts</code> costs us nothing and dodges the reserved-word problem <code>time</code> would hand us.</p>
+
+  <h2>The change</h2>
+  <p>It's a rename of the keyword plus a mechanical pass over existing definitions. Cheap to handle, no query rewrites beyond swapping the word.</p>
+  <div class="contract">
+    <strong>The contract</strong>
+    Every metric exposes <code>value</code> and <code>ts</code>. Always those two names. What they point to is the metric's business; what you type to query them never changes.
+  </div>
+  <p>Both examples under the new convention:</p>
+
+  <pre><code><span class="kw">kind</span>: metric
+<span class="kw">name</span>: on_time_delivery_rate
+<span class="kw">value</span>: shipments.on_time_pct
+<span class="kw">ts</span>: shipments.delivered_at
+<span class="kw">granularity</span>: month
+<span class="kw">description</span>: <span class="str">Share of shipments delivered within the promised window</span>
+
+<span class="kw">dimensions</span>:
+  - <span class="kw">name</span>: lane
+    <span class="kw">ref</span>: shipments.origin_dest_lane
+  - <span class="kw">name</span>: carrier
+    <span class="kw">ref</span>: shipments.carrier_name</code></pre>
+
+  <pre><code><span class="kw">kind</span>: metric
+<span class="kw">name</span>: fleet_utilization
+<span class="kw">value</span>: vehicles.active_ratio
+<span class="kw">ts</span>: vehicles.reading_at
+<span class="kw">granularity</span>: day
+<span class="kw">description</span>: <span class="str">Fraction of the fleet in active service</span>
+
+<span class="kw">dimensions</span>:
+  - <span class="kw">name</span>: depot
+    <span class="kw">ref</span>: vehicles.home_depot
+  - <span class="kw">name</span>: vehicle_class
+    <span class="kw">ref</span>: vehicles.class</code></pre>
+
+  <p><code>value:</code> and <code>ts:</code> are the only two fixed keywords that point at columns. Everything else (<code>granularity</code>, <code>dimensions</code>, and their <code>name</code>/<code>ref</code> pairs) is unchanged.</p>
+
+  <p class="footer-note">Placeholders to swap before circulating: the example column refs (<code>shipments.on_time_pct</code>, <code>vehicles.active_ratio</code>) are in our style but invented, and the <code>period_anchor</code> mentions assume that field exists. If it doesn't, soften both to "the definition."</p>
+
+</div>
+</body>
+</html>
