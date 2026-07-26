@@ -1,0 +1,451 @@
+<style>
+  :root {
+    --paper: #F3F6F4;
+    --ink: #17211E;
+    --text: #2B3733;
+    --muted: #5C6B66;
+    --rule: #DBE2DF;
+    --accent: #0C6E5D;
+    --accent-soft: rgba(12, 110, 93, 0.10);
+    --panel: rgba(12, 110, 93, 0.045);
+    --rec-bg: #0C6E5D;
+    --rec-ink: #EDF6F3;
+    --rec-label: rgba(237, 246, 243, 0.72);
+
+    --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+    --measure: 40rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0E1614;
+      --ink: #EAEEEC;
+      --text: #C6D0CD;
+      --muted: #8FA09B;
+      --rule: #243230;
+      --accent: #46C6AC;
+      --accent-soft: rgba(70, 198, 172, 0.14);
+      --panel: rgba(70, 198, 172, 0.06);
+      --rec-bg: #0C6E5D;
+      --rec-ink: #EDF6F3;
+      --rec-label: rgba(237, 246, 243, 0.74);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #0E1614;
+    --ink: #EAEEEC;
+    --text: #C6D0CD;
+    --muted: #8FA09B;
+    --rule: #243230;
+    --accent: #46C6AC;
+    --accent-soft: rgba(70, 198, 172, 0.14);
+    --panel: rgba(70, 198, 172, 0.06);
+    --rec-bg: #0C6E5D;
+    --rec-ink: #EDF6F3;
+    --rec-label: rgba(237, 246, 243, 0.74);
+  }
+
+  :root[data-theme="light"] {
+    --paper: #F3F6F4;
+    --ink: #17211E;
+    --text: #2B3733;
+    --muted: #5C6B66;
+    --rule: #DBE2DF;
+    --accent: #0C6E5D;
+    --accent-soft: rgba(12, 110, 93, 0.10);
+    --panel: rgba(12, 110, 93, 0.045);
+    --rec-bg: #0C6E5D;
+    --rec-ink: #EDF6F3;
+    --rec-label: rgba(237, 246, 243, 0.72);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 1.0625rem;
+    line-height: 1.66;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .stripe {
+    height: 4px;
+    width: 100%;
+    background: var(--accent);
+  }
+
+  .doc {
+    max-width: var(--measure);
+    margin: 0 auto;
+    padding: clamp(3rem, 8vw, 5.5rem) 1.5rem 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.75rem;
+  }
+
+  /* Masthead */
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .eyebrow {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  h1 {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(2rem, 5.2vw, 2.55rem);
+    line-height: 1.13;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+
+  .meta {
+    margin: 0.15rem 0 0;
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .meta .dot { color: var(--rule); }
+
+  /* Lede / executive summary */
+  .lede {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(1.16rem, 2.4vw, 1.34rem);
+    line-height: 1.5;
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+
+  /* Sections */
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .knum {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  h2 {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(1.34rem, 3vw, 1.6rem);
+    line-height: 1.2;
+    letter-spacing: -0.006em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+
+  p { margin: 0; }
+  section p + p { margin-top: 0.2rem; }
+
+  em { font-style: italic; color: var(--ink); }
+
+  a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    transition: text-decoration-color 0.15s ease;
+  }
+  a:hover { text-decoration-color: var(--accent); }
+  a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Value / fit lists */
+  .points {
+    list-style: none;
+    margin: 0.1rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .points li {
+    padding-left: 1.1rem;
+    position: relative;
+  }
+  .points li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .points strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* Evidence panel (§03) */
+  .evidence {
+    border: 1px solid var(--rule);
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 1.6rem clamp(1.2rem, 3vw, 1.75rem);
+    gap: 1rem;
+  }
+  .chip {
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 0.32rem 0.6rem;
+    border-radius: 999px;
+  }
+
+  /* Recommendation climax */
+  .rec {
+    background: var(--rec-bg);
+    color: var(--rec-ink);
+    border-radius: 14px;
+    padding: clamp(1.75rem, 4vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+  .rec-label {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--rec-label);
+  }
+  .rec-text {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: clamp(1.14rem, 2.4vw, 1.3rem);
+    line-height: 1.48;
+    color: var(--rec-ink);
+    text-wrap: pretty;
+  }
+  .rec-text strong { font-weight: 700; }
+
+  /* Footer */
+  footer {
+    margin-top: 0.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    line-height: 1.7;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+  }
+  footer a { text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--accent-soft);
+    padding: 0.05em 0.35em;
+    border-radius: 4px;
+    color: var(--ink);
+  }
+</style>
+
+<div class="stripe"></div>
+
+<article class="doc">
+
+  <header class="masthead">
+    <p class="eyebrow">Strategy Briefing</p>
+    <h1>Making Vulcan data products AI-ready with the Open Knowledge Format</h1>
+    <p class="meta">
+      <span>For CEO / CPO</span>
+      <span class="dot">·</span>
+      <span>Recommendation</span>
+      <span class="dot">·</span>
+      <span>July 2026</span>
+    </p>
+  </header>
+
+  <p class="lede">
+    AI agents are only as good as the context they can reach — and today that context is
+    trapped in incompatible systems. The Open Knowledge Format (OKF), a new vendor-neutral
+    standard from Google Cloud, packages a data product's meaning as portable files any
+    human or agent can read. It already runs in production inside Google Cloud. Because
+    Vulcan already holds the governed metadata OKF needs, emitting it is a low-cost
+    generation step — not a new system — and doing it now puts us early on the standard
+    the ecosystem is converging toward.
+  </p>
+
+  <section>
+    <div class="head">
+      <p class="knum">01 — The problem</p>
+      <h2>Agents are blocked by missing context, not missing data</h2>
+    </div>
+    <p>
+      The hard part of pointing AI at enterprise data isn't running queries — it's
+      <em>understanding</em>: what a metric means, how it's computed, who owns it, and
+      whether it's still trustworthy. In
+      <a href="https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing">announcing&nbsp;OKF</a>,
+      Google Cloud puts it plainly: every agent builder re-solves the same context-assembly
+      problem from scratch, every catalog vendor reinvents the same models, and the
+      knowledge stays locked behind whichever surface created it.
+    </p>
+    <p>
+      This is why the industry is standardizing the connective tissue for AI. Anthropic's
+      <a href="https://modelcontextprotocol.io">Model Context Protocol</a> standardized how
+      agents <em>connect</em> to data and tools; OKF is the complement — a standard for the
+      <em>knowledge itself</em>, the durable meaning around the data.
+    </p>
+  </section>
+
+  <section>
+    <div class="head">
+      <p class="knum">02 — The standard</p>
+      <h2>What OKF actually is</h2>
+    </div>
+    <p>
+      OKF is an open specification from Google Cloud's Data Cloud team, deliberately
+      vendor-neutral — "format, not platform." A data product becomes a directory of plain
+      Markdown files with a small structured header: no proprietary API, no SDK, readable
+      in any editor and by any agent. It is minimal and versioned, with a public
+      <a href="https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf">specification on GitHub</a>.
+      And it doesn't invent a new habit — it formalizes one teams already practice, wiring
+      agents to <code>AGENTS.md</code> / <code>CLAUDE.md</code> files and metadata-as-code
+      repositories.
+    </p>
+  </section>
+
+  <section class="evidence">
+    <span class="chip">In production</span>
+    <div class="head">
+      <p class="knum">03 — The proof</p>
+      <h2>It already runs in production — at the source</h2>
+    </div>
+    <p>
+      This isn't a paper standard. Google Cloud has built OKF into its
+      <a href="https://cloud.google.com/blog/products/data-analytics/introducing-the-google-cloud-knowledge-catalog">Knowledge Catalog</a>,
+      which ingests OKF and serves it to Google's own data agents — and its reference
+      tooling generates OKF automatically by walking a <strong>BigQuery</strong> dataset and
+      drafting a concept document for every table and view. The format is already the working
+      interface between Google's flagship warehouse and its agents.
+    </p>
+    <p>
+      OKF is early — released mid-2026, now at v0.2 (adding trust and verification signals) —
+      with Google as its first major adopter. That is exactly the window in which adopting a
+      standard is cheapest and most differentiating, rather than retrofitting after it
+      consolidates.
+    </p>
+  </section>
+
+  <section>
+    <div class="head">
+      <p class="knum">04 — The value</p>
+      <h2>Why it matters</h2>
+    </div>
+    <ul class="points">
+      <li>
+        <strong>Trust, not just answers.</strong> OKF carries provenance, verification, and
+        freshness as first-class signals — an AI answer can be traced and defended, not
+        merely believed.
+      </li>
+      <li>
+        <strong>Write once, consumed everywhere.</strong> One product becomes usable by
+        internal assistants, data catalogs, search, and partner systems — with no bespoke
+        integration per tool, because they all speak the one open format.
+      </li>
+      <li>
+        <strong>A broader standards wave.</strong> Open contract and product standards —
+        <a href="https://bitol.io">ODCS</a> under the Linux Foundation's Bitol project and
+        <a href="https://opendataproducts.org">ODPS</a> — already govern how data is
+        described. OKF extends that logic to the AI-context layer, and value accrues to the
+        format the most parties can speak.
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="head">
+      <p class="knum">05 — The fit</p>
+      <h2>Vulcan makes this effortless</h2>
+    </div>
+    <p>
+      The decisive point: we already have everything OKF needs. Vulcan holds models, metrics,
+      ownership, data quality, and freshness as governed metadata — and already emits two
+      established open standards from it today, ODCS contracts and ODPS product documents.
+      OKF is an incremental generation step on that same foundation:
+    </p>
+    <ul class="points">
+      <li><strong>On demand.</strong> A complete, standards-compliant bundle for any product, through the same API as our existing contract exports.</li>
+      <li><strong>Always in sync.</strong> Regenerated from live metadata as products evolve, with ownership and freshness derived from what Vulcan already tracks.</li>
+      <li><strong>Nothing extra.</strong> No new content for teams to author, and no new tool to operate.</li>
+    </ul>
+  </section>
+
+  <aside class="rec">
+    <p class="rec-label">Recommendation</p>
+    <p class="rec-text">
+      Emitting OKF turns data products we already govern into AI-ready assets at near-zero
+      marginal cost — a small, low-risk, reversible step that compounds. Every product
+      becomes discoverable, trustworthy, and reusable by the next generation of AI tools,
+      matching the interface Google already runs between BigQuery and its agents.
+      <strong>Ship OKF export as a first-class Vulcan capability.</strong>
+    </p>
+  </aside>
+
+  <footer>
+    Prepared for internal review · July 2026<br>
+    Sources —
+    <a href="https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing">Google Cloud (OKF)</a>,
+    <a href="https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf">OKF specification</a>,
+    <a href="https://modelcontextprotocol.io">Anthropic (MCP)</a>,
+    <a href="https://bitol.io">Bitol / ODCS</a>,
+    <a href="https://opendataproducts.org">ODPS</a>.
+  </footer>
+
+</article>
