@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Real-World Data Problems for Write-Back</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F6F2;
+    --panel:#FFFFFF;
+    --ink:#1B2422;
+    --muted:#5B6663;
+    --line:#D9DDD3;
+    --line-soft:#E7EAE2;
+    --photo:#8A4B2D;
+    --photo-bg:#F4E9E1;
+    --tax:#1E5F80;
+    --tax-bg:#E4EDF3;
+    --selfx:#4E6E33;
+    --selfx-bg:#E9EFE1;
+    --link:#14615A;
+    --mark:#B02E1F;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *{transition:none !important}
+  }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Serif', Georgia, serif;
+    font-size:17px;
+    line-height:1.65;
+  }
+  a{color:var(--link);text-decoration:none;border-bottom:1px solid rgba(20,97,90,.35)}
+  a:hover{border-bottom-color:var(--link)}
+  a:focus-visible, button:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:2px}
+  .mono{font-family:'IBM Plex Mono', ui-monospace, monospace}
+  code{
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-size:.85em;
+    background:#EDEFE8;
+    border:1px solid var(--line-soft);
+    border-radius:3px;
+    padding:1px 5px;
+    white-space:nowrap;
+  }
+
+  /* ---------- header ---------- */
+  header.doc{
+    border-bottom:1px solid var(--line);
+    background:var(--panel);
+  }
+  .doc-inner{
+    max-width:1180px;margin:0 auto;padding:56px 28px 36px;
+  }
+  .doc-kicker{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:18px;
+  }
+  h1{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:700;font-size:clamp(30px,4.5vw,46px);
+    line-height:1.12;letter-spacing:-.015em;max-width:20ch;
+  }
+  .doc-sub{
+    margin-top:16px;max-width:68ch;color:var(--muted);font-size:16.5px;
+  }
+  .doc-meta{
+    margin-top:22px;display:flex;flex-wrap:wrap;gap:10px 26px;
+    font-family:'IBM Plex Mono', monospace;font-size:12.5px;color:var(--muted);
+  }
+  .doc-meta b{color:var(--ink);font-weight:600}
+
+  /* family legend */
+  .families{
+    margin-top:30px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+  }
+  .family{
+    border:1px solid var(--line);border-radius:6px;background:var(--paper);
+    padding:14px 16px;font-size:14.5px;line-height:1.5;
+  }
+  .family .tag{margin-bottom:8px}
+  .family .who{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);display:block;margin-top:8px}
+  .tag{
+    display:inline-block;font-family:'IBM Plex Mono', monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:3px 9px;border-radius:3px;border:1px solid transparent;
+  }
+  .tag.photo{color:var(--photo);background:var(--photo-bg);border-color:#E0C9BA}
+  .tag.tax{color:var(--tax);background:var(--tax-bg);border-color:#C3D6E2}
+  .tag.selfx{color:var(--selfx);background:var(--selfx-bg);border-color:#CEDBBD}
+
+  /* ---------- layout ---------- */
+  .shell{
+    max-width:1180px;margin:0 auto;padding:0 28px;
+    display:grid;grid-template-columns:250px minmax(0,1fr);gap:56px;
+  }
+  nav.toc{
+    position:sticky;top:0;align-self:start;
+    max-height:100vh;overflow-y:auto;
+    padding:36px 0 48px;
+    font-family:'IBM Plex Sans', sans-serif;
+  }
+  nav.toc .toc-title{
+    font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:14px;
+  }
+  nav.toc ol{list-style:none}
+  nav.toc li{margin:0}
+  nav.toc a{
+    display:block;padding:6px 10px;border:0;border-left:2px solid transparent;
+    color:var(--muted);font-size:13.5px;line-height:1.35;border-radius:0 4px 4px 0;
+  }
+  nav.toc a:hover{color:var(--ink);background:#EEF0E9}
+  nav.toc a.active{color:var(--ink);border-left-color:var(--ink);background:#EEF0E9;font-weight:600}
+  nav.toc a .n{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-right:7px}
+  nav.toc .toc-extra{margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft)}
+
+  main{padding:36px 0 90px;min-width:0}
+
+  /* ---------- sections ---------- */
+  section.problem, section.plain{
+    padding:44px 0 8px;margin-bottom:22px;
+    border-top:1px solid var(--line);
+  }
+  section:first-of-type{border-top:0;padding-top:8px}
+  .p-head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+  .p-num{
+    font-family:'IBM Plex Mono', monospace;font-weight:600;font-size:13px;
+    color:var(--muted);letter-spacing:.08em;
+  }
+  h2{
+    font-family:'IBM Plex Sans', sans-serif;font-weight:700;
+    font-size:clamp(22px,2.6vw,29px);letter-spacing:-.01em;line-height:1.2;
+    margin:4px 0 4px;
+  }
+  h2 .anchor{border:0;color:var(--line);margin-left:8px;font-weight:400}
+  h2 .anchor:hover{color:var(--link)}
+  h3{
+    font-family:'IBM Plex Sans', sans-serif;font-weight:600;font-size:15px;
+    letter-spacing:.02em;margin:30px 0 12px;
+  }
+  .p-body p{margin:14px 0;max-width:74ch}
+  .p-body em{font-style:italic}
+
+  /* diagrams */
+  figure.diagram{
+    margin:26px 0;border:1px solid var(--line);border-radius:8px;
+    background:var(--panel);overflow:hidden;
+  }
+  figure.diagram .chrome{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 14px;border-bottom:1px solid var(--line-soft);
+    font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--muted);
+    letter-spacing:.06em;text-transform:uppercase;background:#FBFCF9;
+  }
+  figure.diagram .mermaid{padding:18px 14px;display:flex;justify-content:center;overflow-x:auto}
+  figure.diagram .mermaid svg{max-width:100%;height:auto}
+
+  /* scenarios */
+  ul.scenarios{list-style:none;margin:6px 0 10px}
+  ul.scenarios li{
+    margin:14px 0;padding:16px 18px;
+    background:var(--panel);border:1px solid var(--line-soft);border-radius:6px;
+    max-width:80ch;
+  }
+  ul.scenarios .where{
+    display:inline-block;font-family:'IBM Plex Mono', monospace;font-size:11px;
+    font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+    margin-bottom:6px;
+  }
+  ul.scenarios p{margin:0;font-size:16px}
+
+  /* absorb callout */
+  .absorb{
+    margin:26px 0 30px;padding:18px 20px;max-width:80ch;
+    border-left:3px solid var(--ink);background:#EEF0E9;border-radius:0 6px 6px 0;
+  }
+  .absorb .label{
+    font-family:'IBM Plex Mono', monospace;font-size:11px;font-weight:600;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+    display:block;margin-bottom:8px;
+  }
+  .absorb p{margin:0;font-size:16px}
+
+  .backtop{
+    display:inline-block;margin:4px 0 10px;border:0;
+    font-family:'IBM Plex Mono', monospace;font-size:11.5px;letter-spacing:.08em;
+    color:var(--muted);text-transform:uppercase;
+  }
+  .backtop:hover{color:var(--link)}
+
+  /* map table */
+  .map-wrap{overflow-x:auto;margin:24px 0;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+  table.map{border-collapse:collapse;width:100%;min-width:880px;font-size:14px;font-family:'IBM Plex Sans',sans-serif}
+  table.map th{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;
+    padding:12px 14px;border-bottom:1px solid var(--line);background:#FBFCF9;
+  }
+  table.map td{padding:12px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top;line-height:1.45}
+  table.map tr:last-child td{border-bottom:0}
+  table.map td.num a{font-family:'IBM Plex Mono',monospace;font-weight:600;border:0}
+  table.map .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px}
+  .dot.photo{background:var(--photo)} .dot.tax{background:var(--tax)} .dot.selfx{background:var(--selfx)}
+
+  /* glossary */
+  dl.gloss{max-width:80ch}
+  dl.gloss div{padding:14px 0;border-bottom:1px solid var(--line-soft)}
+  dl.gloss div:last-child{border-bottom:0}
+  dl.gloss dt{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px}
+  dl.gloss dd{margin-top:5px;color:var(--ink);font-size:15.5px}
+  dl.gloss dt:target, section:target .p-head h2{scroll-margin-top:20px}
+  :target{scroll-margin-top:24px}
+
+  footer{
+    border-top:1px solid var(--line);padding:26px 28px 60px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);
+    max-width:1180px;margin:0 auto;
+  }
+
+  @media (max-width:920px){
+    .shell{grid-template-columns:1fr;gap:0}
+    nav.toc{
+      position:static;max-height:none;padding:24px 0 8px;
+      border-bottom:1px solid var(--line);
+    }
+    nav.toc ol{display:grid;grid-template-columns:1fr 1fr;gap:2px 14px}
+    .families{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body id="top">
+
+<header class="doc">
+  <div class="doc-inner">
+    <div class="doc-kicker">Write-Back Working Papers · No. 2 · v2</div>
+    <h1>Real-World Data Problems for Write-Back</h1>
+    <p class="doc-sub">The concrete ways operational/analytical drift breaks agent writes, illustrated with HR (Workday), supply chain (ERP), and ecommerce (OMS) data. Philosophical objections are out of scope. Every problem here is one a mid-size Workday + SAP + Shopify estate produces in an ordinary week.</p>
+    <div class="doc-meta">
+      <span><b>Author</b> Animesh Kumar</span>
+      <span><b>Date</b> July 25, 2026</span>
+      <span><b>Answered by</b> <a href="architecture.html">Governed Write-Back: A Reference Architecture</a></span>
+    </div>
+
+    <div class="families" id="families">
+      <div class="family">
+        <span class="tag photo">The photograph</span>
+        The warehouse is a photograph of the business, and a photograph is always of the past. Lag, late arrivals, shared snapshots, and effective dating are four ways the photograph misleads a writer. These problems are <em>managed</em>, never eliminated.
+        <span class="who">Problems 1 · 4 · 5 · 6</span>
+      </div>
+      <div class="family">
+        <span class="tag tax">The transformation tax</span>
+        The cleaning, merging, and reshaping that make the read side trustworthy also sever the path back to the source. These problems are <em>paid once per action</em>, at authoring time, as explicit mappings and honest vocabulary.
+        <span class="who">Problems 2 · 3 · 7</span>
+      </div>
+      <div class="family">
+        <span class="tag selfx">Self-inflicted</span>
+        These come from reusing read-side machinery (scheduled pipelines, warehouse-only verification) for a job it was never built to do. They are <em>eliminated outright</em> by two structural rules.
+        <span class="who">Problems 8 · 9</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="toc" aria-label="Contents">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#p1"><span class="n">01</span>Sync lag</a></li>
+      <li><a href="#p2"><span class="n">02</span>Transformation inversion</a></li>
+      <li><a href="#p3"><span class="n">03</span>Identity and keys</a></li>
+      <li><a href="#p4"><span class="n">04</span>Late-arriving entities</a></li>
+      <li><a href="#p5"><span class="n">05</span>Lost update</a></li>
+      <li><a href="#p6"><span class="n">06</span>Effective dating</a></li>
+      <li><a href="#p7"><span class="n">07</span>Declared joins</a></li>
+      <li><a href="#p8"><span class="n">08</span>Restatement</a></li>
+      <li><a href="#p9"><span class="n">09</span>Read-your-writes</a></li>
+    </ol>
+    <div class="toc-extra">
+      <ol>
+        <li><a href="#map">The map, in one table</a></li>
+        <li><a href="#glossary">Glossary</a></li>
+        <li><a href="architecture.html">The solution paper ↗</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  <main>
+
+  <!-- ================= PROBLEM 1 ================= -->
+  <section class="problem" id="p1">
+    <div class="p-head">
+      <span class="p-num">PROBLEM 01</span>
+      <a class="tag photo" href="#families">The photograph</a>
+    </div>
+    <h2>Sync lag: validating against yesterday<a class="anchor" href="#p1">#</a></h2>
+    <div class="p-body">
+      <p>When a person makes a change in Workday or SAP, that change does not appear in the analytics warehouse instantly. It arrives with the next scheduled sync: a batch extract, a nightly load, sometimes a near-real-time feed, but always a delay. For dashboards this barely matters; nobody cares whether headcount was refreshed at 2am or 4am. The read side was built on the assumption that a few hours of delay is acceptable, and for reading, it is.</p>
+      <p>A write changes the stakes entirely. If an agent checks "is this employee active?" against the warehouse before acting, it is checking a photograph, and the photograph might be six hours old. A human making the same check would notice contradictions, ask a colleague, hesitate. An agent takes the answer literally and proceeds. The staleness that was harmless on a dashboard becomes the basis for an action against a live system.</p>
+      <p>The useful way to think about the risk is as a product of three factors: how often the entity actually changes, how long the sync delay is, and how many other actors are touching the same entity. A cost center that changes twice a year, read through a warehouse ten minutes behind, carries effectively zero staleness risk. Inventory during a flash sale, read through the same warehouse, is fiction within seconds. Same warehouse, same lag, opposite risk. This is why the design cannot treat "the warehouse is stale" as a single yes/no fact.</p>
+    </div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig 1 · false accept</span><span>sequence</span></div>
+      <pre class="mermaid">
+sequenceDiagram
+    participant WD as Workday (source)
+    participant WH as Warehouse (dim_workers)
+    participant AG as Agent
+
+    Note over WD: 09:00 · Employee E-1042<br/>terminated, effective today
+    Note over WH: last sync 02:00 ·<br/>E-1042 status = ACTIVE
+    AG->>WH: 15:00 validate: "assign E-1042 to project"
+    WH-->>AG: ACTIVE ✓ (stale by 6h)
+    AG->>WD: apply assignment
+    WD-->>AG: REJECTED · worker terminated
+    Note over WH: 02:00 next day · sync arrives,<br/>E-1042 now TERMINATED
+      </pre>
+    </figure>
+
+    <h3>Real scenarios</h3>
+    <ul class="scenarios">
+      <li>
+        <span class="where">HR · Workday</span>
+        <p>A staffing agent assigns workers to project codes using the warehouse's worker dimension, fed by a Workday RaaS extract that runs every night at 2am. An employee is terminated at 9am. Until the next extract, every downstream system that trusts the warehouse believes the person is active. The agent's assignment bounces off Workday's own validation at best; at worst, if the target system validates less strictly than Workday, a terminated employee ends up allocated to a client project, and the error surfaces weeks later in a billing review.</p>
+      </li>
+      <li>
+        <span class="where">Supply chain · ERP</span>
+        <p>A goods-receipt agent checks that a purchase order is in <code>APPROVED</code> status before recording a receipt against it. Procurement closed the PO two hours ago after a pricing dispute. The warehouse still shows <code>APPROVED</code>. The receipt intent is validated, submitted, and rejected by the ERP, and the receiving dock now has physical goods with no system record, which is exactly the situation goods-receipt processes exist to prevent.</p>
+      </li>
+      <li>
+        <span class="where">Ecommerce · OMS</span>
+        <p>During a promotion, an inventory agent reads <code>on_hand = 240</code> for a SKU from the warehouse and approves a channel allocation. The number was true at the 6am sync. By 10am the SKU has sold 300 units. The allocation was validated against a quantity that stopped being real four hours earlier.</p>
+      </li>
+    </ul>
+
+    <div class="absorb">
+      <span class="label">What the design must absorb</span>
+      <p>Validation performed at <a href="#g-accept">accept time</a> (when the intent is received) can only ever be advisory. The authoritative check happens at apply time, against the source system itself. The gap between the two is not a flaw to be minimized to zero; it is a property to be declared per action, which is what the design cut's <a href="#g-freshness"><code>freshness_tolerance</code></a> field and <a href="#g-classes">write-class</a> system exist for.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ================= PROBLEM 2 ================= -->
+  <section class="problem" id="p2">
+    <div class="p-head">
+      <span class="p-num">PROBLEM 02</span>
+      <a class="tag tax" href="#families">The transformation tax</a>
+    </div>
+    <h2>Transformation inversion: there is no field to write back to<a class="anchor" href="#p2">#</a></h2>
+    <div class="p-body">
+      <p>The numbers agents read from the semantic layer were manufactured. <code>net_revenue_usd</code> is not a column that exists anywhere in the order management system; it is the output of a pipeline that filtered out test orders, subtracted discounts and returns, converted currencies at the order-date rate, and merged duplicates. That manufacturing is precisely what makes the read side valuable: the agent gets a clean, comparable, business-ready number instead of raw operational noise.</p>
+      <p>The trouble starts the moment someone asks the agent to <em>change</em> that number. "Adjust net revenue for order 555123" sounds like a write, but net revenue is not a thing that can be written. It is a computation over five source fields, one of which is a filter, one of which is an exchange rate that was correct on a specific date. Reversing the pipeline is not a technical inconvenience; for most transformations it is mathematically impossible, because information was deliberately discarded on the way in. Which component was wrong: the gross amount, the discount, the return, or the rate? The measure cannot say, because the measure was built by forgetting that distinction.</p>
+      <p>This is the problem an entire product category (reverse ETL: Census, Hightouch) was built around, and their decade of scar tissue reduces to one lesson: the hard part of writing back is not moving the data, it is knowing which source field and which key the write actually belongs to.</p>
+    </div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig 2 · the broken inverse</span><span>flow</span></div>
+      <pre class="mermaid">
+flowchart LR
+    subgraph SOURCE [OMS source tables]
+        O[orders.gross_amount]
+        D[discounts.amount]
+        R[returns.amount]
+        FX[fx_rates]
+        T[orders.is_test]
+    end
+    subgraph PIPE [Transform pipeline]
+        F1[filter is_test = false]
+        F2[net = gross − discounts − returns]
+        F3[convert to USD at order-date rate]
+        F4[dedupe on order_key, SCD merge]
+    end
+    M[semantic measure:<br/>net_revenue_usd]
+
+    O --> F1 --> F2 --> F3 --> F4 --> M
+    D --> F2
+    R --> F2
+    FX --> F3
+    T --> F1
+    M -. "❌ 'adjust net_revenue for order X'<br/>maps to WHICH source field,<br/>at WHICH fx rate, before or after<br/>the test filter?" .-> SOURCE
+      </pre>
+    </figure>
+
+    <h3>Real scenarios</h3>
+    <ul class="scenarios">
+      <li>
+        <span class="where">HR · Workday</span>
+        <p>An executive asks a compensation agent to "increase total comp for this team by 5%." <code>total_compensation</code> in the warehouse is base pay plus bonus target plus an equity valuation plus a benefits load factor, normalized to USD. There is no total-comp field in Workday to write. A real raise is a compensation-change business process against <em>base pay</em>, effective-dated, routed through approval. An agent that doesn't know this either fails, or worse, finds some writable field and modifies the wrong component.</p>
+      </li>
+      <li>
+        <span class="where">Supply chain · ERP</span>
+        <p>A costing agent is asked to "correct the landed cost" on a receipt line. Landed cost was assembled from unit price, allocated freight, duty, and handling, each from a different source document. The correction belongs to exactly one of those components (the freight allocation was wrong), and writing anywhere else corrupts a number that finance reconciles monthly.</p>
+      </li>
+      <li>
+        <span class="where">Ecommerce · OMS</span>
+        <p>A margin agent reads <code>contribution_margin</code> and is asked to bring an underperforming SKU above threshold. The only levers that exist in any writable system are the list price and the promotion flag; the margin itself is arithmetic. An action defined against the margin is undefined; actions defined against price and promotion are real.</p>
+      </li>
+    </ul>
+
+    <div class="absorb">
+      <span class="label">What the design must absorb</span>
+      <p>Actions are never defined against measures. They are defined against source-system operations (<code>update_base_pay</code>, <code>apply_discount</code>, <code>adjust_freight_allocation</code>), and the state model's job is to carry the explicit mapping from the semantic entity down to the source fields and keys those operations touch. A useful litmus test for authors: if an intent can only be phrased against a derived number, it is not yet a writable intent; it is a goal that decomposes into one or more real operations.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ================= PROBLEM 3 ================= -->
+  <section class="problem" id="p3">
+    <div class="p-head">
+      <span class="p-num">PROBLEM 03</span>
+      <a class="tag tax" href="#families">The transformation tax</a>
+    </div>
+    <h2>Identity: the key the agent has is not the key the source wants<a class="anchor" href="#p3">#</a></h2>
+    <div class="p-body">
+      <p>Warehouses assign their own identifiers. When a worker's record is loaded, the warehouse mints a surrogate key (<code>employee_sk = 88412</code>), an integer that exists nowhere in Workday and means nothing to any operational system. Surrogates exist for good read-side reasons: they make joins fast, they insulate the warehouse from upstream key changes, and they make it possible to keep <em>history</em>, because when the worker transfers departments, the warehouse doesn't overwrite the old row; it closes it and opens a new one with a new surrogate. This versioning pattern is called <a href="#g-scd2">SCD2</a> (slowly changing dimensions, type 2), and it means one person is many rows.</p>
+      <p>Now hand that surrogate to an agent. The agent queried last quarter's org structure, picked up <code>employee_sk 88412</code>, and now wants to act on that person. Three things are wrong at once. The surrogate identifies a <em>historical version</em> of the person, possibly one whose department, manager, and cost center are all obsolete. The source system has never heard of the number. And even once the surrogate is resolved to a real identifier, Workday itself has two: the human-readable Employee ID for some APIs, the WID (a GUID) for others, and the right one depends on which integration surface the write uses.</p>
+      <p>For reads, none of this matters; the surrogate does its job invisibly. For writes, identity resolution is a mandatory, explicit step, and skipping it produces writes that land on the wrong version, the wrong system, or the wrong person.</p>
+    </div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig 3 · the key chain</span><span>flow</span></div>
+      <pre class="mermaid">
+flowchart LR
+    AG[Agent holds:<br/>employee_sk = 88412<br/>warehouse surrogate] --> DIM[dim_workers row<br/>employee_sk 88412<br/>employee_id 'E-1042'<br/>workday_wid '3aa9…f1'<br/>valid 2024-03-01 → 2025-11-30 ❗]
+    DIM -->|natural key| WD1[Workday REST: Employee_ID E-1042]
+    DIM -->|GUID| WD2[Workday WWS/SOAP: WID 3aa9…f1]
+    DIM -.->|"surrogate row is an<br/>EXPIRED SCD2 version ·<br/>points at old org unit"| X[❌ write lands on<br/>stale context]
+      </pre>
+    </figure>
+
+    <h3>Real scenarios</h3>
+    <ul class="scenarios">
+      <li>
+        <span class="where">HR · Workday</span>
+        <p>A workforce agent builds a reallocation plan from a warehouse query joining last year's project assignments. Every worker reference in the plan is a surrogate pointing at the SCD2 row that was current <em>then</em>. For workers who have since transferred, the plan's context (manager, org, location) describes people who no longer exist in that configuration, and any write built on it inherits the obsolescence.</p>
+      </li>
+      <li>
+        <span class="where">Ecommerce · OMS</span>
+        <p>The warehouse's customer dimension merged three source identities into one entity: a Shopify customer GID, a guest-checkout email, and a legacy account from a migrated platform. A retention agent decides to issue a credit "to the customer." The OMS needs exactly one of the three source identities, and picking the wrong one credits an account the customer can no longer log into. The merge that made the read-side customer-360 possible is what makes the write ambiguous.</p>
+      </li>
+      <li>
+        <span class="where">Supply chain · ERP</span>
+        <p>Vendor-master cleanup merged "ACME Corp" and "Acme Corporation" into a single warehouse supplier entity. The ERP still carries both vendor numbers, one active, one blocked. A payment-terms agent updating "the supplier" must know which vendor number survived, and the warehouse entity, having deliberately blurred that distinction, cannot tell it.</p>
+      </li>
+    </ul>
+
+    <div class="absorb">
+      <span class="label">What the design must absorb</span>
+      <p>Every state model declares an explicit <a href="#g-keymap"><code>key_mapping</code></a>: the path from the warehouse surrogate, through the current dimension row, to the natural or API key the source system actually accepts. Intents are recorded against the natural key, resolved at accept time from the <em>current</em> SCD row, never against a surrogate. Where the warehouse has merged multiple source identities, the mapping must name the surviving one, and if it can't, the action is not yet authorable.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ================= PROBLEM 4 ================= -->
+  <section class="problem" id="p4">
+    <div class="p-head">
+      <span class="p-num">PROBLEM 04</span>
+      <a class="tag photo" href="#families">The photograph</a>
+    </div>
+    <h2>Late-arriving entities: the false reject<a class="anchor" href="#p4">#</a></h2>
+    <div class="p-body">
+      <p>This is <a href="#p1">Problem 1</a>'s mirror image. There, the warehouse said yes about something that had become false. Here, the warehouse says no about something that has become true. A supplier onboarded in the ERP at 10am is fully real, fully valid, ready to transact, and completely invisible to the warehouse until the afternoon sync. An agent that validates "does this supplier exist?" against the warehouse gets a confident, wrong <em>no</em>.</p>
+      <p>With human users, this failure is an annoyance. A person who gets "supplier not found" thirty minutes after onboarding it shrugs, knows the system is slow, tries again after lunch. Agents do not shrug. An agent receives "rejected" and encodes it as ground truth: the write was illegal. Depending on how it is built, it either abandons a perfectly legal task, reports a false failure upward, or retries in a tight loop against a validation that won't change for hours. All three behaviors are worse than the underlying problem.</p>
+      <p>This is the case that forces a third verdict into the validation vocabulary. "Accepted" and "rejected" assume the validator's knowledge is complete. Against a synced snapshot, it never is, and the honest answer for an entity the warehouse hasn't met yet is "I can't verify this," which is a different claim from "this is illegal."</p>
+    </div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig 4 · false reject</span><span>sequence</span></div>
+      <pre class="mermaid">
+sequenceDiagram
+    participant ERP as ERP (source)
+    participant WH as Warehouse (dim_suppliers)
+    participant AG as Agent
+
+    Note over ERP: 10:00 · new supplier<br/>SUP-7719 onboarded
+    AG->>WH: 10:30 validate: "create PO for SUP-7719"
+    WH-->>AG: ❌ supplier not found → REJECTED?
+    Note over AG: agent concludes "illegal",<br/>gives up · or retries in a loop
+    Note over WH: 14:00 sync · SUP-7719 appears
+      </pre>
+    </figure>
+
+    <h3>Real scenarios</h3>
+    <ul class="scenarios">
+      <li>
+        <span class="where">Supply chain · ERP</span>
+        <p>Procurement onboards a supplier at 10am specifically because an urgent PO needs to go out today. The procurement agent, asked to create that PO at 10:30, is told the supplier doesn't exist. The one situation where the write is most time-sensitive (a brand-new entity being used immediately) is exactly the situation the snapshot handles worst.</p>
+      </li>
+      <li>
+        <span class="where">HR · Workday</span>
+        <p>A hire is entered in Workday in the morning; an onboarding agent tries to create the IT-provisioning case an hour later and is rejected because the worker isn't in the dimension yet. The agent reports the onboarding as blocked. The new hire's first-day laptop ticket, the very thing the agent existed to automate, is now waiting on a nightly batch.</p>
+      </li>
+      <li>
+        <span class="where">Ecommerce · OMS</span>
+        <p>Merchandising creates a SKU at noon for a product launching at 6pm. The pricing agent, applying launch pricing at 2pm, is told the SKU is invalid. By the time the warehouse learns the SKU exists, the launch window has passed.</p>
+      </li>
+    </ul>
+
+    <div class="absorb">
+      <span class="label">What the design must absorb</span>
+      <p>The <a href="#g-accept">accept service</a> compares the referenced entity against the dimension's <a href="#g-watermark">sync watermark</a>, the timestamp of the last successful load. If the entity could plausibly have been created after that watermark, the verdict is <a href="#g-unverifiable"><code>unverifiable</code></a>, a first-class status distinct from rejection. Policy then decides whether unverifiable intents may queue, to be re-validated at apply time when the source can answer authoritatively. The three-way taxonomy <code>accepted / rejected / unverifiable</code> is not decoration; it is what makes the system usable by callers that take every answer literally.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ================= PROBLEM 5 ================= -->
+  <section class="problem" id="p5">
+    <div class="p-head">
+      <span class="p-num">PROBLEM 05</span>
+      <a class="tag photo" href="#families">The photograph</a>
+    </div>
+    <h2>Lost update: two agents, one snapshot<a class="anchor" href="#p5">#</a></h2>
+    <div class="p-body">
+      <p>Concurrency problems are as old as databases, and databases solved them decades ago with locks and transactions. Those solutions work because the database doing the validating is the database doing the writing: it can hold a lock between the check and the change.</p>
+      <p>A warehouse-validated write has no such luxury. The check happens against the warehouse; the change happens in the ERP; nothing connects them. Worse, the warehouse snapshot is <em>shared</em>: every agent reading between two syncs sees the identical photograph. Two agents can both check the same inventory level, both find it sufficient, both act, and both be individually correct against a snapshot that neither of their actions updated. The source system receives two writes in sequence, applies both, and the second silently destroys the assumption the first was built on.</p>
+      <p>Nothing in this failure looks like an error. No validation failed, no exception was thrown, no log line is suspicious. The damage is discovered later, as a negative inventory balance or a price that doesn't match any decision anyone remembers making, and by then the causal chain is two syncs deep and effectively unreconstructable. Agents make this categorically worse than humans did, because agents act in bursts, in parallel, within the same sync window, on the same entities. The probability of collision stops being negligible.</p>
+    </div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig 5 · last writer wins</span><span>sequence</span></div>
+      <pre class="mermaid">
+sequenceDiagram
+    participant A1 as Agent A (replenishment)
+    participant A2 as Agent B (allocation)
+    participant WH as Warehouse snapshot
+    participant SRC as ERP inventory
+
+    WH-->>A1: SKU-9 on_hand = 100 (as of 06:00)
+    WH-->>A2: SKU-9 on_hand = 100 (same snapshot)
+    A1->>SRC: set safety adjustment −30 (thinks 100)
+    A2->>SRC: allocate 90 to store 12 (thinks 100)
+    Note over SRC: both accepted in sequence ·<br/>on_hand now −20.<br/>Last writer silently won.
+      </pre>
+    </figure>
+
+    <h3>Real scenarios</h3>
+    <ul class="scenarios">
+      <li>
+        <span class="where">Supply chain · ERP</span>
+        <p>A replenishment agent and an allocation agent both read <code>on_hand = 100</code> for a SKU from the 6am snapshot. Replenishment applies a safety-stock adjustment of −30 assuming 100 available; allocation commits 90 units to a store assuming the same. The ERP accepts both. On-hand is now −20, the store order will short-ship, and both agents' logs show flawless execution.</p>
+      </li>
+      <li>
+        <span class="where">HR · Workday</span>
+        <p>A requisition-hygiene agent closes stale requisitions while a hiring-manager assistant agent extends one of the same requisitions with an updated close date. Both validated against the morning extract, both wrote, and the requisition's final state depends purely on which write arrived second. A candidate pipeline is either orphaned or resurrected at random.</p>
+      </li>
+      <li>
+        <span class="where">Ecommerce · OMS</span>
+        <p>A pricing agent applies a planned price change to a SKU while a promotion agent, within the same sync window, computes a 20%-off promotional price from the base price it read this morning. The promotion math is now applied to a base price that no longer exists, and the customer-facing price is a number nobody chose.</p>
+      </li>
+    </ul>
+
+    <div class="absorb">
+      <span class="label">What the design must absorb</span>
+      <p>Contended mutations (<a href="#g-classes">write classes</a> W3 and W4 in the design cut, meaning writes to state that other actors change within a sync window) carry an <a href="#g-version"><code>expected_version</code></a>: the version of the entity the caller believed it was acting on, checked at apply time against the <em>source</em>, never against the warehouse. If the source has moved past that version, the intent fails loudly instead of winning silently. The stronger move, where the business allows it, is to redesign the action itself: record an adjustment <em>event</em> rather than set a level, because append-only and commutative writes cannot lose updates in the first place.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ================= PROBLEM 6 ================= -->
+  <section class="problem" id="p6">
+    <div class="p-head">
+      <span class="p-num">PROBLEM 06</span>
+      <a class="tag photo" href="#families">The photograph</a>
+    </div>
+    <h2>Effective dating: "current" is a question, not a column<a class="anchor" href="#p6">#</a></h2>
+    <div class="p-body">
+      <p>Most systems treat time simply: a record has the value it has, and updates replace it. HR systems cannot afford that simplicity, because HR reality is full of changes that take effect at a different time than they were entered. A raise approved in July can be effective from June (retro pay). A reorg entered today can be effective in September. Workday is built around this from the ground up: every transaction carries both an <em>entry</em> date and an <a href="#g-effective"><em>effective</em> date</a>, and the two routinely disagree in both directions. The formal name is bi-temporal data, but the plain version is: the system's answer to any question depends on <em>when you ask about</em>, not just when you ask.</p>
+      <p>A warehouse extract, by necessity, flattens this into a photograph: "the current row." That flattening quietly answers only one of the possible time questions, and an agent that does arithmetic on the flattened value can be perfectly correct and completely wrong at once. The failure below isn't a stale read in the <a href="#p1">Problem 1</a> sense; the warehouse was faithfully up to date with everything that had been <em>entered</em>. What it couldn't know is that an entry made next week would rewrite last month.</p>
+      <p>There is a second, subtler trap in the same family: existence is also effective-dated. A future-dated position or a future-dated supplier contract <em>exists as a row</em> today but is not a valid target for action until its effective date arrives. "It's in the dimension" and "it can be acted on now" are different claims.</p>
+    </div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig 6 · the editable past</span><span>flow</span></div>
+      <pre class="mermaid">
+flowchart TD
+    subgraph WD [Workday reality for E-2201]
+        R1["Row: comp $95k<br/>effective 2026-01-01<br/>entered 2026-01-02"]
+        R2["Row: comp $101k<br/>effective 2026-06-01<br/>entered 2026-07-20 ← RETRO,<br/>entered after the fact"]
+        R3["Row: transfer to Org-B<br/>effective 2026-09-01<br/>entered 2026-07-10 ← FUTURE-DATED"]
+    end
+    WH["Warehouse 'current' row (synced 2026-07-19):<br/>comp $95k ❌ (retro not yet entered)<br/>org = Org-A ✓ today, ❌ for any effective date ≥ Sep 1"]
+    WD --> WH
+    AG[Agent: 'give 3% raise on current comp,<br/>effective Aug 1'] -->|reads $95k,<br/>computes $97.85k| X[❌ correct answer is<br/>3% of $101k = $104.03k]
+    WH --> AG
+      </pre>
+    </figure>
+
+    <h3>Real scenarios</h3>
+    <ul class="scenarios">
+      <li>
+        <span class="where">HR · Workday</span>
+        <p>A compensation agent computes a 3% raise, effective August 1, on a base of $95k read from the warehouse on July 19. On July 20, payroll enters a retroactive increase effective June 1, making the true June-onward base $101k. The agent's arithmetic was flawless; its base was a snapshot that a later entry rewrote. The raise lands at $97.85k instead of $104.03k, the employee notices, and the correction consumes more HR effort than the original raise.</p>
+      </li>
+      <li>
+        <span class="where">HR · Workday</span>
+        <p>A staffing agent assigns a worker to a position it found in the dimension. The position is real but future-dated, part of a September reorg entered in July. The assignment is rejected, or worse, accepted into an org structure that doesn't operationally exist for another six weeks, confusing every report between now and then.</p>
+      </li>
+      <li>
+        <span class="where">Supply chain · ERP</span>
+        <p>Contract price lists carry effective ranges. A PO agent prices an order against the price row that is <em>in the table</em> today, but the delivery date falls inside the next contract period, where a different price is in effect. The PO is issued at a price that will fail three-way match at invoice time, and accounts payable inherits the dispute.</p>
+      </li>
+    </ul>
+
+    <div class="absorb">
+      <span class="label">What the design must absorb</span>
+      <p>For effective-dated sources, validation predicates must be evaluated <em>as of the intent's effective date</em>, not as of "now," and state transitions on such entities (write class W4) always re-read the source at apply time, because the past itself is editable. This problem is also the strongest single argument for the queue at the heart of the design: an intent recorded with its effective date can simply wait, and be applied when the world reaches it.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ================= PROBLEM 7 ================= -->
+  <section class="problem" id="p7">
+    <div class="p-head">
+      <span class="p-num">PROBLEM 07</span>
+      <a class="tag tax" href="#families">The transformation tax</a>
+    </div>
+    <h2>Declared joins are not enforced integrity<a class="anchor" href="#p7">#</a></h2>
+    <div class="p-body">
+      <p>The semantic model's join graph looks like a natural validation asset. "Orders join to customers on customer_id" reads like a rule, and using it to check that a write's references hang together (this SKU exists, this currency is valid for this region, this order belongs to this customer) is genuinely useful and essentially free.</p>
+      <p>The trap is in what a declared join actually is. In an operational database, a foreign key is enforced: the engine physically refuses a row that violates it. In a warehouse, the join is a <em>description written by an author</em>, a claim about how the data usually relates. Cloud warehouses do not enforce referential integrity even when asked; Snowflake accepts foreign-key DDL and then ignores it by design. And real warehouse tables carry the residue of every upstream mess: guest checkouts with null customers, orders pointing at customers deleted upstream, positions referencing cost centers that closed mid-quarter.</p>
+      <p>So a validation built on the join graph is real evidence, but it is evidence of a specific, limited kind: "this reference resolves in the snapshot we have." It is not proof that the relationship holds operationally, and vocabulary discipline here matters more than it looks. The first time a document says the join graph "enforces" anything, someone downstream will design as if it does.</p>
+    </div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig 7 · claim vs reality</span><span>flow</span></div>
+      <pre class="mermaid">
+flowchart LR
+    subgraph CLAIM [Semantic model claim]
+        C1[orders N→1 customers<br/>on customer_id]
+    end
+    subgraph REALITY [Warehouse reality]
+        O1[order 555123 → customer_id NULL<br/>guest checkout]
+        O2[order 555124 → customer_id C-9<br/>customer since deleted upstream]
+        O3[order 555125 → customer_id C-12 ✓]
+    end
+    CLAIM -. "validation says the path exists;<br/>2 of 3 rows can't actually walk it" .-> REALITY
+      </pre>
+    </figure>
+
+    <h3>Real scenarios</h3>
+    <ul class="scenarios">
+      <li>
+        <span class="where">Ecommerce · OMS</span>
+        <p>A service agent issues a goodwill credit "to the customer on order 555123." The order is a guest checkout; its customer_id is null. The join the validation walked exists in the model and fails on this row, and the credit has no destination. A close cousin, order 555124, points at a customer since deleted upstream; validation resolves the reference against the warehouse's retained row and approves a credit to an account the source system no longer has.</p>
+      </li>
+      <li>
+        <span class="where">HR · Workday</span>
+        <p>The model declares positions join to cost centers. The quarterly close retired forty cost centers; open positions still reference them in the extract. A staffing agent's assignment validates cleanly against the model and is rejected by Workday, whose own validation knows the cost center is closed.</p>
+      </li>
+      <li>
+        <span class="where">Supply chain · ERP</span>
+        <p>A carrier-master cleanup retired a set of carrier codes. Historical shipments referencing them remain in the warehouse, as they should. A shipment agent, validating a new booking against "carrier codes present in the dimension," happily selects a retired code, because presence in a dimension that retains history says nothing about current validity.</p>
+      </li>
+    </ul>
+
+    <div class="absorb">
+      <span class="label">What the design must absorb</span>
+      <p>Referential validation derived from the join graph belongs in the advisory tier, and its verdict is phrased as "resolves," never "enforced." It is cheap, mechanical, and worth having; it catches typos, hallucinated IDs, and structural nonsense before anything reaches a source system. The authoritative verdict on whether a relationship actually holds is always the source's, at apply time.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ================= PROBLEM 8 ================= -->
+  <section class="problem" id="p8">
+    <div class="p-head">
+      <span class="p-num">PROBLEM 08</span>
+      <a class="tag selfx" href="#families">Self-inflicted</a>
+    </div>
+    <h2>Restatement re-fires side effects<a class="anchor" href="#p8">#</a></h2>
+    <div class="p-body">
+      <p>Analytical pipelines are built to re-run. When an upstream bug is found, the fix is to restate: re-execute the affected date range and overwrite the bad outputs. Backfills do the same for new logic over old data. This is not an edge case; it is the read side's superpower. Idempotent re-execution over intervals is what makes warehouse data correctable at all, and a healthy data team restates something every month.</p>
+      <p>Now imagine a write nestled inside one of those pipelines: a scheduled model that, as part of its daily run, calls a carrier API to book pickups. It works perfectly for a month. Then someone restates July. The scheduler faithfully re-executes every July interval, and every embedded API call fires again. The carrier receives a second booking for July 3rd, and a second for the 4th, and so on through the month. Nothing in the pipeline is aware anything is wrong, because from the pipeline's perspective nothing is: re-running is what it's <em>for</em>.</p>
+      <p>The failure is silent in a specific, expensive way. Warehouse-side, the restated outputs are correct, which is all anyone checks. The duplicates exist only in the outside world, and they surface on their own schedule: an invoice, a confused supplier, a customer who received two coupon emails. By then the restatement that caused them is weeks old and nobody connects the two events.</p>
+    </div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig 8 · the backfill that booked trucks</span><span>sequence</span></div>
+      <pre class="mermaid">
+sequenceDiagram
+    participant P as Scheduled model w/ embedded API call
+    participant API as Carrier API
+
+    Note over P: July daily runs
+    P->>API: Jul 03 · book pickup #35;A
+    P->>API: Jul 04 · book pickup #35;B
+    Note over P: Aug 02 · upstream fix,<br/>RESTATE Jul 01–31
+    P->>API: Jul 03 re-run · book pickup #35;A ← AGAIN
+    P->>API: Jul 04 re-run · book pickup #35;B ← AGAIN
+    Note over API: duplicate physical pickups booked.<br/>Silent until the invoice arrives.
+      </pre>
+    </figure>
+
+    <h3>Real scenarios</h3>
+    <ul class="scenarios">
+      <li>
+        <span class="where">Supply chain · ERP</span>
+        <p>A daily model books carrier pickups for outbound shipments as it processes the day's orders. An August restatement of July re-books a month of pickups. Trucks are dispatched to docks with nothing to collect, and the carrier's invoice for the phantom pickups is the first anyone hears of it.</p>
+      </li>
+      <li>
+        <span class="where">HR · Workday</span>
+        <p>A model that generates and sends offer letters as part of a requisition pipeline is backfilled after a template fix. Candidates who accepted weeks ago receive fresh offer letters, some reflecting the corrected (different) terms. Legal gets involved. This exact class of incident is why HR integration teams are conservative about anything automated touching candidate communication.</p>
+      </li>
+      <li>
+        <span class="where">Ecommerce · OMS</span>
+        <p>An attribution model that issues win-back coupon codes to lapsed customers is restated after an attribution-logic fix. Every lapsed customer in the window receives a second coupon code, both codes are live, and the promotion budget is spent twice on the same cohort.</p>
+      </li>
+    </ul>
+
+    <div class="absorb">
+      <span class="label">What the design must absorb</span>
+      <p>Side effects never live inside interval-scheduled models. The <a href="#g-executor">executor</a> (the author-written function that actually calls the outside world) fires only for rows in the <a href="#g-ledger">intent ledger</a>, the append-only record of accepted write requests, and every external call is keyed on the intent's <a href="#g-idem">idempotency key</a>. A restatement re-runs pipelines, finds no new accepted intents, and is a no-op against the outside world by construction. This single rule is the difference between "the ledger is elegant" and "the ledger is mandatory."</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ================= PROBLEM 9 ================= -->
+  <section class="problem" id="p9">
+    <div class="p-head">
+      <span class="p-num">PROBLEM 09</span>
+      <a class="tag selfx" href="#families">Self-inflicted</a>
+    </div>
+    <h2>Read-your-writes: the agent that couldn't see its own hand<a class="anchor" href="#p9">#</a></h2>
+    <div class="p-body">
+      <p>Any competent agent verifies its work: act, then read back, then confirm. The instinct is exactly right, and against a single system it works. Against a split read/write architecture it backfires, because the write went to the source system and the read-back goes to the warehouse, and the warehouse won't reflect the write until the next sync, hours from now.</p>
+      <p>So the agent cancels an order, the cancellation succeeds, and the agent's verification read says <code>PLACED</code>. Every fact the agent can see says the cancellation failed. A human would recognize the pattern ("the dashboard just hasn't refreshed"); the agent has no such folklore. It does the diligent thing: retries the cancellation, or reports the failure, or escalates. The retry is the mild outcome; a duplicate intent is at least deduplicable. The escalation is worse: a human now investigates a failure that never happened, and organizational trust in the agent, the scarcest resource in any agent rollout, takes the hit.</p>
+      <p>The insidious part is that this failure is <em>caused by good agent design</em>. The more rigorously an agent verifies its actions, the more reliably it falls into the gap. Any write path that punishes verification is a write path agents cannot safely use.</p>
+    </div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig 9 · the phantom failure</span><span>sequence</span></div>
+      <pre class="mermaid">
+sequenceDiagram
+    participant AG as Agent
+    participant AS as Accept service
+    participant SRC as Source
+    participant WH as Warehouse
+
+    AG->>AS: cancel order 555125
+    AS->>SRC: applied ✓ (cancellation C-88)
+    AG->>WH: verify: status of 555125?
+    WH-->>AG: PLACED (next sync in 5h)
+    Note over AG: "my cancel failed" →<br/>submits cancel AGAIN →<br/>duplicate intent, or worse,<br/>escalates a phantom failure
+    AG->>AS: cancel order 555125 (retry)
+    AS-->>AG: dedup hit on idempotency key ✓<br/>+ pending/applied intent visible in read path
+      </pre>
+    </figure>
+
+    <h3>Real scenarios</h3>
+    <ul class="scenarios">
+      <li>
+        <span class="where">Ecommerce · OMS</span>
+        <p>A service agent cancels an order inside the fulfillment cutoff window, verifies against the warehouse, sees <code>PLACED</code>, and re-submits. With idempotency in place the retry is absorbed; without it, the OMS receives a second cancellation request against an already-cancelled order and returns an error that the agent now reports as a <em>new</em> failure, compounding the confusion.</p>
+      </li>
+      <li>
+        <span class="where">HR · Workday</span>
+        <p>An onboarding agent creates an IT-provisioning case, reads back the worker's case list from the warehouse, finds nothing, and creates the case again. IT receives two tickets for one laptop, and the dedup burden lands on the service desk, which is precisely the manual work the agent was meant to remove.</p>
+      </li>
+      <li>
+        <span class="where">Supply chain · ERP</span>
+        <p>A procurement agent submits a PO change, cannot see it reflected, and flags the change as failed in its run summary. The nightly ops review now contains a red item that self-resolves at 2am. After a few weeks of phantom reds, the team stops reading the agent's run summaries at all, which defeats the point of having them.</p>
+      </li>
+    </ul>
+
+    <div class="absorb">
+      <span class="label">What the design must absorb</span>
+      <p>The <a href="#g-ledger">intent ledger</a> is itself exposed through the semantic layer as a readable entity (<code>pending_intents</code>), so the verification read returns the whole truth: warehouse status <code>PLACED</code>, <em>and</em> an applied cancellation intent C-88 awaiting sync. The agent's verify step reads warehouse state and ledger state together, and idempotency keys on the accept service make the inevitable retry harmless. The ledger stops being only the write path's bookkeeping and becomes part of the read model, which is the move that closes the loop.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ================= MAP ================= -->
+  <section class="plain" id="map">
+    <div class="p-head"><span class="p-num">SUMMARY</span></div>
+    <h2>The map, in one table<a class="anchor" href="#map">#</a></h2>
+    <div class="map-wrap">
+      <table class="map">
+        <thead>
+          <tr><th>#</th><th>Problem</th><th>Anchor example</th><th>Failure if ignored</th><th>Design answer</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="num"><a href="#p1">01</a></td><td><span class="dot photo"></span>Sync lag</td><td>Workday termination, 6h stale</td><td>False accept; source bounces or wrong write lands</td><td>Advisory accept-check, authoritative apply-check, declared tolerance</td></tr>
+          <tr><td class="num"><a href="#p2">02</a></td><td><span class="dot tax"></span>Transformation inversion</td><td>net_revenue, total_comp</td><td>Unactionable or wrong-field writes</td><td>Actions target source operations, never measures; explicit field mapping</td></tr>
+          <tr><td class="num"><a href="#p3">03</a></td><td><span class="dot tax"></span>Identity / SCD2 keys</td><td>employee_sk vs Employee ID vs WID</td><td>Write lands on wrong version, system, or person</td><td>Declared key_mapping; intents on natural keys, resolved from current row</td></tr>
+          <tr><td class="num"><a href="#p4">04</a></td><td><span class="dot photo"></span>Late-arriving entities</td><td>New supplier, urgent PO</td><td>False reject; agent gives up, loops, or escalates</td><td><code>unverifiable</code> verdict + sync-watermark check; re-validate at apply</td></tr>
+          <tr><td class="num"><a href="#p5">05</a></td><td><span class="dot photo"></span>Lost update</td><td>Two agents, one inventory snapshot</td><td>Silent last-writer-wins; negative stock</td><td><code>expected_version</code> at apply, vs source; prefer append/commutative actions</td></tr>
+          <tr><td class="num"><a href="#p6">06</a></td><td><span class="dot photo"></span>Effective dating</td><td>Retro pay rewrites the base</td><td>Correct math on a wrong base; invalid future targets</td><td>Predicates as-of effective date; source re-read on transitions; queue by effective date</td></tr>
+          <tr><td class="num"><a href="#p7">07</a></td><td><span class="dot tax"></span>Declared joins</td><td>Guest-checkout orphans, closed cost centers</td><td>Validation theater; source rejects, or worse, accepts</td><td>"Resolves," never "enforced"; advisory tier only</td></tr>
+          <tr><td class="num"><a href="#p8">08</a></td><td><span class="dot selfx"></span>Restatement</td><td>Backfill re-books a month of pickups</td><td>Duplicate real-world side effects, discovered by invoice</td><td>Side effects only from the ledger, keyed on idempotency</td></tr>
+          <tr><td class="num"><a href="#p9">09</a></td><td><span class="dot selfx"></span>Read-your-writes</td><td>Cancel, verify, retry</td><td>Duplicate intents; phantom failures; eroded trust</td><td>Ledger exposed in the read path; idempotent accept</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="p-body">
+      <p>The grouping from the <a href="#families">introduction</a> is worth restating as the takeaway. Problems 1, 4, 5, and 6 are the photograph disease and are <em>managed</em>, never eliminated: the design's job is to declare, measure, and bound the gap, not to pretend it closes. Problems 2, 3, and 7 are the transformation tax and are <em>paid once per action</em>, at authoring time, in the form of explicit mappings and honest vocabulary. Problems 8 and 9 are <em>eliminated outright</em> by two structural rules: side effects only from the ledger, and the ledger visible in the read path. A design review of any write-path proposal can use exactly that split as its checklist.</p>
+      <p>The architecture that answers these nine problems, component by component, is described in <a href="architecture.html">Governed Write-Back: A Reference Architecture</a>.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ================= GLOSSARY ================= -->
+  <section class="plain" id="glossary">
+    <div class="p-head"><span class="p-num">REFERENCE</span></div>
+    <h2>Glossary<a class="anchor" href="#glossary">#</a></h2>
+    <div class="p-body"><p>Terms from the companion design-cut document, defined here so this page stands alone.</p></div>
+    <dl class="gloss">
+      <div id="g-accept"><dt>Accept service / accept time</dt><dd>The platform component that receives a write intent, runs advisory validation, and records it. Accept time is when the intent arrives; apply time is when the executor acts on the source system. Validation verdicts differ in authority between the two.</dd></div>
+      <div id="g-ledger"><dt>Intent ledger</dt><dd>An append-only record of every write intent: payload, actor, validation verdicts, status, and outcome. It is simultaneously the queue, the audit trail, and (exposed as <code>pending_intents</code>) part of the read model.</dd></div>
+      <div id="g-executor"><dt>Executor</dt><dd>The author-written function that performs the real-world call against the source system. It fires only for accepted ledger rows, never as part of a scheduled pipeline run.</dd></div>
+      <div id="g-classes"><dt>Write classes (W1–W5)</dt><dd>The design cut's taxonomy: W1 append/create-new, W2 slow attribute update, W3 contended mutation, W4 state transition, W5 cross-system composite. The class determines routing (queue, immediate, refuse) and mandatory controls.</dd></div>
+      <div id="g-freshness"><dt>freshness_tolerance</dt><dd>A per-action declaration of how stale the validating snapshot may be for the validation to remain meaningful. Registration fails if the tolerance is tighter than the measured sync lag of the dimensions the validation reads.</dd></div>
+      <div id="g-version"><dt>expected_version</dt><dd>The version of the entity the caller believed it was acting on, carried on the intent and checked at apply time against the source. A mismatch fails the intent loudly instead of letting the last writer win silently.</dd></div>
+      <div id="g-idem"><dt>Idempotency key</dt><dd>A unique key per intent, passed to (or checked against) the target system so that retries and re-deliveries produce the same single effect. What makes the inevitable duplicate submission harmless.</dd></div>
+      <div id="g-watermark"><dt>Sync watermark</dt><dd>The timestamp of a dimension's last successful load. Comparing a referenced entity against it distinguishes "this reference is invalid" from "this reference is newer than my knowledge."</dd></div>
+      <div id="g-unverifiable"><dt>unverifiable</dt><dd>The third validation verdict beside accepted and rejected: the snapshot cannot answer, typically because the entity may postdate the sync watermark. Policy decides whether unverifiable intents may queue for re-validation at apply time.</dd></div>
+      <div id="g-keymap"><dt>key_mapping</dt><dd>The declared path from a warehouse surrogate key, through the current dimension row, to the natural or API key the source system accepts. Intents are recorded against the natural key.</dd></div>
+      <div id="g-scd2"><dt>SCD2</dt><dd>Slowly changing dimensions, type 2: the warehouse pattern of keeping history by closing the old row and opening a new one on change. One entity becomes many rows, each with its own surrogate key and validity range.</dd></div>
+      <div id="g-effective"><dt>Effective date</dt><dd>The date a change takes business effect, as distinct from the date it was entered. In effective-dated systems like Workday the two routinely differ in both directions (retro pay, future-dated reorgs), so "current" is a question about a date, not a stored value.</dd></div>
+    </dl>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  </main>
+</div>
+
+<footer>
+  Real-World Data Problems for Write-Back · v2 · answered by <a href="architecture.html">Governed Write-Back: A Reference Architecture</a>. Internal working paper.
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.3/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'neutral',
+    fontFamily: "'IBM Plex Sans', sans-serif",
+    themeVariables: {
+      fontSize: '14px',
+      primaryColor: '#EEF0E9',
+      primaryBorderColor: '#8B958F',
+      primaryTextColor: '#1B2422',
+      lineColor: '#5B6663',
+      actorBkg: '#FFFFFF',
+      actorBorder: '#8B958F',
+      actorTextColor: '#1B2422',
+      noteBkgColor: '#F4E9E1',
+      noteBorderColor: '#C9A78F',
+      noteTextColor: '#1B2422',
+      signalColor: '#1B2422',
+      signalTextColor: '#1B2422',
+      clusterBkg: '#FBFCF9',
+      clusterBorder: '#D9DDD3',
+      edgeLabelBackground: '#FFFFFF'
+    },
+    sequence: { actorMargin: 40, width: 160, mirrorActors: false },
+    flowchart: { htmlLabels: true, curve: 'basis' }
+  });
+
+  // TOC active-state highlighting
+  (function () {
+    var links = document.querySelectorAll('nav.toc a[href^="#"]');
+    var map = {};
+    links.forEach(function (a) {
+      var id = a.getAttribute('href').slice(1);
+      var el = document.getElementById(id);
+      if (el) map[id] = a;
+    });
+    if (!('IntersectionObserver' in window)) return;
+    var current = null;
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          if (current) current.classList.remove('active');
+          current = map[e.target.id];
+          if (current) current.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px' });
+    Object.keys(map).forEach(function (id) {
+      obs.observe(document.getElementById(id));
+    });
+  })();
+</script>
+</body>
+</html>

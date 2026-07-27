@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Governed Write-Back: A Reference Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5F6F2;
+    --panel:#FFFFFF;
+    --ink:#1B2422;
+    --muted:#5B6663;
+    --line:#D9DDD3;
+    --line-soft:#E7EAE2;
+    --advisory:#8A4B2D;      /* warm sienna: claims about the snapshot */
+    --advisory-bg:#F4E9E1;
+    --authoritative:#1E5F80; /* deep blue: the source's answer */
+    --authoritative-bg:#E4EDF3;
+    --link:#14615A;
+    --ok:#4E6E33;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *{transition:none !important}
+  }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Serif', Georgia, serif;
+    font-size:17px;
+    line-height:1.65;
+  }
+  a{color:var(--link);text-decoration:none;border-bottom:1px solid rgba(20,97,90,.35)}
+  a:hover{border-bottom-color:var(--link)}
+  a:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:2px}
+  code{
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-size:.85em;
+    background:#EDEFE8;
+    border:1px solid var(--line-soft);
+    border-radius:3px;
+    padding:1px 5px;
+    white-space:nowrap;
+  }
+  strong{font-weight:600}
+
+  /* ---------- header ---------- */
+  header.doc{border-bottom:1px solid var(--line);background:var(--panel)}
+  .doc-inner{max-width:1180px;margin:0 auto;padding:56px 28px 40px}
+  .doc-kicker{
+    font-family:'IBM Plex Mono', monospace;font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:18px;
+  }
+  h1{
+    font-family:'IBM Plex Sans', sans-serif;font-weight:700;
+    font-size:clamp(30px,4.5vw,46px);line-height:1.12;letter-spacing:-.015em;max-width:22ch;
+  }
+  .doc-sub{margin-top:16px;max-width:70ch;color:var(--muted);font-size:16.5px}
+  .doc-meta{
+    margin-top:22px;display:flex;flex-wrap:wrap;gap:10px 26px;
+    font-family:'IBM Plex Mono', monospace;font-size:12.5px;color:var(--muted);
+  }
+  .doc-meta b{color:var(--ink);font-weight:600}
+
+  /* thesis banner */
+  .thesis{
+    margin-top:30px;border:1px solid var(--line);border-radius:8px;overflow:hidden;
+    display:grid;grid-template-columns:1fr 1fr;background:var(--panel);
+  }
+  .thesis .half{padding:18px 20px;font-family:'IBM Plex Sans',sans-serif}
+  .thesis .half.adv{background:var(--advisory-bg);border-right:1px solid var(--line)}
+  .thesis .half.auth{background:var(--authoritative-bg)}
+  .thesis .tt{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+    letter-spacing:.12em;text-transform:uppercase;display:block;margin-bottom:6px;
+  }
+  .thesis .adv .tt{color:var(--advisory)}
+  .thesis .auth .tt{color:var(--authoritative)}
+  .thesis .half p{font-size:15.5px;line-height:1.5;margin:0}
+
+  /* authority tags used through the doc */
+  .tag{
+    display:inline-block;font-family:'IBM Plex Mono', monospace;
+    font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+    padding:3px 9px;border-radius:3px;border:1px solid transparent;
+  }
+  .tag.adv{color:var(--advisory);background:var(--advisory-bg);border-color:#E0C9BA}
+  .tag.auth{color:var(--authoritative);background:var(--authoritative-bg);border-color:#C3D6E2}
+
+  /* ---------- layout ---------- */
+  .shell{
+    max-width:1180px;margin:0 auto;padding:0 28px;
+    display:grid;grid-template-columns:250px minmax(0,1fr);gap:56px;
+  }
+  nav.toc{
+    position:sticky;top:0;align-self:start;max-height:100vh;overflow-y:auto;
+    padding:36px 0 48px;font-family:'IBM Plex Sans', sans-serif;
+  }
+  nav.toc .toc-title{
+    font-family:'IBM Plex Mono', monospace;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:14px;
+  }
+  nav.toc ol{list-style:none}
+  nav.toc a{
+    display:block;padding:6px 10px;border:0;border-left:2px solid transparent;
+    color:var(--muted);font-size:13.5px;line-height:1.35;border-radius:0 4px 4px 0;
+  }
+  nav.toc a:hover{color:var(--ink);background:#EEF0E9}
+  nav.toc a.active{color:var(--ink);border-left-color:var(--ink);background:#EEF0E9;font-weight:600}
+  nav.toc a .n{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-right:7px}
+  nav.toc .toc-extra{margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft)}
+
+  main{padding:36px 0 90px;min-width:0}
+
+  /* ---------- sections ---------- */
+  section{padding:44px 0 8px;margin-bottom:22px;border-top:1px solid var(--line)}
+  section:first-of-type{border-top:0;padding-top:8px}
+  .p-num{
+    font-family:'IBM Plex Mono', monospace;font-weight:600;font-size:13px;
+    color:var(--muted);letter-spacing:.08em;display:block;margin-bottom:4px;
+  }
+  h2{
+    font-family:'IBM Plex Sans', sans-serif;font-weight:700;
+    font-size:clamp(22px,2.6vw,29px);letter-spacing:-.01em;line-height:1.2;margin:4px 0 8px;
+  }
+  h2 .anchor{border:0;color:var(--line);margin-left:8px;font-weight:400}
+  h2 .anchor:hover{color:var(--link)}
+  h3{
+    font-family:'IBM Plex Sans', sans-serif;font-weight:600;font-size:16px;
+    letter-spacing:.01em;margin:30px 0 12px;
+  }
+  .p-body p{margin:14px 0;max-width:76ch}
+  .p-body ul, .p-body ol{margin:14px 0 14px 24px;max-width:74ch}
+  .p-body li{margin:8px 0}
+
+  /* callout */
+  .rule{
+    margin:26px 0;padding:18px 20px;max-width:80ch;
+    border-left:3px solid var(--ink);background:#EEF0E9;border-radius:0 6px 6px 0;
+  }
+  .rule .label{
+    font-family:'IBM Plex Mono', monospace;font-size:11px;font-weight:600;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+    display:block;margin-bottom:8px;
+  }
+  .rule p{margin:0;font-size:16.5px}
+  .rule.big p{font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:17.5px}
+
+  /* diagrams */
+  figure.diagram{
+    margin:26px 0;border:1px solid var(--line);border-radius:8px;
+    background:var(--panel);overflow:hidden;
+  }
+  figure.diagram .chrome{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 14px;border-bottom:1px solid var(--line-soft);
+    font-family:'IBM Plex Mono', monospace;font-size:11.5px;color:var(--muted);
+    letter-spacing:.06em;text-transform:uppercase;background:#FBFCF9;
+  }
+  figure.diagram .mermaid{padding:18px 14px;display:flex;justify-content:center;overflow-x:auto}
+  figure.diagram .mermaid svg{max-width:100%;height:auto}
+
+  /* code blocks */
+  pre.code{
+    margin:22px 0;padding:18px 20px;overflow-x:auto;
+    background:#22292A;color:#E8ECE6;border-radius:8px;
+    font-family:'IBM Plex Mono', ui-monospace, monospace;
+    font-size:13px;line-height:1.6;
+  }
+  pre.code .cm{color:#8FA396}      /* comment */
+  pre.code .k{color:#8FC7BB}       /* key / keyword */
+  pre.code .s{color:#E0B98F}       /* string / value */
+  .code-caption{
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);
+    letter-spacing:.06em;text-transform:uppercase;margin:-14px 0 22px 4px;
+  }
+
+  /* tables */
+  .tbl-wrap{overflow-x:auto;margin:22px 0;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+  table.tbl{border-collapse:collapse;width:100%;font-size:14px;font-family:'IBM Plex Sans',sans-serif}
+  table.tbl th{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;
+    padding:12px 14px;border-bottom:1px solid var(--line);background:#FBFCF9;white-space:nowrap;
+  }
+  table.tbl td{padding:12px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top;line-height:1.45}
+  table.tbl tr:last-child td{border-bottom:0}
+  table.tbl td.c{font-family:'IBM Plex Mono',monospace;font-size:12.5px;white-space:nowrap}
+  table.tbl .sev-err{color:#B02E1F;font-weight:600}
+  table.tbl .sev-warn{color:var(--advisory);font-weight:600}
+
+  .backtop{
+    display:inline-block;margin:8px 0 10px;border:0;
+    font-family:'IBM Plex Mono', monospace;font-size:11.5px;letter-spacing:.08em;
+    color:var(--muted);text-transform:uppercase;
+  }
+  .backtop:hover{color:var(--link)}
+
+  /* glossary */
+  dl.gloss{max-width:82ch}
+  dl.gloss div{padding:14px 0;border-bottom:1px solid var(--line-soft)}
+  dl.gloss div:last-child{border-bottom:0}
+  dl.gloss dt{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px}
+  dl.gloss dd{margin-top:5px;font-size:15.5px}
+  :target{scroll-margin-top:24px}
+
+  footer{
+    border-top:1px solid var(--line);padding:26px 28px 60px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);
+    max-width:1180px;margin:0 auto;
+  }
+
+  @media (max-width:920px){
+    .shell{grid-template-columns:1fr;gap:0}
+    nav.toc{position:static;max-height:none;padding:24px 0 8px;border-bottom:1px solid var(--line)}
+    nav.toc ol{display:grid;grid-template-columns:1fr 1fr;gap:2px 14px}
+    .thesis{grid-template-columns:1fr}
+    .thesis .half.adv{border-right:0;border-bottom:1px solid var(--line)}
+  }
+</style>
+</head>
+<body id="top">
+
+<header class="doc">
+  <div class="doc-inner">
+    <div class="doc-kicker">Write-Back Working Papers · No. 3 · Draft for review</div>
+    <h1>Governed Write-Back: A Reference Architecture</h1>
+    <p class="doc-sub">A standard write path for agents over analytical data: a declared Action Contract beside the semantic model, an append-only Intent Ledger, two delivery modes, and an author-owned Executor as the only component that touches the outside world. This document answers <a href="problems.html">Real-World Data Problems for Write-Back</a> (the problems paper); references of the form P1..P9 link to the nine problems catalogued there.</p>
+    <div class="doc-meta">
+      <span><b>Author</b> Animesh Kumar</span>
+      <span><b>Date</b> July 25, 2026</span>
+      <span><b>Companion</b> <a href="problems.html">Real-World Data Problems for Write-Back</a></span>
+    </div>
+
+    <div class="thesis" role="note" aria-label="Correctness posture">
+      <div class="half adv">
+        <span class="tt">Accept time · advisory</span>
+        <p>Validation against the analytical snapshot is a claim about a photograph. It catches most nonsense early, and it is honest about its age.</p>
+      </div>
+      <div class="half auth">
+        <span class="tt">Apply time · authoritative</span>
+        <p>The source system's answer, at the moment of the write, is the only verdict that counts. Every mechanism below defers final authority here.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="toc" aria-label="Contents">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#abstract"><span class="n">00</span>Abstract</a></li>
+      <li><a href="#s1"><span class="n">01</span>Design stance</a></li>
+      <li><a href="#s2"><span class="n">02</span>Architecture overview</a></li>
+      <li><a href="#s3"><span class="n">03</span>The Action Contract</a></li>
+      <li><a href="#s4"><span class="n">04</span>Write classes &amp; decision table</a></li>
+      <li><a href="#s5"><span class="n">05</span>Validation: tiers &amp; verdicts</a></li>
+      <li><a href="#s6"><span class="n">06</span>The Intent Ledger</a></li>
+      <li><a href="#s7"><span class="n">07</span>Delivery modes</a></li>
+      <li><a href="#s8"><span class="n">08</span>The Executor Module</a></li>
+      <li><a href="#s9"><span class="n">09</span>Reconciliation</a></li>
+      <li><a href="#s10"><span class="n">10</span>Traceability</a></li>
+      <li><a href="#s11"><span class="n">11</span>Adoption sequence</a></li>
+    </ol>
+    <div class="toc-extra">
+      <ol>
+        <li><a href="#glossary">Glossary</a></li>
+        <li><a href="problems.html">The problems paper ↗</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  <main>
+
+  <!-- ============ ABSTRACT ============ -->
+  <section id="abstract">
+    <span class="p-num">SECTION 00</span>
+    <h2>Abstract<a class="anchor" href="#abstract">#</a></h2>
+    <div class="p-body">
+      <p>Semantic models give agents a governed way to read enterprise state: certified entities, measures, and dimensions, with ownership, versioning, and policy attached. Nothing equivalent exists for changing that state. Every write an agent performs today happens outside the governed layer, through hand-written tools and direct API calls that carry their own implicit and unreviewed permission model.</p>
+      <p>This document describes a standard architecture that closes the gap. An <a href="#s3"><strong>Action Contract</strong></a> is declared beside the semantic model: a versioned specification of what mutations are allowed, on which entities, under which conditions. An <a href="#g-accept"><strong>Accept Service</strong></a> validates incoming write requests against the contract and records them in an append-only <a href="#s6"><strong>Intent Ledger</strong></a>. Intents are delivered in one of two modes, <a href="#s7"><strong>queued</strong> or <strong>immediate</strong></a>, and the only component that ever touches an external system is an author-owned <a href="#s8"><strong>Executor Module</strong></a>: plain Python, deliberately outside any scheduled pipeline. A <a href="#s9"><strong>Reconciliation Check</strong></a> closes the loop by confirming that applied intents eventually become observable in the analytical data.</p>
+      <p>The entire architecture rests on one correctness posture, stated in the banner above and enforced everywhere below: accept-time validation is advisory; apply-time validation is authoritative.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ============ 1 DESIGN STANCE ============ -->
+  <section id="s1">
+    <span class="p-num">SECTION 01</span>
+    <h2>Design stance<a class="anchor" href="#s1">#</a></h2>
+    <div class="p-body">
+      <p>The problems paper reduces to a single image: the analytical layer is a photograph of the business, and a photograph is always of the past. Sync lag, late-arriving entities, shared snapshots, and effective dating (<a href="problems.html#p1">P1</a>, <a href="problems.html#p4">P4</a>, <a href="problems.html#p5">P5</a>, <a href="problems.html#p6">P6</a>) are four ways the photograph misleads anyone who writes based on it. No architecture eliminates the photograph; the choice is between pretending the gap does not exist and designing around it explicitly.</p>
+      <p>This architecture designs around it with one reframe: <strong>the queue converts a correctness problem into a rejection-rate problem.</strong> If a write is recorded as an <em>intent</em> and the authoritative system validates again when the intent is applied, stale validation at accept time can produce only two outcomes: a false accept that gets caught at apply, or a false reject that annoys the caller. Neither corrupts state. That is a much better failure menu than the alternative, where a stale check gates a live mutation directly.</p>
+      <p>Three postures follow, and every section below is an application of one of them:</p>
+      <ol>
+        <li><strong>The platform never mutates a source system.</strong> The Executor Module does, and a named author owns it. The platform's job is contract, policy, and record.</li>
+        <li><strong>The semantic layer is never the source of truth for operational state.</strong> It describes state held elsewhere, on a lag. It can host the contract for allowed mutations and the record of requested ones; it cannot adjudicate what is true <em>right now</em>.</li>
+        <li><strong>Honest vocabulary.</strong> Join-graph checks "resolve," they never "enforce" (<a href="problems.html#p7">P7</a>). Verdicts come in three, not two: accepted, rejected, unverifiable (<a href="problems.html#p4">P4</a>). Validation is either <span class="tag adv">advisory</span> or <span class="tag auth">authoritative</span>, and every check declares which it is.</li>
+      </ol>
+
+      <h3>When this layer is not worth it</h3>
+      <p>A reference architecture should say where it does not apply. For a single write against a single system with a good API and its own validation, placing this layer in the middle adds a hop, a staleness surface, and a second validation regime that can disagree with the source's. The value concentrates in three situations:</p>
+      <ul>
+        <li><strong>Discovery.</strong> The caller (typically an agent) cannot know forty different APIs, but it can know one contract. The Action Contract is the catalogue of what may be done.</li>
+        <li><strong>One policy and audit plane.</strong> Writes spanning several systems, or writes that must answer "who did this, under whose authority, and was it approved," need a single place where those questions have answers.</li>
+        <li><strong>The ledger has independent worth.</strong> Replayable intents, deferred application, human approval gates, and a complete record of what was asked and decided are valuable even when the write itself is simple.</li>
+      </ul>
+      <p>If a proposed action claims none of the three, it should be a direct API call, and the contract review should say so.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ============ 2 ARCHITECTURE ============ -->
+  <section id="s2">
+    <span class="p-num">SECTION 02</span>
+    <h2>Architecture overview<a class="anchor" href="#s2">#</a></h2>
+    <div class="p-body">
+      <p>Two runtimes, one ledger, one authoring surface.</p>
+    </div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig A · the two-runtime split</span><span>flow</span></div>
+      <pre class="mermaid">
+flowchart LR
+    A[Agent / caller] -->|"submit write intent"| AS[Accept Service<br/>platform-owned]
+    AS -->|"validate against contract,<br/>record verdicts"| L[(Intent Ledger<br/>append-only record)]
+    AS -.->|"mode: immediate<br/>inline invocation"| EX[Executor Module<br/>author-owned Python]
+    D[Dispatch Worker<br/>platform-owned, scheduled] -->|"mode: queued<br/>drain accepted intents,<br/>per-entity order"| L
+    D --> EX
+    EX -->|"outcome + external reference"| L
+    EX --> SRC[Source system<br/>HR / ERP / OMS API]
+    R[Reconciliation Check<br/>author-owned, scheduled] -->|"applied intents vs<br/>synced analytical state"| L
+      </pre>
+    </figure>
+
+    <div class="p-body"><p>One intent, end to end:</p></div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig B · one intent, submit to reconcile</span><span>sequence</span></div>
+      <pre class="mermaid">
+sequenceDiagram
+    participant AG as Agent
+    participant AS as Accept Service
+    participant L as Intent Ledger
+    participant D as Dispatch Worker
+    participant EX as Executor Module
+    participant SRC as Source system
+    participant W as Warehouse
+
+    AG->>AS: submit: cancel order 555125
+    AS->>AS: validate (advisory):<br/>referential, attribute, stateful
+    AS->>L: record intent, status = accepted
+    AS-->>AG: accepted, intent_id + idempotency key
+    D->>L: pick up accepted intent
+    D->>EX: apply(intent, ctx)
+    EX->>SRC: authoritative check + cancel
+    SRC-->>EX: done (cancellation C-88)
+    EX-->>L: outcome = applied, external_ref C-88
+    Note over W: next sync brings the<br/>cancellation into the warehouse
+    Note over L: Reconciliation Check later confirms:<br/>applied intent observable, status = reconciled
+    AG->>AS: verify (reads warehouse + ledger together)
+    AS-->>AG: PLACED in warehouse,<br/>applied intent C-88 pending sync
+      </pre>
+    </figure>
+
+    <div class="p-body">
+      <p>The sentence that organizes everything: <strong>there is one authoring surface, the Executor's <code>apply</code> function, and two invocation paths; the declared mode decides who calls it and when.</strong> Queued intents are picked up by the Dispatch Worker on a schedule. Immediate intents are invoked inline by the Accept Service while the caller waits. Same code, same contract, same ledger row either way.</p>
+      <p>The two-runtime split is not an implementation detail; it exists because of <a href="problems.html#p8">P8</a>. Scheduled analytical pipelines re-run by design (restatement, backfill), and anything with side effects inside them re-fires those side effects. The write path therefore lives entirely outside the pipeline scheduler, and <a href="#s8">Section 8</a> makes the rule explicit.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ============ 3 ACTION CONTRACT ============ -->
+  <section id="s3">
+    <span class="p-num">SECTION 03</span>
+    <h2>The Action Contract<a class="anchor" href="#s3">#</a></h2>
+    <div class="p-body">
+      <p>The Action Contract is the write-side sibling of the semantic model: a versioned, reviewable declaration, bound to a semantic entity, listing what may be done to it. It lives in the same repository discipline as the read model: a file, a pull request, an owner.</p>
+      <p>What an Action Contract declares:</p>
+      <ul>
+        <li><strong>The bound entity</strong>, connecting the contract to the semantic model's types, dimensions, and joins.</li>
+        <li><strong>A key mapping</strong>: the explicit path from the warehouse's internal (surrogate) key, through the current dimension row, to the natural or API key the source system accepts. This answers <a href="problems.html#p3">P3</a> directly. Intents are recorded against the natural key, resolved at accept time from the current row, never against a surrogate. Where the analytical layer has merged several source identities into one entity, the mapping must name the surviving one; if it cannot, the action is not yet authorable.</li>
+        <li><strong>Actions</strong>, each with an input schema, a <a href="#s4">write class</a>, a risk tier, a delivery mode, validation predicates in <a href="#s5">three tiers</a>, an executor binding, and a reconciliation reference.</li>
+      </ul>
+      <p>Two worked examples, deliberately different in character:</p>
+    </div>
+
+<pre class="code">
+<span class="k">kind:</span> <span class="s">ActionContract</span>
+<span class="k">name:</span> <span class="s">product_pricing</span>
+<span class="k">entity:</span> <span class="s">semantic.products</span>
+<span class="k">key_mapping:</span>
+  <span class="k">from:</span> <span class="s">product_sk</span>                       <span class="cm"># warehouse surrogate</span>
+  <span class="k">via:</span>  <span class="s">dim_products.source_product_id</span>    <span class="cm"># column carrying the natural key</span>
+  <span class="k">to:</span>   <span class="s">oms.product_id</span>                    <span class="cm"># what the source API accepts</span>
+
+<span class="k">actions:</span>
+  - <span class="k">name:</span> <span class="s">update_list_price</span>
+    <span class="k">write_class:</span> <span class="s">W2</span>          <span class="cm"># slow attribute update</span>
+    <span class="k">risk_tier:</span> <span class="s">reversible</span>
+    <span class="k">mode:</span> <span class="s">queued</span>
+    <span class="k">freshness_tolerance:</span> <span class="s">24h</span>
+    <span class="k">input:</span>
+      <span class="k">product_id:</span> <span class="s">{type: string, required: true}</span>
+      <span class="k">new_price:</span>  <span class="s">{type: decimal, gt: 0, required: true}</span>
+      <span class="k">currency:</span>   <span class="s">{type: string, enum: [USD, EUR, GBP]}</span>
+      <span class="k">effective_from:</span> <span class="s">{type: date, required: true}</span>
+    <span class="k">validation:</span>
+      <span class="k">referential:</span>            <span class="cm"># derived from the join graph; "resolves"</span>
+        - <span class="s">product_id resolves in dim_products</span>
+        - <span class="s">currency resolves via products -> price_books</span>
+      <span class="k">attribute:</span>              <span class="cm"># declared predicates, evaluated at accept</span>
+        - <span class="s">dim_products.status != 'discontinued'</span>
+        - <span class="s">input.new_price <= dim_products.msrp * 1.5</span>
+      <span class="k">stateful:</span> <span class="s">[]</span>            <span class="cm"># none; that is what makes this W2, not W3</span>
+    <span class="k">executor:</span>
+      <span class="k">module:</span> <span class="s">executors/oms_pricing.py</span>
+      <span class="k">callable:</span> <span class="s">apply</span>
+    <span class="k">reconciliation:</span>
+      <span class="k">check:</span> <span class="s">checks/price_intents_landed</span>
+      <span class="k">sla:</span> <span class="s">48h</span>
+
+  - <span class="k">name:</span> <span class="s">cancel_order</span>
+    <span class="k">write_class:</span> <span class="s">W4</span>          <span class="cm"># state transition</span>
+    <span class="k">risk_tier:</span> <span class="s">irreversible</span>
+    <span class="k">mode:</span> <span class="s">queued</span>
+    <span class="k">expected_version:</span>
+      <span class="k">field:</span> <span class="s">dim_orders.row_version</span>      <span class="cm"># advisory read at accept</span>
+    <span class="k">approval:</span>
+      <span class="k">required:</span> <span class="s">true</span>
+      <span class="k">approvers:</span> <span class="s">[role:ops_lead]</span>
+    <span class="k">input:</span>
+      <span class="k">order_id:</span> <span class="s">{type: string, required: true}</span>
+      <span class="k">reason:</span>   <span class="s">{type: string, enum: [customer_request, fraud, oos]}</span>
+    <span class="k">validation:</span>
+      <span class="k">referential:</span>
+        - <span class="s">order_id resolves in dim_orders</span>
+      <span class="k">attribute:</span>
+        - <span class="s">dim_orders.status in ('placed','allocated')</span>   <span class="cm"># advisory snapshot claim</span>
+      <span class="k">stateful:</span>
+        - <span class="k">source_check:</span> <span class="s">order status in ('placed','allocated')</span>
+          <span class="k">when:</span> <span class="s">apply</span>                                   <span class="cm"># authoritative, at apply</span>
+    <span class="k">executor:</span>
+      <span class="k">module:</span> <span class="s">executors/oms_orders.py</span>
+      <span class="k">callable:</span> <span class="s">apply</span>
+    <span class="k">reconciliation:</span>
+      <span class="k">check:</span> <span class="s">checks/cancelled_orders_landed</span>
+      <span class="k">sla:</span> <span class="s">24h</span>
+</pre>
+<div class="code-caption">An Action Contract with one W2 and one W4 action</div>
+
+    <div class="p-body">
+      <p>Three constructs in these examples carry most of the weight:</p>
+      <p><strong>Actions target operations, never measures.</strong> There is no action called <code>adjust_net_revenue</code>, because net revenue is a computation, not a thing (<a href="problems.html#p2">P2</a>). The authoring litmus test: if an intent can only be phrased against a derived number, it is not yet a writable intent; it is a goal that decomposes into one or more real source operations.</p>
+      <p><strong>The <code>when: apply</code> construct.</strong> The same predicate appears twice with different authority: evaluated against the analytical snapshot at accept (<span class="tag adv">advisory</span>, cheap, catches most nonsense early) and against the source at apply (<span class="tag auth">authoritative</span>). Divergence between the two evaluations is recorded on the intent itself, which means the system <em>measures</em> its own staleness per action over time instead of guessing at it (<a href="problems.html#p1">P1</a>, <a href="problems.html#p6">P6</a>).</p>
+      <p><strong>The reconciliation reference.</strong> Every action names the check that will later confirm its effects became observable. An action without one draws a registration warning (<a href="#s4">Section 4</a>), because a write path that never verifies its own landing is a rumor mill.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ============ 4 WRITE CLASSES ============ -->
+  <section id="s4">
+    <span class="p-num">SECTION 04</span>
+    <h2>Write classes and the decision table<a class="anchor" href="#s4">#</a></h2>
+    <div class="p-body">
+      <p>Not all writes are the same risk, and the biggest single design error in write paths is treating them uniformly. Every action declares exactly one <strong>write class</strong>, and the class, not author preference, determines the legal routing and the mandatory controls. Authors can tighten (queue something that could run immediately); they can never loosen.</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>#</th><th>Write class</th><th>Definition</th><th>Examples</th><th>Staleness sensitivity</th><th>Default route</th><th>Mandatory controls</th></tr></thead>
+        <tbody>
+          <tr><td class="c">W1</td><td><strong>Append / create-new</strong></td><td>Creates a record that did not exist; conflicts impossible by construction</td><td>Create HR case; log supplier note; submit a PO <em>request</em>; create draft product</td><td>None</td><td><strong>Queue</strong></td><td>Idempotency key</td></tr>
+          <tr><td class="c">W2</td><td><strong>Slow attribute update</strong></td><td>Mutates an attribute whose real-world change rate far exceeds sync lag</td><td>Product description; cost-center reassignment; supplier contact; long-tail price</td><td>Low</td><td><strong>Queue</strong>, with declared freshness tolerance</td><td>Idempotency key; tolerance at least the measured sync lag of the backing dimensions</td></tr>
+          <tr><td class="c">W3</td><td><strong>Contended mutation</strong></td><td>Mutates state that other actors change concurrently within one sync window</td><td>Inventory adjustment; price during an active promotion; budget draw-down</td><td>High</td><td><strong>Immediate</strong> (the target API is the validator; the accept-time check is openly advisory), otherwise <strong>refuse</strong></td><td>Expected version, checked at apply time against the <em>source</em>, never the warehouse</td></tr>
+          <tr><td class="c">W4</td><td><strong>State transition</strong></td><td>Moves an entity along its lifecycle; legality depends on current state by definition</td><td>Cancel order; approve PO; initiate termination; close shipment</td><td>Definitional</td><td><strong>Queue</strong> + version check + approval tier</td><td>Expected version; human approval for irreversible or financial tiers</td></tr>
+          <tr><td class="c">W5</td><td><strong>Cross-system composite</strong></td><td>One business intent, side effects in two or more systems</td><td>Onboard employee (HR + directory + payroll); launch product (PIM + pricing + channel)</td><td>N/A</td><td><strong>Refuse.</strong> Decompose into W1..W4 intents; orchestration lives above this layer</td><td>None: the class is not accepted</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="p-body"><p>Routing is a function of three declared facts, nothing else:</p></div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig C · routing as a function</span><span>flow</span></div>
+      <pre class="mermaid">
+flowchart TD
+    S[Intent arrives] --> C{write_class}
+    C -->|W1 append| Q[QUEUE]
+    C -->|W2 slow attribute| T{freshness_tolerance ≥<br/>measured dim sync lag?}
+    T -->|yes| Q
+    T -->|no| RJ[REJECT at registration:<br/>author must reclassify as W3]
+    C -->|W3 contended| V{target system<br/>validates on its side?}
+    V -->|yes| IM[IMMEDIATE<br/>accept-time check = advisory]
+    V -->|no| RF[REFUSE:<br/>no authoritative validator exists]
+    C -->|W4 transition| A{risk_tier}
+    A -->|informational / reversible| QV[QUEUE + expected_version]
+    A -->|irreversible / financial| QA[QUEUE + expected_version<br/>+ human approval gate]
+    C -->|W5 composite| RF2[REFUSE:<br/>decompose, orchestrate above]
+      </pre>
+    </figure>
+
+    <div class="p-body">
+      <p>Two deliberate consequences of this shape. First, <strong>W2 misclassification is caught at registration, not at runtime</strong>: if the declared tolerance is tighter than the measured sync lag of the dimensions the validation reads, the action is really a contended mutation wearing a slow-update costume, and the contract is rejected before it can mislead anyone. Second, <strong>immediate mode exists only where a real validator exists downstream</strong>. It is a pass-through with an honest advisory check, never the platform pretending to enforce against stale state.</p>
+      <h3>Registration Rules</h3>
+      <p>The decision table is enforced when a contract is registered or loaded, as a set of mechanical checks. Errors block registration; warnings surface for review.</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Rule</th><th>Severity</th><th>Check</th></tr></thead>
+        <tbody>
+          <tr><td class="c">WR-001</td><td class="sev-err">error</td><td><code>write_class</code> is present and one of W1..W5</td></tr>
+          <tr><td class="c">WR-002</td><td class="sev-err">error</td><td>W3 and W4 actions declare an <code>expected_version</code> source field</td></tr>
+          <tr><td class="c">WR-003</td><td class="sev-err">error</td><td>W4 with risk tier irreversible or financial declares an approval gate</td></tr>
+          <tr><td class="c">WR-004</td><td class="sev-err">error</td><td><code>mode: immediate</code> requires write class W3 and a target that validates</td></tr>
+          <tr><td class="c">WR-005</td><td class="sev-err">error</td><td>The executor binding resolves to an importable module and callable</td></tr>
+          <tr><td class="c">WR-006</td><td class="sev-warn">warn</td><td>W2 freshness tolerance is less than twice the measured sync lag of referenced dimensions</td></tr>
+          <tr><td class="c">WR-007</td><td class="sev-warn">warn</td><td>The action lacks a reconciliation reference</td></tr>
+          <tr><td class="c">WR-008</td><td class="sev-err">error</td><td>W5 declared (refused: decompose, orchestrate above this layer)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="p-body">
+      <p>The rules are the decision table in executable form. A reviewer reading a contract and a machine registering it are checking the same things.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ============ 5 VALIDATION ============ -->
+  <section id="s5">
+    <span class="p-num">SECTION 05</span>
+    <h2>Validation: three tiers, three verdicts<a class="anchor" href="#s5">#</a></h2>
+    <div class="p-body">
+      <p>Validation at the Accept Service runs in three tiers, and naming the tiers prevents the failure mode where someone reads "validated" as "legal."</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Tier</th><th>What it checks</th><th>Where truth comes from</th><th>Authority</th><th>Answers</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Referential</strong></td>
+            <td>Do the intent's references hang together: does this product exist, does this currency apply to this region, does this order belong to this customer</td>
+            <td>Derived automatically from the semantic model's join graph</td>
+            <td><span class="tag adv">advisory</span> Verdicts are phrased as <strong>"resolves,"</strong> never "enforced." Declared joins are claims by an author; warehouses do not enforce referential integrity, and real tables carry orphans</td>
+            <td><a href="problems.html#p7">P7</a></td>
+          </tr>
+          <tr>
+            <td><strong>Attribute</strong></td>
+            <td>Declared predicates on the payload and on current dimension attributes: status is not discontinued, price is within bounds</td>
+            <td>The analytical snapshot at accept time</td>
+            <td><span class="tag adv">advisory</span> A claim about the snapshot, honest about its age</td>
+            <td><a href="problems.html#p1">P1</a></td>
+          </tr>
+          <tr>
+            <td><strong>Stateful</strong></td>
+            <td>Anything depending on contended current state: live status, inventory levels, in-flight promotions</td>
+            <td>The snapshot at accept, and the <strong>source system at apply</strong>, via the <code>when: apply</code> construct</td>
+            <td><span class="tag adv">advisory</span> at accept, <span class="tag auth">authoritative</span> at apply; the split <em>is</em> the correctness posture</td>
+            <td><a href="problems.html#p1">P1</a>, <a href="problems.html#p5">P5</a>, <a href="problems.html#p6">P6</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="p-body"><p>Verdicts come in three, because two is dishonest:</p></div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig D · three verdicts</span><span>flow</span></div>
+      <pre class="mermaid">
+flowchart LR
+    I[Intent] --> RV{Referential +<br/>attribute checks}
+    RV -->|all pass| ACC[ACCEPTED<br/>recorded, routed by mode]
+    RV -->|a check fails| REJ[REJECTED<br/>with the failing predicate named]
+    RV -->|"referenced entity may be<br/>newer than the dimension's<br/>last successful load"| UNV[UNVERIFIABLE<br/>policy decides: queue for<br/>re-validation at apply, or reject]
+      </pre>
+    </figure>
+
+    <div class="p-body">
+      <p>The third verdict exists because of <a href="problems.html#p4">P4</a>. A supplier onboarded this morning is fully real and completely invisible to the warehouse until the next sync. "Rejected" would be a confident lie, and agents encode confident lies as ground truth: they abandon legal tasks, report false failures, or retry in loops. The Accept Service compares the referenced entity against the dimension's <strong>sync watermark</strong> (the timestamp of its last successful load); if the entity could plausibly postdate it, the verdict is <code>unverifiable</code>, and policy decides whether such intents may queue for authoritative re-validation at apply time.</p>
+      <p>For effective-dated sources (<a href="problems.html#p6">P6</a>), one further rule: validation predicates are evaluated <strong>as of the intent's effective date</strong>, not as of now, and state transitions on such entities always re-read the source at apply, because in those systems the past itself is editable. The queue is the natural home for effective-dated intents: an intent recorded with its effective date can simply wait, and be applied when the world reaches it.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ============ 6 LEDGER ============ -->
+  <section id="s6">
+    <span class="p-num">SECTION 06</span>
+    <h2>The Intent Ledger<a class="anchor" href="#s6">#</a></h2>
+    <div class="p-body">
+      <p>The ledger is the architecture's center of gravity: an append-only record where every write request lands, whatever its fate. Conceptually, one row per intent, carrying:</p>
+      <ul>
+        <li><strong>identity</strong>: intent id, idempotency key, the acting principal and (where applicable) the approving human</li>
+        <li><strong>the request</strong>: action name, payload, effective date, expected version</li>
+        <li><strong>the adjudication</strong>: verdicts per validation tier, with the advisory and authoritative evaluations recorded separately</li>
+        <li><strong>the outcome</strong>: status, external reference returned by the source system, timestamps for every transition</li>
+      </ul>
+      <p>The ledger is three things at once. It is the <strong>queue</strong>: the Dispatch Worker drains accepted intents from it, applying intents that touch the same entity strictly in order (part of the answer to <a href="problems.html#p5">P5</a>). It is the <strong>audit trail</strong>: the complete, append-only history of what was asked, decided, approved, applied, and observed. And, exposed through the semantic layer as a readable entity (for example <code>pending_intents</code>), it is <strong>part of the read model</strong>, which is the move that answers <a href="problems.html#p9">P9</a>: an agent's verification read returns warehouse state <em>and</em> ledger state together, so "PLACED, with an applied cancellation awaiting sync" replaces the phantom failure.</p>
+      <p>Its status machine, in full:</p>
+    </div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig E · the intent status machine</span><span>state</span></div>
+      <pre class="mermaid">
+stateDiagram-v2
+    [*] --> received
+    received --> accepted: tiers pass, policy ok
+    received --> rejected: referential or attribute fail
+    received --> unverifiable: entity may postdate sync watermark
+    unverifiable --> accepted: policy allows queue-anyway
+    unverifiable --> rejected: policy denies
+    accepted --> awaiting_approval: approval gate
+    awaiting_approval --> accepted: approved
+    awaiting_approval --> rejected: denied or expired
+    accepted --> dispatched: worker or inline call
+    dispatched --> applied: source confirmed
+    dispatched --> rejected: source said no
+    dispatched --> failed: transport or system error
+    failed --> dispatched: retryable, attempts remain
+    failed --> quarantined: attempts exhausted
+    dispatched --> unknown: call sent, no response
+    unknown --> applied: reconciliation finds the effect
+    unknown --> failed: reconciliation finds nothing
+    applied --> reconciled: check confirms effect in warehouse
+    applied --> diverged: check SLA breached
+      </pre>
+    </figure>
+
+    <div class="p-body">
+      <p>Two states deserve the emphasis, because naive designs omit exactly these two and real integrations produce them daily. <strong><code>unverifiable</code></strong> is the honest answer to a snapshot that cannot know (<a href="#s5">Section 5</a>). <strong><code>unknown</code></strong> is the honest answer to a call that went out and never came back: the request may or may not have taken effect, and the only safe resolution is observation, not blind retry. <a href="#s9">Reconciliation</a> is what converts <code>unknown</code> into <code>applied</code> or <code>failed</code> based on evidence.</p>
+      <p>Implementation is deliberately unspecified here: any durable store with transactional row updates and ordered draining serves. What is <em>not</em> negotiable is the shape: append-only, one status machine, per-entity ordering, idempotency keys on every intent.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ============ 7 DELIVERY MODES ============ -->
+  <section id="s7">
+    <span class="p-num">SECTION 07</span>
+    <h2>Delivery modes: queued and immediate<a class="anchor" href="#s7">#</a></h2>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig F · two modes, one authoring surface</span><span>flow</span></div>
+      <pre class="mermaid">
+flowchart LR
+    subgraph QUEUED [Queued: the default]
+        L1[(Ledger)] --> DW[Dispatch Worker<br/>scheduled]
+        DW -->|"per-entity order,<br/>retry with backoff,<br/>quarantine after N"| E1[Executor]
+        E1 -->|"authoritative checks<br/>+ apply"| S1[Source]
+    end
+    subgraph IMMEDIATE [Immediate: the exception]
+        AS2[Accept Service] -->|"inline, caller waits"| E2[Executor]
+        E2 -->|"the target API<br/>is the validator"| S2[Source]
+        AS2 --> L2[(Ledger<br/>recorded either way)]
+    end
+      </pre>
+    </figure>
+
+    <div class="p-body">
+      <p><strong>Queued is the default</strong>, and most of the architecture's virtues live here. The Dispatch Worker drains accepted intents on a schedule, in per-entity order, with retry, backoff, and quarantine handled by the platform. The queue is what makes the correctness posture real: authority is deferred to apply time, where the source can answer. It is also what makes three whole problem families tractable:</p>
+      <ul>
+        <li><strong>Contention (<a href="problems.html#p5">P5</a>):</strong> intents carrying an <code>expected_version</code> are checked at apply against the source; if the world moved past the version the caller believed in, the intent fails loudly instead of winning silently. Where the business allows it, the stronger move is designing the action itself as an append or an event ("record an adjustment of minus 30") rather than a level-set ("set on-hand to 70"), because commutative writes cannot lose updates at all.</li>
+        <li><strong>Effective dating (<a href="problems.html#p6">P6</a>):</strong> an intent recorded with a future effective date waits in the queue and applies when the world reaches it. Deferred application stops being a workaround and becomes a feature.</li>
+        <li><strong>Approval (risk tiers):</strong> a queued intent can sit in <code>awaiting_approval</code> indefinitely without holding any caller hostage. Human gates and synchronous calls do not mix; human gates and queues do.</li>
+      </ul>
+      <p><strong>Immediate exists only where a real validator exists downstream</strong> (write class W3 with a target that validates). It is a pass-through: the Accept Service runs its advisory checks, records the intent, invokes the Executor inline, and returns the source's answer to the waiting caller. What immediate mode does <em>not</em> give you is worth a plain sentence: it provides no stronger correctness than the target API itself provides. It also concentrates every hard operational problem in one place: synchronous latency budgets, mid-call failure with unknown outcome (the <code>unknown</code> state exists largely because of this mode), and the awkward theatre of the platform's advisory check disagreeing with the source's authoritative one while the caller watches. In any rollout, immediate mode comes last, smallest, and most reluctantly.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ============ 8 EXECUTOR ============ -->
+  <section id="s8">
+    <span class="p-num">SECTION 08</span>
+    <h2>The author handover: the Executor Module<a class="anchor" href="#s8">#</a></h2>
+    <div class="p-body">
+      <p>Everything so far is platform machinery. The Executor Module is where an author, the person who owns the action, takes over. It is deliberately small: one Python function with a strict contract.</p>
+    </div>
+
+<pre class="code">
+<span class="cm"># executors/oms_orders.py</span>
+<span class="k">from</span> writepath <span class="k">import</span> Intent, ExecutorContext, Outcome
+
+<span class="k">def</span> apply(intent: Intent, ctx: ExecutorContext) -> Outcome:
+    <span class="cm">"""
+    Contract:
+      - MUST be idempotent on intent.idempotency_key: pass it to the
+        target if the API supports it; otherwise check-before-write.
+      - MUST NOT read the warehouse to decide legality; the source is
+        the validator here. ctx.source gives an authenticated client.
+      - MUST return one of:
+          Outcome.applied(external_ref=...),
+          Outcome.rejected(code=..., detail=...),   # the source said no
+          Outcome.failed(retryable=True|False, ...) # transport / system error
+          Outcome.unknown(...)                      # sent, no response
+      - MUST NOT raise for business rejections; raise only for bugs.
+    """</span>
+    order = ctx.source.oms.get_order(intent.payload[<span class="s">"order_id"</span>])
+    <span class="k">if</span> order.status <span class="k">not in</span> (<span class="s">"placed"</span>, <span class="s">"allocated"</span>):
+        <span class="k">return</span> Outcome.rejected(code=<span class="s">"ILLEGAL_STATE"</span>,
+                                detail=f<span class="s">"order is {order.status}"</span>)
+
+    resp = ctx.source.oms.cancel_order(
+        order_id=intent.payload[<span class="s">"order_id"</span>],
+        reason=intent.payload[<span class="s">"reason"</span>],
+        idempotency_key=intent.idempotency_key,
+    )
+    <span class="k">return</span> Outcome.applied(external_ref=resp.cancellation_id)
+</pre>
+<div class="code-caption">The one function an author writes</div>
+
+    <div class="p-body">
+      <p>The four outcomes are the whole vocabulary between author and platform. <code>applied</code> carries the source's reference. <code>rejected</code> is a <em>business</em> no from the source and is final. <code>failed</code> is a transport or system error, and the author says whether retrying makes sense. <code>unknown</code> is the honest answer when a call went out and nothing came back; the platform parks it for reconciliation instead of retrying blind. Business rejections return; only bugs raise.</p>
+    </div>
+
+    <div class="rule big">
+      <span class="label">The rule that keeps this safe</span>
+      <p>The Executor Module is plain Python, loaded and invoked by the write runtime. It is never an interval-scheduled pipeline model.</p>
+    </div>
+
+    <div class="p-body">
+      <p>The reasoning is <a href="problems.html#p8">P8</a> in one paragraph. Analytical pipelines re-run by design: restatement and backfill re-execute past intervals, and that is the read side's superpower. Any side effect embedded in a pipeline re-fires when the pipeline re-runs, and the duplicates land in the outside world (a re-booked truck, a re-sent offer letter, a re-issued coupon) where nobody is checking. The Executor therefore fires only for ledger rows in <code>accepted</code> status, and every external call is keyed on the intent's idempotency key. A restatement re-runs pipelines, finds no new accepted intents, and is a no-op against the world <em>by construction</em>, not by discipline.</p>
+      <p>What the platform guarantees around <code>apply</code>, so authors never rebuild it: per-entity ordering, retry with backoff for retryable failures, quarantine after exhausted attempts, parking of <code>unknown</code> outcomes for reconciliation, authenticated source connections and secrets through <code>ctx</code>, and structured logging of every invocation against the intent row.</p>
+      <p>What the platform explicitly does <strong>not</strong> do: compensation. There are no automatic rollbacks and no multi-step sagas. Cross-system compensating transactions are a graveyard of good intentions; the moment "undo" is automatic, its failure modes multiply faster than its successes. If an author needs a reverse, they declare a <em>separate action</em> that is the business-level reverse (an order un-hold, a credit memo), and it travels through the same ledger with the same controls. The buyer fear behind irreversibility is answered by the proposal and approval gates in front of the write, not by promises of magic behind it.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ============ 9 RECONCILIATION ============ -->
+  <section id="s9">
+    <span class="p-num">SECTION 09</span>
+    <h2>Reconciliation: closing the loop<a class="anchor" href="#s9">#</a></h2>
+    <div class="p-body">
+      <p>Applying a write is a claim; reconciliation is the evidence. Each action names a <strong>Reconciliation Check</strong>: a scheduled comparison between the ledger and the synced analytical tables, asking one question: <em>for every intent marked applied longer ago than the SLA, is its expected effect now observable?</em></p>
+    </div>
+
+    <figure class="diagram">
+      <div class="chrome"><span>Fig G · the reconciliation loop</span><span>flow</span></div>
+      <pre class="mermaid">
+flowchart LR
+    L[(Intent Ledger:<br/>applied intents,<br/>older than SLA)] --> RC{Reconciliation Check<br/>scheduled, author-owned}
+    W[(Warehouse:<br/>synced state)] --> RC
+    RC -->|effect observable| OK[status: reconciled]
+    RC -->|effect absent| DV[status: diverged<br/>routed to a human]
+    U[(unknown outcomes)] --> RC
+    RC -->|effect found| UA[unknown → applied]
+    RC -->|nothing found| UF[unknown → failed]
+      </pre>
+    </figure>
+
+    <div class="p-body">
+      <p>Reconciliation does three jobs with one mechanism. It <strong>closes the audit loop</strong>: <code>applied</code> becomes <code>reconciled</code> on evidence, or <code>diverged</code> on an SLA breach, and divergences are routed to a human with the full intent history attached. It <strong>resolves the <code>unknown</code> state</strong>: the call that never answered is settled by observation rather than by guesswork or blind retry. And it <strong>feeds the system's self-knowledge</strong>: divergence rates and advisory-versus-authoritative disagreement rates per action are exactly the data that tunes each action's freshness tolerance (<a href="problems.html#p1">P1</a>) and exposes which contracts were classified optimistically.</p>
+      <p>The check itself is authored beside the contract, versioned in the same repository, reviewed in the same pull request. A write path whose landing is never verified is a rumor mill; this is the component that keeps it a system of record.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ============ 10 TRACEABILITY ============ -->
+  <section id="s10">
+    <span class="p-num">SECTION 10</span>
+    <h2>Problem-to-solution traceability<a class="anchor" href="#s10">#</a></h2>
+    <div class="p-body">
+      <p>The <a href="problems.html#map">problems paper closes with a map</a>; this is its mirror. The residual-risk column is deliberate: a reference architecture that claims zero residuals is selling something.</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>Problem</th><th>Answered by</th><th>Mechanism</th><th>Residual risk</th></tr></thead>
+        <tbody>
+          <tr><td class="c"><a href="problems.html#p1">P1 · Sync lag</a></td><td>Design stance; validation tiers; freshness tolerance; reconciliation</td><td>Advisory accept-check, authoritative apply-check; declared per-action tolerance; measured divergence</td><td>The advisory layer will sometimes accept what apply rejects; the rejection rate is managed, not zero</td></tr>
+          <tr><td class="c"><a href="problems.html#p2">P2 · Transformation inversion</a></td><td>Action Contract</td><td>Actions target source operations, never measures; the litmus test at authoring time</td><td>Goals phrased against derived numbers must be decomposed by a human or an upstream planner</td></tr>
+          <tr><td class="c"><a href="problems.html#p3">P3 · Identity / SCD2 keys</a></td><td>Action Contract key mapping</td><td>Surrogate resolved through the current row to the natural key; intents recorded on natural keys</td><td>Entities whose merged identities cannot name a surviving source key are not authorable</td></tr>
+          <tr><td class="c"><a href="problems.html#p4">P4 · Late-arriving entities</a></td><td>Three-verdict validation</td><td>Sync-watermark comparison; <code>unverifiable</code> verdict; re-validation at apply</td><td>Policy must still choose between queuing unverifiable intents and rejecting them; both have costs</td></tr>
+          <tr><td class="c"><a href="problems.html#p5">P5 · Lost update</a></td><td>Write classes W3/W4; ledger ordering; delivery modes</td><td><code>expected_version</code> checked at apply against the source; per-entity serial application; prefer append/commutative designs</td><td>Actions that cannot carry a version and cannot be made commutative are refused, not solved</td></tr>
+          <tr><td class="c"><a href="problems.html#p6">P6 · Effective dating</a></td><td>Validation as-of effective date; queued delivery</td><td>Predicates evaluated as of the intent's effective date; W4 re-reads the source at apply; intents wait for their date</td><td>Retroactive entries after apply can still rewrite the base a past intent used; reconciliation surfaces it, nothing prevents it</td></tr>
+          <tr><td class="c"><a href="problems.html#p7">P7 · Declared joins</a></td><td>Referential tier vocabulary</td><td>"Resolves," never "enforced"; advisory tier only</td><td>A resolving reference can still be operationally invalid; the source's verdict at apply is the backstop</td></tr>
+          <tr><td class="c"><a href="problems.html#p8">P8 · Restatement</a></td><td>Two-runtime split; the Executor rule</td><td>Side effects only from accepted ledger rows, keyed on idempotency; never inside scheduled pipelines</td><td>None by construction, provided the rule is enforced at registration (WR-005) and in review</td></tr>
+          <tr><td class="c"><a href="problems.html#p9">P9 · Read-your-writes</a></td><td>Ledger in the read model; idempotent accept</td><td><code>pending_intents</code> readable beside warehouse state; duplicate submissions absorbed by idempotency keys</td><td>Callers that read only the warehouse and ignore the ledger still see the gap; the contract's read guidance must say so</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ============ 11 ADOPTION ============ -->
+  <section id="s11">
+    <span class="p-num">SECTION 11</span>
+    <h2>Adoption sequence<a class="anchor" href="#s11">#</a></h2>
+    <div class="p-body">
+      <p>The order is chosen so that each phase proves something the next one depends on.</p>
+      <ol>
+        <li><strong>Ledger, Accept Service, W1 only.</strong> Append and create-new actions: referential and attribute validation, queue, dispatch, one executor. No versions, no approvals, no contention risk by construction. This proves the loop end to end.</li>
+        <li><strong>W2 with freshness tolerance, plus Reconciliation Checks.</strong> The first real staleness handling, and the point where the system starts <em>measuring</em> sync lag and divergence instead of assuming them.</li>
+        <li><strong>W4 with expected version and approval gates.</strong> The capability people actually want to see: an irreversible action proposed by an agent, gated by a human, applied by the queue, confirmed by reconciliation.</li>
+        <li><strong>W3 immediate, as a pass-through where the target validates.</strong> Last, smallest, and most reluctantly, for the reasons in <a href="#s7">Section 7</a>.</li>
+      </ol>
+      <p>W5 stays out at every phase. Composite cross-system intents decompose into W1..W4, and their orchestration is a different layer with different tools. A write path that stays narrow stays trustworthy.</p>
+    </div>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  <!-- ============ GLOSSARY ============ -->
+  <section id="glossary">
+    <span class="p-num">REFERENCE</span>
+    <h2>Glossary<a class="anchor" href="#glossary">#</a></h2>
+    <dl class="gloss">
+      <div id="g-contract"><dt>Action Contract</dt><dd>The versioned, reviewable declaration of allowed mutations, bound to a semantic entity: actions, input schemas, write classes, validation predicates, executor binding, reconciliation reference.</dd></div>
+      <div id="g-accept"><dt>Accept Service</dt><dd>The platform component that receives a write intent, runs advisory validation, records the intent, and (in immediate mode) invokes the Executor inline.</dd></div>
+      <div id="g-ledger"><dt>Intent Ledger</dt><dd>The append-only record of every write intent: payload, actor, verdicts, status, and outcome. Simultaneously the queue, the audit trail, and (exposed as a readable entity) part of the read model.</dd></div>
+      <div id="g-executor"><dt>Executor Module</dt><dd>The author-owned Python function that performs the real-world call against the source system. Fires only for accepted ledger rows; never part of a scheduled pipeline.</dd></div>
+      <div id="g-dispatch"><dt>Dispatch Worker</dt><dd>The scheduled platform component that drains accepted intents from the ledger in per-entity order and invokes the Executor.</dd></div>
+      <div id="g-recon"><dt>Reconciliation Check</dt><dd>The scheduled, author-owned comparison of applied intents against synced analytical state; resolves <code>unknown</code>, confirms <code>reconciled</code>, flags <code>diverged</code>.</dd></div>
+      <div id="g-classes"><dt>Write class (W1..W5)</dt><dd>The taxonomy that determines routing and controls: append/create, slow attribute update, contended mutation, state transition, cross-system composite (refused).</dd></div>
+      <div id="g-risk"><dt>Risk tier</dt><dd>Informational, reversible, irreversible, financial. Higher tiers force approval gates.</dd></div>
+      <div id="g-freshness"><dt>Freshness tolerance</dt><dd>A per-action declaration of how stale the validating snapshot may be for validation to remain meaningful; checked against measured sync lag at registration.</dd></div>
+      <div id="g-version"><dt>Expected version</dt><dd>The version of the entity the caller believed it was acting on, checked at apply time against the source.</dd></div>
+      <div id="g-idem"><dt>Idempotency key</dt><dd>A unique key per intent making retries and re-deliveries produce one effect.</dd></div>
+      <div id="g-watermark"><dt>Sync watermark</dt><dd>The timestamp of a dimension's last successful load; the basis of the <code>unverifiable</code> verdict.</dd></div>
+      <div id="g-rules"><dt>Registration Rules (WR-xxx)</dt><dd>Mechanical checks run when a contract is registered; the decision table in executable form.</dd></div>
+      <div id="g-authority"><dt>Advisory / authoritative</dt><dd>The two authority levels of validation: claims about the analytical snapshot, and the source system's answer at apply time.</dd></div>
+    </dl>
+    <a class="backtop" href="#top">Back to top ↑</a>
+  </section>
+
+  </main>
+</div>
+
+<footer>
+  Governed Write-Back: A Reference Architecture · answers <a href="problems.html">Real-World Data Problems for Write-Back</a> · Internal working paper.
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.3/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'neutral',
+    fontFamily: "'IBM Plex Sans', sans-serif",
+    themeVariables: {
+      fontSize: '14px',
+      primaryColor: '#EEF0E9',
+      primaryBorderColor: '#8B958F',
+      primaryTextColor: '#1B2422',
+      lineColor: '#5B6663',
+      actorBkg: '#FFFFFF',
+      actorBorder: '#8B958F',
+      actorTextColor: '#1B2422',
+      noteBkgColor: '#F4E9E1',
+      noteBorderColor: '#C9A78F',
+      noteTextColor: '#1B2422',
+      signalColor: '#1B2422',
+      signalTextColor: '#1B2422',
+      clusterBkg: '#FBFCF9',
+      clusterBorder: '#D9DDD3',
+      edgeLabelBackground: '#FFFFFF'
+    },
+    sequence: { actorMargin: 40, width: 160, mirrorActors: false },
+    flowchart: { htmlLabels: true, curve: 'basis' }
+  });
+
+  // TOC active-state highlighting
+  (function () {
+    var links = document.querySelectorAll('nav.toc a[href^="#"]');
+    var map = {};
+    links.forEach(function (a) {
+      var id = a.getAttribute('href').slice(1);
+      var el = document.getElementById(id);
+      if (el) map[id] = a;
+    });
+    if (!('IntersectionObserver' in window)) return;
+    var current = null;
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          if (current) current.classList.remove('active');
+          current = map[e.target.id];
+          if (current) current.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px' });
+    Object.keys(map).forEach(function (id) {
+      obs.observe(document.getElementById(id));
+    });
+  })();
+</script>
+</body>
+</html>
