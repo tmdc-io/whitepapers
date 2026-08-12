@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Prostate &amp; Hernia — A Visual Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F3F6F7; --panel:#FFFFFF; --ink:#182732; --ink-soft:#4A5B66; --ink-faint:#7C8B94;
+  --rose:#B44A62; --rose-pale:#F6E7EB; --rose-deep:#7E2F42;
+  --teal:#0E6B5C; --teal-pale:#E3F0ED; --teal-deep:#0A4A40;
+  --amber:#A66A12; --amber-pale:#FAF0DE; --amber-deep:#6E4508;
+  --hairline:#D6DEE2;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:'Source Sans 3',sans-serif;font-size:17px;line-height:1.75}
+.wrap{max-width:760px;margin:0 auto;padding:0 24px 96px}
+header{padding:72px 0 48px;border-bottom:1px solid var(--hairline)}
+.eyebrow{font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+h1{font-family:'Fraunces',serif;font-weight:500;font-size:clamp(34px,6vw,52px);line-height:1.12;margin:14px 0 18px}
+.lede{font-size:19px;color:var(--ink-soft);max-width:58ch}
+h2{font-family:'Fraunces',serif;font-weight:500;font-size:30px;margin:72px 0 8px;line-height:1.2}
+h3{font-family:'Fraunces',serif;font-weight:500;font-size:21px;margin:40px 0 10px}
+.part-label{font-size:12px;letter-spacing:0.18em;text-transform:uppercase;font-weight:600;margin-top:72px}
+.part-label.rose{color:var(--rose)}
+.part-label.teal{color:var(--teal)}
+h2 + p, h3 + p{margin-top:6px}
+p{margin:16px 0;max-width:66ch}
+p.tight{margin-top:6px}
+.figure{background:var(--panel);border:1px solid var(--hairline);border-radius:10px;margin:32px 0;overflow:hidden}
+.figure svg{display:block;width:100%;height:auto}
+.figcap{padding:14px 20px;border-top:1px solid var(--hairline);font-size:13.5px;color:var(--ink-soft);line-height:1.6}
+.figcap b{font-weight:600;color:var(--ink);letter-spacing:0.06em;text-transform:uppercase;font-size:12px;margin-right:8px}
+.note{border-left:3px solid var(--amber);background:var(--amber-pale);padding:16px 20px;border-radius:0 8px 8px 0;margin:28px 0}
+.note p{margin:0;color:var(--amber-deep);font-size:15.5px}
+.note p b{color:var(--amber-deep)}
+table{width:100%;border-collapse:collapse;margin:28px 0;font-size:15px;background:var(--panel);border:1px solid var(--hairline);border-radius:10px;overflow:hidden}
+th{text-align:left;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;padding:12px 16px;border-bottom:1px solid var(--hairline)}
+td{padding:12px 16px;border-bottom:1px solid var(--hairline);vertical-align:top;line-height:1.55}
+tr:last-child td{border-bottom:none}
+td:first-child{font-weight:600;white-space:nowrap}
+.steps{counter-reset:step;margin:24px 0;padding:0;list-style:none}
+.steps li{counter-increment:step;position:relative;padding:0 0 22px 52px;max-width:66ch}
+.steps li::before{content:counter(step);position:absolute;left:0;top:1px;width:30px;height:30px;border-radius:50%;background:var(--teal-pale);color:var(--teal-deep);font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center}
+.steps li::after{content:"";position:absolute;left:14.5px;top:36px;bottom:4px;width:1px;background:var(--hairline)}
+.steps li:last-child::after{display:none}
+.steps b{font-weight:600}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:28px 0}
+.compare .card{background:var(--panel);border:1px solid var(--hairline);border-radius:10px;padding:20px 22px}
+.card h4{font-family:'Fraunces',serif;font-weight:500;font-size:18px;margin-bottom:8px}
+.card p{font-size:15px;margin:8px 0;color:var(--ink-soft)}
+.card .tag{display:inline-block;font-size:11.5px;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:99px;margin-bottom:10px}
+.tag.rose{background:var(--rose-pale);color:var(--rose-deep)}
+.tag.teal{background:var(--teal-pale);color:var(--teal-deep)}
+footer{margin-top:88px;padding-top:24px;border-top:1px solid var(--hairline);font-size:14px;color:var(--ink-faint);max-width:66ch}
+@media(max-width:640px){.compare{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:no-preference){.figure{animation:rise .5s ease both}@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Patient anatomy reference</div>
+  <h1>The prostate &amp; the hernia</h1>
+  <p class="lede">Two unrelated conditions that get confused because both appear in men, both involve the lower abdomen, and both eventually raise the question of surgery. One is a gland problem. The other is a plumbing-wall problem.</p>
+</header>
+
+<div class="part-label rose">Part one</div>
+<h2>The prostate</h2>
+<p class="tight">The prostate is a gland roughly the size and shape of a walnut, weighing 20–25 grams in a healthy adult. It sits in a crowded neighbourhood: directly beneath the bladder, in front of the rectum, and wrapped around the first stretch of the urethra, the tube that drains urine from the bladder out through the penis.</p>
+<p>Its job is reproductive. It produces about a third of the fluid in semen, a slightly alkaline liquid that nourishes sperm and helps them survive the acidic environment of the vagina. During ejaculation the prostate's muscle fibres contract and squeeze this fluid into the urethra, where it mixes with sperm arriving from the testes.</p>
+
+<div class="figure">
+<svg viewBox="0 0 720 460" role="img" aria-label="Cross-section of male pelvis showing bladder, prostate, urethra and rectum">
+  <ellipse cx="230" cy="120" rx="130" ry="85" fill="#F6E7EB" stroke="#B44A62" stroke-width="1.2"/>
+  <text x="230" y="112" text-anchor="middle" font-family="Fraunces,serif" font-size="19" fill="#7E2F42">Bladder</text>
+  <text x="230" y="136" text-anchor="middle" font-size="13.5" fill="#B44A62">stores urine</text>
+  <rect x="216" y="203" width="28" height="257" fill="#FAF0DE"/>
+  <line x1="216" y1="203" x2="216" y2="460" stroke="#A66A12" stroke-width="1"/>
+  <line x1="244" y1="203" x2="244" y2="460" stroke="#A66A12" stroke-width="1"/>
+  <ellipse cx="230" cy="290" rx="88" ry="66" fill="#E9D4EE" stroke="#7A4E8C" stroke-width="1.2"/>
+  <rect x="217" y="226" width="26" height="128" fill="#FAF0DE" opacity="0.85"/>
+  <line x1="217" y1="226" x2="217" y2="354" stroke="#A66A12" stroke-width="0.7"/>
+  <line x1="243" y1="226" x2="243" y2="354" stroke="#A66A12" stroke-width="0.7"/>
+  <text x="230" y="270" text-anchor="middle" font-family="Fraunces,serif" font-size="18" fill="#4A2757">Prostate</text>
+  <text x="230" y="292" text-anchor="middle" font-size="12.5" fill="#7A4E8C">wraps the</text>
+  <text x="230" y="308" text-anchor="middle" font-size="12.5" fill="#7A4E8C">urethra</text>
+  <ellipse cx="560" cy="290" rx="70" ry="110" fill="#EEF1F0" stroke="#7C8B94" stroke-width="1"/>
+  <text x="560" y="284" text-anchor="middle" font-family="Fraunces,serif" font-size="17" fill="#4A5B66">Rectum</text>
+  <text x="560" y="306" text-anchor="middle" font-size="12.5" fill="#7C8B94">exam access</text>
+  <line x1="490" y1="290" x2="322" y2="290" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+  <line x1="246" y1="420" x2="380" y2="420" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+  <text x="388" y="416" font-size="13.5" fill="#4A5B66">Urethra continues to</text>
+  <text x="388" y="433" font-size="13.5" fill="#4A5B66">exit the body</text>
+  <line x1="246" y1="180" x2="380" y2="150" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+  <text x="388" y="146" font-size="13.5" fill="#4A5B66">Bladder neck: urine enters</text>
+  <text x="388" y="163" font-size="13.5" fill="#4A5B66">the urethra here</text>
+</svg>
+<div class="figcap"><b>Fig. 1</b>Sagittal (side) view of the male pelvis. The urethra passes straight through the middle of the prostate, which is why prostate enlargement causes urinary symptoms. The rectum sits directly behind, which is why a doctor can assess the gland by digital rectal exam.</div>
+</div>
+
+<h3>Why location is destiny</h3>
+<p>Everything that goes wrong with the prostate goes wrong because of where it sits. The gland forms a ring around the urethra. When it grows, it has nowhere to expand except inward, narrowing the channel. Think of a fist slowly tightening around a drinking straw: the straw still works, but you have to suck harder, less gets through, and you never quite empty the glass.</p>
+
+<h3>The three things that go wrong</h3>
+<table>
+<tr><th>Condition</th><th>What it is</th><th>Who gets it</th></tr>
+<tr><td>BPH</td><td>Benign prostatic hyperplasia. Non-cancerous growth of the inner zone of the gland. By far the most common: roughly half of men over 50 and up to 90% of men over 80 have some degree of it.</td><td>Older men; risk climbs steadily with age</td></tr>
+<tr><td>Prostatitis</td><td>Inflammation of the gland, sometimes bacterial, often not. Causes pelvic pain, burning urination, sometimes fever. The one prostate problem common in younger men.</td><td>Any age; commonest urological diagnosis in men under 50</td></tr>
+<tr><td>Prostate cancer</td><td>Malignant growth, usually starting in the outer zone (which is why it often causes no urinary symptoms early on). Typically slow-growing; many men die with it, not from it. Screened via PSA blood test.</td><td>Risk rises after 50; earlier with family history</td></tr>
+</table>
+
+<h3>Symptoms of an enlarged prostate</h3>
+<p>The classic BPH picture: a weak or interrupted stream, straining to start, dribbling at the end, the feeling of never fully emptying, and getting up two or three times a night to urinate (nocturia). Symptoms are scored on a standard questionnaire (IPSS) that also guides treatment decisions.</p>
+<p>Treatment is a ladder. Mild symptoms get watchful waiting and lifestyle changes (less evening fluid, less caffeine). Moderate symptoms get medication: alpha-blockers like tamsulosin relax the muscle at the bladder neck within days, while 5-alpha-reductase inhibitors like finasteride shrink the gland itself over months. Surgery enters when medication stops working, or when complications appear: recurrent urine retention, bladder stones, repeated infections, or kidney strain from chronic back-pressure.</p>
+
+<div class="part-label teal">Part one, continued</div>
+<h2>Prostate surgery in detail</h2>
+<p class="tight">The workhorse operation for BPH is the TURP: transurethral resection of the prostate. It's been the gold standard for decades and everything newer is measured against it. The elegant part is that there's no external cut at all; the surgeon works entirely through the urethra.</p>
+
+<h3>TURP, step by step</h3>
+<ol class="steps">
+<li><b>Anaesthesia.</b> Spinal (numb from the waist down, awake) or general. Spinal is common because it's safer for older patients and lets the team monitor for a rare complication called TUR syndrome.</li>
+<li><b>The resectoscope goes in.</b> A thin instrument, about the width of a pen, is passed up the urethra. It carries a camera, a light, irrigation fluid channels, and an electrified wire loop at the tip.</li>
+<li><b>Trimming the obstruction.</b> The surgeon uses the wire loop to shave away the inner, overgrown part of the prostate in small chips, like coring an apple from the inside while leaving the outer shell intact. The outer capsule of the gland stays; only the tissue choking the urethra is removed.</li>
+<li><b>Flushing and sealing.</b> The chips are washed out through the scope and sent to pathology (occasionally they reveal unsuspected cancer). Bleeding points are cauterised with the same loop.</li>
+<li><b>Catheter.</b> A catheter stays in for 1–3 days, often with continuous bladder irrigation to keep the urine clear of clots while the raw surface heals.</li>
+</ol>
+
+<div class="figure">
+<svg viewBox="0 0 720 420" role="img" aria-label="TURP procedure: resectoscope passed through the urethra removes inner prostate tissue">
+  <ellipse cx="360" cy="170" rx="200" ry="140" fill="#E9D4EE" stroke="#7A4E8C" stroke-width="1.3"/>
+  <text x="360" y="66" text-anchor="middle" font-size="13" fill="#7A4E8C">Outer capsule stays intact</text>
+  <ellipse cx="360" cy="185" rx="120" ry="85" fill="#F6E7EB" stroke="#B44A62" stroke-width="1" stroke-dasharray="5 4"/>
+  <text x="360" y="120" text-anchor="middle" font-size="13" fill="#7E2F42">Overgrown inner tissue: removed in chips</text>
+  <rect x="336" y="150" width="48" height="270" rx="6" fill="#E3F0ED" stroke="#0E6B5C" stroke-width="1.2"/>
+  <text x="360" y="390" text-anchor="middle" font-size="12.5" fill="#0A4A40">urethra</text>
+  <rect x="350" y="200" width="20" height="220" rx="10" fill="#0E6B5C"/>
+  <path d="M360 200 C 340 185, 340 165, 360 158 C 380 165, 380 185, 360 200 Z" fill="none" stroke="#0A4A40" stroke-width="2.5"/>
+  <line x1="372" y1="240" x2="500" y2="240" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+  <text x="508" y="236" font-size="13.5" fill="#4A5B66">Resectoscope: camera,</text>
+  <text x="508" y="253" font-size="13.5" fill="#4A5B66">irrigation, wire loop</text>
+  <line x1="368" y1="170" x2="500" y2="150" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+  <text x="508" y="146" font-size="13.5" fill="#4A5B66">Electrified loop shaves</text>
+  <text x="508" y="163" font-size="13.5" fill="#4A5B66">tissue from inside</text>
+  <circle cx="300" cy="160" r="5" fill="#B44A62"/>
+  <circle cx="320" cy="140" r="4" fill="#B44A62"/>
+  <circle cx="285" cy="185" r="4.5" fill="#B44A62"/>
+  <line x1="292" y1="172" x2="180" y2="172" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+  <text x="172" y="160" text-anchor="end" font-size="13.5" fill="#4A5B66">Tissue chips,</text>
+  <text x="172" y="177" text-anchor="end" font-size="13.5" fill="#4A5B66">flushed out and</text>
+  <text x="172" y="194" text-anchor="end" font-size="13.5" fill="#4A5B66">sent to pathology</text>
+</svg>
+<div class="figcap"><b>Fig. 2</b>TURP in cross-section. The instrument enters through the urethra with no external incision. Only the inner overgrowth is removed; the outer capsule of the prostate remains. The channel it leaves behind lets urine flow freely again.</div>
+</div>
+
+<h3>Recovery and what to expect after TURP</h3>
+<p>Hospital stay is typically 1–2 nights. Expect blood-tinged urine for a couple of weeks and some urgency while the bladder recalibrates. Most men are back to desk work in about two weeks; heavy lifting waits 4–6 weeks. Symptom relief is usually dramatic and durable, with 10–15 years before any re-treatment is commonly needed.</p>
+<p>The side effect worth knowing about in advance: retrograde ejaculation. In most men after TURP, semen flows backward into the bladder during orgasm instead of out (it's harmlessly passed with urine later). Orgasm sensation is generally preserved and erections are usually unaffected, but fertility is reduced, which matters if you're planning children. Urinary incontinence and erectile dysfunction are uncommon after TURP, unlike after cancer surgery.</p>
+
+<h3>The newer alternatives</h3>
+<table>
+<tr><th>Procedure</th><th>How it works</th><th>Best suited for</th></tr>
+<tr><td>HoLEP</td><td>Holmium laser enucleation. A laser peels the entire inner adenoma off the capsule in one piece, which is then morcellated in the bladder and removed. Less bleeding than TURP, works on very large glands.</td><td>Large prostates (&gt;80g); patients on blood thinners</td></tr>
+<tr><td>UroLift</td><td>Tiny permanent implants pin the obstructing lobes apart like tying back curtains. No tissue removed. Preserves ejaculation. Often done as a day case under sedation.</td><td>Smaller glands; men who want to preserve ejaculatory function</td></tr>
+<tr><td>Rezum</td><td>Steam injections destroy excess tissue, which the body reabsorbs over ~3 months. Minimally invasive, preserves sexual function, but relief is gradual.</td><td>Small-to-moderate glands; office-based option</td></tr>
+<tr><td>Radical prostatectomy</td><td>Removal of the entire gland, almost always robot-assisted (da Vinci) through small keyhole ports. This is a cancer operation, not a BPH operation. The urethra is rejoined to the bladder; nerve bundles controlling erections are spared where the tumour allows.</td><td>Localised prostate cancer in men fit for surgery</td></tr>
+</table>
+
+<div class="note"><p><b>Don't confuse the two operations.</b> TURP removes the inner blockage and treats symptoms; the prostate itself stays. Radical prostatectomy removes the whole gland and treats cancer. Their risk profiles are completely different: incontinence and erectile dysfunction are real considerations after radical prostatectomy, and rare after TURP.</p></div>
+
+<div class="part-label rose">Part two</div>
+<h2>The hernia</h2>
+<p class="tight">A hernia has nothing to do with glands. It's a structural failure: your abdominal wall is a layered sheet of muscle and connective tissue that holds the intestines in under constant pressure, and a hernia is what happens when that wall develops a gap. Whatever is behind the wall (usually a loop of intestine or a knuckle of fatty tissue) pushes through the gap and bulges under the skin.</p>
+<p>The physics is simple. Every cough, lift, and strain spikes the pressure inside your abdomen. A healthy wall distributes that pressure evenly. A wall with a weak point concentrates it there, and pressure always finds the weak point. Once tissue has pushed through, the gap tends to stretch, which is why hernias grow over time and never heal on their own. Muscle gaps don't knit themselves closed.</p>
+
+<div class="figure">
+<svg viewBox="0 0 720 430" role="img" aria-label="Mechanism of a hernia: intestine pushing through a defect in the abdominal wall">
+  <text x="130" y="48" font-size="13" fill="#7C8B94" letter-spacing="1">INSIDE THE ABDOMEN</text>
+  <text x="500" y="48" font-size="13" fill="#7C8B94" letter-spacing="1">OUTSIDE (UNDER SKIN)</text>
+  <rect x="330" y="70" width="52" height="130" rx="8" fill="#F0C9A8" stroke="#A66A12" stroke-width="1.2"/>
+  <rect x="330" y="290" width="52" height="130" rx="8" fill="#F0C9A8" stroke="#A66A12" stroke-width="1.2"/>
+  <line x1="440" y1="70" x2="440" y2="420" stroke="#D6DEE2" stroke-width="1" stroke-dasharray="6 5"/>
+  <text x="452" y="410" font-size="12.5" fill="#7C8B94">skin line</text>
+  <path d="M240 130 C 140 150, 140 340, 240 360 C 285 372, 316 320, 324 275 C 330 240, 400 230, 428 245 C 462 262, 462 228, 428 218 C 400 208, 332 220, 326 200 C 318 165, 285 118, 240 130 Z" fill="#F6E7EB" stroke="#B44A62" stroke-width="1.3"/>
+  <text x="215" y="238" text-anchor="middle" font-family="Fraunces,serif" font-size="18" fill="#7E2F42">Intestine</text>
+  <text x="215" y="260" text-anchor="middle" font-size="13" fill="#B44A62">loop under pressure</text>
+  <line x1="356" y1="215" x2="356" y2="120" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+  <line x1="356" y1="120" x2="480" y2="100" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+  <text x="488" y="96" font-size="13.5" fill="#4A5B66">The defect: a gap in</text>
+  <text x="488" y="113" font-size="13.5" fill="#4A5B66">the muscle wall</text>
+  <line x1="382" y1="330" x2="480" y2="330" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+  <text x="488" y="326" font-size="13.5" fill="#4A5B66">Abdominal wall:</text>
+  <text x="488" y="343" font-size="13.5" fill="#4A5B66">muscle and fascia</text>
+  <line x1="452" y1="222" x2="452" y2="180" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+  <text x="460" y="172" font-size="13.5" fill="#4A5B66">The bulge you feel:</text>
+  <text x="460" y="189" font-size="13.5" fill="#4A5B66">bigger on coughing,</text>
+  <text x="460" y="206" font-size="13.5" fill="#4A5B66">flatter lying down</text>
+  <line x1="250" y1="232" x2="330" y2="232" stroke="#B44A62" stroke-width="2" marker-end="url(#ah)"/>
+  <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#B44A62" stroke-width="1.8" stroke-linecap="round"/></marker></defs>
+  <text x="250" y="395" font-size="13.5" fill="#4A5B66">Intra-abdominal pressure pushes tissue through the gap</text>
+</svg>
+<div class="figcap"><b>Fig. 3</b>The hernia mechanism. A loop of intestine, pushed by internal pressure, finds a defect in the muscle wall and protrudes through it, forming the visible lump. The narrow part of the loop passing through the gap, called the neck, is where trouble starts if it gets pinched.</div>
+</div>
+
+<h3>The main types</h3>
+<table>
+<tr><th>Type</th><th>Where and why</th></tr>
+<tr><td>Inguinal</td><td>The groin crease. About 75% of all hernias, and heavily male (lifetime risk ~27% for men vs ~3% for women) because the inguinal canal, where the spermatic cord passes through the wall to the testicle, is a built-in weak point. Large ones can descend into the scrotum.</td></tr>
+<tr><td>Femoral</td><td>Just below the groin crease, through the canal carrying the femoral vessels. More common in women. Higher strangulation risk, so these are usually repaired promptly.</td></tr>
+<tr><td>Umbilical</td><td>At or near the navel, through the natural weak spot left by the umbilical cord. Common in infants (often closes by itself by age 4–5) and in adults after pregnancy or weight gain.</td></tr>
+<tr><td>Incisional</td><td>Through the scar of a previous abdominal operation, where the repaired wall is weaker than the original.</td></tr>
+<tr><td>Hiatal</td><td>The odd one out: internal, with no visible lump. Part of the stomach slides up through the diaphragm into the chest. Causes reflux and heartburn rather than a bulge, and is managed differently.</td></tr>
+</table>
+
+<h3>Recognising it, and the one emergency</h3>
+<p>The typical story: a soft lump in the groin or at the navel that appears when standing, coughing, or lifting, and slips back (or can be gently pushed back) when lying down. There may be a dragging ache by the end of the day. A hernia that pushes back in is called reducible, and it's not an emergency.</p>
+<p>The danger is a fixed sequence. First the hernia becomes <em>incarcerated</em>: the tissue gets stuck and won't reduce. Then it can become <em>strangulated</em>: the neck of the gap pinches the trapped loop tightly enough to cut off its blood supply, and the tissue begins to die within hours.</p>
+<div class="note"><p><b>Emergency signs:</b> sudden severe pain at the hernia site, a lump that turns firm, tender, and won't push back, skin over it turning red or dusky, nausea and vomiting, inability to pass gas or stool. Strangulation is a surgical emergency measured in hours. Go to a hospital immediately.</p></div>
+
+<div class="part-label teal">Part two, continued</div>
+<h2>Hernia surgery in detail</h2>
+<p class="tight">Surgery is the only definitive fix, and the modern principle is the same in every technique: push the contents back where they belong, then reinforce the weak area with a mesh so the repair doesn't rely on stitching tissue under tension. Mesh, a soft polypropylene screen the body's own scar tissue grows into, dropped recurrence rates from roughly 10–15% in the old stitch-only era to 1–3%.</p>
+
+<div class="compare">
+<div class="card">
+  <span class="tag rose">Open repair · Lichtenstein</span>
+  <h4>One incision, direct view</h4>
+  <p>A 6–8 cm cut over the hernia. The sac is dissected free, contents returned to the abdomen, and a flat mesh is laid over the defect and stitched to the surrounding strong tissue.</p>
+  <p>Can be done under local, spinal, or general anaesthesia. The standard choice for large hernias, strangulated emergencies, and patients who can't have general anaesthesia.</p>
+</div>
+<div class="card">
+  <span class="tag teal">Laparoscopic · TAPP / TEP</span>
+  <h4>Three keyholes, inside view</h4>
+  <p>Three 5–12 mm ports. A camera and instruments place the mesh on the <em>inside</em> of the wall, where abdominal pressure presses it flat against the defect instead of pushing against it.</p>
+  <p>Requires general anaesthesia. Less post-op pain, faster return to work, and the clear winner for repairing both sides at once or a recurrence after open repair.</p>
+</div>
+</div>
+
+<h3>What actually happens in a laparoscopic repair</h3>
+<ol class="steps">
+<li><b>General anaesthesia and insufflation.</b> The abdomen (or the plane behind the muscle wall, in TEP) is gently inflated with CO₂ to create working space.</li>
+<li><b>Ports in.</b> Three small incisions: one near the navel for the camera, two lower down for instruments.</li>
+<li><b>Reduce the sac.</b> The hernia sac and its contents are drawn back inside under direct camera view. The surgeon inspects the tissue: healthy bowel goes back; strangulated bowel must be resected, which converts this to a bigger operation.</li>
+<li><b>Place the mesh.</b> A mesh sheet, typically 10 × 15 cm, is unrolled over the defect from the inside, overlapping it generously on all sides. It's fixed with tacks or surgical glue, or sometimes just held by pressure.</li>
+<li><b>Deflate and close.</b> Gas out, ports out, skin closed with dissolvable stitches or glue. The whole operation typically takes 30–60 minutes and is usually a day case.</li>
+</ol>
+
+<div class="figure">
+<svg viewBox="0 0 720 350" role="img" aria-label="Mesh repair: mesh sheet placed over the wall defect, reinforced by scar tissue ingrowth">
+  <rect x="80" y="140" width="240" height="46" rx="8" fill="#F0C9A8" stroke="#A66A12" stroke-width="1.2"/>
+  <rect x="400" y="140" width="240" height="46" rx="8" fill="#F0C9A8" stroke="#A66A12" stroke-width="1.2"/>
+  <text x="360" y="120" text-anchor="middle" font-size="13.5" fill="#4A5B66">The defect (gap in the wall)</text>
+  <line x1="330" y1="130" x2="360" y2="145" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+  <g>
+    <rect x="200" y="200" width="320" height="34" rx="6" fill="#E3F0ED" stroke="#0E6B5C" stroke-width="1.3"/>
+    <line x1="216" y1="200" x2="216" y2="234" stroke="#0E6B5C" stroke-width="0.6" opacity="0.5"/>
+    <line x1="248" y1="200" x2="248" y2="234" stroke="#0E6B5C" stroke-width="0.6" opacity="0.5"/>
+    <line x1="280" y1="200" x2="280" y2="234" stroke="#0E6B5C" stroke-width="0.6" opacity="0.5"/>
+    <line x1="312" y1="200" x2="312" y2="234" stroke="#0E6B5C" stroke-width="0.6" opacity="0.5"/>
+    <line x1="344" y1="200" x2="344" y2="234" stroke="#0E6B5C" stroke-width="0.6" opacity="0.5"/>
+    <line x1="376" y1="200" x2="376" y2="234" stroke="#0E6B5C" stroke-width="0.6" opacity="0.5"/>
+    <line x1="408" y1="200" x2="408" y2="234" stroke="#0E6B5C" stroke-width="0.6" opacity="0.5"/>
+    <line x1="440" y1="200" x2="440" y2="234" stroke="#0E6B5C" stroke-width="0.6" opacity="0.5"/>
+    <line x1="472" y1="200" x2="472" y2="234" stroke="#0E6B5C" stroke-width="0.6" opacity="0.5"/>
+    <line x1="504" y1="200" x2="504" y2="234" stroke="#0E6B5C" stroke-width="0.6" opacity="0.5"/>
+  </g>
+  <text x="360" y="222" text-anchor="middle" font-size="13.5" fill="#0A4A40" font-weight="600">Mesh</text>
+  <line x1="360" y1="240" x2="360" y2="278" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+  <text x="360" y="298" text-anchor="middle" font-size="13.5" fill="#4A5B66">Mesh overlaps the gap widely on the inner surface;</text>
+  <text x="360" y="316" text-anchor="middle" font-size="13.5" fill="#4A5B66">abdominal pressure now presses it flat instead of pushing tissue out</text>
+  <text x="150" y="90" font-size="13.5" fill="#4A5B66">Muscle wall</text>
+  <line x1="165" y1="98" x2="180" y2="138" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+  <text x="540" y="90" font-size="13.5" fill="#4A5B66">Scar tissue grows into</text>
+  <text x="540" y="107" font-size="13.5" fill="#4A5B66">the mesh over weeks</text>
+  <line x1="560" y1="115" x2="530" y2="198" stroke="#7C8B94" stroke-width="0.8" stroke-dasharray="4 4"/>
+</svg>
+<div class="figcap"><b>Fig. 4</b>The mesh principle. Rather than pulling the edges of the gap together under tension (the old method, which tore and recurred), a mesh screen bridges the defect with wide overlap. The body's collagen grows through its pores, making the patch part of the wall itself.</div>
+</div>
+
+<h3>Recovery after hernia repair</h3>
+<p>Most repairs are day surgery: home the same evening. Walking starts the same day and actively helps recovery. After laparoscopic repair, desk work resumes in about a week; after open repair, one to two weeks. Driving waits until you can brake sharply without hesitation, usually 1–2 weeks. Lifting anything heavy waits 4–6 weeks while the mesh integrates, and that's the timeline that matters most; going back to lifting early is the classic route to recurrence.</p>
+<p>Expected and normal: bruising around the wound (after groin repair it can track down into the scrotum, which looks alarming and isn't), a firm ridge under the incision for a few weeks, and shoulder-tip pain for a day or two after laparoscopy from the CO₂ gas irritating the diaphragm. Worth a call to the surgeon: fever, spreading redness, a wound leaking fluid, or a new lump at the site.</p>
+<p>Long-term issues are uncommon but real. Recurrence runs 1–3% with mesh. Chronic groin pain lasting beyond three months affects a minority of patients and is the main talking point when weighing repair of a small, symptom-free hernia; current practice accepts watchful waiting for those, since most eventually need repair anyway but there's no harm in deferring while it's quiet.</p>
+
+<h2>The two conditions, side by side</h2>
+<table>
+<tr><th></th><th>Prostate (BPH)</th><th>Hernia</th></tr>
+<tr><td>What it is</td><td>A gland enlarging and squeezing the urethra</td><td>Tissue escaping through a gap in the muscle wall</td></tr>
+<tr><td>Main symptom</td><td>Weak stream, night-time urination</td><td>A lump that grows on straining</td></tr>
+<tr><td>First treatment</td><td>Medication (tamsulosin, finasteride)</td><td>None works; watchful waiting or surgery</td></tr>
+<tr><td>Definitive fix</td><td>TURP or laser through the urethra, no external cut</td><td>Mesh repair, open or laparoscopic</td></tr>
+<tr><td>Emergency form</td><td>Acute urinary retention (can't urinate at all)</td><td>Strangulation (blood supply cut off)</td></tr>
+</table>
+
+<footer>This guide is for understanding, not diagnosis. Symptoms in either territory deserve an examination by a doctor; both conditions are common, well understood, and very treatable when assessed early.</footer>
+
+</div>
+</body>
+</html>
