@@ -72,10 +72,10 @@ strong { font-weight:600; }
 @media (max-width:900px) {
   .layout { display:block; padding:28px 18px 72px; }
   .sidebar { margin-bottom:24px; }
-  .toc { position:static; display:flex; flex-wrap:wrap; gap:6px 4px; border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
-  .toc .toc-title { width:100%; margin-bottom:4px; }
-  .toc a, .toc a.sub { border-left:none; padding:3px 8px; background:var(--engine-tint); border-radius:4px; font-size:12.5px; }
-  .toc a.active { background:var(--dataos-tint); }
+  .toc { position:static; border:1px solid var(--line); border-radius:8px; padding:12px 14px; }
+  .toc .toc-title { margin-bottom:8px; }
+  .toc a { padding:4px 10px; font-size:13.5px; }
+  .toc a.sub { padding-left:22px; font-size:12.5px; }
   .inv, .inv tbody, .inv tr, .inv td { display:block; width:100%; }
   .inv td:first-child { white-space:normal; width:100%; border-bottom:none; padding-bottom:2px;
     font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--dataos); }
@@ -104,6 +104,7 @@ strong { font-weight:600; }
 <a class="sub" href="#gap-product-object">2.4 No product object</a>
 <a class="sub" href="#gap-semantics">2.5 Ranked, not warranted</a>
 <a class="sub" href="#gap-compute">2.6 Metered compute</a>
+<a class="sub" href="#gap-operating">2.7 Operating is invisible</a>
 <a href="#part3">3 · Where DataOS is relevant</a>
 <a href="#part4">4 · Objections</a>
 </nav></aside>
@@ -279,7 +280,7 @@ strong { font-weight:600; }
 <h4 class="albl">Cost</h4>
 <p>Decisions made on wrong numbers, senior-weeks of archaeology, and the slow one: each silent incident teaches the business to re-verify the data team's numbers, un-earning self-service.</p>
 <h4 class="albl">Why it holds</h4>
-<p>Learned models see distributions; permissions-to-change see promises. Closing this requires contracts as platform objects, which is the object-model problem in 2.4, not a monitoring feature.</p>
+<p>Learned models see distributions; permissions-to-change see promises. Closing this requires contracts as platform objects, which is the object-model problem in <a href="#gap-product-object">2.4</a>, not a monitoring feature.</p>
 <h4 class="albl">DataOS</h4>
 <p>Declared invariants and contract checks run as promotion gates per product; change classification is computed at plan time, before review.</p>
 </div>
@@ -293,7 +294,7 @@ strong { font-weight:600; }
 <h3 id="gap-lifecycle">2.2 &nbsp;Changes have no consumer-facing lifecycle</h3>
 <div class="anatomy">
 <h4 class="albl">Mechanism</h4>
-<p>Bundles version code; git versions transformations; ALTER is instant and in-place on views, metric views, and tags. The entire change apparatus serves the person making the change. Nothing performs change classification (2.1) on behalf of the people depending on it: no contract diff, no v2 serving beside v3, no notice period.</p>
+<p>Bundles version code; git versions transformations; ALTER is instant and in-place on views, metric views, and tags. The entire change apparatus serves the person making the change. Nothing performs change classification (<a href="#gap-quality">2.1</a>) on behalf of the people depending on it: no contract diff, no v2 serving beside v3, no notice period.</p>
 <h4 class="albl">Real-world break</h4>
 <p>The change above ships through green CI: code review checks Spark, tests check the transformation, validate checks YAML, expectations check nulls. Every gate examines the factory; none examines the promise. Three weeks later, "who approved this?" has no answer, because approval-of-a-promise was never an object in the system.</p>
 <h4 class="albl">Cost</h4>
@@ -317,7 +318,7 @@ strong { font-weight:600; }
 <h4 class="albl">Real-world break</h4>
 <p>Of three real consumers, the producer knows one. The mobile API reading over JDBC through a service principal is invisible; nobody checks lineage before a change anyway, because lineage is where you go after something breaks.</p>
 <h4 class="albl">Cost</h4>
-<p>Every change carries unknown blast radius, so teams either move slow (change review theater) or break things (and pay 2.1's bill).</p>
+<p>Every change carries unknown blast radius, so teams either move slow (change review theater) or break things (and pay <a href="#gap-quality">2.1</a>'s bill).</p>
 <h4 class="albl">Why it holds</h4>
 <p>A real consumer registry requires consumption to flow through a product boundary that registration can gate. UC's model is open grants on securables; any principal with SELECT reads however it likes. Registration without a boundary is a wiki.</p>
 <h4 class="albl">DataOS</h4>
@@ -383,7 +384,7 @@ strong { font-weight:600; }
 <h4 class="albl">Cost</h4>
 <p>Discovery-and-trust stays a social process (weeks of finding, asking, verifying per consumer), and every governance answer must be assembled from fragments at audit time.</p>
 <h4 class="albl">Why it holds</h4>
-<p>A composite lifecycle object contradicts the securable-per-asset foundation everything else (grants, lineage, ABAC, Discover) is built on. Retrofitting it is a rewrite of the catalog's object model. And the forcing-function history says it plainly: Databricks builds product primitives where transactions demand them. Internal promises don't transact, so they don't get primitives.</p>
+<p>A composite lifecycle object contradicts the securable-per-asset foundation everything else (grants, lineage, ABAC, Discover) is built on. Retrofitting it is a rewrite of the catalog's object model. And the forcing-function history says it plainly: Databricks builds product primitives where transactions demand them. Internal promises don't transact, so they don't get primitives. Notice the asymmetry: their semantic format is becoming a standard (metric views into Spark), but their product metadata (Domains, certification, Ontology) has no standard shape at all. We emit the standards for exactly the layer they don't have.</p>
 <h4 class="albl">DataOS</h4>
 <p>Audited consumption is the internal forcing function, and DataOS ships the primitive it forces: the product manifest: contract, semantics, ports, owner, consumers in one artifact, one lifecycle. Discover becomes the storefront our products surface in.</p>
 </div>
@@ -393,7 +394,7 @@ strong { font-weight:600; }
 <p><em>Land:</em> "Every audit question becomes a lookup."</p></div>
 </div>
 
-<p class="seam">The four gaps above are about the <strong>promise</strong>: declaring it, changing it, and knowing who relies on it. The two below are about <strong>consumption</strong>: what agents can trust, and what serving costs.</p>
+<p class="seam">The four gaps above are about the <strong>promise</strong>: declaring it, changing it, and knowing who relies on it. The two below are about <strong>consumption</strong>: what agents can trust, and what serving costs. The last is about <strong>operating</strong>: keeping the promise over time.</p>
 
 <div class="gap">
 <h3 id="gap-semantics">2.5 &nbsp;Semantics are ranked, not warranted</h3>
@@ -401,13 +402,13 @@ strong { font-weight:600; }
 <h4 class="albl">Mechanism</h4>
 <p>Genie Ontology extracts knowledge from queries, dashboards, and 50+ apps and ranks competing definitions by authority (OntoRank). Ranking picks the likeliest meaning of "revenue"; nothing versions it, guarantees it, or notifies anyone when it drifts. <a href="https://www.typedef.ai/blog/what-is-genie-ontology-databricks-continuously-learned-context-layer-explained">Ranking a definition is not verifying the number</a> computed from it.</p>
 <h4 class="albl">Real-world break</h4>
-<p>An agent inherits 2.1's silent semantic shift at machine speed: it doesn't file a confused Slack message like an analyst, it produces confident wrong answers at volume, under a certified-looking source. OBO auth answers "may this agent see this row"; nothing answers "what may this agent rely on."</p>
+<p>An agent inherits <a href="#gap-quality">2.1</a>'s silent semantic shift at machine speed: it doesn't file a confused Slack message like an analyst, it produces confident wrong answers at volume, under a certified-looking source. OBO auth answers "may this agent see this row"; nothing answers "what may this agent rely on."</p>
 <h4 class="albl">Cost</h4>
 <p>Security review becomes the AI bottleneck (no artifact states what an agent may rely on), and the industry outcome Gartner predicts: 40% of enterprises demoting or decommissioning agents by 2027 over governance gaps found in production.</p>
 <h4 class="albl">Why it holds</h4>
-<p>A learned graph is probabilistic by design; warranting context requires the contract objects of 2.4 plus the lifecycle of 2.2. Also: Ontology ingests from everywhere but serves the Genie family; an open, warranted context API for any agent is a different product with a different buyer.</p>
+<p>A learned graph is probabilistic by design; warranting context requires the contract objects of <a href="#gap-product-object">2.4</a> plus the lifecycle of <a href="#gap-lifecycle">2.2</a>. Also: Ontology ingests from everywhere but serves the Genie family; an open, warranted context API for any agent is a different product with a different buyer.</p>
 <h4 class="albl">DataOS</h4>
-<p>Contract-grounded context served to any agent: each dataset carries a machine-readable statement of meaning, guarantee, and freshness: the artifact the security reviewer signs.</p>
+<p>Contract-grounded context served to any agent: each dataset carries a machine-readable statement of meaning, guarantee, and freshness: the artifact the security reviewer signs. And it's standard-shaped: DataOS emits <a href="https://bitol-io.github.io/open-data-contract-standard/v3.1.0/">ODCS</a> for datasets, <a href="https://bitol.io/">ODPS</a> for products, and <a href="https://dataintelligenceplatform.substack.com/p/the-meta-standard-nobody-asked-for">OKF</a> for agent context, so any agent or tool can parse it without our SDK.</p>
 </div>
 <div class="hook"><span class="lbl">Demo hook</span>
 <p><em>Scene:</em> same revenue question, two agents, before and after the silent shift.</p>
@@ -436,6 +437,26 @@ strong { font-weight:600; }
 <p><em>Land:</em> "The cheapest query is the one that never runs."</p></div>
 </div>
 
+<div class="gap">
+<h3 id="gap-operating">2.7 &nbsp;Operating a product is invisible</h3>
+<div class="anatomy">
+<h4 class="albl">Mechanism</h4>
+<p>A table is queried, not called: there's no runtime to compute "is this trending toward a breach" against. Unity Catalog surfaces consumption and <code>query_history</code> logs per-query latency and errors. These are signals, not an operating loop. Nothing rolls them up against a target the product committed to, and nothing acts when the trend turns bad.</p>
+<h4 class="albl">Real-world break</h4>
+<p>A product drifts toward a freshness or latency SLA breach for days. Query counts look healthy. No SLO catches the drift, no incident opens, no one is paged. The team hears about it from a complaint, after the SLA is already broken.</p>
+<h4 class="albl">Cost</h4>
+<p>Every SLA is enforced by the consumer noticing. That inverts the relationship: the customer becomes the monitoring system, each breach is discovered downstream where it's most expensive, and the team's credibility pays for the gap between "broken" and "noticed."</p>
+<h4 class="albl">Why it holds</h4>
+<p>The pieces exist: table-level drift profiling, SQL alerts on thresholds, a webhook to page someone. But they're per-table, assemble-it-yourself parts with no product entity to hang them on. The SLA lives in a wiki, the alert lives in Databricks SQL, the routing lives in PagerDuty, and nothing binds them to the thing the consumer actually bought. An SLO is telemetry rolled up against an internal target, watched continuously, wired to an incident process. That requires a runtime entity operating as one contract, not three tools someone stitched together and maintains by hand. And it's downstream of <a href="#gap-product-object">2.4</a>: you can't operate an entity the catalog can't express.</p>
+<h4 class="albl">DataOS</h4>
+<p>The product manifest carries the SLA; the runtime derives SLOs from live telemetry, set tighter than the SLA on purpose. Breach an SLO and an incident opens and routes to the owning team automatically. The SLA holds because the SLO caught it first, not because someone noticed after the fact. Operating a data product is what turns publishing into product management.</p>
+</div>
+<div class="hook"><span class="lbl">Demo hook</span>
+<p><em>Scene:</em> a product with a declared freshness SLA, its feed quietly slowing.</p>
+<p><em>Show:</em> dashboards green, query counts healthy on one side. On the other, the SLO breaches, an incident opens, the owner is paged, all before the SLA breaks.</p>
+<p><em>Land:</em> "Your customer found the last one. The runtime found this one."</p></div>
+</div>
+
 <h2 id="part3">3 · Where DataOS is relevant</h2>
 <div class="kicker">the map and the posture</div>
 
@@ -450,6 +471,7 @@ strong { font-weight:600; }
 <tr><td>No product object</td><td>The product manifest as the primitive: contract, semantics, ports, owner, consumers in one artifact</td></tr>
 <tr><td>Ranked, not warranted</td><td>Contract-grounded context served to any agent; the reliance artifact security teams sign</td></tr>
 <tr><td>Metered consumption</td><td>In-flight dedup + result reuse + semantic APIs; compute pushed down only for new work</td></tr>
+<tr><td>Operating is invisible</td><td>SLA in the manifest; SLOs derived from live telemetry; incidents opened and routed to owners before the SLA breaks</td></tr>
 </table>
 
 <h3>Coexistence posture</h3>
@@ -457,6 +479,7 @@ strong { font-weight:600; }
 <p>We import metric views; a year of customer modeling becomes an on-ramp, not a moat. Their tables are our inputs. Their engines run our compute: we push work down, we don't replace it.</p>
 <p>We respect their ABAC as the enforcement plane. On top of it, we offer simpler, semantic-shaped REST and GraphQL APIs, governed separately or inclusively, whichever the customer's security model calls for. The filter lives in the layer, not the prompt.</p>
 <p>And we offer business-user-friendly discovery of data products, with APIs to build custom experiences on top.</p>
+<p>The contracts themselves are standard-shaped: <a href="https://bitol-io.github.io/open-data-contract-standard/v3.1.0/">ODCS</a> and <a href="https://bitol.io/">ODPS</a> under the Linux Foundation, plus <a href="https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md">OKF</a> for agent context. The promise is portable, even from us.</p>
 <p>Where a customer already runs DataOS on another engine, Databricks is an extension of a working blueprint, not a new bet.</p>
 
 
