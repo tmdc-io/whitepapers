@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Databricks and the Product Boundary: How DataOS coexists with the Databricks estate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --paper:#FFFFFF; --ink:#171A20; --ink-soft:#4A4F5A; --dataos:#23407C; --dataos-tint:#EFF3FA;
+        --amber:#B7791F; --amber-tint:#FDF6E3; --line:#E3E4E0; --engine-tint:#F2F3F5; --toc-w:248px; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; scroll-padding-top:24px; }
+body { background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans',sans-serif; font-size:16px; line-height:1.6; }
+
+.layout { display:grid; grid-template-columns:var(--toc-w) minmax(0,880px); gap:40px; max-width:1200px; margin:0 auto; padding:48px 24px 96px; }
+main { min-width:0; }
+
+/* ---- ToC ---- */
+.sidebar { position:relative; }
+.toc { position:sticky; top:24px; font-size:13.5px; }
+.toc .toc-title { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px; }
+.toc a { display:block; color:var(--ink-soft); text-decoration:none; padding:4px 10px; border-left:2px solid var(--line); line-height:1.4; }
+.toc a:hover { color:var(--dataos); }
+.toc a.active { color:var(--dataos); border-left-color:var(--dataos); font-weight:600; }
+.toc a.sub { padding-left:22px; font-size:12.5px; }
+
+.eyebrow { font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; }
+h1 { font-size:clamp(26px,4.5vw,38px); font-weight:700; line-height:1.15; letter-spacing:-.02em; margin-bottom:14px; }
+h1 .accent { color:var(--dataos); }
+.subtitle { font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--ink-soft); margin:-6px 0 14px; }
+.standfirst { font-size:18px; color:var(--ink-soft); max-width:60ch; margin-bottom:8px; }
+h2 { font-size:22px; font-weight:700; color:var(--dataos); margin:44px 0 4px; }
+h3 { font-size:17px; font-weight:700; margin:0 0 6px; }
+.gap h3 { font-size:18px; padding-top:18px; border-top:1px solid var(--line); }
+main h3:not(.gap h3) { margin-top:26px; }
+.kicker { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft); margin-bottom:14px; }
+p { margin-bottom:10px; max-width:70ch; }
+
+table { width:100%; border-collapse:collapse; font-size:14.5px; margin:14px 0; background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+th { font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; text-align:left; padding:9px 13px; border-bottom:1.5px solid var(--ink); }
+td { padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+tr:last-child td { border-bottom:none; }
+.inv td p { margin-bottom:8px; } .inv td p:last-child { margin-bottom:0; }
+.inv td:first-child { font-weight:700; width:20%; white-space:nowrap; }
+code { font-family:'IBM Plex Mono',monospace; font-size:.88em; background:var(--engine-tint); padding:0 4px; border-radius:3px; }
+
+
+figure.diag { margin:18px 0; }
+figure.diag svg { width:100%; height:auto; display:block; border:1px solid var(--line); border-radius:10px; background:#fff; }
+figure.diag figcaption { font-size:13px; color:var(--ink-soft); margin-top:6px; }
+figure.diag text { font-family:'IBM Plex Sans',sans-serif; }
+figure.diag .mono { font-family:'IBM Plex Mono',monospace; }
+.gap { margin:34px 0 40px; }
+.lbl { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--dataos); }
+.anatomy p { margin-bottom:8px; }
+
+h4.albl { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--dataos); font-weight:600; margin:14px 0 4px; }
+.anatomy h4.albl:first-child { margin-top:2px; }
+.anatomy p { margin-bottom:6px; }
+.seam { font-size:14.5px; color:var(--ink-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:10px 2px; margin:22px 0; max-width:70ch; }
+.hook { border-left:3px solid var(--amber); background:var(--amber-tint); padding:9px 13px; margin-top:10px; font-size:14.5px; border-radius:0 6px 6px 0; }
+.hook .lbl { color:var(--amber); }
+.hook p { margin:6px 0 0; max-width:66ch; } .hook p:first-of-type { margin-top:4px; } .hook em { font-style:normal; font-weight:600; color:var(--amber); }
+
+a { color:var(--dataos); text-decoration:none; border-bottom:1px solid #C4D0E8; }
+a:hover { border-bottom-color:var(--dataos); }
+.toc a { border-bottom:none; }
+.ref { font-size:13.5px; color:var(--ink-soft); line-height:1.9; }
+strong { font-weight:600; }
+
+/* ---- responsive ---- */
+@media (max-width:900px) {
+  .layout { display:block; padding:28px 18px 72px; }
+  .sidebar { margin-bottom:24px; }
+  .toc { position:static; display:flex; flex-wrap:wrap; gap:6px 4px; border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+  .toc .toc-title { width:100%; margin-bottom:4px; }
+  .toc a, .toc a.sub { border-left:none; padding:3px 8px; background:var(--engine-tint); border-radius:4px; font-size:12.5px; }
+  .toc a.active { background:var(--dataos-tint); }
+  .inv, .inv tbody, .inv tr, .inv td { display:block; width:100%; }
+  .inv td:first-child { white-space:normal; width:100%; border-bottom:none; padding-bottom:2px;
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--dataos); }
+  .inv td { border-bottom:none; }
+  .inv tr { border-bottom:1px solid var(--line); padding:6px 0; }
+  .inv tr:last-child { border-bottom:none; }
+  h2 { margin-top:34px; }
+}
+@media (max-width:520px) {
+  body { font-size:15px; }
+  
+  table:not(.inv) { display:block; overflow-x:auto; }
+}
+@media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar"><nav class="toc" id="toc">
+<div class="toc-title">Contents</div>
+<a href="#part1">1 · The Databricks spread</a>
+<a href="#part2">2 · The gaps</a>
+<a class="sub" href="#gap-quality">2.1 Quality is statistical</a>
+<a class="sub" href="#gap-lifecycle">2.2 No consumer-facing lifecycle</a>
+<a class="sub" href="#gap-consumers">2.3 Consumers are invisible</a>
+<a class="sub" href="#gap-product-object">2.4 No product object</a>
+<a class="sub" href="#gap-semantics">2.5 Ranked, not warranted</a>
+<a class="sub" href="#gap-compute">2.6 Metered compute</a>
+<a href="#part3">3 · Where DataOS is relevant</a>
+<a href="#part4">4 · Objections</a>
+</nav></aside>
+<main>
+
+
+
+<div class="eyebrow">Internal · Product + Sales Alignment · August 2026 · Animesh Kumar</div>
+<h1>Databricks and the <span class="accent">Product Boundary</span></h1>
+<p class="subtitle">How DataOS coexists with the Databricks estate</p>
+
+<p class="standfirst">DataOS productizes data assets for audited consumption by humans, BI, and agents. Databricks has built a genuinely complete asset platform. This doc maps how far it has spread, and where audited consumption still has no home.</p>
+
+<h2 id="part1">1 · How far the Databricks ecosystem has spread</h2>
+<div class="kicker">the reality of what Databricks offers off the shelf</div>
+
+<table class="inv">
+<tr><td>Lakehouse foundation</td><td>
+<p>Delta Lake on cloud object storage as the open-format spine, with Iceberg interop (UniForm, managed Iceberg, Iceberg REST catalog) so the same tables serve engines beyond Databricks. Photon runs as the vectorized execution engine underneath most workloads.</p>
+<p>Open formats are the strategic posture: the storage layer is deliberately not a lock-in point; the catalog and compute above it are.</p>
+</td></tr>
+<tr><td>Ingestion &amp; pipelines</td><td>
+<p>Lakeflow Connect ships <a href="https://docs.databricks.com/aws/en/ingestion/lakeflow-connect/">managed connectors</a> for SaaS apps and databases (Salesforce, Workday, ServiceNow, SQL Server via CDC, plus file sources like Google Drive and SharePoint), fully managed on serverless, governed by UC, with auto-retry and cursor recovery.</p>
+<p><a href="https://docs.databricks.com/aws/en/ldp">Declarative pipelines</a> (formerly DLT) cover streaming and batch: AUTO CDC handles SCD1/2 and out-of-order events without watermark code, and an incremental engine keeps materialized views current while reprocessing only changed data. The framework is upstreamed into Apache Spark 4.1 itself.</p>
+<p>Between managed connectors (copy the data in) and federation (query it where it lives; see Governance), most non-Databricks estates are reachable one way or the other. Asset bundles give dev/staging/prod code lifecycle with CI/CD.</p>
+</td></tr>
+<tr><td>Governance</td><td>
+<p><a href="https://docs.databricks.com/aws/en/data-governance/unity-catalog/abac">ABAC policies</a> went <a href="https://www.databricks.com/blog/abac-row-filtering-and-column-masking-policies-governed-tags-and-data-classification-are-now">GA in May 2026</a> alongside governed tags and agentic data classification. Policies attach once at catalog or schema level, match assets via tags, inherit downward, and cover tables, materialized views, and streaming tables, including tables that don't exist yet.</p>
+<p>Classification runs as an agent that scans catalogs and auto-tags PII, financial data, and credentials, feeding tags straight into enforcement. Fail-closed by design. Tags now enforce, not just label.</p>
+<p>UC's reach extends beyond Databricks-resident data: <a href="https://docs.databricks.com/aws/en/query-federation/">Lakehouse Federation</a> mounts external systems (Snowflake, BigQuery, SQL Server, PostgreSQL, Oracle, Teradata, Redshift, Salesforce Data 360) as foreign catalogs with governed, read-only access, query pushdown, and table-level controls, so external estates appear inside the same governance pane without moving data.</p>
+</td></tr>
+<tr><td>Quality &amp; prediction</td><td>
+<p><a href="https://docs.databricks.com/aws/en/data-governance/unity-catalog/get-started">Data Quality Monitoring</a> runs anomaly detection across every table in a schema with zero configuration: per-table learned models predict next-commit freshness and expected row-count ranges, health indicators surface in Catalog Explorer, and alerts fire on deviation (both 2026).</p>
+<p>Pipeline-time expectations live in DLT; DQX supplies rule libraries. The platform doesn't just store your data; it forms expectations about it.</p>
+</td></tr>
+<tr><td>Semantics</td><td>
+<p><a href="https://docs.databricks.com/gcp/en/business-semantics/metric-views/">Metric views</a> went GA April 2026: YAML measures and dimensions with star/snowflake joins, window measures, parameters, and composable measures, plus agent metadata (synonyms, display names) tuned for Genie accuracy. Served to BI over <a href="https://docs.databricks.com/aws/en/partners/bi/bi-metric-view">DirectQuery with automatic query rewrites</a>.</p>
+<p>The spec is being open-sourced into Apache Spark. Databricks is betting its semantic format becomes the industry's.</p>
+</td></tr>
+<tr><td>Discovery</td><td>
+<p><a href="https://docs.databricks.com/aws/en/discover/discover-page">Discover, Domains, and Subdomains</a> (<a href="https://www.databricks.com/blog/announcing-public-preview-discover-and-domains-powered-unity-catalog">public preview 2026</a>): an internal marketplace of tables, dashboards, notebooks, metric views, Genie agents, and apps organized by business area rather than technical location, with AI-powered recommendations from usage and lineage signals.</p>
+<p>Certification and deprecation flags apply to nearly every asset type: catalogs, models, dashboards, Genie spaces, notebooks.</p>
+</td></tr>
+<tr><td>AI stack</td><td>
+<p><a href="https://www.databricks.com/product/artificial-intelligence/agent-bricks">Agent Bricks</a> is a full agent platform, <a href="https://www.databricks.com/blog/agent-bricks-governed-enterprise-agent-platform">now GA</a>: Knowledge Assistants, Supervisor Agents with on-behalf-of auth validating every fetch against the user's UC permissions, custom agents, MCP-native tool access with a built-in governed tool catalog, persistent agent memory on Lakebase, and frontier-model routing (including Claude Code and Cursor) through one API.</p>
+<p>Genie One is GA and acts through MCP, not just answers.</p>
+<p><a href="https://www.databricks.com/blog/introducing-genie-one-genie-ontology-and-genie-agents">Genie Ontology</a> (preview) is the depth play: a two-feed context graph (curated UC semantics plus knowledge auto-extracted from your queries, dashboards, pipelines, and 50+ connected apps including Slack, Jira, Google Drive, SharePoint, and Salesforce), ranked by OntoRank. Genie reads your Jira tickets and shared drives, not just your tables.</p>
+</td></tr>
+<tr><td>Lakebase</td><td>
+<p>A managed Postgres tier inside the platform: the OLTP leg the lakehouse never had. Serves operational apps, holds agent memory for Agent Bricks, receives reverse-ETL'd serving data synced from Delta tables, and exposes schemas directly as REST endpoints via the <a href="https://docs.databricks.com/aws/en/oltp/projects/data-api">Data API</a>.</p>
+<p>Transactional and analytical estates under one vendor, one governance model.</p>
+</td></tr>
+<tr><td>Compute</td><td>
+<p>Eight primitives (all-purpose clusters, job clusters, SQL warehouses, serverless, pipeline compute, model serving, vector search, Lakebase), converging on serverless including GPU.</p>
+<p>REST access to the warehouse via the <a href="https://databricks.com/blog/announcing-general-availability-databricks-sql-statement-execution-api">Statement Execution API</a>. No semantic or GraphQL API.</p>
+</td></tr>
+</table>
+
+<p>Read the table as one system and the conclusion is hard to avoid. <strong>Done right, this covers the full breadth of human and agentic consumption.</strong></p>
+<p>Data gets in from almost anywhere. SaaS connectors, CDC from operational databases, files from shared drives, streams. Or it stays where it lives and gets mounted through federation. Either way, it lands in open formats any engine can read.</p>
+<p>Then the platform takes over. One catalog governs everything, with <strong>policies that enforce themselves on tables that don't exist yet</strong>. Quality models watch the data without being configured. Semantics carry business meaning into BI and into agents through Genie.</p>
+<p>And consumption runs the full range. Analysts in SQL. Dashboards. Applications over REST, operational apps on Postgres. Agents with governed identity, tools, memory, and a context graph that reads the company's Jira and shared drives.</p>
+<p>Here's the honest bottom line: <strong>a small dedicated platform team can stand up a complete data platform substrate on this</strong>, ingestion to agent, without ever leaving one vendor's documentation.</p>
+<p>That's the starting position for everything that follows. The substrate exists. The real question is what it's organized around (assets and queries) and what that organizing principle can't express.</p>
+
+<figure class="diag"><svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The product boundary diagram">
+  <!-- Consumers -->
+  <text x="24" y="34" font-size="12" fill="#4A4F5A" class="mono" letter-spacing="1.5">AUDITED CONSUMPTION</text>
+  <g font-size="14" font-weight="600" text-anchor="middle">
+    <rect x="24" y="46" width="212" height="44" rx="7" fill="#F2F3F5" stroke="#E3E4E0"/>
+    <text x="130" y="73">Humans</text>
+    <rect x="254" y="46" width="212" height="44" rx="7" fill="#F2F3F5" stroke="#E3E4E0"/>
+    <text x="360" y="73">BI</text>
+    <rect x="484" y="46" width="212" height="44" rx="7" fill="#F2F3F5" stroke="#E3E4E0"/>
+    <text x="590" y="73">Agents</text>
+  </g>
+  <!-- arrows down -->
+  <g stroke="#4A4F5A" stroke-width="1.5">
+    <line x1="130" y1="90" x2="130" y2="116"/><line x1="360" y1="90" x2="360" y2="116"/><line x1="590" y1="90" x2="590" y2="116"/>
+  </g>
+
+  <!-- DataOS promise layer -->
+  <rect x="24" y="118" width="672" height="106" rx="9" fill="#EFF3FA" stroke="#23407C" stroke-width="1.6"/>
+  <text x="42" y="146" font-size="13" fill="#23407C" class="mono" font-weight="600" letter-spacing="1.2">DATAOS · MANAGES THE PROMISE</text>
+  <g font-size="13.5" text-anchor="middle">
+    <rect x="42" y="160" width="148" height="44" rx="6" fill="#fff" stroke="#C4D0E8"/>
+    <text x="116" y="187">Contract</text>
+    <rect x="204" y="160" width="148" height="44" rx="6" fill="#fff" stroke="#C4D0E8"/>
+    <text x="278" y="187">Versions</text>
+    <rect x="366" y="160" width="148" height="44" rx="6" fill="#fff" stroke="#C4D0E8"/>
+    <text x="440" y="187">Consumers</text>
+    <rect x="528" y="160" width="150" height="44" rx="6" fill="#fff" stroke="#C4D0E8"/>
+    <text x="603" y="180">Change</text>
+    <text x="603" y="196">classification</text>
+  </g>
+
+  <!-- Boundary -->
+  <line x1="24" y1="252" x2="696" y2="252" stroke="#B7791F" stroke-width="2.5" stroke-dasharray="9 7"/>
+  <rect x="180" y="238" width="360" height="28" rx="5" fill="#FDF6E3" stroke="#B7791F"/>
+  <text x="360" y="257" font-size="12.5" fill="#B7791F" class="mono" font-weight="600" text-anchor="middle" letter-spacing="1.2">THE PRODUCT BOUNDARY</text>
+
+  <!-- Databricks substrate -->
+  <rect x="24" y="286" width="672" height="150" rx="9" fill="#FDFDFC" stroke="#E3E4E0" stroke-width="1.4"/>
+  <text x="42" y="314" font-size="13" fill="#4A4F5A" class="mono" font-weight="600" letter-spacing="1.2">DATABRICKS · MANAGES ASSETS &amp; QUERIES</text>
+  <g font-size="13" text-anchor="middle" fill="#171A20">
+    <rect x="42" y="330" width="200" height="40" rx="6" fill="#F2F3F5" stroke="#E3E4E0"/>
+    <text x="142" y="355">Unity Catalog · ABAC</text>
+    <rect x="256" y="330" width="200" height="40" rx="6" fill="#F2F3F5" stroke="#E3E4E0"/>
+    <text x="356" y="355">Lakeflow · DLT</text>
+    <rect x="470" y="330" width="208" height="40" rx="6" fill="#F2F3F5" stroke="#E3E4E0"/>
+    <text x="574" y="355">Metric views · Genie</text>
+    <rect x="42" y="382" width="200" height="40" rx="6" fill="#F2F3F5" stroke="#E3E4E0"/>
+    <text x="142" y="407">DQ monitoring</text>
+    <rect x="256" y="382" width="200" height="40" rx="6" fill="#F2F3F5" stroke="#E3E4E0"/>
+    <text x="356" y="407">Agent Bricks</text>
+    <rect x="470" y="382" width="208" height="40" rx="6" fill="#F2F3F5" stroke="#E3E4E0"/>
+    <text x="574" y="407">Engines · Lakebase</text>
+  </g>
+</svg><figcaption>The product boundary: Databricks manages assets and queries; the promise layer above it is where DataOS operates.</figcaption></figure>
+
+<h2 id="part2">2 · The gaps, from a productization angle</h2>
+
+<p>What DataOS brings is one idea: <strong>the data product is a managed object with a lifecycle.</strong></p>
+<p>A product in DataOS is a single artifact. Contract, semantics, quality rules, owner, version, consumers: declared together, not scattered across a catalog, a pipeline repo, and a wiki.</p>
+<p>The lifecycle runs the whole arc. <strong>Declare the promise. Classify every change against it.</strong> Breaking changes ship as new versions while the old one keeps serving. Consumers are registered, notified, and migrated on their own schedule. Retirement happens when observed consumption hits zero, not when someone remembers.</p>
+<p>And consumption is audited by construction: every read, human or dashboard or agent, flows through a versioned contract, so "what was promised, to whom, and who approved the change" always has a one-line answer.</p>
+<p>Databricks manages assets superbly. <strong>Nothing below manages the promise.</strong> Each gap that follows is one place where that difference shows up in production.</p>
+
+
+<div class="gap">
+<h3 id="gap-quality">2.1 &nbsp;Quality is statistical, not contractual</h3>
+<div class="anatomy">
+<h4 class="albl">Mechanism</h4>
+<p>DQ monitoring learns what a table usually looks like and flags deviation. Useful, and structurally incapable of the judgment that matters: it cannot distinguish an intended change from a broken one, because <em>intent is not observable in data</em>. Intent exists only as a declared promise plus a diff against it. Call that missing judgment <strong>change classification</strong>: given a proposed change, decide whether it violates what consumers were promised (breaking, new major version) or not (compatible, ships). Classification requires three inputs no monitor has: a contract to diff against, the column-level lineage of the change itself, and a verdict that gates release.</p>
+<figure class="diag"><svg viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Change classification flow">
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#4A4F5A"/>
+    </marker>
+  </defs>
+  <g font-size="13.5" text-anchor="middle">
+    <rect x="30" y="130" width="160" height="56" rx="7" fill="#F2F3F5" stroke="#E3E4E0"/>
+    <text x="110" y="153" font-weight="600">Proposed change</text>
+    <text x="110" y="172" font-size="12" fill="#4A4F5A">at plan time</text>
+
+    <line x1="190" y1="158" x2="248" y2="158" stroke="#4A4F5A" stroke-width="1.5" marker-end="url(#a)"/>
+
+    <rect x="252" y="122" width="188" height="72" rx="7" fill="#EFF3FA" stroke="#23407C" stroke-width="1.5"/>
+    <text x="346" y="150" font-weight="600" fill="#23407C">Diff against contract</text>
+    <text x="346" y="169" font-size="12" fill="#4A4F5A">schema + column-level</text>
+    <text x="346" y="184" font-size="12" fill="#4A4F5A">lineage of the change</text>
+
+    <!-- compatible branch -->
+    <line x1="440" y1="140" x2="510" y2="84" stroke="#4A4F5A" stroke-width="1.5" marker-end="url(#a)"/>
+    <text x="466" y="98" font-size="11.5" fill="#4A4F5A" class="mono">COMPATIBLE</text>
+    <rect x="514" y="46" width="182" height="58" rx="7" fill="#F2F8F2" stroke="#5B8C5A"/>
+    <text x="605" y="70" font-weight="600" fill="#3A5F39">Ships as minor</text>
+    <text x="605" y="89" font-size="12" fill="#4A4F5A">nothing to migrate</text>
+
+    <!-- breaking branch -->
+    <line x1="440" y1="176" x2="510" y2="232" stroke="#4A4F5A" stroke-width="1.5" marker-end="url(#a)"/>
+    <text x="463" y="222" font-size="11.5" fill="#B7791F" class="mono">BREAKING</text>
+    <rect x="514" y="212" width="182" height="102" rx="7" fill="#FDF6E3" stroke="#B7791F"/>
+    <text x="605" y="238" font-weight="600" fill="#8a5a13">Forced to new major</text>
+    <text x="605" y="260" font-size="12" fill="#4A4F5A">old version keeps serving</text>
+    <text x="605" y="278" font-size="12" fill="#4A4F5A">consumers notified</text>
+    <text x="605" y="296" font-size="12" fill="#4A4F5A">migrate on their schedule</text>
+  </g>
+  <text x="30" y="36" font-size="12" fill="#4A4F5A">Intent is not observable in data. It exists only as a declared promise plus a diff against it.</text>
+</svg><figcaption>Change classification: every proposed change is judged against the contract before review.</figcaption></figure>
+<h4 class="albl">Real-world break</h4>
+<p>An engineer redefines <code>total_amount</code> from gross to net. Row counts normal, freshness normal, nulls normal: every predictive monitor scores the table healthy while finance under-reports revenue. The expensive breaks are precisely the ones statistics can't see.</p>
+<h4 class="albl">Cost</h4>
+<p>Decisions made on wrong numbers, senior-weeks of archaeology, and the slow one: each silent incident teaches the business to re-verify the data team's numbers, un-earning self-service.</p>
+<h4 class="albl">Why it holds</h4>
+<p>Learned models see distributions; permissions-to-change see promises. Closing this requires contracts as platform objects, which is the object-model problem in 2.4, not a monitoring feature.</p>
+<h4 class="albl">DataOS</h4>
+<p>Declared invariants and contract checks run as promotion gates per product; change classification is computed at plan time, before review.</p>
+</div>
+<div class="hook"><span class="lbl">Demo hook</span>
+<p><em>Scene:</em> orders product live, DQ monitoring on, finance dashboard on top.</p>
+<p><em>Show:</em> two changes. A column rename ships as a minor: monitors green, dashboard fine. Then the discount redefinition: monitors still green, but the plan blocks it as breaking.</p>
+<p><em>Land:</em> "Your monitors saw both and said nothing. Only the contract knew the difference."</p></div>
+</div>
+
+<div class="gap">
+<h3 id="gap-lifecycle">2.2 &nbsp;Changes have no consumer-facing lifecycle</h3>
+<div class="anatomy">
+<h4 class="albl">Mechanism</h4>
+<p>Bundles version code; git versions transformations; ALTER is instant and in-place on views, metric views, and tags. The entire change apparatus serves the person making the change. Nothing performs change classification (2.1) on behalf of the people depending on it: no contract diff, no v2 serving beside v3, no notice period.</p>
+<h4 class="albl">Real-world break</h4>
+<p>The change above ships through green CI: code review checks Spark, tests check the transformation, validate checks YAML, expectations check nulls. Every gate examines the factory; none examines the promise. Three weeks later, "who approved this?" has no answer, because approval-of-a-promise was never an object in the system.</p>
+<h4 class="albl">Cost</h4>
+<p>Incident cost plus audit cost: for regulated consumers, a number without an approval trail is a finding, not a feature.</p>
+<h4 class="albl">Why it holds</h4>
+<p>Consumer-facing lifecycle means serving two versions of the same logical asset simultaneously and refusing valid SQL DDL that breaks a promise. Both contradict how the catalog and engine treat assets today; this is a platform posture, not a missing endpoint.</p>
+<h4 class="albl">DataOS</h4>
+<p>The product is the promise: versioned contracts, breaking changes forced to new majors, previous versions served through their own environments until observed consumption reaches zero.</p>
+</div>
+<div class="hook"><span class="lbl">Demo hook</span>
+<p><em>Scene:</em> that breaking change, approved as v3.</p>
+<p><em>Show:</em> v2 keeps serving. Finance stays pinned. Then ask both systems: who approved this? Git blame and a Slack hunt on one side. A one-line release record on the other.</p>
+<p><em>Land:</em> "A 3 a.m. debugging session becomes a calendar invite."</p></div>
+</div>
+
+<div class="gap">
+<h3 id="gap-consumers">2.3 &nbsp;Consumers are invisible</h3>
+<div class="anatomy">
+<h4 class="albl">Mechanism</h4>
+<p>Lineage records reads, not reliances. It cannot distinguish a production dependency from an exploratory query, shows external readers as opaque service principals, and captures nothing about which properties of a column a reader assumed. There is no registry, no blast-radius computation, no notification path.</p>
+<h4 class="albl">Real-world break</h4>
+<p>Of three real consumers, the producer knows one. The mobile API reading over JDBC through a service principal is invisible; nobody checks lineage before a change anyway, because lineage is where you go after something breaks.</p>
+<h4 class="albl">Cost</h4>
+<p>Every change carries unknown blast radius, so teams either move slow (change review theater) or break things (and pay 2.1's bill).</p>
+<h4 class="albl">Why it holds</h4>
+<p>A real consumer registry requires consumption to flow through a product boundary that registration can gate. UC's model is open grants on securables; any principal with SELECT reads however it likes. Registration without a boundary is a wiki.</p>
+<h4 class="albl">DataOS</h4>
+<p>Consumers are registered objects tied to observed consumption; blast radius is computed, notification is a lifecycle step, and access flows through the product.</p>
+</div>
+<div class="hook"><span class="lbl">Demo hook</span>
+<p><em>Scene:</em> three real consumers, one hiding behind a JDBC service principal.</p>
+<p><em>Show:</em> UC lineage shows a principal blob. DataOS names all three, notification preview included.</p>
+<p><em>Land:</em> "The consumer you don't know about is the one that pages you."</p></div>
+</div>
+
+<div class="gap">
+<h3 id="gap-product-object">2.4 &nbsp;No product object</h3>
+<div class="anatomy">
+<h4 class="albl">Mechanism</h4>
+<p>The catalog's unit is the securable: table, view, function. Nothing binds N tables plus semantics plus quality rules into one versioned unit with an owner, an SLA, and consumers. Audited consumption has no unit to audit.</p>
+<h4 class="albl">What Databricks calls a "data product"</h4>
+<p>The label exists in three places; none is a lifecycle object:</p>
+<p style="margin-left:14px"><em><a href="https://www.databricks.com/product/unity-catalog">The UC product page</a></em>: "own and publish high-quality data products." Marketing noun. The features underneath are domains, Discover, and certification.</p>
+<p style="margin-left:14px"><em><a href="https://docs.databricks.com/aws/en/marketplace/get-started-consumer">Databricks Marketplace</a></em>: the closest thing to a real product object: a listing bundles tables, volumes, models, and notebooks, delivered as a read-only catalog via Delta Sharing to entitled consumers. But it's an external commerce construct: no versioned contract, no change classification, no consumer notification, and no internal equivalent.</p>
+<p style="margin-left:14px"><em><a href="https://docs.databricks.com/aws/en/discover/discover-page">Domains + Discover</a></em>: internally, a "product" is a governed tag plus a certification boolean. Grouping and trust signals, no lifecycle.</p>
+<p>Notice the pattern: the <em>external</em> case got a product primitive because commerce forced it. A listing can't be transacted without defined contents and entitlements. Internal consumption never had a forcing function, so the primitive was never built.</p>
+<figure class="diag"><svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fragments versus manifest">
+  <!-- left: fragments -->
+  <text x="30" y="34" font-size="12.5" fill="#4A4F5A" class="mono" font-weight="600" letter-spacing="1.2">"CUSTOMER_360" IN THE CATALOG</text>
+  <g font-size="12" text-anchor="middle">
+    <rect x="30" y="52" width="128" height="36" rx="6" fill="#F2F3F5" stroke="#E3E4E0"/><text x="94" y="75">customers  ·  table</text>
+    <rect x="176" y="66" width="128" height="36" rx="6" fill="#F2F3F5" stroke="#E3E4E0"/><text x="240" y="89">orders  ·  table</text>
+    <rect x="44" y="108" width="128" height="36" rx="6" fill="#F2F3F5" stroke="#E3E4E0"/><text x="108" y="131">events  ·  table</text>
+    <rect x="192" y="122" width="128" height="36" rx="6" fill="#F2F3F5" stroke="#E3E4E0"/><text x="256" y="145">support  ·  table</text>
+    <rect x="30" y="166" width="140" height="36" rx="6" fill="#F2F3F5" stroke="#E3E4E0"/><text x="100" y="189">ltv  ·  metric view</text>
+    <rect x="188" y="180" width="140" height="36" rx="6" fill="#F2F3F5" stroke="#E3E4E0"/><text x="258" y="203">churn  ·  metric view</text>
+    <rect x="52" y="224" width="120" height="36" rx="6" fill="#FDFDFC" stroke="#E3E4E0" stroke-dasharray="4 3"/><text x="112" y="247" fill="#4A4F5A">wiki page</text>
+    <rect x="196" y="238" width="132" height="36" rx="6" fill="#FDFDFC" stroke="#E3E4E0" stroke-dasharray="4 3"/><text x="262" y="261" fill="#4A4F5A">domain tag</text>
+  </g>
+  <g font-size="12.5" fill="#B7791F" class="mono">
+    <text x="30" y="308">version?   guarantee?</text>
+    <text x="30" y="328">owner?   consumers?</text>
+  </g>
+
+  <!-- divider -->
+  <line x1="366" y1="30" x2="366" y2="336" stroke="#E3E4E0" stroke-width="1.4"/>
+
+  <!-- right: manifest -->
+  <text x="398" y="34" font-size="12.5" fill="#23407C" class="mono" font-weight="600" letter-spacing="1.2">CUSTOMER_360 AS A PRODUCT</text>
+  <rect x="398" y="52" width="292" height="252" rx="9" fill="#EFF3FA" stroke="#23407C" stroke-width="1.6"/>
+  <g font-size="13" class="mono">
+    <text x="418" y="86" fill="#23407C" font-weight="600">customer_360  ·  v2.3</text>
+    <line x1="418" y1="98" x2="672" y2="98" stroke="#C4D0E8"/>
+    <text x="418" y="124" fill="#171A20">contract     schema + semantics</text>
+    <text x="418" y="150" fill="#171A20">ports        SQL · REST · GraphQL</text>
+    <text x="418" y="176" fill="#171A20">owner        commerce-data</text>
+    <text x="418" y="202" fill="#171A20">freshness    daily · declared</text>
+    <text x="418" y="228" fill="#171A20">consumers    finance-bi</text>
+    <text x="418" y="248" fill="#171A20">             churn-ml</text>
+    <text x="418" y="268" fill="#171A20">             mobile-api</text>
+    <line x1="418" y1="282" x2="672" y2="282" stroke="#C4D0E8"/>
+  </g>
+  <text x="398" y="330" font-size="12.5" fill="#4A4F5A">One artifact. Every audit question becomes a lookup.</text>
+</svg><figcaption>The same product as catalog fragments and as one manifest.</figcaption></figure>
+<h4 class="albl">Real-world break</h4>
+<p>"Customer 360" exists as tribal knowledge spread over four tables, two metric views, and a wiki page. Which version a consumer is on, what it guarantees, and who owns it are questions with no queryable answer. And when the buyer says "Marketplace has data products," the accurate response is: for data you sell to other companies, yes; for data your teams promise each other, no.</p>
+<h4 class="albl">Cost</h4>
+<p>Discovery-and-trust stays a social process (weeks of finding, asking, verifying per consumer), and every governance answer must be assembled from fragments at audit time.</p>
+<h4 class="albl">Why it holds</h4>
+<p>A composite lifecycle object contradicts the securable-per-asset foundation everything else (grants, lineage, ABAC, Discover) is built on. Retrofitting it is a rewrite of the catalog's object model. And the forcing-function history says it plainly: Databricks builds product primitives where transactions demand them. Internal promises don't transact, so they don't get primitives.</p>
+<h4 class="albl">DataOS</h4>
+<p>Audited consumption is the internal forcing function, and DataOS ships the primitive it forces: the product manifest: contract, semantics, ports, owner, consumers in one artifact, one lifecycle. Discover becomes the storefront our products surface in.</p>
+</div>
+<div class="hook"><span class="lbl">Demo hook</span>
+<p><em>Scene:</em> ask both systems: show me customer_360.</p>
+<p><em>Show:</em> four tables, two metric views, a wiki tab. No answer for version, guarantee, owner, consumers. The manifest answers all four on one screen.</p>
+<p><em>Land:</em> "Every audit question becomes a lookup."</p></div>
+</div>
+
+<p class="seam">The four gaps above are about the <strong>promise</strong>: declaring it, changing it, and knowing who relies on it. The two below are about <strong>consumption</strong>: what agents can trust, and what serving costs.</p>
+
+<div class="gap">
+<h3 id="gap-semantics">2.5 &nbsp;Semantics are ranked, not warranted</h3>
+<div class="anatomy">
+<h4 class="albl">Mechanism</h4>
+<p>Genie Ontology extracts knowledge from queries, dashboards, and 50+ apps and ranks competing definitions by authority (OntoRank). Ranking picks the likeliest meaning of "revenue"; nothing versions it, guarantees it, or notifies anyone when it drifts. <a href="https://www.typedef.ai/blog/what-is-genie-ontology-databricks-continuously-learned-context-layer-explained">Ranking a definition is not verifying the number</a> computed from it.</p>
+<h4 class="albl">Real-world break</h4>
+<p>An agent inherits 2.1's silent semantic shift at machine speed: it doesn't file a confused Slack message like an analyst, it produces confident wrong answers at volume, under a certified-looking source. OBO auth answers "may this agent see this row"; nothing answers "what may this agent rely on."</p>
+<h4 class="albl">Cost</h4>
+<p>Security review becomes the AI bottleneck (no artifact states what an agent may rely on), and the industry outcome Gartner predicts: 40% of enterprises demoting or decommissioning agents by 2027 over governance gaps found in production.</p>
+<h4 class="albl">Why it holds</h4>
+<p>A learned graph is probabilistic by design; warranting context requires the contract objects of 2.4 plus the lifecycle of 2.2. Also: Ontology ingests from everywhere but serves the Genie family; an open, warranted context API for any agent is a different product with a different buyer.</p>
+<h4 class="albl">DataOS</h4>
+<p>Contract-grounded context served to any agent: each dataset carries a machine-readable statement of meaning, guarantee, and freshness: the artifact the security reviewer signs.</p>
+</div>
+<div class="hook"><span class="lbl">Demo hook</span>
+<p><em>Scene:</em> same revenue question, two agents, before and after the silent shift.</p>
+<p><em>Show:</em> the raw-side agent keeps answering. Confidently wrong. The contract-side agent serves correct v2 or flags the change.</p>
+<p><em>Land:</em> "The agent never got suspicious. The contract did."</p></div>
+</div>
+
+<div class="gap">
+<h3 id="gap-compute">2.6 &nbsp;Everything meters through their compute</h3>
+<div class="anatomy">
+<h4 class="albl">Mechanism</h4>
+<p>Governed answers require the DBSQL engine: metric views are DirectQuery-only (import mode breaks semantics), Statement Execution runs per-call on a warehouse under one principal, Lakebase serving requires materializing data into it. There is no semantic API (measures by name over REST/GraphQL with tenant context) and no layer deciding which reads shouldn't hit compute at all. And there's a second meter: text-to-SQL agents burn tokens ingesting schemas and retrying failed queries. Metered API spend nobody budgets, scaling with usage.</p>
+<h4 class="albl">Real-world break</h4>
+<p>Who queries changes everything: humans in dozens per day, dashboard tiles in thousands, agents in millions. Near-identical reads, each billing the meter again. The consumption curve inflects exactly when the customer succeeds at AI.</p>
+<h4 class="albl">Cost</h4>
+<p>The DBSQL line becomes the AI tax; embedded and agent workloads also inherit seconds-scale latency and a shared-service-principal security model that reopens what OBO solved.</p>
+<h4 class="albl">Why it holds</h4>
+<p>Serving governed answers without the meter is revenue-negative. A vendor does not ship a feature whose success shrinks its own consumption line. This gap is economic, which makes it the most durable of the six.</p>
+<h4 class="albl">DataOS</h4>
+<p>In-flight dedup collapses concurrent identical queries into one execution; result reuse serves repeated reads without touching the engine; work-avoided metrics make the saving provable per workload, not asserted. Semantic serving over APIs with tenant-aware security, compute pushed down only when work is genuinely new.</p>
+<p>Freshness is stated, not hidden: cached answers serve at each product's declared freshness tolerance; fresh or long-tail queries pass through live, with dedup still applied. And agents send small JSON metric queries instead of generating SQL: no schema ingestion, near-zero retries, the token meter flattens with the compute meter.</p>
+</div>
+<div class="hook"><span class="lbl">Demo hook</span>
+<p><em>Scene:</em> a dashboard with a dozen tiles plus a chatty agent, run against both paths.</p>
+<p><em>Show:</em> the DBU meter climbing on one side. The work-avoided counter on the other. Same numbers everywhere. Then the token counts: schema-and-retry loops versus small JSON queries.</p>
+<p><em>Land:</em> "The cheapest query is the one that never runs."</p></div>
+</div>
+
+<h2 id="part3">3 · Where DataOS is relevant</h2>
+<div class="kicker">the map and the posture</div>
+
+<h3>The one-liner</h3>
+<p>DataOS is the system of record for intent. Contracts declare what's promised, change classification judges every change against the promise, and audited consumption follows, for humans, BI, and agents alike.</p>
+
+<table>
+<tr><th>Gap</th><th>DataOS mechanism</th></tr>
+<tr><td>Quality is statistical</td><td>Contract checks and declared invariants as promotion gates; classification at plan time</td></tr>
+<tr><td>No consumer-facing lifecycle</td><td>Versioned contracts; breaking changes forced to new majors; old versions served until consumption hits zero</td></tr>
+<tr><td>Consumers are invisible</td><td>Registered consumers + observed consumption; computed blast radius; notification as a lifecycle step</td></tr>
+<tr><td>No product object</td><td>The product manifest as the primitive: contract, semantics, ports, owner, consumers in one artifact</td></tr>
+<tr><td>Ranked, not warranted</td><td>Contract-grounded context served to any agent; the reliance artifact security teams sign</td></tr>
+<tr><td>Metered consumption</td><td>In-flight dedup + result reuse + semantic APIs; compute pushed down only for new work</td></tr>
+</table>
+
+<h3>Coexistence posture</h3>
+<p>Their features are our substrate, not our competition.</p>
+<p>We import metric views; a year of customer modeling becomes an on-ramp, not a moat. Their tables are our inputs. Their engines run our compute: we push work down, we don't replace it.</p>
+<p>We respect their ABAC as the enforcement plane. On top of it, we offer simpler, semantic-shaped REST and GraphQL APIs, governed separately or inclusively, whichever the customer's security model calls for. The filter lives in the layer, not the prompt.</p>
+<p>And we offer business-user-friendly discovery of data products, with APIs to build custom experiences on top.</p>
+<p>Where a customer already runs DataOS on another engine, Databricks is an extension of a working blueprint, not a new bet.</p>
+
+
+
+
+
+<h2 id="part4">4 · Objections</h2>
+<p>These are some of the questions buyers might ask. This doc doesn't answer them. We need to align together to prepare an answer.</p>
+
+<p><strong>1. Won't Databricks just ship this?</strong></p>
+
+<p><strong>2. We're all-in on Databricks and it's working. Why should we pay for a layer on top?</strong></p>
+
+<p><strong>3. Can't our platform team build this with metric views, wrapper views, and CI checks?</strong></p>
+
+<p><strong>4. Genie already answers our business users' questions. What does your semantic layer add?</strong></p>
+
+<p><strong>5. Engine portability gives customers renewal leverage over their warehouse vendor. Do we say that out loud, or let them discover it?</strong></p>
+
+
+
+
+
+</main>
+</div>
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var targets=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1));});
+  function onScroll(){
+    var idx=0;
+    for(var i=0;i<targets.length;i++){
+      if(targets[i] && targets[i].getBoundingClientRect().top<=90) idx=i;
+    }
+    links.forEach(function(a,i){a.classList.toggle('active',i===idx);});
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+})();
+</script>
+</body>
+</html>
