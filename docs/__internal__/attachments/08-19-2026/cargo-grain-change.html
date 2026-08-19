@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Grain Change, Played Through: Databricks-only vs. with DataOS</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --ink:#171A20; --soft:#4A4F5A; --blue:#23407C; --line:#E2E4E8; --break:#B32D1B; --ok:#2E7D4F; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#fff; color:var(--ink); font-family:'IBM Plex Sans',Arial,sans-serif; font-size:16px; line-height:1.6; }
+.wrap { max-width:840px; margin:0 auto; padding:48px 22px 90px; }
+h1,h2,h3 { font-family:'Courier New',Courier,monospace; letter-spacing:-0.01em; }
+h1 { font-size:30px; font-weight:700; line-height:1.2; margin-bottom:6px; }
+h2 { font-size:21px; font-weight:700; color:var(--blue); margin:46px 0 10px; }
+h3 { font-size:16.5px; font-weight:700; margin:26px 0 6px; }
+.eyebrow { font-family:'Courier New',Courier,monospace; font-size:12.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--soft); margin-bottom:10px; }
+.standfirst { font-size:17.5px; color:var(--soft); margin:8px 0 4px; }
+p { margin-bottom:12px; }
+code { font-family:'Courier New',Courier,monospace; font-size:.93em; background:#F2F3F5; padding:0 4px; border-radius:3px; }
+.term { font-family:'Courier New',Courier,monospace; font-size:13px; line-height:1.5;
+background:#F6F6F3; border:1px solid #E2E4E8; border-radius:6px; padding:14px 16px;
+white-space:pre; overflow-x:auto; margin:14px 0; }
+table { border-collapse:collapse; font-size:13.5px; margin:12px 0; font-family:'Courier New',Courier,monospace; }
+th { text-align:left; padding:5px 14px 5px 0; border-bottom:1.5px solid var(--ink); font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
+td { padding:4px 14px 4px 0; border-bottom:1px solid var(--line); }
+tr:last-child td { border-bottom:none; }
+.tables { display:flex; gap:36px; flex-wrap:wrap; align-items:flex-start; }
+.tbl-label { font-family:'Courier New',Courier,monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--soft); margin:10px 0 2px; }
+.punch { border-left:3px solid var(--blue); background:#EFF3FA; padding:12px 16px; margin:16px 0; }
+.bad td.hz { color:var(--break); font-weight:700; }
+</style>
+</head>
+<body><div class="wrap">
+
+<div class="eyebrow">Internal · Working note · August 2026</div>
+<h1>A grain change, played through</h1>
+<p class="standfirst">The same one-line performance PR, in a Databricks-only environment and with DataOS in the loop. Everything reconciles to the kilo in both worlds. Only one of them ships a false dangerous-goods declaration.</p>
+
+<h2>The problem</h2>
+<p><code>logistics.cargo_lines</code> holds one row per scanned item. Eight items across two containers; net 12,400 kg, tare 3,600, manifest gross 16,000. One aerosol pallet line carries a hazmat code: <code>UN1950</code>, 90 kg.</p>
+<p>A performance PR pre-aggregates the table to pallet grain, because pallets are what gets loaded and billed. One line changes: a <code>GROUP BY</code>, with <code>MAX()</code> on the text columns so the schema stays identical and nothing downstream errors.</p>
+
+<div class="tables">
+<div>
+<div class="tbl-label">Before · 8 rows, item grain (excerpt)</div>
+<table>
+<tr><th>pallet</th><th>sku</th><th>hazmat_un</th><th>weight</th></tr>
+<tr><td>PLT-A</td><td>SKU-2201</td><td></td><td>1,850</td></tr>
+<tr><td>PLT-A</td><td>SKU-2207</td><td></td><td>1,240</td></tr>
+<tr><td>PLT-A</td><td>SKU-4419</td><td>UN1950</td><td>90</td></tr>
+<tr><td>…</td><td></td><td></td><td></td></tr>
+</table>
+</div>
+<div>
+<div class="tbl-label">After · 3 rows, pallet grain</div>
+<table class="bad">
+<tr><th>pallet</th><th>sku</th><th>hazmat_un</th><th>weight</th></tr>
+<tr><td>PLT-A</td><td>SKU-4419</td><td class="hz">UN1950</td><td class="hz">3,180</td></tr>
+<tr><td>PLT-B</td><td>SKU-3318</td><td></td><td>4,320</td></tr>
+<tr><td>PLT-C</td><td>SKU-5530</td><td></td><td>4,900</td></tr>
+</table>
+</div>
+</div>
+
+<p>62% fewer rows, totals identical to the kilo. The PR says "no change to totals," which is true, so it's approved. And the dangerous-goods declaration for that shipment now reads <b>3,180 kg of UN1950 instead of 90 kg</b>, because the aerosol's UN code came along for the ride on a row that's now a pallet.</p>
+
+<div class="punch">The arithmetic is invariant under this change, so every arithmetic check is structurally blind to it. What changed is what a row <em>means</em>, and meaning isn't a number any reconciliation can touch. The general law: additive measures survive grain changes; counts collapse, ratios shift, attribution corrupts.</div>
+
+<h2>Databricks only</h2>
+<figure style="margin:18px 0;">
+<div style="overflow-x:auto;"><svg viewBox="0 0 840 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Databricks-only: disjoint assets" style="width:100%; min-width:680px; height:auto; border:1px solid #E2E4E8; border-radius:6px; background:#fff;">
+<defs>
+<marker id="arr2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#B9BEC9"/></marker>
+</defs>
+<style>
+.n2{font-family:'Courier New',Courier,monospace;font-size:11px;fill:#171A20;}
+.isl{fill:none;stroke:#C9CCD3;stroke-width:1.2;stroke-dasharray:6 4;}
+.ilbl{font-family:'Courier New',Courier,monospace;font-size:9.5px;letter-spacing:.08em;fill:#8A8F9C;}
+.ok{fill:#2E7D4F;font-size:10px;font-family:'Courier New',Courier,monospace;font-weight:bold;}
+.e2{stroke:#B9BEC9;stroke-width:1.1;fill:none;marker-end:url(#arr2);}
+.eo{stroke:#B9BEC9;stroke-width:1.1;fill:none;stroke-dasharray:3 3;marker-end:url(#arr2);}
+.box{fill:#F2F3F5;stroke:#E2E4E8;}
+</style>
+
+<!-- Island: pipeline A -->
+<rect class="isl" x="18" y="40" width="268" height="130" rx="10"/>
+<text class="ilbl" x="30" y="58">LAKEFLOW PIPELINE · INGEST</text>
+<rect class="box" x="34" y="76" width="110" height="34" rx="5"/><text class="n2" x="89" y="97" text-anchor="middle">scan_events</text>
+<rect class="box" x="164" y="76" width="108" height="34" rx="5"/><text class="n2" x="218" y="93" text-anchor="middle">cargo_lines</text>
+<text class="ok" x="218" y="105" text-anchor="middle">expectations ✔</text>
+<path class="e2" d="M144,93 L160,93"/>
+
+<!-- Island: pipeline B -->
+<rect class="isl" x="318" y="40" width="240" height="170" rx="10"/>
+<text class="ilbl" x="330" y="58">LAKEFLOW PIPELINE · COMPLIANCE</text>
+<rect class="box" x="345" y="72" width="186" height="32" rx="5"/><text class="n2" x="438" y="92" text-anchor="middle">cargo_lines_enriched ✔</text>
+<rect class="box" x="345" y="118" width="186" height="32" rx="5"/><text class="n2" x="438" y="138" text-anchor="middle">dg_declaration ✔</text>
+<text x="438" y="170" text-anchor="middle" font-family="'Courier New',Courier,monospace" font-size="10px" fill="#B32D1B" font-weight="bold">declares 3,180 kg UN1950 · nothing sees it</text>
+<path class="e2" d="M438,104 L438,114"/>
+
+<!-- Island: metric views -->
+<rect class="isl" x="590" y="40" width="232" height="170" rx="10"/>
+<text class="ilbl" x="602" y="58">UNITY CATALOG · METRIC VIEWS</text>
+<rect class="box" x="612" y="72" width="188" height="32" rx="5"/><text class="n2" x="706" y="92" text-anchor="middle">hazmat_weight_by_un ✔</text>
+<rect class="box" x="612" y="116" width="188" height="32" rx="5"/><text class="n2" x="706" y="136" text-anchor="middle">manifest_gross_weight ✔</text>
+<rect class="box" x="612" y="160" width="188" height="32" rx="5"/><text class="n2" x="706" y="180" text-anchor="middle">avg_line_weight ✔</text>
+
+<!-- Island: DQ monitoring -->
+<rect class="isl" x="18" y="230" width="268" height="130" rx="10"/>
+<text class="ilbl" x="30" y="248">DATA QUALITY MONITORING</text>
+<rect class="box" x="34" y="264" width="110" height="34" rx="5"/><text class="n2" x="89" y="281" text-anchor="middle">row-count</text><text class="n2" x="89" y="293" text-anchor="middle">model</text>
+<rect class="box" x="164" y="264" width="108" height="34" rx="5"/><text class="n2" x="218" y="285" text-anchor="middle">alert</text>
+<path class="e2" d="M144,281 L160,281"/>
+<text class="ok" x="152" y="330">triaged: marked expected ✔</text>
+
+<!-- Island: wiki (connected to nothing) -->
+<rect class="isl" x="318" y="262" width="240" height="88" rx="10"/>
+<text class="ilbl" x="330" y="280">WIKI</text>
+<text class="n2" x="438" y="306" text-anchor="middle">"grain: one row = one scanned item"</text>
+<text class="n2" x="438" y="326" text-anchor="middle" fill="#8A8F9C">connected to nothing</text>
+
+<!-- cross-island data flows (thin) -->
+<path class="e2" d="M272,86 C300,80 310,82 341,86"/>
+<path class="e2" d="M531,88 C560,86 570,86 608,88"/>
+<!-- monitor observes -->
+<path class="eo" d="M89,260 C89,200 150,130 168,112"/>
+<text class="n2" x="96" y="196" fill="#8A8F9C" font-size="9.5">observes</text>
+</svg></div>
+<figcaption style="font-size:13px; color:#4A4F5A; margin-top:6px;">Every asset healthy, every check green, each island governed on its own terms. The declared grain lives in a wiki and connects to nothing, so nothing can enforce it, and nothing spans the islands, so nothing can block across them.</figcaption>
+</figure>
+<p>Databricks does notice. Data Quality Monitoring learns what each table usually looks like, expected row counts and commit cadence, with no configuration at all. When <code>cargo_lines</code> drops from 8 rows to 3, the completeness model flags it, the health indicator goes red in Catalog Explorer, and an alert reaches the table owner. So far, everything worked.</p>
+<p>Then comes the triage. The owner opens the alert, finds the recent PR ("pre-aggregation for performance, no change to totals") and recomputes the totals. True, to the kilo. The anomaly gets marked expected, the model relearns its baseline, and three rows per shipment becomes the new normal. From that night on, the DG declaration ships 3,180 kg of UN1950 under a green health indicator.</p>
+<p>The failure isn't in the monitor. It's in what the monitor's signal can be checked against. Nothing in this environment records what a row was <em>promised</em> to mean, so the only reference the owner has is the PR description, which is honest. A statistical alert plus an honest PR is a rubber stamp.</p>
+
+<h2>With DataOS</h2>
+<p>DataOS governs transformation, semantics, and metrics as one unit, and the contract for <code>cargo_lines</code> declares its grain: one row = one scanned item, joining 1:1 to <code>orders.order_lines</code>. Three acts.</p>
+<figure style="margin:18px 0;">
+<div style="overflow-x:auto;"><svg viewBox="0 0 940 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Product DAG: models, audits, metrics" style="width:100%; min-width:760px; height:auto; border:1px solid #E2E4E8; border-radius:6px; background:#fff;">
+<defs>
+<marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#B9BEC9"/></marker>
+</defs>
+<style>
+.n{font-family:'Courier New',Courier,monospace;font-size:11.5px;fill:#171A20;}
+.t{font-family:'Courier New',Courier,monospace;font-size:9px;font-weight:bold;letter-spacing:.05em;}
+.col{font-family:'Courier New',Courier,monospace;font-size:10px;letter-spacing:.1em;fill:#8A8F9C;}
+.e{stroke:#B9BEC9;stroke-width:1.2;fill:none;marker-end:url(#arr);}
+.ea{stroke:#B9BEC9;stroke-width:1.2;fill:none;stroke-dasharray:4 3;}
+</style>
+
+<text x="30" y="26" class="col">SOURCES</text>
+<text x="250" y="26" class="col">MODEL + AUDITS</text>
+<text x="510" y="26" class="col">DERIVED</text>
+<text x="720" y="26" class="col">METRICS</text>
+
+<!-- sources -->
+<rect x="20" y="120" width="160" height="36" rx="5" fill="#F2F3F5" stroke="#E2E4E8"/>
+<text x="100" y="142" class="n" text-anchor="middle">scan_events</text>
+<rect x="20" y="330" width="160" height="36" rx="5" fill="#F2F3F5" stroke="#E2E4E8"/>
+<text x="100" y="352" class="n" text-anchor="middle">orders.order_lines</text>
+
+<!-- model -->
+<rect x="240" y="112" width="180" height="52" rx="6" fill="#FBEDEA" stroke="#B32D1B" stroke-width="1.6"/>
+<text x="330" y="134" class="n" text-anchor="middle">logistics.cargo_lines</text>
+<text x="330" y="152" class="t" fill="#B32D1B" text-anchor="middle">BREAKING · grain changed</text>
+
+<!-- audits (attached, dashed) -->
+<rect x="214" y="200" width="232" height="30" rx="5" fill="#fff" stroke="#B32D1B" stroke-dasharray="4 3"/>
+<text x="330" y="219" class="n" text-anchor="middle" font-size="9.5">cargo_order_line_consistency ✘</text>
+<rect x="214" y="238" width="232" height="30" rx="5" fill="#fff" stroke="#B32D1B" stroke-dasharray="4 3"/>
+<text x="330" y="257" class="n" text-anchor="middle" font-size="9.5">hazmat_un_weight_validation ✘</text>
+<rect x="214" y="276" width="232" height="30" rx="5" fill="#fff" stroke="#2E7D4F" stroke-dasharray="4 3"/>
+<text x="330" y="295" class="n" text-anchor="middle" font-size="9.5">manifest_weight_reconciliation ✔</text>
+
+<!-- derived -->
+<rect x="480" y="48" width="190" height="34" rx="5" fill="#FBF3E2" stroke="#8A5A13"/>
+<text x="575" y="69" class="n" text-anchor="middle" font-size="10.5">cargo_lines_enriched</text>
+<rect x="480" y="96" width="190" height="46" rx="5" fill="#FBEDEA" stroke="#B32D1B" stroke-width="1.4"/>
+<text x="575" y="115" class="n" text-anchor="middle" font-size="10.5">dg_declaration</text>
+<text x="575" y="132" class="t" fill="#B32D1B" text-anchor="middle">BLOCKED · last state serves</text>
+<rect x="480" y="156" width="190" height="34" rx="5" fill="#FBF3E2" stroke="#8A5A13"/>
+<text x="575" y="177" class="n" text-anchor="middle" font-size="10.5">rollup.container_weights_01</text>
+<rect x="480" y="204" width="190" height="34" rx="5" fill="#FBF3E2" stroke="#8A5A13"/>
+<text x="575" y="225" class="n" text-anchor="middle" font-size="10.5">rollup.pallet_billing_01</text>
+
+<!-- metrics -->
+<rect x="700" y="52" width="216" height="34" rx="5" fill="#FBF3E2" stroke="#8A5A13"/>
+<text x="808" y="73" class="n" text-anchor="middle" font-size="10.5">hazmat_weight_by_un</text>
+<rect x="700" y="106" width="216" height="34" rx="5" fill="#FBF3E2" stroke="#8A5A13"/>
+<text x="808" y="127" class="n" text-anchor="middle" font-size="10.5">lines_per_shipment</text>
+<rect x="700" y="160" width="216" height="34" rx="5" fill="#FBF3E2" stroke="#8A5A13"/>
+<text x="808" y="181" class="n" text-anchor="middle" font-size="10.5">avg_line_weight</text>
+<rect x="700" y="214" width="216" height="46" rx="5" fill="#EAF4EE" stroke="#2E7D4F" stroke-width="1.4"/>
+<text x="808" y="233" class="n" text-anchor="middle" font-size="10.5">manifest_gross_weight</text>
+<text x="808" y="250" class="t" fill="#2E7D4F" text-anchor="middle">NON-BREAKING</text>
+
+<!-- edges -->
+<path class="e" d="M180,138 L236,138"/>
+<path class="e" d="M420,126 C450,110 450,75 476,66"/>
+<path class="e" d="M420,138 L476,120"/>
+<path class="e" d="M420,146 C450,155 450,168 476,172"/>
+<path class="e" d="M420,152 C452,175 450,208 476,220"/>
+<path class="e" d="M670,66 L696,69"/>
+<path class="e" d="M670,113 C682,113 686,118 696,122"/>
+<path class="e" d="M670,172 C680,174 686,176 696,177"/>
+<path class="e" d="M670,222 C680,228 686,234 696,236"/>
+<path class="ea" d="M180,344 C210,344 220,300 236,290 C238,270 238,236 240,228"/>
+<text x="150" y="318" class="n" font-size="9.5" fill="#8A8F9C">1:1 declared</text>
+</svg></div>
+<figcaption style="font-size:13px; color:#4A4F5A; margin-top:6px;">The product as one planned unit. Red is the changed model and what its failure blocks; amber is indirect breaking; green is what the plan concedes survives. The audits hang off the model and gate everything to its right.</figcaption>
+</figure>
+
+<h3>Act 1 · the plan catches it</h3>
+<p>The same change hits <code>vulcan plan</code> before it merges. The diff is captured, classified breaking against the declared grain, every impacted asset listed, registered consumers named, and the product version bumps on apply.</p>
+<div class="term">(.env) ➜  freight_ops git:(perf/pallet-preagg-cargo-lines) ✗ vulcan plan
+
+Differences from the `prod` environment:
+
+Models:
+├── Directly Modified:
+│   └── logistics.cargo_lines
+└── Indirectly Modified:
+    ├── logistics.cargo_lines_enriched
+    ├── logistics.dg_declaration
+    ├── __virtual.hazmat_weight_by_un
+    ├── __virtual.manifest_gross_weight
+    ├── __virtual.lines_per_shipment
+    ├── __virtual.avg_line_weight
+    ├── rollup.container_weights_01
+    └── rollup.pallet_billing_01
+Standalone Audits:
+└── Indirectly Modified:
+    ├── cargo_order_line_consistency
+    ├── manifest_weight_reconciliation
+    └── hazmat_un_weight_validation
+
+-------------------------------------------------------------------------------
+--- models/logistics/cargo_lines.sql
++++ models/logistics/cargo_lines.sql
+
+@@ -41,11 +41,12 @@
+
+  SELECT
+    shipment_id,
+    container_id,
+    pallet_id,
+-    sku,
+-    hazmat_un,
+-    weight_kg
+-  FROM logistics.scan_events
+-  WHERE scan_type = &#x27;load&#x27;
++    MAX(sku)         AS sku,
++    MAX(hazmat_un)   AS hazmat_un,
++    SUM(weight_kg)   AS weight_kg
++  FROM logistics.scan_events
++  WHERE scan_type = &#x27;load&#x27;
++  GROUP BY shipment_id, container_id, pallet_id
+-------------------------------------------------------------------------------
+
+Directly Modified: logistics.cargo_lines (Breaking)
+└── Indirectly Modified Children:
+    ├── (Metric) __virtual.hazmat_weight_by_un (Indirect Breaking)
+    ├── (Metric) __virtual.lines_per_shipment (Indirect Breaking)
+    ├── (Metric) __virtual.avg_line_weight (Indirect Breaking)
+    ├── (Metric) __virtual.manifest_gross_weight (Indirect — Non-breaking)
+    ├── (Table) logistics.cargo_lines_enriched (Indirect Breaking)
+    ├── (Table) logistics.dg_declaration (Indirect Breaking)
+    ├── (Rollup) rollup.container_weights_01 (Indirect Breaking)
+    ├── (Rollup) rollup.pallet_billing_01 (Indirect Breaking)
+    ├── (Semantic Model) cargo_order_line_consistency (Indirect Breaking)
+    ├── (Semantic Model) manifest_weight_reconciliation (Indirect — Passing)
+    └── (Semantic Model) hazmat_un_weight_validation (Indirect Breaking)
+
+Registered consumers of affected assets (3):
+    ├── dg-declaration-service    reads logistics.dg_declaration        · API
+    ├── customs-manifest          reads __virtual.manifest_gross_weight · export
+    └── billing                   reads rollup.pallet_billing_01        · dashboard
+
+This plan contains breaking changes.</div>
+<p>Notice the plan's restraint. <code>manifest_gross_weight</code> comes back <b>non-breaking</b>, because a SUM survives a grain change, and the reconciliation audit shows as <b>Passing</b>. The arithmetic is still true, and the plan says so. It judges per measure, and it concedes the one thing the PR author got right.</p>
+
+<h3>Act 2 · the author applies anyway; the audits block promotion</h3>
+<div class="term">Apply - Backfill Tables [y/n]: y
+[1/1] logistics.cargo_lines                [full refresh (3 rows), audits ✔2 ✘1]      0.31s
+      ✘ cargo_order_line_consistency
+[1/1] manifest_weight_reconciliation       [run standalone audit, audits ✔1]          0.08s
+[1/1] hazmat_un_weight_validation          [run standalone audit, audits ✘1]          0.09s
+[1/1] cargo_order_line_consistency         [run standalone audit, audits ✘1]          0.07s
+[1/1] rollup.container_weights_01          [full refresh (2 rows)]                    0.06s
+[1/1] rollup.pallet_billing_01             [full refresh (3 rows)]                    0.07s
+[1/1] logistics.cargo_lines_enriched       [full refresh (3 rows)]                    0.28s
+[1/1] logistics.dg_declaration             [blocked: upstream audit failed]           --
+Executing model batches ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╸━━━━━━━━━  87.5% • 7/8 • 0:00:01
+
+✘ Model batches halted: 2 audits failed, 1 model blocked
+
+  logistics.dg_declaration was not refreshed. Its last verified state
+  continues to serve dg-declaration-service.</div>
+<p>The regulatory output never refreshed. Consent doesn't release a false declaration.</p>
+
+<h3>Act 3 · the fix</h3>
+<p>The performance goal was legitimate; the mistake was where the aggregation lived. The author restores item grain in <code>cargo_lines</code> and moves the pallet pre-agg into <code>rollup.pallet_billing_01</code>, which declares pallet grain in its own contract:</p>
+<div class="term">(.env) ➜  freight_ops git:(perf/pallet-preagg-cargo-lines) ✗ vulcan plan
+
+Differences from the `prod` environment:
+
+Models:
+└── Directly Modified:
+    ├── logistics.cargo_lines          (item grain restored)
+    └── rollup.pallet_billing_01       (pallet pre-aggregation moved here)
+
+Directly Modified: logistics.cargo_lines (Non-breaking)
+Directly Modified: rollup.pallet_billing_01 (Non-breaking — additive rollup,
+                                             grain declared: pallet)
+
+Apply - Backfill Tables [y/n]: y
+[1/1] logistics.cargo_lines                [full refresh (8 rows), audits ✔3]         0.29s
+[1/1] manifest_weight_reconciliation       [run standalone audit, audits ✔1]          0.08s
+[1/1] hazmat_un_weight_validation          [run standalone audit, audits ✔1]          0.07s
+[1/1] cargo_order_line_consistency         [run standalone audit, audits ✔1]          0.06s
+[1/1] rollup.container_weights_01          [full refresh (2 rows)]                    0.06s
+[1/1] rollup.pallet_billing_01             [full refresh (3 rows)]                    0.07s
+[1/1] logistics.cargo_lines_enriched       [full refresh (8 rows)]                    0.27s
+[1/1] logistics.dg_declaration             [full refresh (1 row), audits ✔1]          0.12s
+Executing model batches ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 8/8 • 0:00:01
+
+✔ Model batches executed
+
+Updating virtual layer  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 4/4 • 0:00:00
+
+✔ Virtual layer updated</div>
+<p>The pre-agg ships and the promise never broke. Nothing that violated a declared contract was ever promoted.</p>
+
+<h2>"Oh, I can do this in Databricks?"</h2>
+<p>Mostly, yes. Every audit above was written by a person, and each has a Databricks equivalent: the 1:1 join is a DQX rule or a DLT expectation, the hazmat cap is an expectation, the reconciliation is a SQL alert. A fail-severity expectation will even halt its own pipeline. The checks travel fine.</p>
+<p>What has no equivalent is the verdict. <code>(Breaking)</code> wasn't produced by running a check against data. It was produced by diffing a change against a declared grain. Databricks has nowhere to write that sentence, "one row is one scanned item," as something the platform holds you to, because there is no contract object to hold it. You can assert things about data. You cannot assert things about a change, and the change is where this incident started.</p>
+<p>The rest follows from that missing object. The endangered audits appeared in the plan before any data moved; an expectation only exists at runtime. <code>dg_declaration</code> was blocked by a failure in a different model; an expectation halts only its own pipeline, and wiring one pipeline's failure to another's refusal is orchestration you build and then maintain. And these checks live inside the product and version with it, rather than scattered across pipeline code, DQX config, and a wiki page holding the SLA.</p>
+<div class="punch"><b>The checks are portable. The consequences aren't.</b></div>
+
+<h2>The alert, replayed in this world</h2>
+<p>The monitor fires exactly as before. Nothing here switches it off, and nothing should. What changes is what the triager finds when they look: a plan record. Breaking, grain change named, version bumped, three consumers notified, the declaration held at its last verified state. The same dismissal that was a guess against a PR description becomes an acknowledgment against a recorded change.</p>
+
+</div></body></html>
