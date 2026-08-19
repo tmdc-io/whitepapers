@@ -229,7 +229,7 @@ strong { font-weight:600; }
 
 <p>What DataOS brings is one idea: <strong>the data product is a managed object with a lifecycle.</strong></p>
 <p>A product in DataOS is a single artifact. Contract, semantics, quality rules, owner, version, consumers: declared together, not scattered across a catalog, a pipeline repo, and a wiki.</p>
-<p>The lifecycle runs the whole arc. <strong>Declare the promise. Classify every change against it.</strong> Breaking changes ship as new versions while the old one keeps serving. Consumers are registered, notified, and migrated on their own schedule. Retirement happens when observed consumption hits zero, not when someone remembers.</p>
+<p>The lifecycle runs the whole arc. <strong>Declare the promise. Classify every change against it.</strong> Breaking changes are stopped at plan time and ship only with explicit consent and a version bump. Registered consumers hear about the change before it lands, in the channels they already work in: email, Slack, Teams, webhooks. Retirement is a deliberate, notified act, not a quiet deletion.</p>
 <p>And consumption is audited by construction: every read, human or dashboard or agent, flows through a versioned contract, so "what was promised, to whom, and who approved the change" always has a one-line answer.</p>
 <p>Databricks manages assets superbly. <strong>Nothing below manages the promise.</strong> Each gap that follows is one place where that difference shows up in production.</p>
 
@@ -268,10 +268,10 @@ strong { font-weight:600; }
     <line x1="440" y1="176" x2="510" y2="232" stroke="#4A4F5A" stroke-width="1.5" marker-end="url(#a)"/>
     <text x="463" y="222" font-size="11.5" fill="#B7791F" class="mono">BREAKING</text>
     <rect x="514" y="212" width="182" height="102" rx="7" fill="#FDF6E3" stroke="#B7791F"/>
-    <text x="605" y="238" font-weight="600" fill="#8a5a13">Forced to new major</text>
-    <text x="605" y="260" font-size="12" fill="#4A4F5A">old version keeps serving</text>
-    <text x="605" y="278" font-size="12" fill="#4A4F5A">consumers notified</text>
-    <text x="605" y="296" font-size="12" fill="#4A4F5A">migrate on their schedule</text>
+    <text x="605" y="238" font-weight="600" fill="#8a5a13">Blocked · consent required</text>
+    <text x="605" y="260" font-size="12" fill="#4A4F5A">ships only with explicit consent</text>
+    <text x="605" y="278" font-size="12" fill="#4A4F5A">as a new major version</text>
+    <text x="605" y="296" font-size="12" fill="#4A4F5A">consumers notified before impact</text>
   </g>
   <text x="30" y="36" font-size="12" fill="#4A4F5A">Intent is not observable in data. It exists only as a declared promise plus a diff against it.</text>
 </svg><figcaption>Change classification: every proposed change is judged against the contract before review.</figcaption></figure>
@@ -294,19 +294,19 @@ strong { font-weight:600; }
 <h3 id="gap-lifecycle">2.2 &nbsp;Changes have no consumer-facing lifecycle</h3>
 <div class="anatomy">
 <h4 class="albl">Mechanism</h4>
-<p>Bundles version code; git versions transformations; ALTER is instant and in-place on views, metric views, and tags. The entire change apparatus serves the person making the change. Nothing performs change classification (<a href="#gap-quality">2.1</a>) on behalf of the people depending on it: no contract diff, no v2 serving beside v3, no notice period.</p>
+<p>Bundles version code; git versions transformations; ALTER is instant and in-place on views, metric views, and tags. The entire change apparatus serves the person making the change. Nothing performs change classification (<a href="#gap-quality">2.1</a>) on behalf of the people depending on it: no contract diff, no consent gate, no notice period.</p>
 <h4 class="albl">Real-world break</h4>
 <p>The change above ships through green CI: code review checks Spark, tests check the transformation, validate checks YAML, expectations check nulls. Every gate examines the factory; none examines the promise. Three weeks later, "who approved this?" has no answer, because approval-of-a-promise was never an object in the system.</p>
 <h4 class="albl">Cost</h4>
 <p>Incident cost plus audit cost: for regulated consumers, a number without an approval trail is a finding, not a feature.</p>
 <h4 class="albl">Why it holds</h4>
-<p>Consumer-facing lifecycle means serving two versions of the same logical asset simultaneously and refusing valid SQL DDL that breaks a promise. Both contradict how the catalog and engine treat assets today; this is a platform posture, not a missing endpoint.</p>
+<p>Consumer-facing lifecycle means two things a catalog doesn't do: refusing a valid change because a promise forbids it, and notifying people who never touched the code. Both contradict how the catalog treats assets today: an ALTER either has permissions or it doesn't, and the set of people who care is recorded nowhere. This is a platform posture, not a missing endpoint.</p>
 <h4 class="albl">DataOS</h4>
-<p>The product is the promise: versioned contracts, breaking changes forced to new majors, previous versions served through their own environments until observed consumption reaches zero.</p>
+<p>The product is the promise: versioned contracts, breaking changes blocked at plan time and shipped only with explicit consent, consumers notified through their channels before the change lands. The version history is the audit trail: what changed, who consented, who was told.</p>
 </div>
 <div class="hook"><span class="lbl">Demo hook</span>
-<p><em>Scene:</em> that breaking change, approved as v3.</p>
-<p><em>Show:</em> v2 keeps serving. Finance stays pinned. Then ask both systems: who approved this? Git blame and a Slack hunt on one side. A one-line release record on the other.</p>
+<p><em>Scene:</em> that breaking change, at the consent gate.</p>
+<p><em>Show:</em> the plan blocks it; an owner explicitly approves; the version bumps and the notification lands in finance's Slack before the change does. Then ask both systems: who approved this? Git blame and a Slack hunt on one side. A one-line plan record on the other.</p>
 <p><em>Land:</em> "A 3 a.m. debugging session becomes a calendar invite."</p></div>
 </div>
 
@@ -412,7 +412,7 @@ strong { font-weight:600; }
 </div>
 <div class="hook"><span class="lbl">Demo hook</span>
 <p><em>Scene:</em> same revenue question, two agents, before and after the silent shift.</p>
-<p><em>Show:</em> the raw-side agent keeps answering. Confidently wrong. The contract-side agent serves correct v2 or flags the change.</p>
+<p><em>Show:</em> the raw-side agent keeps answering. Confidently wrong. The contract-side agent still answers correctly, because the silent shift never shipped.</p>
 <p><em>Land:</em> "The agent never got suspicious. The contract did."</p></div>
 </div>
 
@@ -466,7 +466,7 @@ strong { font-weight:600; }
 <table>
 <tr><th>Gap</th><th>DataOS mechanism</th></tr>
 <tr><td>Quality is statistical</td><td>Contract checks and declared invariants as promotion gates; classification at plan time</td></tr>
-<tr><td>No consumer-facing lifecycle</td><td>Versioned contracts; breaking changes forced to new majors; old versions served until consumption hits zero</td></tr>
+<tr><td>No consumer-facing lifecycle</td><td>Breaking changes blocked at plan time; explicit consent and a version bump to ship; consumers notified via email, Slack, Teams, webhooks before impact</td></tr>
 <tr><td>Consumers are invisible</td><td>Registered consumers + observed consumption; computed blast radius; notification as a lifecycle step</td></tr>
 <tr><td>No product object</td><td>The product manifest as the primitive: contract, semantics, ports, owner, consumers in one artifact</td></tr>
 <tr><td>Ranked, not warranted</td><td>Contract-grounded context served to any agent; the reliance artifact security teams sign</td></tr>
