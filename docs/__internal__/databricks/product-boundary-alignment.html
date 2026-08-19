@@ -58,6 +58,10 @@ h4.albl { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:
 .anatomy h4.albl:first-child { margin-top:2px; }
 .anatomy p { margin-bottom:6px; }
 .seam { font-size:14.5px; color:var(--ink-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:10px 2px; margin:22px 0; }
+
+pre.code { font-family:'IBM Plex Mono',monospace; font-size:12.5px; line-height:1.55; background:#F6F6F3; border:1px solid var(--line); border-radius:8px; padding:14px 16px; overflow-x:auto; margin:12px 0; white-space:pre; }
+.say { border-left:3px solid var(--amber); background:var(--amber-tint); padding:9px 13px; margin:12px 0 18px; font-size:14.5px; border-radius:0 6px 6px 0; }
+.say .lbl { color:var(--amber); margin-right:6px; }
 .hook { border-left:3px solid var(--amber); background:var(--amber-tint); padding:9px 13px; margin-top:10px; font-size:14.5px; border-radius:0 6px 6px 0; }
 .hook .lbl { color:var(--amber); }
 .hook p { margin:6px 0 0; } .hook p:first-of-type { margin-top:4px; } .hook em { font-style:normal; font-weight:600; color:var(--amber); }
@@ -106,13 +110,14 @@ strong { font-weight:600; }
 <a class="sub" href="#gap-compute">2.6 Metered compute</a>
 <a class="sub" href="#gap-operating">2.7 Operating is invisible</a>
 <a href="#part3">3 · Where DataOS is relevant</a>
-<a href="#part4">4 · Objections</a>
+<a href="#part4">4 · Demo</a>
+<a href="#part5">5 · Objections</a>
 </nav></aside>
 <main>
 
 
 
-<div class="eyebrow">Internal · Product + Sales Alignment · August 17, 2026</div>
+<div class="eyebrow">Internal · Product + Sales Alignment · August 18, 2026</div>
 <h1>Databricks and the <span class="accent">Product Boundary</span></h1>
 <p class="subtitle">How DataOS coexists with the Databricks estate</p>
 
@@ -186,9 +191,9 @@ strong { font-weight:600; }
     <line x1="130" y1="90" x2="130" y2="116"/><line x1="360" y1="90" x2="360" y2="116"/><line x1="590" y1="90" x2="590" y2="116"/>
   </g>
 
-  <!-- DataOS promise layer -->
+  <!-- DataOS contract layer -->
   <rect x="24" y="118" width="672" height="106" rx="9" fill="#EFF3FA" stroke="#23407C" stroke-width="1.6"/>
-  <text x="42" y="146" font-size="13" fill="#23407C" class="mono" font-weight="600" letter-spacing="1.2">DATAOS · MANAGES THE PROMISE</text>
+  <text x="42" y="146" font-size="13" fill="#23407C" class="mono" font-weight="600" letter-spacing="1.2">DATAOS · MANAGES THE CONTRACT</text>
   <g font-size="13.5" text-anchor="middle">
     <rect x="42" y="160" width="148" height="44" rx="6" fill="#fff" stroke="#C4D0E8"/>
     <text x="116" y="187">Contract</text>
@@ -223,22 +228,22 @@ strong { font-weight:600; }
     <rect x="470" y="382" width="208" height="40" rx="6" fill="#F2F3F5" stroke="#E3E4E0"/>
     <text x="574" y="407">Engines · Lakebase</text>
   </g>
-</svg><figcaption>The product boundary: Databricks manages assets and queries; the promise layer above it is where DataOS operates.</figcaption></figure>
+</svg><figcaption>The product boundary: Databricks manages assets and queries; the contract layer above it is where DataOS operates.</figcaption></figure>
 
 <h2 id="part2">2 · The gaps, from a productization angle</h2>
 
 <p>What DataOS brings is one idea: <strong>the data product is a managed object with a lifecycle.</strong></p>
 <p>A product in DataOS is a single artifact. Contract, semantics, quality rules, owner, version, consumers: declared together, not scattered across a catalog, a pipeline repo, and a wiki.</p>
-<p>The lifecycle runs the whole arc. <strong>Declare the promise. Classify every change against it.</strong> Breaking changes are stopped at plan time and ship only with explicit consent and a version bump. Registered consumers hear about the change before it lands, in the channels they already work in: email, Slack, Teams, webhooks. Retirement is a deliberate, notified act, not a quiet deletion.</p>
-<p>And consumption is audited by construction: every read, human or dashboard or agent, flows through a versioned contract, so "what was promised, to whom, and who approved the change" always has a one-line answer.</p>
-<p>Databricks manages assets superbly. <strong>Nothing below manages the promise.</strong> Each gap that follows is one place where that difference shows up in production.</p>
+<p>The lifecycle runs the whole arc. <strong>Declare the contract. Classify every change against it.</strong> Breaking changes are stopped at plan time and ship only with explicit consent and a version bump. Registered consumers hear about the change before it lands, in the channels they already work in: email, Slack, Teams, webhooks. Retirement is a deliberate, notified act, not a quiet deletion.</p>
+<p>And consumption is audited by construction: every read, human or dashboard or agent, flows through a versioned contract, so "what was declared, to whom, and who approved the change" always has a one-line answer.</p>
+<p>Databricks manages assets superbly. <strong>Nothing below manages the contract.</strong> Each gap that follows is one place where that difference shows up in production.</p>
 
 
 <div class="gap">
 <h3 id="gap-quality">2.1 &nbsp;Quality is statistical, not contractual</h3>
 <div class="anatomy">
 <h4 class="albl">Mechanism</h4>
-<p>DQ monitoring learns what a table usually looks like and flags deviation. Useful, and structurally incapable of the judgment that matters: it cannot distinguish an intended change from a broken one, because <em>intent is not observable in data</em>. Intent exists only as a declared promise plus a diff against it. Call that missing judgment <strong>change classification</strong>: given a proposed change, decide whether it violates what consumers were promised (breaking, new major version) or not (compatible, ships). Classification requires three inputs no monitor has: a contract to diff against, the column-level lineage of the change itself, and a verdict that gates release.</p>
+<p>DQ monitoring learns what a table usually looks like and flags deviation. Useful, and structurally incapable of the judgment that matters: it cannot distinguish an intended change from a broken one, because <em>intent is not observable in data</em>. Intent exists only as a declaration plus a diff against it. Call that missing judgment <strong>change classification</strong>: given a proposed change, decide whether it violates what the contract declared to consumers (breaking, new major version) or not (compatible, ships). Classification requires three inputs no monitor has: a contract to diff against, the column-level lineage of the change itself, and a verdict that gates release.</p>
 <figure class="diag"><svg viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Change classification flow">
   <defs>
     <marker id="a" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
@@ -273,21 +278,17 @@ strong { font-weight:600; }
     <text x="605" y="278" font-size="12" fill="#4A4F5A">as a new major version</text>
     <text x="605" y="296" font-size="12" fill="#4A4F5A">consumers notified before impact</text>
   </g>
-  <text x="30" y="36" font-size="12" fill="#4A4F5A">Intent is not observable in data. It exists only as a declared promise plus a diff against it.</text>
+  <text x="30" y="36" font-size="12" fill="#4A4F5A">Intent is not observable in data. It exists only as a declaration plus a diff against it.</text>
 </svg><figcaption>Change classification: every proposed change is judged against the contract before review.</figcaption></figure>
 <h4 class="albl">Real-world break</h4>
-<p>An engineer redefines <code>total_amount</code> from gross to net. Row counts normal, freshness normal, nulls normal: every predictive monitor scores the table healthy while finance under-reports revenue. The expensive breaks are precisely the ones statistics can't see.</p>
+<p>A performance PR pre-aggregates a scanned-item cargo table to pallet grain: one <code>GROUP BY</code>, <code>MAX()</code> on the text columns so the schema holds. Totals reconcile to the kilo and every monitor stays green, while the dangerous-goods declaration downstream now attributes a full pallet's weight to a hazmat code that belongs to one 90 kg item. The expensive breaks are precisely the ones statistics can't see. (Part 4 runs this exact scenario end to end.)</p>
 <h4 class="albl">Cost</h4>
 <p>Decisions made on wrong numbers, senior-weeks of archaeology, and the slow one: each silent incident teaches the business to re-verify the data team's numbers, un-earning self-service.</p>
 <h4 class="albl">Why it holds</h4>
-<p>Learned models see distributions; permissions-to-change see promises. Closing this requires contracts as platform objects, which is the object-model problem in <a href="#gap-product-object">2.4</a>, not a monitoring feature.</p>
+<p>Learned models see distributions; permissions-to-change see contracts. Closing this requires contracts as platform objects, which is the object-model problem in <a href="#gap-product-object">2.4</a>, not a monitoring feature.</p>
 <h4 class="albl">DataOS</h4>
 <p>Declared invariants and contract checks run as promotion gates per product; change classification is computed at plan time, before review.</p>
 </div>
-<div class="hook"><span class="lbl">Demo hook</span>
-<p><em>Scene:</em> orders product live, DQ monitoring on, finance dashboard on top.</p>
-<p><em>Show:</em> two changes. A column rename ships as a minor: monitors green, dashboard fine. Then the discount redefinition: monitors still green, but the plan blocks it as breaking.</p>
-<p><em>Land:</em> "Your monitors saw both and said nothing. Only the contract knew the difference."</p></div>
 </div>
 
 <div class="gap">
@@ -296,18 +297,14 @@ strong { font-weight:600; }
 <h4 class="albl">Mechanism</h4>
 <p>Bundles version code; git versions transformations; ALTER is instant and in-place on views, metric views, and tags. The entire change apparatus serves the person making the change. Nothing performs change classification (<a href="#gap-quality">2.1</a>) on behalf of the people depending on it: no contract diff, no consent gate, no notice period.</p>
 <h4 class="albl">Real-world break</h4>
-<p>The change above ships through green CI: code review checks Spark, tests check the transformation, validate checks YAML, expectations check nulls. Every gate examines the factory; none examines the promise. Three weeks later, "who approved this?" has no answer, because approval-of-a-promise was never an object in the system.</p>
+<p>The change above ships through green CI: code review checks Spark, tests check the transformation, validate checks YAML, expectations check nulls. Every gate examines the factory; none examines the contract. Three weeks later, "who approved this?" has no answer, because approval-of-a-contract was never an object in the system.</p>
 <h4 class="albl">Cost</h4>
 <p>Incident cost plus audit cost: for regulated consumers, a number without an approval trail is a finding, not a feature.</p>
 <h4 class="albl">Why it holds</h4>
-<p>Consumer-facing lifecycle means two things a catalog doesn't do: refusing a valid change because a promise forbids it, and notifying people who never touched the code. Both contradict how the catalog treats assets today: an ALTER either has permissions or it doesn't, and the set of people who care is recorded nowhere. This is a platform posture, not a missing endpoint.</p>
+<p>Consumer-facing lifecycle means two things a catalog doesn't do: refusing a valid change because a contract forbids it, and notifying people who never touched the code. Both contradict how the catalog treats assets today: an ALTER either has permissions or it doesn't, and the set of people who care is recorded nowhere. This is a platform posture, not a missing endpoint.</p>
 <h4 class="albl">DataOS</h4>
-<p>The product is the promise: versioned contracts, breaking changes blocked at plan time and shipped only with explicit consent, consumers notified through their channels before the change lands. The version history is the audit trail: what changed, who consented, who was told.</p>
+<p>The product is the contract: versioned, breaking changes blocked at plan time and shipped only with explicit consent, consumers notified through their channels before the change lands. The version history is the audit trail: what changed, who consented, who was told.</p>
 </div>
-<div class="hook"><span class="lbl">Demo hook</span>
-<p><em>Scene:</em> that breaking change, at the consent gate.</p>
-<p><em>Show:</em> the plan blocks it; an owner explicitly approves; the version bumps and the notification lands in finance's Slack before the change does. Then ask both systems: who approved this? Git blame and a Slack hunt on one side. A one-line plan record on the other.</p>
-<p><em>Land:</em> "A 3 a.m. debugging session becomes a calendar invite."</p></div>
 </div>
 
 <div class="gap">
@@ -324,10 +321,6 @@ strong { font-weight:600; }
 <h4 class="albl">DataOS</h4>
 <p>Consumers are registered objects tied to observed consumption; blast radius is computed, notification is a lifecycle step, and access flows through the product.</p>
 </div>
-<div class="hook"><span class="lbl">Demo hook</span>
-<p><em>Scene:</em> three real consumers, one hiding behind a JDBC service principal.</p>
-<p><em>Show:</em> UC lineage shows a principal blob. DataOS names all three, notification preview included.</p>
-<p><em>Land:</em> "The consumer you don't know about is the one that pages you."</p></div>
 </div>
 
 <div class="gap">
@@ -380,21 +373,17 @@ strong { font-weight:600; }
   <text x="398" y="330" font-size="12.5" fill="#4A4F5A">One artifact. Every audit question becomes a lookup.</text>
 </svg><figcaption>The same product as catalog fragments and as one manifest.</figcaption></figure>
 <h4 class="albl">Real-world break</h4>
-<p>"Customer 360" exists as tribal knowledge spread over four tables, two metric views, and a wiki page. Which version a consumer is on, what it guarantees, and who owns it are questions with no queryable answer. And when the buyer says "Marketplace has data products," the accurate response is: for data you sell to other companies, yes; for data your teams promise each other, no.</p>
+<p>"Customer 360" exists as tribal knowledge spread over four tables, two metric views, and a wiki page. Which version a consumer is on, what it guarantees, and who owns it are questions with no queryable answer. And when the buyer says "Marketplace has data products," the accurate response is: for data you sell to other companies, yes; for data your teams commit to each other, no.</p>
 <h4 class="albl">Cost</h4>
 <p>Discovery-and-trust stays a social process (weeks of finding, asking, verifying per consumer), and every governance answer must be assembled from fragments at audit time.</p>
 <h4 class="albl">Why it holds</h4>
-<p>A composite lifecycle object contradicts the securable-per-asset foundation everything else (grants, lineage, ABAC, Discover) is built on. Retrofitting it is a rewrite of the catalog's object model. And the forcing-function history says it plainly: Databricks builds product primitives where transactions demand them. Internal promises don't transact, so they don't get primitives. Notice the asymmetry: their semantic format is becoming a standard (metric views into Spark), but their product metadata (Domains, certification, Ontology) has no standard shape at all. We emit the standards for exactly the layer they don't have.</p>
+<p>A composite lifecycle object contradicts the securable-per-asset foundation everything else (grants, lineage, ABAC, Discover) is built on. Retrofitting it is a rewrite of the catalog's object model. And the forcing-function history says it plainly: Databricks builds product primitives where transactions demand them. Internal contracts don't transact, so they never got a primitive. Notice the asymmetry: their semantic format is becoming a standard (metric views into Spark), but their product metadata (Domains, certification, Ontology) has no standard shape at all. We emit the standards for exactly the layer they don't have.</p>
 <h4 class="albl">DataOS</h4>
 <p>Audited consumption is the internal forcing function, and DataOS ships the primitive it forces: the product manifest: contract, semantics, ports, owner, consumers in one artifact, one lifecycle. Discover becomes the storefront our products surface in.</p>
 </div>
-<div class="hook"><span class="lbl">Demo hook</span>
-<p><em>Scene:</em> ask both systems: show me customer_360.</p>
-<p><em>Show:</em> four tables, two metric views, a wiki tab. No answer for version, guarantee, owner, consumers. The manifest answers all four on one screen.</p>
-<p><em>Land:</em> "Every audit question becomes a lookup."</p></div>
 </div>
 
-<p class="seam">The four gaps above are about the <strong>promise</strong>: declaring it, changing it, and knowing who relies on it. The two below are about <strong>consumption</strong>: what agents can trust, and what serving costs. The last is about <strong>operating</strong>: keeping the promise over time.</p>
+<p class="seam">The four gaps above are about the <strong>contract</strong>: declaring it, changing it, and knowing who relies on it. The two below are about <strong>consumption</strong>: what agents can trust, and what serving costs. The last is about <strong>operating</strong>: keeping the contract over time.</p>
 
 <div class="gap">
 <h3 id="gap-semantics">2.5 &nbsp;Semantics are ranked, not warranted</h3>
@@ -410,10 +399,6 @@ strong { font-weight:600; }
 <h4 class="albl">DataOS</h4>
 <p>Contract-grounded context served to any agent: each dataset carries a machine-readable statement of meaning, guarantee, and freshness: the artifact the security reviewer signs. And it's standard-shaped: DataOS emits <a href="https://bitol-io.github.io/open-data-contract-standard/v3.1.0/">ODCS</a> for datasets, <a href="https://bitol.io/">ODPS</a> for products, and <a href="https://dataintelligenceplatform.substack.com/p/the-meta-standard-nobody-asked-for">OKF</a> for agent context, so any agent or tool can parse it without our SDK.</p>
 </div>
-<div class="hook"><span class="lbl">Demo hook</span>
-<p><em>Scene:</em> same revenue question, two agents, before and after the silent shift.</p>
-<p><em>Show:</em> the raw-side agent keeps answering. Confidently wrong. The contract-side agent still answers correctly, because the silent shift never shipped.</p>
-<p><em>Land:</em> "The agent never got suspicious. The contract did."</p></div>
 </div>
 
 <div class="gap">
@@ -431,10 +416,6 @@ strong { font-weight:600; }
 <p>In-flight dedup collapses concurrent identical queries into one execution; result reuse serves repeated reads without touching the engine; work-avoided metrics make the saving provable per workload, not asserted. Semantic serving over APIs with tenant-aware security, compute pushed down only when work is genuinely new.</p>
 <p>Freshness is stated, not hidden: cached answers serve at each product's declared freshness tolerance; fresh or long-tail queries pass through live, with dedup still applied. And agents send small JSON metric queries instead of generating SQL: no schema ingestion, near-zero retries, the token meter flattens with the compute meter.</p>
 </div>
-<div class="hook"><span class="lbl">Demo hook</span>
-<p><em>Scene:</em> a dashboard with a dozen tiles plus a chatty agent, run against both paths.</p>
-<p><em>Show:</em> the DBU meter climbing on one side. The work-avoided counter on the other. Same numbers everywhere. Then the token counts: schema-and-retry loops versus small JSON queries.</p>
-<p><em>Land:</em> "The cheapest query is the one that never runs."</p></div>
 </div>
 
 <div class="gap">
@@ -451,17 +432,13 @@ strong { font-weight:600; }
 <h4 class="albl">DataOS</h4>
 <p>The product manifest carries the SLA; the runtime derives SLOs from live telemetry, set tighter than the SLA on purpose. Breach an SLO and an incident opens and routes to the owning team automatically. The SLA holds because the SLO caught it first, not because someone noticed after the fact. Operating a data product is what turns publishing into product management.</p>
 </div>
-<div class="hook"><span class="lbl">Demo hook</span>
-<p><em>Scene:</em> a product with a declared freshness SLA, its feed quietly slowing.</p>
-<p><em>Show:</em> dashboards green, query counts healthy on one side. On the other, the SLO breaches, an incident opens, the owner is paged, all before the SLA breaks.</p>
-<p><em>Land:</em> "Your customer found the last one. The runtime found this one."</p></div>
 </div>
 
 <h2 id="part3">3 · Where DataOS is relevant</h2>
 <div class="kicker">the map and the posture</div>
 
 <h3>The one-liner</h3>
-<p>DataOS is the system of record for intent. Contracts declare what's promised, change classification judges every change against the promise, and audited consumption follows, for humans, BI, and agents alike.</p>
+<p>DataOS is the system of record for intent. Contracts declare the terms, change classification judges every change against them, and audited consumption follows, for humans, BI, and agents alike.</p>
 
 <table>
 <tr><th>Gap</th><th>DataOS mechanism</th></tr>
@@ -479,14 +456,201 @@ strong { font-weight:600; }
 <p>We import metric views; a year of customer modeling becomes an on-ramp, not a moat. Their tables are our inputs. Their engines run our compute: we push work down, we don't replace it.</p>
 <p>We respect their ABAC as the enforcement plane. On top of it, we offer simpler, semantic-shaped REST and GraphQL APIs, governed separately or inclusively, whichever the customer's security model calls for. The filter lives in the layer, not the prompt.</p>
 <p>And we offer business-user-friendly discovery of data products, with APIs to build custom experiences on top.</p>
-<p>The contracts themselves are standard-shaped: <a href="https://bitol-io.github.io/open-data-contract-standard/v3.1.0/">ODCS</a> and <a href="https://bitol.io/">ODPS</a> under the Linux Foundation, plus <a href="https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md">OKF</a> for agent context. The promise is portable, even from us.</p>
+<p>The contracts themselves are standard-shaped: <a href="https://bitol-io.github.io/open-data-contract-standard/v3.1.0/">ODCS</a> and <a href="https://bitol.io/">ODPS</a> under the Linux Foundation, plus <a href="https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md">OKF</a> for agent context. The contract is portable, even from us.</p>
 <p>Where a customer already runs DataOS on another engine, Databricks is an extension of a working blueprint, not a new bet.</p>
 
 
 
 
 
-<h2 id="part4">4 · Objections</h2>
+<h2 id="part4">4 · Demo: one shipment through the boundary (WIP)</h2>
+<p><i>Work In Progress</i></p>
+<p>One fixture, one antagonist, four movements, all seven gaps. Runtime around twenty minutes. The project is <code>freight_ops</code>: a freight operator loads containers, every item scanned at load becomes a row in <code>logistics.cargo_lines</code>, and one downstream output is legally consequential: the dangerous-goods declaration filed with port authorities, where declared hazmat weight must match item-level reality. Mis-declare and the container is held, or ships under a false filing. That is why this product carries a contract at all.</p>
+
+<h3>The product, as the author sees it</h3>
+
+<pre class="code">freight_ops/
+├── models/
+│   ├── logistics/
+│   │   ├── cargo_lines.sql        ← transformation; contract in the header
+│   │   ├── cargo_lines.yml        ← kind: semantic — what BI and agents query
+│   │   ├── cargo_lines-dq.yml     ← type: dq — rules and anomaly detection
+│   │   ├── cargo_lines_enriched.sql
+│   │   └── dg_declaration.sql
+│   ├── metrics/
+│   │   └── hazmat_weight.yml      ← kind: metric — the pre-sliced surface
+│   └── rollups/
+│       └── pallet_billing_01.sql  ← pallet grain, declared as such
+├── audits/
+│   └── compliance/
+│       ├── cargo_order_line_consistency.sql
+│       ├── manifest_weight_reconciliation.sql
+│       └── hazmat_un_weight_validation.sql
+├── usage.yml                      ← good_for, not_for, caveats
+└── agreement.md                   ← access gated on acceptance</pre>
+
+<p>The contract is not a separate document. It lives in the model header: the grain, the assertions, the cadence, the column classifications, all in the same file as the SQL they govern. A change to the query is, by construction, a change to the file that declares what the query must honor. That is what makes a diff classifiable.</p>
+
+<p><code>models/logistics/cargo_lines.sql</code>:</p>
+<pre class="code">-- One row per item scanned at container load.
+-- Feeds the dangerous-goods declaration filed with port authorities.
+MODEL (
+  name logistics.cargo_lines,
+  kind FULL,
+  columns (
+    shipment_id INT,
+    container_id VARCHAR,
+    pallet_id VARCHAR,
+    sku VARCHAR,
+    hazmat_un VARCHAR,
+    weight_kg DECIMAL,
+    order_line_id INT
+  ),
+  grains [shipment_id, container_id, pallet_id, sku],
+  cron &#x27;*/15 * * * *&#x27;,
+  assertions (
+    cargo_order_line_consistency,
+    hazmat_un_weight_validation,
+  ),
+  column_classifications (
+    hazmat_un = restricted
+  )
+);
+
+SELECT
+  shipment_id,
+  container_id,
+  pallet_id,
+  sku,           -- Stock-keeping unit, one per scan
+  hazmat_un,     -- UN dangerous-goods code; applies to its item only
+  weight_kg,     -- Scanned item weight in kilograms
+  order_line_id
+FROM logistics.scan_events
+WHERE scan_type = &#x27;load&#x27;</pre>
+
+<p>The semantic model is a sibling file, same name, same project, same plan. The 1:1 the audit checks and the measures agents query are declared next to the transformation they describe. Note the caveat on <code>hazmat_weight_by_un</code>: the author wrote down, in the metadata itself, exactly the assumption the demo is about to attack.</p>
+
+<p><code>models/logistics/cargo_lines.yml</code>:</p>
+<pre class="code">kind: semantic
+name: cargo_lines
+depends_on: logistics.cargo_lines
+description: Cargo manifest lines (semantic layer)
+
+ai_context:
+  instructions: &gt;
+    One row per scanned item. Use for manifest weights, hazmat
+    declarations, and billing joins. Query via SQL, REST, or GraphQL.
+  synonyms: [manifest lines, scan lines]
+
+dimensions:
+  - name: hazmat_un
+    behavior:
+      type: categorical
+    terms:
+      - compliance.un_code
+  - name: sku
+    behavior:
+      type: identifier
+  - container_id
+  - pallet_id
+
+measures:
+  - name: hazmat_weight_by_un
+    type: sum
+    expression: &quot;{cargo_lines.weight_kg}&quot;
+    filters:
+      - &quot;{cargo_lines.hazmat_un} IS NOT NULL&quot;
+    description: Declared dangerous-goods weight
+    behavior:
+      type: simple
+    ai_context:
+      caveats:
+        - Valid only at scanned-item grain; a UN code
+          belongs to its item, not its pallet.
+  - name: manifest_gross_weight
+    type: sum
+    expression: &quot;{cargo_lines.weight_kg}&quot;
+    behavior:
+      type: simple</pre>
+
+<p>Data quality is a third sibling, and it includes the same statistical machinery Databricks has: anomaly detection on row counts. Keep that in mind; the demo will show it staying quiet in both worlds.</p>
+
+<p><code>models/logistics/cargo_lines-dq.yml</code>:</p>
+<pre class="code">type: dq
+name: cargo_lines_dq
+depends_on: logistics.cargo_lines
+
+rules:
+  - row_count &gt; 0
+  - duplicate_count(sku) = 0
+  - anomaly detection for row_count
+  - change for row_count &gt;= -50%</pre>
+
+<p>The metric surface resolves to a semantic measure. And the standalone audit is plain SQL that returns failing rows: a check anyone could write anywhere. The difference will be what happens when it fails.</p>
+
+<p><code>models/metrics/hazmat_weight.yml</code> and <code>audits/compliance/cargo_order_line_consistency.sql</code>:</p>
+<pre class="code">kind: metric
+name: hazmat_weight
+measure: cargo_lines.hazmat_weight_by_un
+ts: cargo_lines.scan_ts
+granularity: day
+description: Declared DG weight by UN code
+
+ai_context:
+  caveats:
+    - Per-item sum; never re-aggregate across a grain change.
+
+dimensions:
+  - name: hazmat_un
+    ref: cargo_lines.hazmat_un
+
+tags: [compliance, hazmat]
+terms: [glossary.dangerous_goods_weight]</pre>
+<pre class="code">-- Every cargo line must map to exactly one order line.
+ASSERTION (
+  name cargo_order_line_consistency,
+  dimension consistency,
+  standalone true,
+);
+
+SELECT c.order_line_id, COUNT(*) AS cargo_rows
+FROM logistics.cargo_lines c
+JOIN orders.order_lines o
+  ON o.id = c.order_line_id
+GROUP BY c.order_line_id
+HAVING COUNT(*) &lt;&gt; 1;</pre>
+
+<p>Three registered consumers complete the fixture: <strong>dg-declaration-service</strong> (API, webhook notify), <strong>customs-manifest</strong> (export, email), <strong>billing</strong> (dashboard, Slack). Access to the product is gated on <code>agreement.md</code>; intended use lives in <code>usage.yml</code>.</p>
+
+<h3>Movement 1 · A normal Tuesday</h3>
+
+<p>Start with the product answering questions. "Show me cargo_manifest: version, guarantee, owner, consumers" is one lookup against the product, not a hunt across four tables, two metric views, and a wiki (<a href="#gap-product-object">2.4</a>). The customs dashboard refreshes its tiles all morning and a compliance agent polls <code>hazmat_weight</code> per shipment; the work-avoided counter climbs while the warehouse sleeps, and the agent's queries are small JSON against declared measures, not schema-ingesting SQL (<a href="#gap-compute">2.6</a>).</p>
+
+<div class="say"><span class="lbl">SAY</span>"Everything you just saw answered, in one lookup, from one object. Hold that. We are about to change something."</div>
+
+<h3>Movement 2 · The change arrives</h3>
+
+<p>An engineer opens a performance PR: pre-aggregate <code>cargo_lines</code> to pallet grain. One <code>GROUP BY</code>, <code>MAX()</code> on the text columns so the schema holds. The goal is legitimate, the totals reconcile to the kilo, and every statistical monitor, theirs and ours, stays green: the DQ file's own anomaly rules see nothing wrong with reconciling totals (<a href="#gap-quality">2.1</a>).</p>
+
+<p>The plan sees what monitors can't. The diff is judged against <code>grains [shipment_id, container_id, pallet_id, sku]</code>: Breaking. The blast radius names every affected asset and all three registered consumers, including the API service that catalog lineage can only show as a service-principal blob (<a href="#gap-consumers">2.3</a>). Nothing ships without explicit consent, and when an owner consents, the version bumps and the notification lands in dg-declaration-service's channel before the change does (<a href="#gap-lifecycle">2.2</a>). Ask the room: who approved this? Git blame on one side. One plan record on the other.</p>
+
+<div class="say"><span class="lbl">SAY</span>"Your monitors saw this diff run and said nothing. The contract knew. And notice who got told, before the change landed, not after."</div>
+
+<h3>Movement 3 · The agent test</h3>
+
+<p>Same question to two agents: how much UN1950 is on shipment 4417? The raw-side agent, post-shift, answers 3,180 kg, confidently, into a compliance workflow, under a certified-looking source. The contract-side agent answers 90 kg, because the silent shift never shipped, and the measure it queried carries the caveat the author wrote on day one (<a href="#gap-semantics">2.5</a>).</p>
+
+<div class="say"><span class="lbl">SAY</span>"The agent never got suspicious. The contract did."</div>
+
+<h3>Movement 4 · Weeks later</h3>
+
+<p>Port scanners degrade and scans arrive slower. Query counts look healthy; nothing is failing, everything is drifting. The freshness term in the contract derives an SLO watched from live telemetry, and when the SLO breaches, an incident opens and routes to freight-ops before the declaration misses a filing window (<a href="#gap-operating">2.7</a>).</p>
+
+<div class="say"><span class="lbl">SAY</span>"Your customer found the last one. The runtime found this one."</div>
+
+<p><strong>Close.</strong> One shipment, one contract, seven gaps crossed. In the other world every gate was green. Here, seven things spoke up.</p>
+
+<h2 id="part5">5 · Objections</h2>
 <p>These are some of the questions buyers might ask. This doc doesn't answer them. We need to align together to prepare an answer.</p>
 
 <p><strong>1. Won't Databricks just ship this?</strong></p>
