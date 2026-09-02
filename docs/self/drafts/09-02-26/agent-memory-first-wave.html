@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Memory: The First Wave and Its Cracks</title>
+<style>
+:root{
+  --paper:#ffffff;
+  --ink:#191919;
+  --muted:#6e6e6e;
+  --faint:#9a9a9a;
+  --rule:#e2e2e2;
+  --wash:#f7f7f5;
+  --steel:#1f4a7a;
+  --oxblood:#7a2e2e;
+  --oxwash:#fbf6f5;
+  --serif:Charter,"Iowan Old Style","Bitstream Charter","Source Serif Pro",Georgia,serif;
+  --mono:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:var(--serif);font-size:18px;line-height:1.62;font-kerning:normal;
+}
+
+.shell{
+  display:grid;grid-template-columns:250px minmax(0,1fr);
+  gap:0 60px;max-width:1180px;margin:0 auto;padding:0 32px;
+}
+
+.rail{
+  position:sticky;top:0;align-self:start;height:100vh;
+  padding:56px 24px 40px 0;overflow-y:auto;border-right:1px solid var(--rule);
+}
+.rail-title{font-size:15px;font-weight:600;line-height:1.35;margin:0 0 4px}
+.rail-by{font-size:13px;color:var(--faint);margin:0 0 26px}
+.toc{list-style:none;margin:0;padding:0}
+.toc ul{list-style:none;margin:0;padding:0}
+.toc a{
+  display:block;font-family:var(--sans);font-size:13.5px;line-height:1.4;
+  color:var(--muted);text-decoration:none;padding:5px 0 5px 13px;
+  border-left:2px solid transparent;margin-left:-2px;
+}
+.toc a:hover{color:var(--ink)}
+.toc a:focus-visible{outline:2px solid var(--steel);outline-offset:2px}
+.toc a.on{color:var(--ink);border-left-color:var(--steel)}
+.toc .sub a{padding-left:26px;font-size:12.5px;color:var(--faint)}
+.toc .sub a.on{color:var(--ink)}
+.toc .grp{
+  font-family:var(--sans);font-size:11.5px;letter-spacing:.02em;
+  color:var(--faint);margin:22px 0 4px 13px;
+}
+
+.doc{padding:56px 0 140px;min-width:0}
+.masthead{margin:0 0 68px;max-width:36ch}
+.masthead h1{font-size:44px;line-height:1.08;font-weight:600;letter-spacing:-.012em;margin:0 0 18px}
+.standfirst{font-size:20px;line-height:1.5;color:var(--muted);margin:0;max-width:48ch}
+.byline{
+  font-family:var(--sans);font-size:13px;color:var(--faint);margin-top:26px;
+  padding-top:14px;border-top:1px solid var(--rule);max-width:48ch;line-height:1.5;
+}
+.byline .author{color:var(--ink);font-weight:600}
+.byline time{color:var(--muted)}
+.byline .dot{padding:0 3px}
+.rail-by{line-height:1.45}
+
+.doc h2{
+  font-size:30px;line-height:1.16;font-weight:600;letter-spacing:-.008em;
+  margin:86px 0 24px;max-width:26ch;scroll-margin-top:28px;
+  padding-top:22px;border-top:1px solid var(--rule);
+}
+.doc h3{font-size:21px;font-weight:600;margin:50px 0 14px;scroll-margin-top:28px}
+.doc h4{font-size:17px;font-weight:600;margin:32px 0 10px;scroll-margin-top:28px}
+.doc p{margin:0 0 20px;max-width:66ch}
+.doc ul.plain,.doc ol.plain{max-width:66ch;padding-left:22px;margin:0 0 20px}
+.doc ul.plain li,.doc ol.plain li{margin-bottom:10px}
+.doc a{color:var(--steel);text-decoration:none;border-bottom:1px solid rgba(31,74,122,.32)}
+.doc a:hover{border-bottom-color:var(--steel)}
+.lede{font-size:20px;line-height:1.55}
+
+.pull{
+  max-width:60ch;margin:36px 0;padding-left:22px;
+  border-left:2px solid var(--steel);font-size:20px;line-height:1.48;
+}
+.pull p{margin:0}
+
+figure{margin:42px 0;padding:26px 0 18px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+figure svg{display:block;width:100%;height:auto}
+figcaption{margin-top:18px;font-size:14.5px;line-height:1.5;color:var(--muted);font-style:italic;max-width:62ch}
+.d-label{font-family:var(--sans);font-size:12.5px;fill:var(--ink)}
+.d-small{font-family:var(--sans);font-size:11px;fill:var(--muted)}
+.d-mono{font-family:var(--mono);font-size:11.5px;fill:var(--ink)}
+.d-key{font-family:var(--sans);font-size:12.5px;font-weight:600;fill:var(--ink)}
+.d-num{font-family:var(--sans);font-size:15px;font-weight:600;fill:var(--ink)}
+.d-box{fill:none;stroke:#c9c9c9;stroke-width:1}
+.d-fill{fill:var(--wash);stroke:#c9c9c9;stroke-width:1}
+.d-acc{fill:none;stroke:var(--steel);stroke-width:1.4}
+.d-accfill{fill:rgba(31,74,122,.07);stroke:var(--steel);stroke-width:1.2}
+.d-accsolid{fill:var(--steel)}
+.d-line{stroke:#b8b8b8;stroke-width:1;fill:none}
+.d-dash{stroke:#b8b8b8;stroke-width:1;fill:none;stroke-dasharray:4 4}
+.d-red{fill:none;stroke:var(--oxblood);stroke-width:1.3}
+.d-redsolid{fill:var(--oxblood)}
+.d-redtext{font-family:var(--sans);font-size:12px;fill:var(--oxblood)}
+.d-acctext{font-family:var(--sans);font-size:12px;fill:var(--steel)}
+.d-bar{fill:#d4d4d4}
+
+.crack{margin:44px 0;padding:26px 28px 8px;background:var(--oxwash);border-left:3px solid var(--oxblood)}
+.crack h3{margin:0 0 16px;font-size:20px;color:var(--oxblood)}
+.crack p{max-width:60ch}
+.crack p:last-child{margin-bottom:20px}
+.crack .verdict{font-weight:600}
+.crack a{color:var(--oxblood);border-bottom-color:rgba(122,46,46,.32)}
+.crack a:hover{border-bottom-color:var(--oxblood)}
+
+pre{
+  font-family:var(--mono);font-size:13px;line-height:1.62;background:#fff;
+  border:1px solid var(--rule);padding:14px 16px;margin:0 0 20px;overflow-x:auto;max-width:66ch;
+}
+.crack pre{background:rgba(255,255,255,.72);border-color:#ecdedc}
+code{font-family:var(--mono);font-size:.88em}
+.doc p code,.doc li code{background:var(--wash);padding:1px 4px}
+
+.stat{
+  display:flex;flex-wrap:wrap;gap:0 44px;margin:30px 0 34px;padding:20px 0;
+  border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);max-width:66ch;
+}
+.stat div{min-width:98px}
+.stat b{display:block;font-size:23px;font-weight:600;line-height:1.2}
+.stat span{font-family:var(--sans);font-size:12px;color:var(--muted);line-height:1.35;display:block;margin-top:3px}
+
+table.reg{
+  border-collapse:collapse;width:100%;margin:32px 0;font-size:15px;
+  font-family:var(--sans);line-height:1.45;
+}
+table.reg th{
+  text-align:left;font-weight:600;font-size:13px;padding:9px 14px 9px 0;
+  border-bottom:1px solid var(--ink);vertical-align:bottom;
+}
+table.reg td{padding:11px 14px 11px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+table.reg td:first-child{font-weight:600;white-space:nowrap}
+.wide{margin-right:-8px;overflow-x:auto}
+
+.timeline{margin:34px 0 40px;max-width:66ch}
+.tl{display:grid;grid-template-columns:112px minmax(0,1fr);gap:0 18px;padding:11px 0;border-top:1px solid var(--rule)}
+.tl:last-child{border-bottom:1px solid var(--rule)}
+.tl dt{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--muted);padding-top:3px}
+.tl dd{margin:0;font-size:16.5px;line-height:1.5}
+
+.note{
+  margin:34px 0;padding:18px 22px;background:var(--wash);
+  font-size:16px;line-height:1.55;max-width:64ch;
+}
+.note p{margin:0 0 12px}
+.note p:last-child{margin:0}
+.note strong{font-weight:600}
+
+.close{
+  margin:84px 0 0;padding-top:26px;border-top:1px solid var(--rule);
+  font-size:14px;color:var(--faint);font-family:var(--sans);max-width:66ch;line-height:1.6;
+}
+
+.rail-toggle{display:none}
+@media (max-width:920px){
+  body{font-size:17px}
+  .shell{grid-template-columns:minmax(0,1fr);gap:0;padding:0 22px}
+  .rail{position:static;height:auto;overflow:visible;border-right:0;border-bottom:1px solid var(--rule);padding:26px 0 20px}
+  .rail-by{margin-bottom:16px}
+  .rail-toggle{display:block}
+  .rail-toggle summary{font-family:var(--sans);font-size:13px;color:var(--steel);cursor:pointer;padding:4px 0}
+  .rail-toggle summary:focus-visible{outline:2px solid var(--steel);outline-offset:3px}
+  .toc-wrap{padding-top:10px}
+  .doc{padding:34px 0 90px}
+  .masthead{margin-bottom:44px}
+  .masthead h1{font-size:32px}
+  .standfirst{font-size:18px}
+  .doc h2{font-size:25px;margin:60px 0 18px}
+  .crack{padding:20px 18px 4px}
+  figure{margin:32px 0}
+  .tl{grid-template-columns:minmax(0,1fr);gap:2px}
+  table.reg{font-size:14px}
+}
+@media (min-width:921px){.toc-wrap{display:block !important}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="rail" aria-label="Contents">
+  <details class="rail-toggle"><summary>Contents</summary></details>
+  <div class="toc-wrap">
+  <ul class="toc">
+    <li class="grp">Part one</li>
+    <li><a href="#three">Three things called memory</a></li>
+    <li><a href="#need">What breaks without it</a></li>
+    <li><a href="#job">The actual job</a></li>
+
+    <li class="grp">Part two</li>
+    <li><a href="#wave">The first wave</a>
+      <ul class="sub">
+        <li><a href="#chrono">How it happened</a></li>
+        <li><a href="#loop">The shared loop</a></li>
+        <li><a href="#mem0">Mem0</a></li>
+        <li><a href="#zep">Zep and Graphiti</a></li>
+        <li><a href="#langmem">LangMem</a></li>
+        <li><a href="#letta">Letta</a></li>
+        <li><a href="#cognee">Cognee</a></li>
+        <li><a href="#supermemory">Supermemory</a></li>
+        <li><a href="#lineage">The research lineage</a></li>
+        <li><a href="#native">The labs ship it too</a></li>
+      </ul>
+    </li>
+
+    <li class="grp">Part three</li>
+    <li><a href="#cracks">Where it cracks</a>
+      <ul class="sub">
+        <li><a href="#crack1">Extraction loses</a></li>
+        <li><a href="#crack2">The scoreboard</a></li>
+        <li><a href="#crack3">Corrections vanish</a></li>
+        <li><a href="#crack4">Agreeing with you</a></li>
+        <li><a href="#crack5">Evidence and guesses</a></li>
+        <li><a href="#crack6">Chat is not the data</a></li>
+      </ul>
+    </li>
+
+    <li class="grp">Part four</li>
+    <li><a href="#second">What comes next</a>
+      <ul class="sub">
+        <li><a href="#reqs">Five requirements</a></li>
+        <li><a href="#hindsight">Hindsight</a></li>
+        <li><a href="#memvid">Memvid</a></li>
+        <li><a href="#platform">Platform, not library</a></li>
+        <li><a href="#contextlayer">The context layer</a></li>
+        <li><a href="#open">Still open</a></li>
+      </ul>
+    </li>
+  </ul>
+  </div>
+</nav>
+
+<article class="doc">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#b8b8b8"/></marker>
+  <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#1f4a7a"/></marker>
+  <marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#7a2e2e"/></marker>
+</defs></svg>
+
+<header class="masthead">
+  <h1>Agent memory: the first wave, and where it cracks</h1>
+  <p class="standfirst">What a memory layer actually is, who built one, how they work, and what the evidence says about the assumption all of them share.</p>
+  <p class="byline"><span class="author">Animesh</span> <span class="dot">·</span> <time datetime="2026-09-02">2 September 2026</time><br>Working draft. Vendor figures are self-reported unless the linked source is independent.</p>
+</header>
+
+<!-- ============================================================ -->
+<!-- PART ONE                                                      -->
+<!-- ============================================================ -->
+
+<h2 id="three">Three things called memory</h2>
+
+<p class="lede">Ask ten teams what they mean by memory and you will get three different systems.</p>
+
+<p>The first is the <strong>context window</strong>. That is what the model can see on this turn. Load a transcript into it and the model knows everything in there. Nothing is hidden from it and nothing needs fetching.</p>
+
+<p>The second is <strong>retrieval</strong>. The model goes and gets something it was not given, usually from a pile of documents. This is what most teams built through 2023 and 2024. It works well for facts about the world: policy documents, product specs, help articles.</p>
+
+<p>The third is <strong>memory</strong>, and it is the hard one. Memory is what an agent keeps about this particular person, or account, or codebase, across sessions that ended weeks ago.</p>
+
+<p>Bigger context windows only help the first. A window holds what you put in it and nothing else. When the session ends, the window empties. A conversation from six weeks ago is not summarised or compressed. It is gone.</p>
+
+<figure>
+<svg viewBox="0 0 760 252" role="img" aria-label="Diagram contrasting context window, retrieval and memory across a timeline of sessions">
+  <line x1="152" y1="212" x2="742" y2="212" class="d-line"/>
+  <g class="d-small">
+    <line x1="200" y1="207" x2="200" y2="217" class="d-line"/><text x="200" y="232" text-anchor="middle">Monday</text>
+    <line x1="360" y1="207" x2="360" y2="217" class="d-line"/><text x="360" y="232" text-anchor="middle">Tuesday</text>
+    <line x1="560" y1="207" x2="560" y2="217" class="d-line"/><text x="560" y="232" text-anchor="middle">six weeks later</text>
+    <line x1="700" y1="207" x2="700" y2="217" class="d-line"/><text x="700" y="232" text-anchor="middle">now</text>
+  </g>
+
+  <text x="142" y="42" text-anchor="end" class="d-key">context window</text>
+  <rect x="640" y="28" width="102" height="22" class="d-accfill"/>
+  <text x="691" y="43" text-anchor="middle" class="d-acctext">this turn only</text>
+  <line x1="154" y1="39" x2="632" y2="39" class="d-dash"/>
+  <text x="393" y="22" text-anchor="middle" class="d-small">none of this is loaded</text>
+
+  <text x="142" y="106" text-anchor="end" class="d-key">retrieval</text>
+  <rect x="154" y="84" width="152" height="42" class="d-box"/>
+  <text x="230" y="102" text-anchor="middle" class="d-label">document corpus</text>
+  <text x="230" y="117" text-anchor="middle" class="d-small">shared, no time axis</text>
+  <path d="M306 105 H632" class="d-line" marker-end="url(#ah1)"/>
+  <rect x="640" y="84" width="102" height="42" class="d-box"/>
+  <text x="691" y="109" text-anchor="middle" class="d-label">the answer</text>
+
+  <text x="142" y="170" text-anchor="end" class="d-key">memory</text>
+  <rect x="182" y="152" width="560" height="34" class="d-accfill"/>
+  <text x="462" y="167" text-anchor="middle" class="d-acctext">what this person told you, corrected, changed their mind about</text>
+  <text x="462" y="181" text-anchor="middle" class="d-small">accrues across every session and survives the window closing</text>
+</svg>
+<figcaption>The window and the corpus both live in the present tense. Only the bottom row has a time axis, and it is the row nobody budgets for.</figcaption>
+</figure>
+
+<p>There is a second reason a large window does not rescue you, and it has nothing to do with storage. Real conversations refuse to stay on one topic. Someone mentions at minute one that they are vegetarian, spends an hour on a Python traceback, then asks about dinner three days later. Loading all of it and asking the model to find one dietary fact is slow, expensive, and less reliable than it sounds, because attention thins out across very long inputs.</p>
+
+<h2 id="need">What breaks without it</h2>
+
+<p>Three examples, all of them ordinary.</p>
+
+<p><strong>A support agent.</strong> A customer has hit the same billing edge case three times in eight months. Twice a human resolved it and wrote what they did. On the third contact the agent starts from nothing, asks the customer to describe the problem again, and proposes the fix that already failed in April.</p>
+
+<p><strong>A coding agent.</strong> In March the team decided against a library because of a licence problem. The decision is in a Slack thread and a Notion page. In September the agent suggests it, someone has to explain the licence problem again, and the agent will suggest it again next month.</p>
+
+<p><strong>A sales agent.</strong> An account manager tells it not to lead with pricing for this account because the buyer is a technical evaluator. Two weeks later it leads with pricing.</p>
+
+<p>What makes these worth engineering rather than tolerating is the shape of the failure. Nobody files a ticket that says the agent forgot. They re-explain, notice they are re-explaining, and quietly reduce what they will trust it with. Usage drops before anyone can point at a bug. There is no error in the logs and no failed request to alert on.</p>
+
+<div class="pull"><p>Any workflow with a second session has a memory requirement, whether or not anyone wrote one down.</p></div>
+
+<h2 id="job">The actual job</h2>
+
+<p>Strip out the products and the job has four parts. Every system in Part two is a set of choices about these four, so it is worth being precise about them before any vendor names appear.</p>
+
+<figure>
+<svg viewBox="0 0 760 300" role="img" aria-label="The four operations any memory system must perform: capture, resolve, persist or decay, and retrieve">
+  <rect x="20" y="30" width="164" height="86" class="d-fill"/>
+  <text x="34" y="52" class="d-num">1</text>
+  <text x="34" y="74" class="d-key">Capture</text>
+  <text x="34" y="92" class="d-small">Decide what mattered.</text>
+  <text x="34" y="106" class="d-small">Most of a turn is noise.</text>
+
+  <path d="M184 73 H214" class="d-line" marker-end="url(#ah1)"/>
+
+  <rect x="218" y="30" width="164" height="86" class="d-fill"/>
+  <text x="232" y="52" class="d-num">2</text>
+  <text x="232" y="74" class="d-key">Resolve</text>
+  <text x="232" y="92" class="d-small">Reconcile it against</text>
+  <text x="232" y="106" class="d-small">what you already hold.</text>
+
+  <path d="M382 73 H412" class="d-line" marker-end="url(#ah1)"/>
+
+  <rect x="416" y="30" width="164" height="86" class="d-fill"/>
+  <text x="430" y="52" class="d-num">3</text>
+  <text x="430" y="74" class="d-key">Persist or decay</text>
+  <text x="430" y="92" class="d-small">Some facts expire.</text>
+  <text x="430" y="106" class="d-small">Some never should.</text>
+
+  <path d="M580 73 H610" class="d-line" marker-end="url(#ah1)"/>
+
+  <rect x="614" y="30" width="126" height="86" class="d-accfill"/>
+  <text x="628" y="52" class="d-num">4</text>
+  <text x="628" y="74" class="d-acctext">Retrieve</text>
+  <text x="628" y="92" class="d-small">Surface the right</text>
+  <text x="628" y="106" class="d-small">slice, on time.</text>
+
+  <path d="M700 116 V150 H102 V116" class="d-dash"/>
+  <text x="401" y="170" text-anchor="middle" class="d-small">the loop runs again on the next turn</text>
+
+  <line x1="20" y1="200" x2="740" y2="200" class="d-line"/>
+  <text x="20" y="226" class="d-key">Where the first wave spent its effort</text>
+  <rect x="20" y="240" width="164" height="20" class="d-bar"/>
+  <rect x="218" y="240" width="164" height="20" class="d-bar"/>
+  <rect x="416" y="240" width="40" height="20" class="d-bar"/>
+  <rect x="614" y="240" width="126" height="20" class="d-accsolid"/>
+  <g class="d-small">
+    <text x="102" y="278" text-anchor="middle">heavy: LLM extraction</text>
+    <text x="300" y="278" text-anchor="middle">heavy: dedupe, update rules</text>
+    <text x="498" y="278" text-anchor="middle">thin</text>
+    <text x="677" y="278" text-anchor="middle" fill="#1f4a7a">heavy: top-k search</text>
+  </g>
+</svg>
+<figcaption>Step three is where almost nobody invested, and it is where the failures in Part three concentrate. Deciding what expires, and keeping the record of what changed, turns out to be harder than either extraction or search.</figcaption>
+</figure>
+
+<p>One more distinction that gets lost. Steps one to three happen on the <strong>write path</strong>, before anyone has asked a question. Step four happens on the <strong>read path</strong>, when the question exists. Anything you throw away on the write path is unrecoverable at read time, no matter how good your retrieval gets. Hold that thought. It is the whole of Part three.</p>
+
+<!-- ============================================================ -->
+<!-- PART TWO                                                      -->
+<!-- ============================================================ -->
+
+<h2 id="wave">The first wave</h2>
+
+<p>Between late 2023 and late 2025 a set of systems arrived that all did roughly the same thing, and several of them arrived by accident. The pivots are worth knowing, because they explain the architectures.</p>
+
+<h3 id="chrono">How it happened</h3>
+
+<div class="timeline">
+<dl>
+  <div class="tl"><dt>Oct 12 2023</dt><dd><a href="https://arxiv.org/abs/2310.08560">MemGPT</a> lands from Berkeley's Sky Computing Lab. Packer, Fang, Patil, Lin, Wooders, Stoica, Gonzalez. Treat the LLM as an operating system that pages its own memory between tiers. It sets the vocabulary for everything after.</dd></div>
+  <div class="tl"><dt>Jan 2024</dt><dd>Mem0 starts, out of a failure. Taranjeet Singh and Deshraj Yadav had built Embedchain, a RAG framework at two million downloads, then shipped a meditation app on top of it. The app <a href="https://techcrunch.com/2025/10/28/mem0-raises-24m-from-yc-peak-xv-and-basis-set-to-build-the-memory-layer-for-ai-apps/">went viral in India and users kept saying the same thing</a>: it does not remember my journey. They pivoted from the retrieval framework to the memory layer.</dd></div>
+  <div class="tl"><dt>Feb 2024</dt><dd><a href="https://arxiv.org/abs/2402.17753">LoCoMo</a> published by Maharana, Lee, Tulyakov, Bansal, Barbieri and Fang, later at ACL 2024. Ten long conversations, roughly 300 turns and 26,000 tokens each, up to 35 sessions, 1,540 questions. <a href="https://github.com/snap-research/locomo">The dataset is public</a> and it becomes the number everyone quotes.</dd></div>
+  <div class="tl"><dt>Sep 2024</dt><dd>MemGPT incorporates as Letta Inc. and the project takes the company's name.</dd></div>
+  <div class="tl"><dt>Oct 2024</dt><dd><a href="https://arxiv.org/abs/2410.10813">LongMemEval</a> published by Wu, Wang, Yu, Zhang, Chang and Yu, later accepted at ICLR 2025. 500 manually curated questions across five abilities: information extraction, multi-session reasoning, temporal reasoning, knowledge updates and abstention. <a href="https://github.com/xiaowu0162/LongMemEval">Repo here.</a> It becomes the number a different set of vendors quotes.</dd></div>
+  <div class="tl"><dt>Jan 2025</dt><dd><a href="https://arxiv.org/abs/2501.13956">Zep's paper</a>. A temporal knowledge graph built on Graphiti, with validity windows on every fact. Claims 84% on LoCoMo.</dd></div>
+  <div class="tl"><dt>Feb 2025</dt><dd><a href="https://langchain-ai.github.io/langmem/">LangMem</a> ships as LangChain's own memory SDK, running inside the LangGraph store.</dd></div>
+  <div class="tl"><dt>Apr 2025</dt><dd><a href="https://arxiv.org/abs/2504.19413">Mem0's paper</a>. Extraction plus a four-way write decision, benchmarked against six baseline categories on LoCoMo. Also <a href="https://arxiv.org/abs/2504.13171">Letta's sleep-time compute</a> work, which moves memory consolidation off the critical path.</dd></div>
+  <div class="tl"><dt>May 8 2025</dt><dd>The dispute. Mem0's CTO files <a href="https://github.com/getzep/zep-papers/issues/5">issue #5 on Zep's paper repo</a> arguing that Zep's 84% came from including adversarial question categories the spec excludes, a non-standard system prompt, and single-run reporting. Replicated properly, he puts Zep at 58.44% with a standard deviation of 0.20. Zep counters with 75.14%.</dd></div>
+  <div class="tl"><dt>May 29 2025</dt><dd>Letta publishes the Letta Leaderboard, on which Letta appears.</dd></div>
+  <div class="tl"><dt>Oct 2025</dt><dd>Money arrives. <a href="https://mem0.ai/series-a">Mem0 raises $24M</a> across seed and Series A, and AWS names it exclusive memory provider for the Agent SDK. <a href="https://rywalker.com/research/supermemory">Supermemory raises $2.6M</a>.</dd></div>
+  <div class="tl"><dt>Oct 2025</dt><dd><a href="https://arxiv.org/abs/2510.27246">BEAM</a> arrives from Tavakoli et al., later at ICLR 2026. Beyond a Million Tokens: up to 10 million tokens across 100 procedurally generated conversations, and ten memory abilities including knowledge update, event ordering, contradiction resolution and abstention. <a href="https://github.com/mohammadtavakoli78/BEAM">Open eval suite.</a> Almost nobody was publishing against it yet.</dd></div>
+  <div class="tl"><dt>Dec 16 2025</dt><dd><a href="https://vectorize.io/blog/introducing-hindsight-agent-memory-that-works-like-human-memory">Hindsight</a> ships from Vectorize.io with Virginia Tech and The Washington Post. First system past 90% on LongMemEval. This is where the second wave starts, and Part four picks it up.</dd></div>
+  <div class="tl"><dt>Early 2026</dt><dd><a href="https://memvid.com/blog/introducing-memvid-v2-portable-deterministic-memory-for-ai">Memvid rewrites itself</a> in Rust after its first version was publicly taken apart. <a href="https://www.cognee.ai/blog/cognee-news/cognee-raises-seven-million-five-hundred-thousand-dollars-seed">Cognee raises $7.5M</a>. Zep <a href="https://www.digitalapplied.com/blog/open-source-agent-memory-mem0-letta-zep-compared">deprecates its self-hostable server</a> and narrows open source to the graph engine alone.</dd></div>
+</dl>
+</div>
+
+<h3 id="loop">The shared loop</h3>
+
+<p>Underneath the branding, the canonical four do the same four things. An extraction model reads the turn and decides what to keep. What survives becomes a vector. The vector goes into a store with metadata. At query time the question is embedded too, nearest neighbours come back, and they land in the prompt.</p>
+
+<figure>
+<svg viewBox="0 0 760 306" role="img" aria-label="The common first-wave pipeline: extract, embed, store, retrieve top-k">
+  <rect x="20" y="24" width="150" height="46" class="d-box"/>
+  <text x="95" y="52" text-anchor="middle" class="d-label">conversation turns</text>
+  <path d="M170 47 H222" class="d-line" marker-end="url(#ah1)"/>
+  <rect x="226" y="24" width="150" height="46" class="d-fill"/>
+  <text x="301" y="44" text-anchor="middle" class="d-label">LLM extraction</text>
+  <text x="301" y="59" text-anchor="middle" class="d-small">what is worth keeping?</text>
+  <path d="M376 47 H428" class="d-line" marker-end="url(#ah1)"/>
+  <g class="d-mono">
+    <text x="436" y="34">"moved to Bangalore"</text>
+    <text x="436" y="50">"prefers short replies"</text>
+    <text x="436" y="66">"on the infra team"</text>
+  </g>
+
+  <path d="M301 70 V104" class="d-line" marker-end="url(#ah1)"/>
+  <rect x="226" y="108" width="150" height="42" class="d-box"/>
+  <text x="301" y="134" text-anchor="middle" class="d-label">embed</text>
+  <text x="392" y="134" class="d-mono">[0.13, -0.44, 0.91, …]</text>
+
+  <path d="M301 150 V184" class="d-line" marker-end="url(#ah1)"/>
+  <rect x="186" y="188" width="230" height="46" class="d-fill"/>
+  <text x="301" y="208" text-anchor="middle" class="d-label">vector store plus metadata</text>
+  <text x="301" y="223" text-anchor="middle" class="d-small">one row per extracted fact</text>
+
+  <text x="301" y="262" text-anchor="middle" class="d-redtext">the original text is not kept</text>
+  <path d="M301 234 V250" class="d-red" marker-end="url(#ah3)"/>
+
+  <line x1="470" y1="96" x2="470" y2="276" class="d-dash"/>
+  <text x="482" y="108" class="d-small">read path</text>
+  <rect x="500" y="120" width="150" height="42" class="d-box"/>
+  <text x="575" y="146" text-anchor="middle" class="d-label">embed the question</text>
+  <path d="M575 162 V190" class="d-line" marker-end="url(#ah1)"/>
+  <rect x="500" y="194" width="150" height="42" class="d-accfill"/>
+  <text x="575" y="220" text-anchor="middle" class="d-acctext">top-k nearest</text>
+  <path d="M416 211 H496" class="d-line" marker-end="url(#ah1)"/>
+  <path d="M575 236 V266" class="d-line" marker-end="url(#ah1)"/>
+  <text x="575" y="286" text-anchor="middle" class="d-label">into the prompt</text>
+</svg>
+<figcaption>The premise: a memory is a fact, facts are true, and remembering means finding the closest one. The red arrow is the step that Part three is about.</figcaption>
+</figure>
+
+<h3 id="mem0">Mem0</h3>
+
+<p>Mem0 is the incumbent, with the adoption to back it: <a href="https://github.com/mem0ai/mem0">41,000 GitHub stars</a>, 14 million downloads, native integrations in CrewAI, Flowise and Langflow, and the AWS Agent SDK partnership. Netflix, Lemonade and Rocket Money are named users.</p>
+
+<p>Its real contribution is on the write path. Ordinary retrieval appends. Mem0 asks what the incoming fact does to the facts already stored, then commits to one of four operations.</p>
+
+<figure>
+<svg viewBox="0 0 760 270" role="img" aria-label="Mem0's four-way write adjudication: add, update, delete or noop">
+  <rect x="270" y="16" width="222" height="38" class="d-accfill"/>
+  <text x="381" y="40" text-anchor="middle" class="d-acctext">incoming: "I moved to Bangalore"</text>
+  <path d="M381 54 V84" class="d-line" marker-end="url(#ah1)"/>
+  <rect x="250" y="88" width="262" height="42" class="d-box"/>
+  <text x="381" y="107" text-anchor="middle" class="d-label">pull candidate memories</text>
+  <text x="381" y="122" text-anchor="middle" class="d-small">already stored: "user lives in Mumbai"</text>
+  <path d="M381 130 V158" class="d-line" marker-end="url(#ah1)"/>
+  <rect x="250" y="162" width="262" height="34" class="d-fill"/>
+  <text x="381" y="184" text-anchor="middle" class="d-label">an LLM decides</text>
+
+  <path d="M300 196 V214 H108 V232" class="d-line" marker-end="url(#ah1)"/>
+  <path d="M350 196 V222 H288 V232" class="d-line" marker-end="url(#ah1)"/>
+  <path d="M412 196 V222 H474 V232" class="d-red" marker-end="url(#ah3)"/>
+  <path d="M462 196 V214 H654 V232" class="d-line" marker-end="url(#ah1)"/>
+
+  <g class="d-key" text-anchor="middle">
+    <text x="108" y="248">ADD</text>
+    <text x="288" y="248">UPDATE</text>
+    <text x="474" y="248" fill="#7a2e2e">DELETE</text>
+    <text x="654" y="248">NOOP</text>
+  </g>
+  <g class="d-small" text-anchor="middle">
+    <text x="108" y="264">new, insert it</text>
+    <text x="288" y="264">amend in place</text>
+    <text x="474" y="264" fill="#7a2e2e">Mumbai fact removed</text>
+    <text x="654" y="264">already known</text>
+  </g>
+</svg>
+<figcaption>Tell Mem0 you have moved and the old city fact is deleted rather than stacked beside the new one. That one decision handles most of what sinks naive vector memory, and it is also the source of crack three.</figcaption>
+</figure>
+
+<p>It stores compressed natural-language statements rather than transcript chunks, which is where the efficiency comes from.</p>
+
+<div class="stat">
+  <div><b>1,764</b><span>tokens per conversation, against 26,031 for full context</span></div>
+  <div><b>0.200s</b><span>p95 search latency</span></div>
+  <div><b>66.88</b><span>LoCoMo, LLM-as-judge, from the paper's own table</span></div>
+</div>
+
+<p>A note on that last figure. The number widely reprinted is 67.13%. The paper's Table 2 reports J = 66.88 for Mem0 against 65.99 for Zep. The gap between those two systems, in the paper that started the argument, is under one point.</p>
+
+<p>Mem0g is the graph variant, entities as nodes and relations as edges. It exists because the flat version cannot answer questions about ordering or duration, and it reportedly scores 68.44 on LoCoMo with GPT-4o-mini.</p>
+
+<p>The trouble with Mem0 is operational rather than conceptual. Teams running it at volume report writes that quietly fail to index and recall that degrades under load. You are getting a library, not a platform, so everything upstream of chat ingestion is yours to build.</p>
+
+<h3 id="zep">Zep and Graphiti</h3>
+
+<p>Zep changed the data model instead of the write logic. <a href="https://github.com/getzep/graphiti">Graphiti</a> sits underneath, building a temporal knowledge graph where every relationship carries the window during which it held true.</p>
+
+<figure>
+<svg viewBox="0 0 760 246" role="img" aria-label="Flat vector store versus time-bounded graph edges">
+  <line x1="382" y1="14" x2="382" y2="232" class="d-dash"/>
+
+  <text x="24" y="26" class="d-key">flat vector store</text>
+  <g class="d-mono">
+    <text x="24" y="60">"works at Acme"</text>
+    <text x="24" y="82">"works at Zephyr"</text>
+    <text x="24" y="104">"works at Acme"</text>
+  </g>
+  <path d="M172 96 H206" class="d-line"/>
+  <text x="214" y="86" class="d-redtext">which one is current?</text>
+  <text x="214" y="104" class="d-small">nothing in the row says</text>
+  <path d="M24 132 H344" class="d-dash"/>
+  <text x="24" y="156" class="d-small">retrieval returns whichever is closest to the</text>
+  <text x="24" y="172" class="d-small">phrasing of the question, which is not the</text>
+  <text x="24" y="188" class="d-small">same as the most recent</text>
+
+  <text x="414" y="26" class="d-key">time-bounded graph</text>
+  <rect x="414" y="52" width="66" height="30" class="d-box"/>
+  <text x="447" y="72" text-anchor="middle" class="d-label">User</text>
+  <path d="M480 67 H616" class="d-line" marker-end="url(#ah1)"/>
+  <text x="548" y="59" text-anchor="middle" class="d-small">works_at</text>
+  <rect x="620" y="52" width="74" height="30" class="d-box"/>
+  <text x="657" y="72" text-anchor="middle" class="d-label">Acme</text>
+  <text x="548" y="84" text-anchor="middle" class="d-small">valid 2023-01 to 2024-06</text>
+
+  <rect x="414" y="132" width="66" height="30" class="d-accfill"/>
+  <text x="447" y="152" text-anchor="middle" class="d-acctext">User</text>
+  <path d="M480 147 H616" class="d-acc" marker-end="url(#ah2)"/>
+  <text x="548" y="139" text-anchor="middle" class="d-small">works_at</text>
+  <rect x="620" y="132" width="74" height="30" class="d-accfill"/>
+  <text x="657" y="152" text-anchor="middle" class="d-acctext">Zephyr</text>
+  <text x="548" y="164" text-anchor="middle" class="d-acctext">valid 2024-06 to now</text>
+
+  <path d="M414 192 H734" class="d-dash"/>
+  <text x="414" y="216" class="d-small">"what changed since Q1" becomes a traversal</text>
+  <text x="414" y="232" class="d-small">instead of a guess</text>
+</svg>
+<figcaption>Validity intervals are the first wave's best answer to change over time. They are also the most expensive.</figcaption>
+</figure>
+
+<p>Two costs, and neither belongs in a footnote. Memory footprint runs past 600,000 tokens per conversation on Mem0's measurement, against Mem0's own 1,764. And graph construction runs asynchronously, so a fact written a minute ago is often not yet findable. For a live agent that is disqualifying, whatever the accuracy numbers say.</p>
+
+<p>There is also a packaging change most write-ups miss. The self-contained Zep Community Edition server was deprecated when Zep <a href="https://www.digitalapplied.com/blog/open-source-agent-memory-mem0-letta-zep-compared">redirected its open-source strategy to the graph engine alone</a>. Self-hosting the open core today means running Graphiti plus a separate graph database, Neo4j or FalkorDB or Kuzu, while the context graph engine and hosted retrieval stay commercial. Three systems to provision before you store a fact.</p>
+
+<p>On the substance, Zep only half belongs in this wave. Time-bounded edges are a genuine answer to one of the failures in Part three. They do nothing about the others.</p>
+
+<h3 id="langmem">LangMem</h3>
+
+<p>If you are already on LangGraph this is the shortest path and the analysis can stop there. It runs inside the LangGraph store, so there is no new infrastructure.</p>
+
+<p>It does carry one idea the others mostly skip: three memory types rather than one. Semantic for facts, episodic for past interactions, and procedural, where the agent rewrites its own system prompt based on feedback. That third kind is underrated. Everything else in this section can remember what an agent knows and not how it should behave.</p>
+
+<p>The numbers settle it for interactive use. 58.10% on LoCoMo, and 59.82 seconds at p95 search. That is a batch tool. Live chat will hit a wall on the first request.</p>
+
+<h3 id="letta">Letta, formerly MemGPT</h3>
+
+<p>The most interesting idea in the wave and the least commercially dominant. <a href="https://github.com/letta-ai/letta">Letta</a> gives memory management to the model and structures it like an operating system.</p>
+
+<figure>
+<svg viewBox="0 0 760 256" role="img" aria-label="Letta's three-tier memory hierarchy with paging between tiers">
+  <rect x="120" y="18" width="380" height="58" class="d-accfill"/>
+  <text x="310" y="42" text-anchor="middle" class="d-acctext">core memory, inside the prompt</text>
+  <text x="310" y="60" text-anchor="middle" class="d-small">persona, human and task blocks, rewritable by the model itself</text>
+
+  <rect x="120" y="106" width="380" height="46" class="d-box"/>
+  <text x="310" y="134" text-anchor="middle" class="d-label">recall memory: the message history</text>
+
+  <rect x="120" y="182" width="380" height="46" class="d-fill"/>
+  <text x="310" y="210" text-anchor="middle" class="d-label">archival memory: unbounded external store</text>
+
+  <path d="M540 76 V106" class="d-acc" marker-end="url(#ah2)"/>
+  <path d="M562 106 V76" class="d-acc" marker-end="url(#ah2)"/>
+  <path d="M540 152 V182" class="d-acc" marker-end="url(#ah2)"/>
+  <path d="M562 182 V152" class="d-acc" marker-end="url(#ah2)"/>
+  <text x="588" y="96" class="d-acctext">page in, page out</text>
+  <text x="588" y="112" class="d-small">by tool call, model decides</text>
+  <text x="588" y="176" class="d-redtext">every arrow is another</text>
+  <text x="588" y="192" class="d-redtext">agentic turn, billed</text>
+
+  <path d="M100 46 H116" class="d-line"/>
+  <path d="M100 46 V205 H116" class="d-line"/>
+  <text x="94" y="126" text-anchor="end" class="d-small">you can open these</text>
+  <text x="94" y="142" text-anchor="end" class="d-small">and read them</text>
+</svg>
+<figcaption>Memory stops being a hidden service the model queries and becomes something it operates. You can open a core block and read what the agent thinks it knows about you. No vector store offers that.</figcaption>
+</figure>
+
+<p>The bill arrives per page. Every promotion and eviction is another turn, so simple tasks cost more than they should. Letta's later sleep-time compute work is a direct response, moving consolidation off the request path.</p>
+
+<p>Worth noting for Part three: Letta reportedly reaches 74.0% on LoCoMo with GPT-4o-mini largely by storing conversation histories as files with semantic search over them. Keep that number.</p>
+
+<h3 id="cognee">Cognee</h3>
+
+<p>Cognee is the one most comparisons skip and the one that most changes the shape of the argument, because it is not built like a library at all.</p>
+
+<p>The pipeline is called ECL: extract, cognify, load. Data comes in from <a href="https://github.com/topoteretes/cognee">38 or more sources</a>, an LLM pulls out entities and relationships, and the result loads into a single engine that unifies relational, vector and graph storage. Each stage is a task you can inspect or override.</p>
+
+<p>Two things it does that nothing else in this section does. First, <a href="https://www.cognee.ai/blog/deep-dives/grounding-ai-memory">ontology grounding</a>: extracted entities get validated against an OWL ontology when one exists, and entities that fail validation are marked <code>ontology_valid = False</code> rather than breaking the pipeline. Ontology support is additive, so you can start with LLM-only extraction and layer in a domain model later. Second, <code>memify</code>, an enrichment pass that feeds rated responses back into edge weights, so the graph is supposed to sharpen with use.</p>
+
+<figure>
+<svg viewBox="0 0 760 300" role="img" aria-label="Cognee's ECL pipeline with ontology validation and the memify feedback loop">
+  <g class="d-small">
+    <rect x="20" y="26" width="104" height="24" class="d-box"/><text x="72" y="42" text-anchor="middle" class="d-label">documents</text>
+    <rect x="20" y="56" width="104" height="24" class="d-box"/><text x="72" y="72" text-anchor="middle" class="d-label">conversations</text>
+    <rect x="20" y="86" width="104" height="24" class="d-box"/><text x="72" y="102" text-anchor="middle" class="d-label">audio, images</text>
+    <rect x="20" y="116" width="104" height="24" class="d-box"/><text x="72" y="132" text-anchor="middle" class="d-label">38+ connectors</text>
+  </g>
+
+  <path d="M124 42 C 150 42, 150 84, 176 84" class="d-line"/>
+  <path d="M124 68 C 150 68, 150 84, 176 84" class="d-line"/>
+  <path d="M124 98 C 150 98, 150 84, 176 84" class="d-line"/>
+  <path d="M124 128 C 150 128, 150 84, 176 84" class="d-line"/>
+
+  <rect x="180" y="60" width="112" height="50" class="d-fill"/>
+  <text x="236" y="80" text-anchor="middle" class="d-key">Extract</text>
+  <text x="236" y="97" text-anchor="middle" class="d-small">ingest, any format</text>
+
+  <path d="M292 85 H320" class="d-line" marker-end="url(#ah1)"/>
+
+  <rect x="324" y="60" width="126" height="50" class="d-fill"/>
+  <text x="387" y="80" text-anchor="middle" class="d-key">Cognify</text>
+  <text x="387" y="97" text-anchor="middle" class="d-small">entities, relationships</text>
+
+  <rect x="324" y="132" width="126" height="46" class="d-accfill"/>
+  <text x="387" y="152" text-anchor="middle" class="d-acctext">OWL ontology</text>
+  <text x="387" y="168" text-anchor="middle" class="d-small">validate, or flag false</text>
+  <path d="M387 132 V114" class="d-acc" marker-end="url(#ah2)"/>
+
+  <path d="M450 85 H478" class="d-line" marker-end="url(#ah1)"/>
+
+  <rect x="482" y="60" width="112" height="50" class="d-fill"/>
+  <text x="538" y="80" text-anchor="middle" class="d-key">Load</text>
+  <text x="538" y="97" text-anchor="middle" class="d-small">graph plus vector</text>
+
+  <path d="M594 85 H622" class="d-line" marker-end="url(#ah1)"/>
+  <rect x="626" y="52" width="114" height="66" class="d-box"/>
+  <text x="683" y="76" text-anchor="middle" class="d-label">one engine</text>
+  <text x="683" y="93" text-anchor="middle" class="d-small">relational, vector,</text>
+  <text x="683" y="107" text-anchor="middle" class="d-small">graph unified</text>
+
+  <path d="M683 118 V212 H540" class="d-red"/>
+  <rect x="404" y="196" width="136" height="34" class="d-box" stroke="#7a2e2e"/>
+  <text x="472" y="217" text-anchor="middle" class="d-redtext">rated responses</text>
+  <path d="M404 213 H300" class="d-red"/>
+  <rect x="176" y="196" width="124" height="34" class="d-box" stroke="#7a2e2e"/>
+  <text x="238" y="217" text-anchor="middle" class="d-redtext">memify</text>
+  <path d="M238 196 V118" class="d-red" marker-end="url(#ah3)"/>
+  <text x="256" y="160" class="d-small">adjusts edge weights</text>
+
+  <path d="M20 258 H740" class="d-dash"/>
+  <text x="20" y="282" class="d-small">The red loop is the part almost nobody else has built: memory learning from how its answers landed.</text>
+</svg>
+<figcaption>Cognee treats memory as a pipeline with a control plane rather than a store with an SDK. $7.5M seed in early 2026, 12,000 stars, 80+ contributors, 70+ reported production deployments.</figcaption>
+</figure>
+
+<p>Cognee also <a href="https://github.com/topoteretes/cognee">reports running against BEAM</a>, using default settings and no benchmark-specific pipeline, beating the previous state of the art at the 100K-token setting and matching it at 10M. <a href="https://arxiv.org/abs/2510.27246">BEAM</a> matters for Part three because it scores knowledge update, event ordering, contradiction resolution and abstention, which LoCoMo largely does not.</p>
+
+<h3 id="supermemory">Supermemory</h3>
+
+<p>Supermemory is the other system shaped like a platform. Founded in 2024 by Dhravya Shah, MIT-licensed core at 26,800 stars, <a href="https://rywalker.com/research/supermemory">$2.6M seed in October 2025</a>, with the hosted platform as the business.</p>
+
+<p>Its stack is five layers, and the interesting thing is which two are at the bottom.</p>
+
+<figure>
+<svg viewBox="0 0 760 264" role="img" aria-label="Supermemory's five layer stack, with connectors and extractors at the base">
+  <rect x="150" y="20" width="460" height="38" class="d-accfill"/>
+  <text x="380" y="44" text-anchor="middle" class="d-acctext">User Understanding Model</text>
+  <rect x="150" y="64" width="460" height="38" class="d-box"/>
+  <text x="380" y="88" text-anchor="middle" class="d-label">Vector Graph Engine, ontology-aware edges</text>
+  <rect x="150" y="108" width="460" height="38" class="d-box"/>
+  <text x="380" y="132" text-anchor="middle" class="d-label">Hybrid Retrieval Engine</text>
+  <rect x="150" y="152" width="460" height="38" class="d-fill"/>
+  <text x="380" y="176" text-anchor="middle" class="d-label">Multi-modal Extractors: PDF, web, image, audio</text>
+  <rect x="150" y="196" width="460" height="38" class="d-fill"/>
+  <text x="380" y="220" text-anchor="middle" class="d-label">Managed Connectors</text>
+
+  <path d="M136 40 V214" class="d-line"/>
+  <path d="M136 40 H146" class="d-line"/>
+  <path d="M136 214 H146" class="d-line"/>
+
+  <path d="M624 160 V232" class="d-red"/>
+  <path d="M624 160 H614" class="d-red"/>
+  <path d="M624 232 H614" class="d-red"/>
+  <text x="628" y="188" class="d-redtext">the ingestion tier,</text>
+  <text x="628" y="204" class="d-redtext">sold as product</text>
+
+  <text x="20" y="256" class="d-small">Mem0 and Zep ship the middle three layers and leave the bottom two to you.</text>
+</svg>
+<figcaption>The bottom two layers are the difference between a memory library and a memory platform. Part four returns to why that gap matters more than any benchmark number.</figcaption>
+</figure>
+
+<p>Two honest notes. Supermemory's published LongMemEval-S result moved from roughly 85% to roughly 99% within months, which needs reading alongside the benchmark criticism in Part three rather than on its own. And it had a real <a href="https://blog.supermemory.ai/incident-report-march-2026/">service degradation on 6 March 2026</a>, four and a half hours of elevated latency under load, not caused by a change but by traffic. That is worth citing precisely because most vendors do not publish incident reports, and because degradation under load is the failure mode teams keep reporting across this whole category.</p>
+
+<h3 id="lineage">The research lineage</h3>
+
+<p>These rarely appear in vendor comparisons and several are better than their adoption suggests. Most of the ideas the second wave is now shipping were published here first.</p>
+
+<div class="wide">
+<table class="reg">
+<thead><tr><th>System</th><th>Core idea</th><th>Why it matters</th></tr></thead>
+<tbody>
+<tr><td><a href="https://arxiv.org/abs/2507.07957">MIRIX</a></td><td>Six memory types (core, episodic, semantic, procedural, resource, knowledge vault) with a multi-agent coordinator orchestrating updates across them.</td><td>The most granular typing anyone has attempted. Hindsight's four networks are a simplification of this direction.</td></tr>
+<tr><td><a href="https://github.com/agiresearch/A-mem">A-Mem</a></td><td>Zettelkasten-style linked notes. Each note evolves when related information arrives, and links form automatically.</td><td>Multi-hop reasoning comes from the link structure rather than from a graph you designed.</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2605.25869">MemoryOS</a></td><td>Short, mid and long-term tiers. Short-term consolidates into mid-term via dialogue chains, mid-term into long-term personal memory via page-like segments.</td><td>The only system in the group that takes consolidation seriously as a scheduled process.</td></tr>
+<tr><td><a href="https://arxiv.org/abs/2604.04853">MemMachine</a></td><td>Episodic memory split into working and persistent, semantic memory holding user profiles, with a tool-selecting retrieval agent routing each query to one of three strategies.</td><td>Ground-truth preservation is its stated design goal, which puts it on the right side of crack one.</td></tr>
+<tr><td><a href="https://github.com/zhongwanjun/MemoryBank-SiliconFriend">MemoryBank</a></td><td>Memories decay unless reinforced, modelled on human consolidation.</td><td>The only serious attempt at step three of the four-part job. LoCoMo performance is weak, which may say more about LoCoMo.</td></tr>
+<tr><td>Memori</td><td>SQL-native. Relational tables for facts, entities and events, with temporal versioning.</td><td>Deliberately unfashionable, and versioned rows are a straightforward answer to crack three.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="native">The labs ship it too</h3>
+
+<p>OpenAI, Anthropic and Google all have native memory in their consumer products now, and the first question any buyer asks is why they would pay for a layer on top.</p>
+
+<p>The vendors' answer is portability. Memory held by a model provider is memory you cannot move, cannot inspect in bulk, and cannot share across the four different agents your company runs. Mem0's founders have made this argument directly: the labs have little incentive to make memory interoperable.</p>
+
+<p>That answer is correct and incomplete. The second half is that native memory is scoped to conversations with that assistant. It has no view of your Notion, your tickets, or your CRM, which is where the decisions worth remembering actually live. Part four is largely about that gap.</p>
+
+<!-- ============================================================ -->
+<!-- PART THREE                                                    -->
+<!-- ============================================================ -->
+
+<h2 id="cracks">Where it cracks</h2>
+
+<p>None of this means the first wave failed. Mem0 handles more memory operations than any other provider by its own count and by AWS's choice. Zep's validity intervals are a real answer to a real question. Letta's core blocks are the only place you can open a file and read what an agent believes about you. Cognee's ontology validation is the most careful piece of engineering in the category. These systems are in production at companies you have heard of, and they mostly do what they claim.</p>
+
+<p>The trouble is narrower than "they do not work," and worse. The one thing all four have in common is the weakest part of each of them. And the benchmarks everyone quotes cannot show you that.</p>
+
+<div class="crack">
+  <h3 id="crack1">Crack one: extraction loses to doing nothing</h3>
+  <p>This is the finding that reorganises everything else, and it comes from a controlled ablation rather than a vendor blog.</p>
+  <p><a href="https://arxiv.org/abs/2601.00821">Verbatim Chunks Beat Extracted Artifacts</a> holds one pipeline fixed. Same model, same retriever, same reranker, same judge. The only thing that changes is what got stored: LLM-extracted typed artifacts, or raw verbatim conversation chunks.</p>
+  <p>Verbatim chunks win by 15.9 points on LoCoMo, 43.9% against 28.0%. On LongMemEval-S they win by 22.0 points, 67.4% against 45.4%. Adding a one-hop semantic graph does not recover the gap. Five separate confound controls reproduce the effect. And the extracted-artifact pipeline never beats naive RAG on overall accuracy.</p>
+  <p>The mechanism the authors give is one sentence and it is the sentence that matters: extraction commits to relevance before the questions are known. Verbatim storage defers that decision to query time. Everything the extractor discarded is unrecoverable, however good your retrieval gets later.</p>
+  <p>Two pieces of context keep this fair. The result is scoped to extraction that <em>replaces</em> source text, tested on one artifact schema in one pipeline family. And the authors' constructive finding is the useful part: a store holding both chunks and artifacts matched chunks on both benchmarks. Structure should sit beside the verbatim text, not instead of it. Concurrent work with near-verbatim, provenance-preserving units fits the same account. Retrieval accuracy tracks how far your stored representation has drifted from the source.</p>
+  <p class="verdict">Extraction is the premise of the first wave, and under controlled conditions it is a net cost.</p>
+</div>
+
+<figure>
+<svg viewBox="0 0 760 278" role="img" aria-label="Bar chart comparing extracted artifacts against verbatim chunks on LoCoMo and LongMemEval-S">
+  <text x="20" y="24" class="d-key">Same pipeline. Only the stored representation changes.</text>
+
+  <text x="20" y="62" class="d-label">LoCoMo</text>
+  <rect x="140" y="50" width="196" height="20" class="d-bar"/>
+  <text x="346" y="65" class="d-label">28.0%</text>
+  <text x="396" y="65" class="d-small">extracted artifacts</text>
+  <rect x="140" y="76" width="307" height="20" class="d-accsolid"/>
+  <text x="457" y="91" class="d-acctext">43.9%</text>
+  <text x="507" y="91" class="d-small">verbatim chunks</text>
+  <text x="140" y="116" class="d-redtext">15.9 point gap</text>
+
+  <text x="20" y="164" class="d-label">LongMemEval-S</text>
+  <rect x="140" y="152" width="318" height="20" class="d-bar"/>
+  <text x="468" y="167" class="d-label">45.4%</text>
+  <text x="518" y="167" class="d-small">extracted artifacts</text>
+  <rect x="140" y="178" width="472" height="20" class="d-accsolid"/>
+  <text x="622" y="193" class="d-acctext">67.4%</text>
+  <text x="20" y="218" class="d-redtext">22.0 point gap</text>
+
+  <path d="M20 236 H740" class="d-dash"/>
+  <text x="20" y="254" class="d-small">A one-hop semantic graph over the artifacts does not close either gap.</text>
+  <text x="20" y="270" class="d-small">The artifact pipeline never beats naive RAG on overall accuracy.</text>
+</svg>
+<figcaption>The controlled ablation in arXiv 2601.00821. The bars are not two products. They are two choices about what to keep, inside one identical system.</figcaption>
+</figure>
+
+<div class="crack">
+  <h3 id="crack2">Crack two: the scoreboard cannot tell good from trivial</h3>
+  <p>Start with the result that should have ended the leaderboard era. <a href="https://arxiv.org/abs/2511.10523">ConvoMem</a> found that plain filesystem operations reach 74% on <a href="https://github.com/snap-research/locomo">LoCoMo</a>, matching or exceeding sophisticated memory systems. Letta reaches 74.0% storing conversations as files with semantic search. If a directory of text files scores what a temporal knowledge graph scores, the benchmark is not measuring what the field thinks it is measuring.</p>
+  <p>Then the data quality. An <a href="https://dev.to/penfieldlabs/we-audited-locomo-64-of-the-answer-key-is-wrong-and-the-judge-accepts-up-to-63-of-intentionally-33lg">independent audit</a> of LoCoMo found 99 score-corrupting errors across 1,540 questions, 6.4%, including hallucinated facts in the answer key, wrong temporal reasoning and speaker attribution errors. The audit puts the honest achievable ceiling near 93.6. The same audit measured the LLM judge accepting up to 63% of deliberately wrong answers.</p>
+  <p>The <a href="https://arxiv.org/abs/2510.08601">Mnemosyne paper</a> documents specific cases independently. In one, LoCoMo's gold answer for what a speaker's degree might be in lists political science and public administration, while the cited session has him sharing a graphic design certificate.</p>
+  <p>Then the missing category. 446 of LoCoMo's questions, 22.5% of the benchmark, have refusal as the correct answer. They name a real person and a real topic from the conversation and then ask about something that person never said. <a href="https://dev.to/gde03/the-ai-memory-benchmark-everyone-quotes-forbids-saying-i-dont-know-o1n">The standard harness drops them and instructs the model never to abstain.</a> Scored on those 446, the incumbents get 0.000.</p>
+  <p>Put that together. A published score in the low nineties is at the ceiling of the benchmark, and that ceiling is a flaw in the answer key rather than a limit on memory. The score was awarded by a judge that accepts nearly two thirds of known-wrong answers. And it covers only the 77.5% of questions that were kept.</p>
+  <p><a href="https://arxiv.org/abs/2410.10813">LongMemEval</a> has a different problem. LongMemEval-S runs roughly 115,000 tokens of context per question, against models that support 200,000 to a million. Part of what it measures is context window management, and as windows grow the full-context baseline keeps climbing, which erodes the benchmark's ability to discriminate at all. One <a href="https://mnemoverse.com/docs/research/evaluation/ai-memory-benchmarks-field-guide">field guide to these benchmarks</a> notes the sharper version: some systems can score near 100% through verbatim-style retrieval, which is the same finding as crack one wearing different clothes.</p>
+
+<p>Successors exist and nobody has adopted them yet. <a href="https://arxiv.org/abs/2602.10715">LoCoMo-Plus</a> goes after memory that is not factual recall. Its cases turn on holding an implicit constraint rather than retrieving a stated fact. Its authors also argue that telling the model what the task is, and then scoring by string match, misleads you even on plain recall.</p>
+</div>
+
+<figure>
+<svg viewBox="0 0 760 290" role="img" aria-label="Breakdown of what LoCoMo's 1540 questions actually contain after the audit">
+  <text x="20" y="24" class="d-key">LoCoMo, 1,540 questions</text>
+
+  <rect x="20" y="42" width="720" height="34" class="d-box"/>
+  <rect x="20" y="42" width="558" height="34" class="d-fill"/>
+  <rect x="578" y="42" width="162" height="34" fill="rgba(122,46,46,.12)" stroke="#7a2e2e" stroke-width="1"/>
+  <text x="299" y="64" text-anchor="middle" class="d-label">1,094 kept and scored</text>
+  <text x="659" y="64" text-anchor="middle" class="d-redtext">446 dropped</text>
+
+  <path d="M659 76 V104" class="d-red" marker-end="url(#ah3)"/>
+  <text x="740" y="124" text-anchor="end" class="d-redtext">The correct answer to these is a refusal.</text>
+  <text x="740" y="140" text-anchor="end" class="d-small">The harness drops them, then tells the model</text>
+  <text x="740" y="154" text-anchor="end" class="d-small">never to abstain. Incumbents score 0.000.</text>
+
+  <path d="M20 182 H740" class="d-dash"/>
+
+  <text x="20" y="208" class="d-key">Of the 1,094 that are scored</text>
+  <text x="20" y="232" class="d-small">6.4% of the full answer key carries score-corrupting errors: hallucinated gold facts, wrong temporal reasoning,</text>
+  <text x="20" y="248" class="d-small">speaker attribution mistakes. Honest ceiling lands near 93.6, not 100.</text>
+  <text x="20" y="272" class="d-small">The LLM judge accepts up to 63% of answers known to be wrong.</text>
+</svg>
+<figcaption>What a headline LoCoMo score is actually a score of. None of this implies anyone cheated. It implies the instrument is not fit for the comparisons being made with it.</figcaption>
+</figure>
+
+<p>The vendor dispute belongs here rather than in the chronology, because it is a symptom of the instrument and not of the vendors.</p>
+
+<p>Zep's paper claimed 84% on LoCoMo. Mem0's CTO <a href="https://github.com/getzep/zep-papers/issues/5">replicated it</a> with what he argued were the correct settings: accuracy restricted to the four validated categories, the system prompt aligned with the one used across the paper, and results averaged over ten independent runs. That gave 58.44%, plus or minus 0.20. Zep replied that Mem0 had misconfigured Zep, and put the corrected figure at 75.14%. Independently, <a href="https://www.digitalapplied.com/blog/open-source-agent-memory-mem0-letta-zep-compared">one third-party figure puts Mem0 at 49.0 on LongMemEval against a self-reported 94.4</a>. Mem0 publishes Mem0's scores. Zep publishes Zep's, in Zep's own paper. Letta designed the leaderboard Letta appears on. None of that is dishonest. It is what a category looks like before it has an independent evaluator.</p>
+
+<p>The token-savings claims deserve the same treatment. Mem0 says 90%, A-Mem 85 to 93%, MemMachine 80%, Zep 94.8%. <a href="https://medium.com/@mrsandelin/the-first-controlled-benchmark-of-ai-memory-in-coding-agents-8e0bb776d39e">They measure four different things</a>: memory footprint compression, tokens per memory operation, a LoCoMo-derived figure, and retrieval accuracy. None of them measures whether the downstream task completed faster or better.</p>
+
+<div class="crack">
+  <h3 id="crack3">Crack three: a correction erases its own history</h3>
+  <p>Here is the sequence, and it happens in every enterprise deployment within the first month.</p>
+<pre>Mar 3    "we're standardising on Postgres"
+Jun 18   "actually we moved to Snowflake"</pre>
+  <p>A plain vector store now holds both statements with nothing to rank them by, so retrieval returns whichever is closer to the phrasing of the question. Mem0 does better and issues a DELETE on the Postgres fact. Zep does better still and closes the validity window on it.</p>
+  <p>Now ask the agent why Snowflake was chosen. On the vector store, it cannot tell which fact is current. On Mem0, the earlier position is gone, along with the fact that a reversal happened at all, who argued for it, and what the Postgres choice was protecting. The write path treated a change of mind as a data error and cleaned it up.</p>
+  <p>Zep's design is the closest thing to an answer, because a closed interval is a record rather than a deletion. But an interval says when a fact stopped being true, not why, and not who said so.</p>
+  <p><a href="https://arxiv.org/abs/2604.15774">MemEvoBench</a> shows what happens when this compounds. It benchmarks memory misevolution across 7 domains and 36 risk types, and the finding is that bad memory does not usually arrive as a single error. It accumulates. Memories that agree with each other reinforce each other under biased feedback. Harmful content dressed up as a success case gets consolidated through repetition. And noisy tool returns harden, over time, from accidental noise into apparent historical evidence.</p>
+  <p class="verdict">Correct and complete are not the same answer, and a system optimised for the first will destroy the second.</p>
+</div>
+
+<div class="crack">
+  <h3 id="crack4">Crack four: memory makes agents agree with you</h3>
+  <p>This one is newer and gets almost no coverage. <a href="https://arxiv.org/abs/2607.01071">MemSyco-Bench</a> benchmarks sycophancy in agent memory specifically.</p>
+  <p>The mechanism is uncomfortable once you see it. A memory layer built on similarity has no way to distinguish a fact the user asserted from a fact that is true. Both are text, both get embedded, both come back with a score. Once a stored belief is retrieved often enough, the agent starts defending it, because it looks exactly like every other piece of grounding in the prompt.</p>
+  <p>So a confident wrong user produces a progressively more confident wrong agent, and the memory layer is the mechanism. This is the failure mode that scales worst, because the more a person uses the system the more of their own assertions come back at them wearing the authority of retrieved context.</p>
+</div>
+
+<div class="crack">
+  <h3 id="crack5">Crack five: evidence and guesses get the same score</h3>
+  <p>Two things go into the store on the same afternoon.</p>
+<pre>"contract renews in March"        &#8592; from a CRM field. dated, checkable
+"this buyer is price-sensitive"   &#8592; from one remark, 18 months ago</pre>
+  <p>Both become rows. Both come back with a similarity score. The second carries no confidence, no provenance, and no mechanism for being challenged, and it will be retrieved with exactly the authority of the renewal date.</p>
+  <p>Then the agent recommends holding off on the enterprise tier, someone asks why, and the honest answer the system can give is <code>memory_47, cosine 0.83</code>. That is a coordinate, not a reason.</p>
+  <p>The collapse happened at write time. No amount of retrieval tuning recovers a distinction that was never recorded, which is the same structural point as crack one arriving from a different direction.</p>
+</div>
+
+<figure>
+<svg viewBox="0 0 760 224" role="img" aria-label="Evidence and inference collapsed into identical rows in a flat store">
+  <text x="24" y="24" class="d-key">what went in</text>
+  <rect x="24" y="40" width="252" height="42" class="d-box"/>
+  <text x="36" y="59" class="d-mono">contract renews in March</text>
+  <text x="36" y="74" class="d-small">CRM field. dated, checkable, owned</text>
+  <rect x="24" y="98" width="252" height="42" class="d-box"/>
+  <text x="36" y="117" class="d-mono">buyer is price-sensitive</text>
+  <text x="36" y="132" class="d-small">one remark, 18 months ago, nobody's</text>
+
+  <path d="M276 61 C 324 61, 324 100, 368 100" class="d-line" marker-end="url(#ah1)"/>
+  <path d="M276 119 C 324 119, 324 108, 368 108" class="d-line" marker-end="url(#ah1)"/>
+
+  <rect x="372" y="76" width="152" height="56" class="d-fill"/>
+  <text x="448" y="100" text-anchor="middle" class="d-label">one flat store</text>
+  <text x="448" y="116" text-anchor="middle" class="d-small">both are just rows now</text>
+
+  <path d="M524 104 H600" class="d-red" marker-end="url(#ah3)"/>
+  <rect x="604" y="76" width="132" height="56" class="d-box" stroke="#7a2e2e"/>
+  <text x="670" y="100" text-anchor="middle" class="d-redtext">retrieved with</text>
+  <text x="670" y="117" text-anchor="middle" class="d-redtext">equal authority</text>
+
+  <path d="M24 172 H736" class="d-dash"/>
+  <text x="24" y="196" class="d-small">The lossy step is on the write path, before any question exists. Read-path tuning cannot recover a distinction</text>
+  <text x="24" y="212" class="d-small">that was never recorded.</text>
+</svg>
+<figcaption>Evidence and inference enter through the same door and leave with the same score. That is a schema decision, and in the first wave almost nobody made it on purpose.</figcaption>
+</figure>
+
+<div class="crack">
+  <h3 id="crack6">Crack six: chat is not where the memory is</h3>
+  <p>Every system in Part two except Cognee and Supermemory assumes memory arrives as conversation turns. In an enterprise, almost none of it does.</p>
+  <p>The decisions worth remembering are in Notion pages, Google Docs, SharePoint, Confluence, Slack threads, Jira comments, CRM notes and meeting transcripts. An agent whose memory only holds its own conversations knows what one person typed at it and nothing about what the organisation already settled. It will re-litigate a decision that was documented in March, confidently, because it has no way to see the document.</p>
+  <p>This is the crack that has no benchmark at all, and it is the one enterprise buyers hit first. LoCoMo cannot test it. LongMemEval cannot test it. It does not show up in any published number, which is part of why the category spent two years optimising retrieval quality on synthetic conversations.</p>
+</div>
+
+<div class="pull"><p>An agent that only remembers its own conversations has the memory of a new hire who refuses to read anything.</p></div>
+
+<!-- ============================================================ -->
+<!-- PART FOUR                                                     -->
+<!-- ============================================================ -->
+
+<h2 id="second">What comes next</h2>
+
+<p>The tempting way to write this section is a product roundup. The more useful way is to derive the requirements from the six cracks, then look at who is attempting which.</p>
+
+<h3 id="reqs">Five requirements</h3>
+
+<figure>
+<svg viewBox="0 0 760 336" role="img" aria-label="Five requirements for the second wave mapped against which cracks they answer">
+  <text x="20" y="22" class="d-key">Requirement</text>
+  <text x="470" y="22" class="d-key">Answers</text>
+  <line x1="20" y1="32" x2="740" y2="32" stroke="#191919" stroke-width="1"/>
+
+  <text x="20" y="60" class="d-label">1. Keep the source next to the derived fact</text>
+  <text x="20" y="76" class="d-small">Verbatim text stays. Structure is added, not substituted.</text>
+  <rect x="470" y="46" width="120" height="20" class="d-accfill"/><text x="530" y="60" text-anchor="middle" class="d-acctext">crack 1</text>
+  <rect x="596" y="46" width="120" height="20" class="d-accfill"/><text x="656" y="60" text-anchor="middle" class="d-acctext">crack 5</text>
+  <line x1="20" y1="92" x2="740" y2="92" class="d-line"/>
+
+  <text x="20" y="120" class="d-label">2. Type memories by how they were acquired</text>
+  <text x="20" y="136" class="d-small">Observed, asserted, inferred. Different rows, not one store.</text>
+  <rect x="470" y="106" width="120" height="20" class="d-accfill"/><text x="530" y="120" text-anchor="middle" class="d-acctext">crack 4</text>
+  <rect x="596" y="106" width="120" height="20" class="d-accfill"/><text x="656" y="120" text-anchor="middle" class="d-acctext">crack 5</text>
+  <line x1="20" y1="152" x2="740" y2="152" class="d-line"/>
+
+  <text x="20" y="180" class="d-label">3. Make change additive, never destructive</text>
+  <text x="20" y="196" class="d-small">A correction is a new record with an author, not a DELETE.</text>
+  <rect x="470" y="166" width="120" height="20" class="d-accfill"/><text x="530" y="180" text-anchor="middle" class="d-acctext">crack 3</text>
+  <line x1="20" y1="212" x2="740" y2="212" class="d-line"/>
+
+  <text x="20" y="240" class="d-label">4. Ingest from where work happens</text>
+  <text x="20" y="256" class="d-small">Connectors, sync, permission inheritance, propagating deletes.</text>
+  <rect x="470" y="226" width="120" height="20" class="d-accfill"/><text x="530" y="240" text-anchor="middle" class="d-acctext">crack 6</text>
+  <line x1="20" y1="272" x2="740" y2="272" class="d-line"/>
+
+  <text x="20" y="300" class="d-label">5. Be measurable on something honest</text>
+  <text x="20" y="316" class="d-small">Updates, ordering, abstention. Tasks completed, not facts recalled.</text>
+  <rect x="470" y="286" width="120" height="20" class="d-accfill"/><text x="530" y="300" text-anchor="middle" class="d-acctext">crack 2</text>
+</svg>
+<figcaption>Requirement three is the one nobody has shipped properly, and requirement five is the one that blocks everyone from proving they shipped the others.</figcaption>
+</figure>
+
+<h3 id="hindsight">Hindsight: types the memories</h3>
+
+<p><a href="https://github.com/vectorize-io/hindsight">Hindsight</a> shipped on 16 December 2025 from Vectorize.io, MIT licensed, with a <a href="https://arxiv.org/abs/2512.12818">paper</a> co-authored with Virginia Tech and The Washington Post. It takes requirement two seriously and is the first system to do so at production quality.</p>
+
+<p>Instead of one undifferentiated store, memory is partitioned into four networks, each with a distinct epistemic role.</p>
+
+<figure>
+<svg viewBox="0 0 760 358" role="img" aria-label="Hindsight's four memory networks and its retain, recall, reflect operations">
+  <rect x="20" y="30" width="172" height="96" class="d-box"/>
+  <text x="34" y="52" class="d-key">World</text>
+  <text x="34" y="72" class="d-small">objective external facts</text>
+  <text x="34" y="92" class="d-mono">"the stove gets hot"</text>
+  <text x="34" y="114" class="d-small">verifiable, agent-neutral</text>
+
+  <rect x="204" y="30" width="172" height="96" class="d-box"/>
+  <text x="218" y="52" class="d-key">Experience</text>
+  <text x="218" y="72" class="d-small">first-person agent history</text>
+  <text x="218" y="92" class="d-mono">"I touched it. it hurt"</text>
+  <text x="218" y="114" class="d-small">what the agent itself did</text>
+
+  <rect x="388" y="30" width="172" height="96" class="d-accfill"/>
+  <text x="402" y="52" class="d-acctext">Opinion</text>
+  <text x="402" y="72" class="d-small">belief, confidence, timestamp</text>
+  <text x="402" y="92" class="d-mono">"don't touch it" 0.99</text>
+  <text x="402" y="114" class="d-small">updates as evidence arrives</text>
+
+  <rect x="572" y="30" width="168" height="96" class="d-box"/>
+  <text x="586" y="52" class="d-key">Observation</text>
+  <text x="586" y="72" class="d-small">synthesised entity profiles</text>
+  <text x="586" y="92" class="d-mono">"ovens are hot too"</text>
+  <text x="586" y="114" class="d-small">from world + experience</text>
+
+  <path d="M106 126 V152" class="d-line"/>
+  <path d="M290 126 V152" class="d-line"/>
+  <path d="M474 126 V152" class="d-acc"/>
+  <path d="M656 126 V152" class="d-line"/>
+  <path d="M106 152 H656" class="d-line"/>
+
+  <rect x="240" y="168" width="280" height="42" class="d-fill"/>
+  <text x="380" y="194" text-anchor="middle" class="d-label">Postgres with pgvector, one memory bank</text>
+
+  <text x="20" y="246" class="d-key">Three operations</text>
+  <rect x="20" y="258" width="220" height="56" class="d-box"/>
+  <text x="34" y="278" class="d-label">retain</text>
+  <text x="34" y="296" class="d-small">ingest into the right network</text>
+
+  <rect x="252" y="258" width="238" height="56" class="d-accfill"/>
+  <text x="266" y="278" class="d-acctext">recall</text>
+  <text x="266" y="296" class="d-small">4 parallel strategies, RRF fused</text>
+
+  <rect x="502" y="258" width="238" height="56" class="d-box"/>
+  <text x="516" y="278" class="d-label">reflect</text>
+  <text x="516" y="296" class="d-small">derive new observations, update beliefs</text>
+
+  <text x="20" y="330" class="d-small">recall runs four searches at once: vector, BM25, graph spreading activation (2 hops, decay 0.6), temporal proximity.</text>
+  <text x="20" y="346" class="d-small">The four result sets are fused with reciprocal rank fusion, then reranked by a cross-encoder.</text>
+</svg>
+<figcaption>The separation between evidence and inference is the point. When the agent says it thinks you prefer concise answers, that belief lives in the opinion network with a confidence score, not mixed in with your name.</figcaption>
+</figure>
+
+<p>The reported result is 91.4% on LongMemEval, <a href="https://venturebeat.com/data/with-91-accuracy-open-source-hindsight-agentic-memory-provides-20-20-vision">the first agent memory system past 90%</a>. Read that number against crack two, not on its own.</p>
+
+<p>The more interesting thing about Hindsight is what an independent reimplementation found. A <a href="https://arxiv.org/abs/2606.17591">paper that rebuilt it faithfully</a> in roughly 420 lines calls the architecture the right structure for memory management. Then it names two gaps. Reflect updates a belief by checking factual consistency, not by checking whether the belief led to a good outcome. And a confidence score is one number, so it throws away the evidence trail behind it. When the score drops, the system cannot say why.</p>
+
+<p>That is requirement two solved and requirement three still open. Hindsight knows the difference between a fact and a belief. It does not keep the argument that changed the belief.</p>
+
+<h3 id="memvid">Memvid: keeps the source</h3>
+
+<p>Memvid's own history is the most honest thing in this section, so it is worth telling straight.</p>
+
+<p>Version one stored text chunks as QR codes encoded into MP4 video frames, with FAISS handling vector search on the side. It got taken apart in public. The <a href="https://lobste.rs/s/ntsbnt/memvid_video_based_ai_memory_library">Lobsters thread</a> called it an immensely inefficient text compression method with a separate vector index doing the actual work, and questioned whether the star count was organic. <a href="https://github.com/Olow304/memvid/issues/49">GitHub issue 49</a> ran the same argument. A <a href="https://esoteriic.com/memvid-critique-when-ai-claims-sound-too-good-to-be-true/">critique</a> pointed out that the project's central claim about vector databases requiring a server was simply false.</p>
+
+<p>Then they rewrote it. <a href="https://memvid.com/blog/introducing-memvid-v2-portable-deterministic-memory-for-ai">Version two</a>, early 2026, is a ground-up Rust rewrite with the QR concept removed entirely.</p>
+
+<figure>
+<svg viewBox="0 0 760 268" role="img" aria-label="Memvid version one compared with version two, showing what changed in the rewrite">
+  <text x="20" y="24" class="d-key">v1</text>
+  <text x="404" y="24" class="d-key">v2</text>
+  <line x1="20" y1="34" x2="360" y2="34" class="d-line"/>
+  <line x1="404" y1="34" x2="740" y2="34" class="d-line"/>
+
+  <g class="d-label">
+    <text x="20" y="60">text to QR codes to MP4 frames</text>
+    <text x="20" y="94">FAISS for vectors</text>
+    <text x="20" y="128">no full-text search</text>
+    <text x="20" y="162">no crash recovery</text>
+    <text x="20" y="196">Python only, GIL bound</text>
+    <text x="20" y="230">latency tied to video seek</text>
+  </g>
+  <g class="d-small">
+    <text x="20" y="76">depends on codec behaviour per platform</text>
+    <text x="20" y="110">separate index doing the real work</text>
+    <text x="20" y="144">vector similarity only</text>
+    <text x="20" y="178">a dead process could corrupt the file</text>
+    <text x="20" y="212">not embeddable in other languages</text>
+    <text x="20" y="246">plus QR decode cost per read</text>
+  </g>
+
+  <path d="M370 55 H398" class="d-line" marker-end="url(#ah1)"/>
+  <path d="M370 89 H398" class="d-line" marker-end="url(#ah1)"/>
+  <path d="M370 123 H398" class="d-line" marker-end="url(#ah1)"/>
+  <path d="M370 157 H398" class="d-line" marker-end="url(#ah1)"/>
+  <path d="M370 191 H398" class="d-line" marker-end="url(#ah1)"/>
+  <path d="M370 225 H398" class="d-line" marker-end="url(#ah1)"/>
+
+  <g class="d-acctext">
+    <text x="404" y="60">purpose-built .mv2 binary format</text>
+    <text x="404" y="94">HNSW, optional product quantization</text>
+    <text x="404" y="128">embedded Tantivy, BM25 ranking</text>
+    <text x="404" y="162">embedded write-ahead log, auto recovery</text>
+    <text x="404" y="196">Rust core, Python and Node bindings, CLI</text>
+    <text x="404" y="230">sub-millisecond search on real workloads</text>
+  </g>
+</svg>
+<figcaption>A vendor answering a fair technical critique by rebuilding the thing. Whatever you make of the benchmark claims, this diff is the work.</figcaption>
+</figure>
+
+<p>What Memvid gets right on the requirements is the first one. An append-only sequence of immutable frames, each with a content hash, timestamp and metadata, in one portable file, is a system that keeps the source. Nothing is distilled away on the write path. It is a rewindable timeline, not a set of extracted claims, and that is exactly what crack one says you want.</p>
+
+<p>The numbers I would keep at arm's length. <a href="https://github.com/memvid/memvid">The README</a> claims 0.025ms P50 retrieval, 0.075ms P99, 1,372 times the throughput of standard RAG, and 35% over the industry average on LoCoMo. The company's own press coverage describes retrieval as <a href="https://www.aicerts.ai/news/memvids-ai-bully-stunt-reveals-llm-memory-testing-challenges/">staying below 17 milliseconds</a>. Those two figures differ by nearly three orders of magnitude, and the same coverage notes that critics are still waiting on independent benchmarks.</p>
+
+<p>The architectural cost is real and it collides directly with requirement three. Append-only with immutable frames means no concurrent writes, no ACID transactions and no fine-grained deletion. Changing one memory means rebuilding the file. For a static or slow-changing profile that is elegant. For a memory store that has to honour a deletion request or record a correction, it is the wrong shape.</p>
+
+<div class="note">
+<p><strong>The pattern worth noticing.</strong> Hindsight solves requirement two and leaves three open. Memvid solves requirement one and makes three harder. Cognee is the only system attempting four and five together. Nobody has three.</p>
+</div>
+
+<h3 id="platform">Memory is a platform, not a library</h3>
+
+<p>Requirement four is where the second wave will actually be decided, and it is the least discussed because no benchmark touches it.</p>
+
+<p>Once memory has to draw on the systems where work happens, the hard parts stop being retrieval and become ingestion and identity.</p>
+
+<figure>
+<svg viewBox="0 0 760 326" role="img" aria-label="Enterprise sources feeding a connector tier, normalisation, and a memory store, with permissions travelling through">
+  <g>
+    <rect x="20" y="22" width="118" height="28" class="d-box"/><text x="79" y="41" text-anchor="middle" class="d-label">Notion</text>
+    <rect x="20" y="58" width="118" height="28" class="d-box"/><text x="79" y="77" text-anchor="middle" class="d-label">Google Docs</text>
+    <rect x="20" y="94" width="118" height="28" class="d-box"/><text x="79" y="113" text-anchor="middle" class="d-label">SharePoint</text>
+    <rect x="20" y="130" width="118" height="28" class="d-box"/><text x="79" y="149" text-anchor="middle" class="d-label">Slack</text>
+    <rect x="20" y="166" width="118" height="28" class="d-box"/><text x="79" y="185" text-anchor="middle" class="d-label">Jira</text>
+    <rect x="20" y="202" width="118" height="28" class="d-box"/><text x="79" y="221" text-anchor="middle" class="d-label">CRM notes</text>
+    <rect x="20" y="238" width="118" height="28" class="d-accfill"/><text x="79" y="257" text-anchor="middle" class="d-acctext">chat turns</text>
+    <text x="79" y="280" text-anchor="middle" class="d-small">the only source the</text>
+    <text x="79" y="294" text-anchor="middle" class="d-small">libraries handle</text>
+  </g>
+
+  <path d="M138 36 C 176 36, 176 126, 208 126" class="d-line"/>
+  <path d="M138 72 C 176 72, 176 126, 208 126" class="d-line"/>
+  <path d="M138 108 C 176 108, 176 126, 208 126" class="d-line"/>
+  <path d="M138 144 C 176 144, 176 126, 208 126" class="d-line"/>
+  <path d="M138 180 C 176 180, 176 126, 208 126" class="d-line"/>
+  <path d="M138 216 C 176 216, 176 126, 208 126" class="d-line"/>
+  <path d="M138 252 C 176 252, 176 126, 208 126" class="d-acc"/>
+
+  <rect x="212" y="90" width="138" height="72" class="d-fill"/>
+  <text x="281" y="114" text-anchor="middle" class="d-label">connector tier</text>
+  <text x="281" y="131" text-anchor="middle" class="d-small">incremental sync,</text>
+  <text x="281" y="145" text-anchor="middle" class="d-small">resumable cursors</text>
+
+  <path d="M350 126 H398" class="d-line" marker-end="url(#ah1)"/>
+
+  <rect x="402" y="78" width="146" height="96" class="d-fill"/>
+  <text x="475" y="102" text-anchor="middle" class="d-label">normalise</text>
+  <text x="475" y="120" text-anchor="middle" class="d-small">one decision arrives as</text>
+  <text x="475" y="134" text-anchor="middle" class="d-small">a doc, a thread about</text>
+  <text x="475" y="148" text-anchor="middle" class="d-small">the doc, and a ticket.</text>
+  <text x="475" y="162" text-anchor="middle" class="d-small">dedupe and merge</text>
+
+  <path d="M548 126 H596" class="d-line" marker-end="url(#ah1)"/>
+
+  <rect x="600" y="90" width="140" height="72" class="d-accfill"/>
+  <text x="670" y="118" text-anchor="middle" class="d-acctext">memory store</text>
+  <text x="670" y="136" text-anchor="middle" class="d-small">retrieval lives here,</text>
+  <text x="670" y="150" text-anchor="middle" class="d-small">and only here</text>
+
+  <path d="M212 200 H740" class="d-red"/>
+  <text x="212" y="222" class="d-redtext">Permissions travel with the record, from the source system all the way through</text>
+  <text x="212" y="240" class="d-small">A restricted SharePoint page must produce a restricted memory.</text>
+  <text x="212" y="256" class="d-small">Enforce that at write time. Filter at read time instead and the</text>
+  <text x="212" y="270" class="d-small">embedding is already sitting in a shared index.</text>
+  <path d="M281 162 V196" class="d-red" marker-end="url(#ah3)"/>
+  <path d="M475 174 V196" class="d-red" marker-end="url(#ah3)"/>
+  <path d="M670 162 V196" class="d-red" marker-end="url(#ah3)"/>
+</svg>
+<figcaption>None of the boxes to the left of the memory store is a retrieval problem, and none of them is what Mem0, Zep, LangMem or Letta were built to do.</figcaption>
+</figure>
+
+<p>Work through what those boxes demand and the platform argument makes itself.</p>
+
+<ul class="plain">
+  <li><strong>Incremental sync.</strong> Change detection per source and a resumable cursor, so you are not re-reading a four thousand page Confluence space nightly.</li>
+  <li><strong>Permission inheritance.</strong> A restricted page produces a restricted memory, and it has to hold at write time. Filtering at read time means the embedding is already in a shared index.</li>
+  <li><strong>Cross-source deduplication.</strong> The same decision appears as a document, a thread reacting to it, and a ticket implementing it. Three memories that agree are not three pieces of evidence, and treating them as such is exactly the accumulation MemEvoBench describes.</li>
+  <li><strong>Identity resolution.</strong> The Slack handle, the Jira account and the CRM contact have to be recognised as one person before you attribute a preference to them.</li>
+  <li><strong>Propagating deletion.</strong> When a document is removed or someone exercises a deletion right, every memory derived from it has to go, which requires provenance recorded on the way in.</li>
+</ul>
+
+<p>That is a data platform. Control plane, sync layer, access model, audit trail. Cognee's 38 connectors and Supermemory's managed connector layer are both bets that this is the product, and I think they are right. The rest of the category is a library you install next to your agent, which means you rebuild all of the above yourself, in application code, and discover the permission model last.</p>
+
+<h3 id="contextlayer">Where the context layer fits</h3>
+
+<p>One distinction keeps getting collapsed, and it matters because the two systems have opposite failure modes.</p>
+
+<p>A <strong>context layer</strong> answers questions about the enterprise's shared semantics. What does this metric mean, which asset is canonical, who owns it, what feeds it, which definition is approved. Authored by people, governed, versioned, mostly stable. Its job is to be correct for everyone at once.</p>
+
+<p>A <strong>memory layer</strong> answers questions about one agent's accumulated experience. What this person prefers, what was tried and rejected, what the agent got corrected on last Tuesday. Observed rather than authored, subjective, fast-moving, scoped to a relationship. Its job is to be useful for one party.</p>
+
+<figure>
+<svg viewBox="0 0 760 330" role="img" aria-label="Quadrant plotting context layer, memory layer, retrieval corpus and prompt against authored-observed and shared-personal axes">
+  <line x1="92" y1="40" x2="92" y2="270" class="d-line"/>
+  <line x1="92" y1="270" x2="700" y2="270" class="d-line"/>
+  <line x1="92" y1="155" x2="700" y2="155" class="d-dash"/>
+  <line x1="396" y1="40" x2="396" y2="270" class="d-dash"/>
+
+  <text x="80" y="52" text-anchor="end" class="d-key">authored</text>
+  <text x="80" y="264" text-anchor="end" class="d-key">observed</text>
+  <text x="97" y="292" class="d-key">shared</text>
+  <text x="696" y="292" text-anchor="end" class="d-key">personal</text>
+
+  <rect x="132" y="60" width="152" height="54" class="d-accfill"/>
+  <text x="208" y="82" text-anchor="middle" class="d-acctext">context layer</text>
+  <text x="208" y="100" text-anchor="middle" class="d-small">governed, versioned</text>
+
+  <rect x="132" y="122" width="132" height="26" class="d-box"/>
+  <text x="198" y="140" text-anchor="middle" class="d-label">retrieval corpus</text>
+
+  <rect x="472" y="60" width="132" height="26" class="d-box"/>
+  <text x="538" y="78" text-anchor="middle" class="d-label">the prompt</text>
+
+  <rect x="472" y="190" width="152" height="54" class="d-accfill"/>
+  <text x="548" y="212" text-anchor="middle" class="d-acctext">memory layer</text>
+  <text x="548" y="230" text-anchor="middle" class="d-small">accrued, corrected</text>
+
+  <text x="92" y="318" class="d-small">The two accented boxes sit diagonally opposite. One system trying to be both ends up being neither.</text>
+</svg>
+<figcaption>Different write paths, different governance, different failure modes. A context layer that drifts is wrong for everyone at once and loudly. A memory layer that drifts is wrong for one person, quietly, and nobody finds out until they leave.</figcaption>
+</figure>
+
+<p>The sharper framing is enforcement against observation. A context layer's value comes from being enforced: the definition of revenue is the definition, and an agent that contradicts it is wrong. A memory layer's value comes from being observed: it records what happened, including the parts that contradict the official position, because that contradiction is usually the useful signal.</p>
+
+<p>Build a memory layer with enforcement semantics and you have built a slow, badly governed context layer. Build a context layer with observation semantics and you have built an opinion poll.</p>
+
+<p>They coexist as peers beside the agent, and they hand off in two directions.</p>
+
+<figure>
+<svg viewBox="0 0 760 322" role="img" aria-label="Two sidecar architecture with context layer and memory layer flanking an agent, with two labelled handoff arrows">
+  <rect x="300" y="118" width="160" height="70" class="d-fill"/>
+  <text x="380" y="150" text-anchor="middle" class="d-key">agent</text>
+  <text x="380" y="168" text-anchor="middle" class="d-small">plans, acts, answers</text>
+
+  <rect x="30" y="102" width="180" height="102" class="d-accfill"/>
+  <text x="120" y="128" text-anchor="middle" class="d-acctext">context layer</text>
+  <text x="120" y="148" text-anchor="middle" class="d-small">definitions, ownership,</text>
+  <text x="120" y="162" text-anchor="middle" class="d-small">canonical assets, lineage</text>
+  <text x="120" y="185" text-anchor="middle" class="d-key">enforced</text>
+
+  <rect x="550" y="102" width="180" height="102" class="d-accfill"/>
+  <text x="640" y="128" text-anchor="middle" class="d-acctext">memory layer</text>
+  <text x="640" y="148" text-anchor="middle" class="d-small">preferences, prior attempts,</text>
+  <text x="640" y="162" text-anchor="middle" class="d-small">corrections, provenance</text>
+  <text x="640" y="185" text-anchor="middle" class="d-key">observed</text>
+
+  <path d="M210 140 H296" class="d-line" marker-end="url(#ah1)"/>
+  <path d="M464 140 H546" class="d-line" marker-end="url(#ah1)"/>
+  <path d="M546 170 H464" class="d-line" marker-end="url(#ah1)"/>
+
+  <path d="M120 204 V248 H636 V208" class="d-acc" marker-end="url(#ah2)"/>
+  <text x="380" y="268" text-anchor="middle" class="d-acctext">vocabulary: "cares about churn" is not storable unless churn has a definition</text>
+
+  <path d="M660 98 V54 H136 V94" class="d-red" marker-end="url(#ah3)"/>
+  <text x="380" y="42" text-anchor="middle" class="d-redtext">correction signal: which definitions keep getting overridden in the field</text>
+  <text x="380" y="26" text-anchor="middle" class="d-small">Cognee's memify is the closest thing to this arrow that ships today</text>
+
+  <path d="M30 298 H730" class="d-dash"/>
+  <text x="30" y="318" class="d-small">Neither sidecar owns the other. They are peers with different write paths, and the agent reads both every turn.</text>
+</svg>
+<figcaption>The downward arrow is understood. The upward one, memory telling the context layer where its definitions fail in practice, is the underbuilt half, and the only production attempt at it is a feedback loop over edge weights.</figcaption>
+</figure>
+
+<p>The first arrow is straightforward. A memory that says this customer cares about churn is close to worthless if churn is not pinned to a definition. Six months later nobody knows which churn the agent meant: logo churn, revenue churn, or the marketing team's version. Memory needs the context layer's vocabulary to store anything that survives contact with time. Without it you are accumulating strings.</p>
+
+<p>The second arrow is where the value is. Every time a person corrects an agent, that correction carries information about the context layer, not only about the person. If eight people in three months override the same definition in the same direction, the definition is wrong and the governance process has not noticed. Memory is the only system positioned to see it, because it is the only one recording what people actually did rather than what they were told.</p>
+
+<p>Cognee's <code>memify</code> is a partial existence proof: rated responses feeding back into edge weights is that arrow, implemented. It is also the weak version, because an edge weight is a scalar, and a scalar has the same problem the Hindsight critique identified. When it moves, you cannot reconstruct why.</p>
+
+<h3 id="open">What is still open</h3>
+
+<p>The market looks like vector databases in 2022. Several systems solving adjacent slices, an active benchmark dispute, real production pain, and consolidation visibly approaching. Three things are genuinely unresolved.</p>
+
+<p><strong>Who decides what counts as evidence.</strong> Separating facts from beliefs is a schema decision, not an architecture. Hindsight partitions the store, which is necessary and not sufficient. The hard question is what happens at write time when an extraction is ambiguous, and who is accountable when it gets filed in the wrong network.</p>
+
+<p><strong>What happens to the record when a human overrides it.</strong> Every system in this piece either deletes the old fact, closes an interval on it, or moves a scalar. None of them keeps the argument. A correction has four parts: an author, a timestamp, a reason, and the thing it replaced. Until that is a record type in its own right, the most valuable data the system produces is thrown away as it arrives.</p>
+
+<p>Which is the strategic point, and it is the reason I would build here. Almost everything in this stack is regenerable. Embeddings can be recomputed with a better model. Extracted facts can be re-extracted from source. Graphs can be rebuilt from the transcript. Definitions can be re-authored, and often should be. Swap in next year's model and most of a memory store improves for free.</p>
+
+<div class="pull"><p>Accumulated human corrections are the one thing here you cannot recompute. They exist only because someone was present, saw the agent get it wrong, and said so.</p></div>
+
+<p>You cannot buy that, scrape it, or synthesise it. It arrives at the speed of real usage by people who care enough to intervene, and it describes an organisation's actual practice rather than its documented practice. A competitor with a better model and more compute starts that corpus at zero.</p>
+
+<p><strong>How anyone will prove any of this.</strong> <a href="https://arxiv.org/abs/2510.27246">BEAM</a> is the right direction: ten abilities including knowledge update, contradiction resolution, event ordering and abstention, scaling to 10 million tokens, with an <a href="https://github.com/mohammadtavakoli78/BEAM">open eval suite</a> and rubric scoring that allows partial credit. It is explicitly built so a larger context window cannot solve it, which is the property LoCoMo and LongMemEval-S both lack.</p>
+
+<p>It is also new, and the pattern in this category is that whoever publishes against a benchmark tends to lead on it. Cognee reports BEAM numbers. So does <a href="https://arxiv.org/abs/2605.30771">Eywa</a>, and it is worth reading for a different reason. It reports BEAM per category, and keeps the retrieved context and the judge's label next to each score. You can check the number against the thing that produced it. Its weakest category is knowledge update, at 70.0%, which is requirement three. What the field needs is an evaluator with no product, and there is no sign of one.</p>
+
+<p class="close">Working draft. Benchmark figures are self-reported unless the linked source is independent, and the LoCoMo and LongMemEval criticisms above apply to every number in this piece including the ones I quoted approvingly. Corrections welcome, particularly on anything where a vendor has shipped past what I have described here.</p>
+
+</article>
+</div>
+
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var map = {}, targets = [];
+  links.forEach(function(a){
+    var el = document.getElementById(a.getAttribute('href').slice(1));
+    if(el){ map[el.id] = a; targets.push(el); }
+  });
+  function clear(){ links.forEach(function(a){ a.classList.remove('on'); }); }
+
+  if('IntersectionObserver' in window){
+    var visible = {};
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ visible[e.target.id] = e.isIntersecting; });
+      var current = null;
+      for(var i=0;i<targets.length;i++){
+        if(visible[targets[i].id]){ current = targets[i].id; break; }
+      }
+      if(!current){
+        for(var j=targets.length-1;j>=0;j--){
+          if(targets[j].getBoundingClientRect().top < 140){ current = targets[j].id; break; }
+        }
+      }
+      if(current && map[current]){ clear(); map[current].classList.add('on'); }
+    },{rootMargin:'-12% 0px -72% 0px',threshold:0});
+    targets.forEach(function(t){ io.observe(t); });
+  }
+
+  var toggle = document.querySelector('.rail-toggle');
+  var wrap = document.querySelector('.toc-wrap');
+  function sync(){
+    if(window.matchMedia('(max-width:920px)').matches){
+      wrap.style.display = toggle.open ? 'block' : 'none';
+    } else { wrap.style.display = ''; }
+  }
+  toggle.addEventListener('toggle', sync);
+  window.addEventListener('resize', sync);
+  sync();
+  links.forEach(function(a){
+    a.addEventListener('click', function(){
+      if(window.matchMedia('(max-width:920px)').matches){ toggle.open = false; sync(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
