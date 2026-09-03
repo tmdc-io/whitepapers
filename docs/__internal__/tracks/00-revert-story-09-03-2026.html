@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverting a bad metric change on Databricks and DataOS</title>
+
+<script>
+  (function () {
+    var saved = localStorage.getItem('theme');
+    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (saved === 'dark' || (!saved && prefersDark)) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  })();
+</script>
+
+<style>
+/* ── Tokens ─────────────────────────────────────────────── */
+:root {
+  --ivory:#FAF9F5; --paper:#FFFFFF; --slate:#141413;
+  --clay:#D97757; --oat:#E3DACC; --olive:#788C5D; --rust:#B04A3F;
+  --g100:#F0EEE6; --g200:#E6E3DA; --g300:#D1CFC5; --g500:#87867F; --g700:#3D3D3A;
+  --serif: ui-serif, Georgia, "Times New Roman", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+}
+:root[data-theme="dark"] {
+  --ivory:#1A1815; --paper:#242220; --slate:#F4EFE6;
+  --clay:#E58B6F; --oat:#3A332A; --olive:#9DB082; --rust:#D26C5F;
+  --g100:#26241F; --g200:#2F2C27; --g300:#3D3A33; --g500:#908E85; --g700:#C7C4BA;
+}
+
+/* ── Base ───────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--ivory); color: var(--g700);
+  font-family: var(--sans); font-size: 16px; line-height: 1.6;
+  padding: 56px 24px 96px;
+}
+main { max-width: 980px; margin: 0 auto; }
+
+/* ── Type ───────────────────────────────────────────────── */
+.eyebrow {
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--g500); margin-bottom: 14px;
+}
+h1 {
+  font-family: var(--serif); font-weight: 500;
+  font-size: clamp(30px, 4.2vw, 45px); line-height: 1.14;
+  letter-spacing: -.018em; color: var(--slate); max-width: 26ch;
+}
+h2 {
+  font-family: var(--serif); font-weight: 500;
+  font-size: clamp(22px, 2.6vw, 29px); letter-spacing: -.012em;
+  color: var(--slate);
+}
+.lede { font-size: 18px; max-width: 62ch; margin-top: 18px; }
+p { max-width: 62ch; margin-bottom: 12px; }
+p:last-child { margin-bottom: 0; }
+.sub { font-size: 14.5px; color: var(--g500); margin-top: 6px; }
+strong { color: var(--slate); font-weight: 600; }
+em.metric { font-style: normal; color: var(--slate); font-weight: 600; }
+
+header { padding-bottom: 40px; border-bottom: 1.5px solid var(--g300); }
+header .meta {
+  font-family: var(--mono); font-size: 12px; color: var(--g500);
+  margin-top: 26px; display: flex; flex-wrap: wrap; gap: 8px 20px;
+}
+section { padding: 46px 0; border-bottom: 1.5px solid var(--g300); }
+section:last-of-type { border-bottom: none; }
+.hgroup { margin-bottom: 28px; }
+
+/* ── TL;DR ──────────────────────────────────────────────── */
+.tldr {
+  margin-top: 28px; padding: 20px 22px;
+  background: var(--paper); border: 1.5px solid var(--g300); border-radius: 12px;
+}
+.tldr .cap {
+  font-family: var(--mono); font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--g500); margin-bottom: 14px;
+}
+.tldr .row {
+  display: grid; grid-template-columns: 118px 1fr; gap: 16px;
+  padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--g200);
+}
+.tldr .row:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.tldr dt {
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+  letter-spacing: .08em; padding-top: 3px;
+}
+.tldr dt.db { color: var(--rust); }
+.tldr dt.dos { color: var(--olive); }
+.tldr dd { font-size: 15.5px; margin: 0; }
+.tldr .close {
+  margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--g200);
+  font-size: 15px; color: var(--g500); max-width: none;
+}
+@media (max-width: 640px) { .tldr .row { grid-template-columns: 1fr; gap: 4px; } }
+
+/* ── Story beats ────────────────────────────────────────── */
+.beats { border-left: 2px solid var(--g300); padding-left: 26px; margin-left: 4px; }
+.beat { position: relative; padding-bottom: 32px; }
+.beat:last-child { padding-bottom: 0; }
+.beat::before {
+  content: ""; position: absolute; left: -33px; top: 6px;
+  width: 12px; height: 12px; border-radius: 999px;
+  background: var(--ivory); border: 2px solid var(--g500);
+}
+.beat.hit::before { border-color: var(--rust); background: var(--rust); }
+.beat .when {
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--g500); margin-bottom: 5px;
+}
+.beat h3 {
+  font-family: var(--serif); font-weight: 500; font-size: 21px;
+  color: var(--slate); letter-spacing: -.01em; margin-bottom: 7px;
+}
+.beat p { font-size: 15.5px; }
+
+/* ── Callout ────────────────────────────────────────────── */
+.conflict {
+  margin-top: 30px; padding: 24px 26px;
+  background: var(--paper); border: 1.5px solid var(--g300);
+  border-left: 3px solid var(--clay); border-radius: 10px;
+}
+.conflict .q {
+  font-family: var(--serif); font-size: clamp(19px, 2.2vw, 24px);
+  line-height: 1.35; color: var(--slate); letter-spacing: -.01em; max-width: 40ch;
+}
+.conflict .a { font-size: 15px; color: var(--g500); margin-top: 12px; max-width: 62ch; }
+
+/* ── Measure cards ──────────────────────────────────────── */
+.measure-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 22px; }
+@media (max-width: 780px) { .measure-grid { grid-template-columns: 1fr; } }
+.measure { background: var(--paper); border: 1.5px solid var(--g300); border-radius: 12px; padding: 20px; }
+.measure.after { border-color: var(--rust); }
+.measure .cap {
+  font-family: var(--mono); font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: .09em; color: var(--g500); margin-bottom: 12px;
+}
+.measure .name { font-size: 15px; color: var(--slate); font-weight: 600; }
+.measure .formula { font-family: var(--mono); font-size: 12.5px; color: var(--g500); margin-top: 7px; }
+.measure .num { font-family: var(--serif); font-size: 40px; font-weight: 500; margin-top: 14px; letter-spacing: -.02em; }
+.measure.before .num { color: var(--olive); }
+.measure.after .num { color: var(--rust); }
+.measure .note { font-size: 13.5px; color: var(--g500); margin-top: 3px; }
+
+/* ── Recovery blocks ────────────────────────────────────── */
+.rec {
+  background: var(--paper); border: 1.5px solid var(--g300); border-radius: 12px;
+  padding: 24px; margin-bottom: 18px;
+}
+.rec:last-child { margin-bottom: 0; }
+.rec.bad { border-top: 3px solid var(--rust); }
+.rec.good { border-top: 3px solid var(--olive); }
+.rec-grid { display: grid; grid-template-columns: 1.02fr .98fr; gap: 26px; align-items: start; }
+@media (max-width: 860px) { .rec-grid { grid-template-columns: 1fr; gap: 18px; } }
+.rec h4 {
+  font-family: var(--serif); font-weight: 500; font-size: 20px;
+  color: var(--slate); margin-bottom: 12px; letter-spacing: -.01em;
+}
+.rec p { font-size: 15px; max-width: none; }
+.rec ol { margin: 14px 0 0 18px; font-size: 15px; }
+.rec ol li { margin-bottom: 5px; }
+.tag {
+  display: inline-block; font-family: var(--mono); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: .08em;
+  padding: 3px 9px; border-radius: 999px; margin-bottom: 14px; background: var(--oat);
+}
+.tag.bad { color: var(--rust); }
+.tag.good { color: var(--olive); }
+.pm-note {
+  margin-top: 14px; padding: 14px 16px; border-radius: 8px;
+  background: var(--g100); border: 1px solid var(--g200); font-size: 15px;
+}
+.pm-note b { color: var(--slate); }
+.outcome {
+  margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--g200); font-size: 15px;
+}
+.outcome b { color: var(--slate); }
+
+/* ── Figures ────────────────────────────────────────────── */
+figure { margin: 24px 0 0; }
+figure.tight { margin-top: 0; }
+figure svg { width: 100%; height: auto; display: block; }
+figcaption { font-size: 13.5px; color: var(--g500); margin-top: 12px; max-width: 62ch; }
+svg text { font-family: var(--sans); fill: var(--g700); }
+svg text.mono { font-family: var(--mono); }
+svg .box { fill: var(--paper); stroke: var(--g300); stroke-width: 1.5; }
+svg .box-good { fill: var(--paper); stroke: var(--olive); stroke-width: 2; }
+svg .box-bad { fill: var(--paper); stroke: var(--rust); stroke-width: 2; }
+svg .box-ghost { fill: none; stroke: var(--g300); stroke-width: 1.5; stroke-dasharray: 5 4; }
+svg .lane { stroke: var(--g300); stroke-width: 1.5; }
+svg .dot { fill: var(--paper); stroke: var(--g500); stroke-width: 1.5; }
+svg .dot-bad { fill: var(--rust); stroke: var(--rust); }
+svg .dot-good { fill: var(--olive); stroke: var(--olive); }
+svg .cut { stroke-width: 1.5; stroke-dasharray: 5 4; }
+svg .link { stroke: var(--g500); stroke-width: 1.5; fill: none; }
+svg .link-bad { stroke: var(--rust); stroke-width: 1.5; fill: none; }
+svg .link-good { stroke: var(--olive); stroke-width: 2; fill: none; }
+svg .link-off { stroke: var(--g300); stroke-width: 1.5; stroke-dasharray: 4 4; fill: none; }
+svg .brace { stroke: var(--g500); stroke-width: 1.5; fill: none; }
+svg .label { fill: var(--g500); }
+svg .band-bad { fill: var(--rust); opacity: .16; }
+svg .band-good { fill: var(--olive); opacity: .18; }
+
+/* ── Table ──────────────────────────────────────────────── */
+table {
+  width: 100%; border-collapse: collapse; background: var(--paper); font-size: 15px;
+  border: 1.5px solid var(--g300); border-radius: 12px; overflow: hidden;
+}
+th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--g200); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+thead th {
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--g500); background: var(--g100);
+}
+tbody th { font-weight: 500; color: var(--slate); width: 26%; }
+td.dos { color: var(--slate); }
+
+footer { margin-top: 40px; font-size: 14px; color: var(--g500); }
+footer p { max-width: 72ch; }
+
+/* ── Toggle ─────────────────────────────────────────────── */
+.theme-toggle {
+  position: fixed; top: 20px; right: 20px; z-index: 100;
+  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  background: var(--paper); color: var(--g700);
+  border: 1.5px solid var(--g300); border-radius: 999px; cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+.theme-toggle:hover { color: var(--clay); border-color: var(--clay); }
+.theme-toggle .i-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .i-moon { display: none; }
+:root[data-theme="dark"] .theme-toggle .i-sun { display: inline-block; }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
+  <svg class="i-moon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M14 8.5A6 6 0 1 1 7.5 2a4.5 4.5 0 0 0 6.5 6.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>
+  <svg class="i-sun" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>
+</button>
+
+<main>
+
+<!-- ── Header ─────────────────────────────────────────── -->
+<header>
+  <p class="eyebrow">Retail revenue reporting</p>
+  <h1>Reverting a bad metric change on Databricks and DataOS</h1>
+  <p class="lede">
+    A retail pipeline published revenue metrics that finance and merchandising used daily. A request
+    to add promo reporting changed the definition of one existing metric, and reports began showing
+    inflated revenue. This is what it took to get the earlier numbers back on each platform.
+  </p>
+
+  <dl class="tldr">
+    <p class="cap">TL;DR</p>
+    <div class="row">
+      <dt class="db">Databricks</dt>
+      <dd>
+        Every table, job and metric is owned separately and versioned separately, so restoring last
+        week's state has to be coordinated across those owners. Teams pause the pipeline and fix
+        forward instead, and reporting stays down until the fix ships.
+      </dd>
+    </div>
+    <div class="row">
+      <dt class="dos">DataOS</dt>
+      <dd>
+        The tables, metric definitions and quality checks are one versioned data product, so last
+        week's state is one revert. Reporting resumes on it within minutes while the promo work is
+        redone in parallel.
+      </dd>
+    </div>
+    <p class="close">
+      The fix takes the same work on both platforms. The time reporting stays unavailable differs.
+    </p>
+  </dl>
+
+  <div class="meta">
+    <span>Same defect</span>
+    <span>Same team</span>
+    <span>Two platforms</span>
+  </div>
+</header>
+
+<!-- ── 1. The story ───────────────────────────────────── -->
+<section>
+  <div class="hgroup">
+    <h2>How it happened</h2>
+    <p class="sub">Four steps, in order.</p>
+  </div>
+
+  <div class="beats">
+
+    <article class="beat">
+      <p class="when">Before the change</p>
+      <h3>The pipeline was already in production</h3>
+      <p>
+        Sales orders flowed through a chain of assets into a small set of published metrics that
+        finance used to close the month and merchandising used for planning. Those definitions had
+        not changed in months. Each asset in the chain had its own owner and its own release
+        schedule.
+      </p>
+      <figure>
+        <svg viewBox="0 0 920 150" role="img" aria-label="Chain of four separately owned assets feeding finance and merchandising dashboards">
+          <text class="mono label" x="4" y="12" font-size="10.5">FOUR ASSETS, FOUR OWNERS, FEEDING ONE NUMBER</text>
+
+          <rect class="box" x="4" y="30" width="152" height="56" rx="8"/>
+          <text x="80" y="54" text-anchor="middle" font-size="13">Raw orders</text>
+          <text x="80" y="72" text-anchor="middle" font-size="11.5" class="label">ingest job</text>
+          <text class="mono label" x="80" y="106" text-anchor="middle" font-size="10.5">OWNER A</text>
+          <path class="link" d="M160 58 h30" marker-end="url(#ar)"/>
+
+          <rect class="box" x="194" y="30" width="152" height="56" rx="8"/>
+          <text x="270" y="54" text-anchor="middle" font-size="13">Cleaned orders</text>
+          <text x="270" y="72" text-anchor="middle" font-size="11.5" class="label">silver table</text>
+          <text class="mono label" x="270" y="106" text-anchor="middle" font-size="10.5">OWNER B</text>
+          <path class="link" d="M350 58 h30" marker-end="url(#ar)"/>
+
+          <rect class="box" x="384" y="30" width="152" height="56" rx="8"/>
+          <text x="460" y="54" text-anchor="middle" font-size="13">Daily revenue</text>
+          <text x="460" y="72" text-anchor="middle" font-size="11.5" class="label">gold table</text>
+          <text class="mono label" x="460" y="106" text-anchor="middle" font-size="10.5">OWNER C</text>
+          <path class="link" d="M540 58 h30" marker-end="url(#ar)"/>
+
+          <rect class="box-good" x="574" y="30" width="152" height="56" rx="8"/>
+          <text x="650" y="54" text-anchor="middle" font-size="13">Net Revenue</text>
+          <text x="650" y="72" text-anchor="middle" font-size="11.5" class="label">metric definition</text>
+          <text class="mono label" x="650" y="106" text-anchor="middle" font-size="10.5">OWNER D</text>
+          <path class="link" d="M730 58 h30" marker-end="url(#ar)"/>
+
+          <rect class="box" x="764" y="30" width="152" height="56" rx="8"/>
+          <text x="840" y="54" text-anchor="middle" font-size="13">Finance &amp; merch</text>
+          <text x="840" y="72" text-anchor="middle" font-size="11.5" class="label">month close, planning</text>
+          <text class="mono label" x="840" y="106" text-anchor="middle" font-size="10.5">CONSUMERS</text>
+
+          <path class="brace" d="M4 128 v8 H726 v-8"/>
+          <text class="mono label" x="365" y="148" text-anchor="middle" font-size="10.5">each one released on its own schedule</text>
+
+          <defs>
+            <marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+              <path d="M0,0 L7,3.5 L0,7" fill="var(--g500)"/>
+            </marker>
+          </defs>
+        </svg>
+      </figure>
+    </article>
+
+    <article class="beat">
+      <p class="when">The request</p>
+      <h3>Merchandising asks for promo reporting</h3>
+      <p>
+        They want revenue before discounts, the campaigns driving the discounting, and the discount
+        cost per promo. That means new fields in the tables and new metrics alongside the existing
+        ones. The existing metrics were meant to stay as they were.
+      </p>
+    </article>
+
+    <article class="beat hit">
+      <p class="when">The defect</p>
+      <h3>Net Revenue changed definition</h3>
+      <p>
+        While the promo metrics were added, <em class="metric">Net Revenue</em> was changed to read
+        revenue before discounts. The metric kept its name, so no dashboard returned an error and no
+        alert fired. The same report returned a higher number, and every team reading
+        <em class="metric">Net Revenue</em> reported inflated revenue.
+      </p>
+      <div class="measure-grid">
+        <article class="measure before">
+          <p class="cap">Before the change</p>
+          <div class="name">Net Revenue</div>
+          <div class="formula">revenue &minus; discounts</div>
+          <div class="num">$4.2M</div>
+          <p class="note">The definition finance signed off on.</p>
+        </article>
+        <article class="measure after">
+          <p class="cap">After the change</p>
+          <div class="name">Net Revenue</div>
+          <div class="formula">revenue &nbsp;(discounts no longer subtracted)</div>
+          <div class="num">$5.1M</div>
+          <p class="note">Same name, same report, wrong number.</p>
+        </article>
+      </div>
+      <figure>
+        <svg viewBox="0 0 920 168" role="img" aria-label="One definition change reaches every consumer of the metric">
+          <text class="mono label" x="4" y="12" font-size="10.5">ONE DEFINITION CHANGE</text>
+          <text class="mono label" x="916" y="12" font-size="10.5" text-anchor="end">EVERY CONSUMER OF THE METRIC</text>
+
+          <rect class="box-bad" x="4" y="52" width="212" height="62" rx="8"/>
+          <text x="110" y="78" text-anchor="middle" font-size="13">Net Revenue</text>
+          <text x="110" y="96" text-anchor="middle" font-size="11.5" fill="var(--rust)">redefined, name unchanged</text>
+
+          <path class="link-bad" d="M220 83 C 300 83, 320 34, 400 34" marker-end="url(#arb)"/>
+          <path class="link-bad" d="M220 83 C 300 83, 320 68, 400 68" marker-end="url(#arb)"/>
+          <path class="link-bad" d="M220 83 C 300 83, 320 102, 400 102" marker-end="url(#arb)"/>
+          <path class="link-bad" d="M220 83 C 300 83, 320 136, 400 136" marker-end="url(#arb)"/>
+
+          <rect class="box" x="408" y="18" width="330" height="32" rx="6"/>
+          <text x="424" y="39" font-size="12.5">Executive revenue dashboard</text>
+          <text class="mono" x="746" y="39" font-size="11" fill="var(--rust)">inflated</text>
+
+          <rect class="box" x="408" y="52" width="330" height="32" rx="6"/>
+          <text x="424" y="73" font-size="12.5">Finance month close</text>
+          <text class="mono" x="746" y="73" font-size="11" fill="var(--rust)">inflated</text>
+
+          <rect class="box" x="408" y="86" width="330" height="32" rx="6"/>
+          <text x="424" y="107" font-size="12.5">Merchandising planning</text>
+          <text class="mono" x="746" y="107" font-size="11" fill="var(--rust)">inflated</text>
+
+          <rect class="box" x="408" y="120" width="330" height="32" rx="6"/>
+          <text x="424" y="141" font-size="12.5">Downstream reports and extracts</text>
+          <text class="mono" x="746" y="141" font-size="11" fill="var(--rust)">inflated</text>
+
+          <defs>
+            <marker id="arb" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+              <path d="M0,0 L7,3.5 L0,7" fill="var(--rust)"/>
+            </marker>
+          </defs>
+        </svg>
+        <figcaption>No consumer had to change anything to be affected.</figcaption>
+      </figure>
+    </article>
+
+    <article class="beat">
+      <p class="when">The decision</p>
+      <h3>Restore the earlier definition, then redo the promo work</h3>
+      <p>
+        Finance reports the inflated figure. The team decides to put
+        <em class="metric">Net Revenue</em> back to what it meant the week before, and to redo the
+        promo work separately. What that restoration requires is where the two platforms differ.
+      </p>
+    </article>
+
+  </div>
+
+  <div class="conflict">
+    <p class="q">What has to be reverted: one table, or everything behind the number?</p>
+    <p class="a">
+      The metric sits at the end of a chain: raw tables, cleaned tables, aggregates, metric
+      definitions, quality checks, and the jobs that run them. Restoring one part of that chain does
+      not restore the number finance was using.
+    </p>
+  </div>
+</section>
+
+<!-- ── 2. Recovery ────────────────────────────────────── -->
+<section>
+  <div class="hgroup">
+    <h2>Two recoveries</h2>
+    <p class="sub">The same defect, and what each platform allows you to revert.</p>
+  </div>
+
+  <!-- Databricks -->
+  <article class="rec bad">
+    <span class="tag bad">Databricks</span>
+    <h4>Different owners, different lifecycles</h4>
+    <div class="rec-grid">
+      <figure class="tight">
+        <svg viewBox="0 0 520 316" role="img" aria-label="Four asset version histories that never line up, with a revert that must be coordinated across four owners">
+          <text class="mono" x="0" y="12" font-size="10.5" fill="var(--rust)">FOUR LIFECYCLES, FOUR VERSION HISTORIES</text>
+
+          <text class="mono label" x="0" y="50" font-size="10.5">METRICS</text>
+          <text class="mono label" x="0" y="63" font-size="9.5">owner D</text>
+          <line class="lane" x1="126" y1="52" x2="512" y2="52"/>
+          <circle class="dot" cx="160" cy="52" r="6"/>
+          <circle class="dot" cx="252" cy="52" r="6"/>
+          <circle class="dot-bad" cx="470" cy="52" r="6"/>
+
+          <text class="mono label" x="0" y="94" font-size="10.5">AGGREGATES</text>
+          <text class="mono label" x="0" y="107" font-size="9.5">owner C</text>
+          <line class="lane" x1="126" y1="96" x2="512" y2="96"/>
+          <circle class="dot" cx="140" cy="96" r="6"/>
+          <circle class="dot" cx="202" cy="96" r="6"/>
+          <circle class="dot" cx="300" cy="96" r="6"/>
+          <circle class="dot" cx="362" cy="96" r="6"/>
+          <circle class="dot-bad" cx="470" cy="96" r="6"/>
+
+          <text class="mono label" x="0" y="138" font-size="10.5">CLEANED</text>
+          <text class="mono label" x="0" y="151" font-size="9.5">owner B</text>
+          <line class="lane" x1="126" y1="140" x2="512" y2="140"/>
+          <circle class="dot" cx="150" cy="140" r="6"/>
+          <circle class="dot" cx="192" cy="140" r="6"/>
+          <circle class="dot" cx="240" cy="140" r="6"/>
+          <circle class="dot" cx="292" cy="140" r="6"/>
+          <circle class="dot" cx="344" cy="140" r="6"/>
+          <circle class="dot" cx="404" cy="140" r="6"/>
+          <circle class="dot-bad" cx="470" cy="140" r="6"/>
+
+          <text class="mono label" x="0" y="182" font-size="10.5">RAW</text>
+          <text class="mono label" x="0" y="195" font-size="9.5">owner A</text>
+          <line class="lane" x1="126" y1="184" x2="512" y2="184"/>
+          <circle class="dot" cx="136" cy="184" r="6"/>
+          <circle class="dot" cx="232" cy="184" r="6"/>
+          <circle class="dot" cx="330" cy="184" r="6"/>
+          <circle class="dot" cx="430" cy="184" r="6"/>
+
+          <line class="cut" x1="310" y1="36" x2="310" y2="200" stroke="var(--clay)"/>
+          <text class="mono" x="310" y="220" text-anchor="middle" font-size="10.5" fill="var(--clay)">no point where all four were last correct</text>
+
+          <path class="brace" d="M126 240 v10 H512 v-10"/>
+          <text x="319" y="272" text-anchor="middle" font-size="11.5">each asset reverts separately, in dependency order</text>
+          <text class="mono" x="319" y="292" text-anchor="middle" font-size="10.5" fill="var(--rust)">COORDINATION ACROSS FOUR OWNERS</text>
+          <text class="mono label" x="319" y="310" text-anchor="middle" font-size="10.5">jobs stay paused until every revert is done</text>
+        </svg>
+      </figure>
+
+      <div>
+        <p>
+          Each asset in the chain has its own owner and its own lifecycle. Each one changed on its
+          own schedule, so there is no single point in time at which all of them were last correct
+          together. The faulty logic is also still scheduled to run tonight.
+        </p>
+        <p class="pm-note">
+          <b>Because each asset has a different owner and a different lifecycle, reverting becomes a
+          program management issue</b> rather than a technical step: agreeing a target state with
+          every owner, sequencing the reverts in dependency order, and holding the pause until all of
+          them are done.
+        </p>
+        <ol>
+          <li>Work out which tables and jobs the change touched</li>
+          <li>Pause the schedules so the bad logic does not run again</li>
+          <li>Pick a matching version for each asset, in dependency order</li>
+          <li>Fix, validate, then restart everything</li>
+        </ol>
+        <p class="outcome">
+          <b>Because that coordination is slow, teams commonly skip the revert and fix forward
+          instead.</b> Reporting stays down until the fix is finished.
+        </p>
+      </div>
+    </div>
+  </article>
+
+  <!-- DataOS -->
+  <article class="rec good">
+    <span class="tag good">DataOS</span>
+    <h4>One owner, one lifecycle, one version</h4>
+    <div class="rec-grid">
+      <figure class="tight">
+        <svg viewBox="0 0 520 316" role="img" aria-label="All layers versioned together as one data product, reverted to the last good version in one step while the fix continues in parallel">
+          <text class="mono" x="0" y="12" font-size="10.5" fill="var(--olive)">ONE DATA PRODUCT, ONE VERSION HISTORY</text>
+
+          <rect class="box-ghost" x="118" y="28" width="394" height="152" rx="10"/>
+
+          <text class="mono label" x="0" y="70" font-size="10.5">METRICS</text>
+          <line class="lane" x1="134" y1="68" x2="498" y2="68"/>
+          <circle class="dot-good" cx="248" cy="68" r="6"/>
+          <circle class="dot-bad" cx="430" cy="68" r="6"/>
+
+          <text class="mono label" x="0" y="118" font-size="10.5">AGGREGATES</text>
+          <line class="lane" x1="134" y1="116" x2="498" y2="116"/>
+          <circle class="dot-good" cx="248" cy="116" r="6"/>
+          <circle class="dot-bad" cx="430" cy="116" r="6"/>
+
+          <text class="mono label" x="0" y="166" font-size="10.5">CLEANED</text>
+          <line class="lane" x1="134" y1="164" x2="498" y2="164"/>
+          <circle class="dot-good" cx="248" cy="164" r="6"/>
+          <circle class="dot-bad" cx="430" cy="164" r="6"/>
+
+          <line class="cut" x1="248" y1="44" x2="248" y2="176" stroke="var(--olive)"/>
+          <line class="cut" x1="430" y1="44" x2="430" y2="176" stroke="var(--rust)"/>
+          <text class="mono" x="248" y="200" text-anchor="middle" font-size="10.5" fill="var(--olive)">version 1</text>
+          <text class="mono" x="430" y="200" text-anchor="middle" font-size="10.5" fill="var(--rust)">version 2</text>
+          <text class="mono label" x="316" y="220" text-anchor="middle" font-size="10">tables, metrics and checks move together</text>
+
+          <path class="link-good" d="M424 240 H 256" marker-end="url(#arg)"/>
+          <text x="340" y="264" text-anchor="middle" font-size="11.5">revert the product to version 1</text>
+          <text class="mono" x="340" y="282" text-anchor="middle" font-size="10.5" fill="var(--olive)">ONE STEP, ONE OWNER, MINUTES</text>
+
+          <path class="link-off" d="M430 300 H 512"/>
+          <text class="mono label" x="424" y="304" text-anchor="end" font-size="10.5">promo fix redone in parallel, released as version 3</text>
+
+          <defs>
+            <marker id="arg" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+              <path d="M0,0 L7,3.5 L0,7" fill="var(--olive)"/>
+            </marker>
+          </defs>
+        </svg>
+      </figure>
+
+      <div>
+        <p>
+          Tables, aggregates, metric definitions and quality checks are versioned together as one
+          data product, owned by one team. The state finance was using last week is a single named
+          version, so the target of the revert is a version number.
+        </p>
+        <p class="pm-note">
+          <b>One lifecycle means there is nothing to coordinate.</b> There is no agreement to reach
+          with four owners and no dependency order to work out, so reverting stays a technical step.
+        </p>
+        <ol>
+          <li>Revert the data product to its last good version</li>
+          <li>The earlier metrics are live again within minutes</li>
+          <li>Redo the promo work in parallel, then release it</li>
+        </ol>
+        <p class="outcome">
+          <b>Reporting returns before the fix is written.</b> Teams using
+          <em class="metric">Net Revenue</em> keep working. Teams waiting on the new promo metrics
+          wait as long as they already were.
+        </p>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ── 3. Mechanism ───────────────────────────────────── -->
+<section>
+  <div class="hgroup">
+    <h2>Why the revert takes minutes</h2>
+    <p class="sub">Reports read a stable name. The versions behind it are kept.</p>
+  </div>
+
+  <p>
+    In the data product, each model keeps its built versions and reports read one unchanging name.
+    Reverting points that name back at the version that was already built and validated, so there is
+    no rebuild to wait for and no table to restore by hand.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 920 236" role="img" aria-label="Reports read a stable metric name that points at a stored version; reverting moves the pointer back to the earlier version">
+      <text class="mono label" x="4" y="14" font-size="10.5">WHAT THE REPORT READS</text>
+      <rect class="box-good" x="346" y="30" width="228" height="60" rx="8"/>
+      <text x="460" y="55" text-anchor="middle" font-size="13.5">Net Revenue</text>
+      <text x="460" y="74" text-anchor="middle" font-size="11.5" class="label">one name, never changes</text>
+
+      <path class="link-off" d="M420 92 C 380 122, 300 118, 262 142"/>
+      <path class="link-good" d="M500 92 C 540 122, 620 118, 658 140" marker-end="url(#arg2)"/>
+
+      <text class="mono label" x="4" y="136" font-size="10.5">VERSIONS KEPT BY THE PRODUCT</text>
+
+      <rect class="box-ghost" x="118" y="146" width="290" height="60" rx="8"/>
+      <text x="263" y="171" text-anchor="middle" font-size="13" class="label">version 2</text>
+      <text x="263" y="190" text-anchor="middle" font-size="11.5" class="label">redefined metric, set aside</text>
+
+      <rect class="box-good" x="514" y="146" width="290" height="60" rx="8"/>
+      <text x="659" y="171" text-anchor="middle" font-size="13">version 1</text>
+      <text x="659" y="190" text-anchor="middle" font-size="11.5" class="label">earlier definition, already built</text>
+
+      <text class="mono" x="460" y="228" text-anchor="middle" font-size="11" fill="var(--clay)">the revert moves the pointer; the data is already there</text>
+
+      <defs>
+        <marker id="arg2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+          <path d="M0,0 L7,3.5 L0,7" fill="var(--olive)"/>
+        </marker>
+      </defs>
+    </svg>
+    <figcaption>
+      On Databricks the equivalent step restores data into the table itself, which is why the jobs
+      have to be held while it happens.
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ── 4. Time to restore ─────────────────────────────── -->
+<section>
+  <div class="hgroup">
+    <h2>Time to restore reporting</h2>
+    <p class="sub">Both teams write the same fix. They differ in when reporting resumes.</p>
+  </div>
+
+  <figure style="margin-top:6px">
+    <svg viewBox="0 0 920 274" role="img" aria-label="Timeline comparison: on Databricks reporting is unavailable until the fix ships; on DataOS reporting resumes after a revert while the fix continues">
+      <text class="mono label" x="168" y="16" font-size="10.5">BAD NUMBER SPOTTED</text>
+      <text class="mono label" x="912" y="16" font-size="10.5" text-anchor="end">FIX RELEASED</text>
+      <line class="cut" x1="168" y1="24" x2="168" y2="248" stroke="var(--g300)"/>
+      <line class="cut" x1="880" y1="24" x2="880" y2="248" stroke="var(--g300)"/>
+
+      <text class="mono" x="0" y="58" font-size="11" fill="var(--rust)">DATABRICKS</text>
+      <rect class="band-bad" x="168" y="70" width="712" height="48" rx="6"/>
+      <rect x="168" y="70" width="712" height="48" rx="6" fill="none" stroke="var(--rust)" stroke-width="1.5"/>
+      <line x1="346" y1="70" x2="346" y2="118" stroke="var(--rust)" stroke-width="1.5" stroke-opacity=".5"/>
+      <line x1="524" y1="70" x2="524" y2="118" stroke="var(--rust)" stroke-width="1.5" stroke-opacity=".5"/>
+      <line x1="702" y1="70" x2="702" y2="118" stroke="var(--rust)" stroke-width="1.5" stroke-opacity=".5"/>
+      <text x="257" y="99" text-anchor="middle" font-size="11.5">find what broke</text>
+      <text x="435" y="99" text-anchor="middle" font-size="11.5">pause the jobs</text>
+      <text x="613" y="99" text-anchor="middle" font-size="11.5">align owners &amp; versions</text>
+      <text x="791" y="99" text-anchor="middle" font-size="11.5">fix &amp; validate</text>
+      <text class="mono" x="524" y="138" text-anchor="middle" font-size="11.5" fill="var(--rust)">reporting unavailable until the fix ships</text>
+
+      <text class="mono" x="0" y="186" font-size="11" fill="var(--olive)">DATAOS</text>
+      <rect x="168" y="198" width="88" height="48" rx="6" fill="var(--paper)" stroke="var(--olive)" stroke-width="1.5"/>
+      <text x="212" y="227" text-anchor="middle" font-size="11.5">revert</text>
+      <rect class="band-good" x="264" y="198" width="616" height="48" rx="6"/>
+      <rect x="264" y="198" width="616" height="48" rx="6" fill="none" stroke="var(--olive)" stroke-width="1.5"/>
+      <text x="572" y="221" text-anchor="middle" font-size="12">version 1 is live, finance keeps reporting</text>
+      <text class="mono label" x="572" y="237" text-anchor="middle" font-size="10.5">promo fix continues in parallel</text>
+      <text class="mono" x="212" y="266" text-anchor="middle" font-size="11" fill="var(--olive)">minutes</text>
+    </svg>
+    <figcaption>
+      The fix takes the same amount of work on both platforms. Reporting resumes at different points.
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ── 5. Summary ─────────────────────────────────────── -->
+<section>
+  <div class="hgroup">
+    <h2>Summary</h2>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th scope="col"></th><th scope="col">Databricks</th><th scope="col">DataOS</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">Ownership and lifecycle</th>
+        <td>Each asset owned separately, on its own lifecycle</td>
+        <td class="dos">One data product, one owner, one lifecycle</td>
+      </tr>
+      <tr>
+        <th scope="row">What you can revert</th>
+        <td>One table or one job at a time</td>
+        <td class="dos">The whole data product, as one version</td>
+      </tr>
+      <tr>
+        <th scope="row">What reverting involves</th>
+        <td>A program management exercise across owners</td>
+        <td class="dos">One revert on one version history</td>
+      </tr>
+      <tr>
+        <th scope="row">What the team does instead</th>
+        <td>Pauses the pipeline and fixes forward</td>
+        <td class="dos">Reverts first, then fixes at a normal pace</td>
+      </tr>
+      <tr>
+        <th scope="row">Reporting meanwhile</th>
+        <td>Unavailable until the fix ships</td>
+        <td class="dos">Live again in minutes, on the last good version</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <footer>
+    <p>
+      Metric definitions get changed by mistake on any platform. What differs is whether the earlier
+      state can be restored as one version, or has to be reassembled from separately owned assets
+      before reporting can resume.
+    </p>
+  </footer>
+</section>
+
+</main>
+
+<script>
+  document.querySelector('.theme-toggle').addEventListener('click', function () {
+    var html = document.documentElement;
+    var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+  });
+</script>
+
+</body>
+</html>
