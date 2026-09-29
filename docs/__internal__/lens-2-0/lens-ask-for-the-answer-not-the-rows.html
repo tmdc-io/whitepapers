@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ask for the answer, not the rows</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FFFFFF; --ink:#171A20; --ink-soft:#4A4F5A;
+  --accent:#23407C; --accent-tint:#EFF3FA; --accent-line:#C4D0E8;
+  --amber:#B7791F; --amber-tint:#FDF6E3; --amber-ink:#8A5A13;
+  --green:#5B8C5A; --green-tint:#F2F8F2; --green-ink:#3A5F39;
+  --line:#E3E4E0; --engine-tint:#F2F3F5; --code-bg:#F6F6F3; --svg-bg:#FFFFFF; --sub:#FAFAF8;
+  --toc-w:248px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#14161B; --ink:#E7E9EE; --ink-soft:#A3A9B5;
+    --accent:#8FB0EE; --accent-tint:#1B2539; --accent-line:#34466B;
+    --amber:#E0A54A; --amber-tint:#2A2215; --amber-ink:#EBC07F;
+    --green:#7FB37E; --green-tint:#18241A; --green-ink:#A6D3A5;
+    --line:#2C3038; --engine-tint:#1D2027; --code-bg:#1A1C22; --svg-bg:#171A20; --sub:#181B21;
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#14161B; --ink:#E7E9EE; --ink-soft:#A3A9B5;
+  --accent:#8FB0EE; --accent-tint:#1B2539; --accent-line:#34466B;
+  --amber:#E0A54A; --amber-tint:#2A2215; --amber-ink:#EBC07F;
+  --green:#7FB37E; --green-tint:#18241A; --green-ink:#A6D3A5;
+  --line:#2C3038; --engine-tint:#1D2027; --code-bg:#1A1C22; --svg-bg:#171A20; --sub:#181B21;
+}
+:root { box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+*, *::before, *::after { box-sizing:inherit; margin:0; padding:0; }
+html { scroll-behavior:smooth; scroll-padding-top:calc(24px + env(safe-area-inset-top,0px)); background:var(--paper); }
+body { background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif; font-size:16px; line-height:1.6; }
+
+.layout { display:grid; grid-template-columns:var(--toc-w) minmax(0,760px); gap:40px; max-width:1200px; margin:0 auto; padding:48px 24px 96px; }
+main { min-width:0; }
+
+.sidebar { position:relative; }
+.toc { position:sticky; top:calc(24px + env(safe-area-inset-top,0px)); font-size:13.5px; }
+.toc .toc-title { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px; }
+.toc a { display:block; color:var(--ink-soft); text-decoration:none; padding:4px 10px; border-left:2px solid var(--line); line-height:1.4; border-bottom:none; }
+.toc a:hover { color:var(--accent); }
+.toc a.active { color:var(--accent); border-left-color:var(--accent); font-weight:600; }
+.toc a.sub { padding-left:22px; font-size:12.5px; }
+
+.eyebrow { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; }
+h1 { font-size:clamp(26px,4.5vw,38px); font-weight:700; line-height:1.15; letter-spacing:-.02em; margin-bottom:14px; }
+.subtitle { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:14px; color:var(--ink-soft); margin:-6px 0 14px; }
+.standfirst { font-size:18px; color:var(--ink-soft); margin-bottom:8px; }
+h2 { font-size:22px; font-weight:700; color:var(--accent); margin:44px 0 4px; }
+h3 { font-size:17px; font-weight:700; margin:26px 0 6px; }
+.meaning h3 { font-size:18px; padding-top:18px; border-top:1px solid var(--line); margin-top:0; }
+.kicker { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:12px; color:var(--ink-soft); margin-bottom:14px; }
+p { margin-bottom:10px; }
+ul.plain, ol.plain { margin:6px 0 12px 20px; }
+ul.plain li, ol.plain li { margin-bottom:6px; }
+
+.tbl { overflow-x:auto; margin:14px 0; border:1px solid var(--line); border-radius:8px; }
+table { width:100%; border-collapse:collapse; font-size:14.5px; background:var(--svg-bg); }
+th { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; text-align:left; padding:9px 13px; border-bottom:1.5px solid var(--ink); }
+td { padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+tr:last-child td { border-bottom:none; }
+td:first-child { font-weight:600; }
+code { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:.88em; background:var(--engine-tint); padding:0 4px; border-radius:3px; }
+
+figure.diag { margin:18px 0; }
+.diag-scroll { overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--svg-bg); }
+figure.diag svg { width:100%; min-width:600px; height:auto; display:block; }
+figure.diag figcaption { font-size:13px; color:var(--ink-soft); margin-top:6px; }
+figure.diag text { font-family:'IBM Plex Sans',system-ui,sans-serif; fill:var(--ink); }
+figure.diag text.mono { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; }
+figure.diag .t-s { fill:var(--ink-soft); }
+figure.diag .t-a { fill:var(--accent); }
+figure.diag .t-am { fill:var(--amber-ink); }
+figure.diag .t-g { fill:var(--green-ink); }
+.bx-n { fill:var(--engine-tint); stroke:var(--line); }
+.bx-a { fill:var(--accent-tint); stroke:var(--accent); stroke-width:1.5; }
+.bx-w { fill:var(--svg-bg); stroke:var(--accent-line); }
+.bx-am { fill:var(--amber-tint); stroke:var(--amber); }
+.bx-g { fill:var(--green-tint); stroke:var(--green); }
+.bx-s { fill:var(--sub); stroke:var(--line); }
+.ln { stroke:var(--ink-soft); stroke-width:1.5; fill:none; }
+.ln-am { stroke:var(--amber); stroke-width:1.5; fill:none; stroke-dasharray:5 5; }
+.dash-am { fill:none; stroke:var(--amber); stroke-width:1.8; stroke-dasharray:9 7; }
+.grid { stroke:var(--line); stroke-width:1; stroke-dasharray:4 5; }
+.axis { stroke:var(--ink-soft); stroke-width:1.2; }
+.arrowhead { fill:var(--ink-soft); stroke:none; }
+
+/* map dots */
+.dot { cursor:pointer; outline:none; }
+.dot .ring { stroke:transparent; stroke-width:3; fill:none; }
+.dot .solid { fill:var(--accent); }
+.dot .hollow { fill:var(--paper); stroke:var(--amber); stroke-width:2.2; }
+.dot .num { font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10px; font-weight:600; text-anchor:middle; }
+.dot .solid + .num { fill:var(--paper); }
+.dot .hollow + .num { fill:var(--amber-ink); }
+.dot:hover .ring, .dot:focus-visible .ring, .dot.sel .ring { stroke:var(--accent); }
+.dot text.lab { font-size:12.5px; }
+.panel { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; padding:12px 14px; margin-top:10px; background:var(--accent-tint); min-height:92px; }
+.panel .lbl { display:block; margin-bottom:4px; }
+.panel p { margin-bottom:6px; font-size:14.5px; }
+.panel p:last-child { margin-bottom:0; }
+.legend { display:flex; flex-wrap:wrap; gap:18px; font-size:13px; color:var(--ink-soft); margin-top:8px; }
+.legend span::before { content:""; display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:6px; vertical-align:-1px; }
+.legend .l-solid::before { background:var(--accent); }
+.legend .l-hollow::before { border:2px solid var(--amber); background:var(--paper); }
+
+.meaning { margin:30px 0 34px; }
+.lbl { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); }
+h4.albl { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:600; margin:14px 0 4px; }
+.anatomy h4.albl:first-child { margin-top:2px; }
+.anatomy p { margin-bottom:6px; }
+.verdict { display:inline-block; font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; padding:1px 7px; border-radius:4px; margin-right:6px; }
+.v-sig { background:var(--green-tint); color:var(--green-ink); border:1px solid var(--green); }
+.v-mix { background:var(--accent-tint); color:var(--accent); border:1px solid var(--accent-line); }
+.v-mkt { background:var(--amber-tint); color:var(--amber-ink); border:1px solid var(--amber); }
+.seam { font-size:14.5px; color:var(--ink-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:10px 2px; margin:22px 0; }
+.ask { border-left:3px solid var(--amber); background:var(--amber-tint); padding:9px 13px; margin:10px 0 4px; font-size:14.5px; border-radius:0 6px 6px 0; }
+.ask .lbl { color:var(--amber-ink); margin-right:6px; }
+.hook { border-left:3px solid var(--accent); background:var(--accent-tint); padding:12px 14px; margin-top:14px; font-size:15px; border-radius:0 6px 6px 0; }
+.hook p:last-child { margin-bottom:0; }
+
+a { color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-line); }
+a:hover { border-bottom-color:var(--accent); }
+a:focus-visible, .dot:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.ref { font-size:13.5px; color:var(--ink-soft); line-height:1.9; }
+.ref li { margin-left:18px; }
+strong { font-weight:600; }
+.updated { font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:12px; color:var(--ink-soft); margin-top:40px; border-top:1px solid var(--line); padding-top:12px; }
+
+.hint { font-style:italic; font-size:14.5px; color:var(--ink-soft); margin:18px 0 -8px; display:flex; align-items:center; gap:8px; }
+.hint-mark { width:12px; height:12px; border-radius:50%; border:2px solid var(--accent); flex:none; }
+.glance { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:12px; color:var(--ink-soft); margin:0 0 12px; }
+.glance span { color:var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:.08em; font-size:11px; margin-right:5px; }
+.glance { display:flex; flex-wrap:wrap; column-gap:18px; row-gap:2px; }
+.glance i { font-style:normal; }
+.tag { font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--amber-ink); background:var(--amber-tint); border:1px solid var(--amber); border-radius:4px; padding:1px 6px; vertical-align:3px; margin-left:6px; }
+.meaning p { max-width:72ch; }
+figure.spot { margin:14px 0 18px; }
+figure.spot .diag-scroll { background:var(--sub); }
+figure.spot svg { min-width:560px; }
+figure.spot figcaption { font-size:12.5px; }
+.ln-a { stroke:var(--accent); stroke-width:2.5; fill:none; }
+.band-am { fill:var(--amber-tint); }
+.faded { opacity:.45; }
+.cmp td:first-child { font-weight:400; }
+.cmp td { width:50%; }
+.seam + .seam { margin-top:-22px; border-top:none; }
+@media (max-width:900px) {
+  .layout { display:block; padding:28px 18px 72px; }
+  .sidebar { margin-bottom:24px; }
+  .toc { position:static; border:1px solid var(--line); border-radius:8px; padding:12px 14px; }
+  h2 { margin-top:34px; }
+}
+@media (max-width:520px) { body { font-size:15px; } }
+@media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+.toc-toggle { display:none; }
+@media (max-width:900px) {
+  html { scroll-padding-top:calc(64px + env(safe-area-inset-top,0px)); }
+  .sidebar { position:sticky; top:env(safe-area-inset-top,0px); z-index:20; background:var(--paper); margin:-28px -18px 24px; padding:0 18px; border-bottom:1px solid var(--line); }
+  .toc-toggle { display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; color:var(--ink); font:inherit; font-size:14px; padding:12px 0; cursor:pointer; text-align:left; }
+  .toc-toggle:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .toc-toggle-label { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
+  .toc-current { margin-left:auto; font-size:13px; color:var(--accent); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:55%; }
+  .burger { position:relative; width:20px; height:14px; flex:none; }
+  .burger span { position:absolute; left:0; width:20px; height:2px; background:var(--ink); border-radius:1px; transition:transform .2s ease, opacity .2s ease; }
+  .burger span:nth-child(1) { top:0; } .burger span:nth-child(2) { top:6px; } .burger span:nth-child(3) { top:12px; }
+  .sidebar.open .burger span:nth-child(1) { transform:translateY(6px) rotate(45deg); }
+  .sidebar.open .burger span:nth-child(2) { opacity:0; }
+  .sidebar.open .burger span:nth-child(3) { transform:translateY(-6px) rotate(-45deg); }
+  .sidebar .toc { display:none; border:none; padding:0 0 14px; max-height:calc(70vh - env(safe-area-inset-top,0px)); overflow-y:auto; }
+  .sidebar .toc .toc-title { display:none; }
+  .sidebar.open .toc { display:block; }
+}
+@media (prefers-reduced-motion:reduce) { .burger span { transition:none; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="toc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <nav class="toc" id="toc" aria-label="Contents">
+    <div class="toc-title">Contents</div>
+    <a href="#s1">1 · What the limit is telling you</a>
+    <a href="#s2">2 · Two doors into the same data</a>
+    <a href="#s3">3 · What a semantic model holds</a>
+    <a href="#s4">4 · One definition, every tool</a>
+    <a href="#s5">5 · Lens or warehouse</a>
+    <a href="#s6">6 · What it costs, and what comes next</a>
+    <a href="#sources">Sources</a>
+  </nav>
+</aside>
+
+<main>
+<div class="eyebrow">Primer · September 2026 · Animesh</div>
+<h1>Ask for the answer, not the rows</h1>
+<p class="subtitle">Semantic models, the 50,000-row limit, and Tablet NPS across Quick and Power BI</p>
+<p class="standfirst">By the end you'll know why a year-over-year widget in Quick hit a 50,000-row limit, which of two connections fits which job, and why one shared definition of Tablet NPS matters more when a company runs two BI tools.</p>
+
+<div class="seam"><strong>A note on bias:</strong> the author co-founded Modern, which builds DataOS and Lens. This page explains a Modern product to a Modern customer. The pattern it argues for is widely used across the industry, and <a href="#s4">section 4</a> names other products that use it.</div>
+<div class="seam"><strong>Who this is for:</strong> Lenovo's Quick authors, who can start with <a href="#s1">section 1</a> and <a href="#s5">section 5</a>, and the BI and data owners who decide how metrics get defined, who will get most from <a href="#s3">section 3</a> and <a href="#s4">section 4</a>. It assumes you know Quick or Power BI, not semantic models. It isn't a setup guide.</div>
+
+<h2 id="s1">1 · What the limit is telling you</h2>
+<div class="kicker">the cap is a design choice</div>
+<p>Lenovo's Quick authors build dashboards on datasets sourced from data products. One widget compares Tablet NPS year over year. To build it, the dataset pulls individual survey responses through Lens, and Quick then works out the comparison itself, with a function like <a href="https://docs.aws.amazon.com/quick/latest/userguide/periodOverPeriodDifference-function.html">periodOverPeriodDifference</a>. Two years of responses is far more than 50,000 rows, so the query stops.</p>
+<p><strong>Lens is built to return answers, and answers are small.</strong> NPS by region by month for two years is a few hundred rows. The cap exists so that Lens doesn't get used as a bulk export, because that job belongs to a different connection.</p>
+
+<h2 id="s2">2 · Two doors into the same data</h2>
+<div class="kicker">one for answers, one for rows</div>
+<p>Lens sits between your tools and the data. The <a href="https://dataos.info/resources/lens/">Lens documentation</a> describes it as a modeling layer over warehouses and lakehouses, queried through Postgres-compatible SQL, REST and GraphQL. You ask in business terms (a measure, sliced by dimensions, filtered by a segment), and Lens writes the SQL for the engine underneath.</p>
+<p><strong>The 50,000-row limit is a signpost to the other door.</strong> The warehouse and its query engine hold the rows and hand them over as rows. Both doors are legitimate. The diagram shows where each one sits.</p>
+
+<figure class="diag" id="fig-doors">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dashboards, reports and agents ask Lens for answers above the line; data science and bulk extracts go straight to the rows below it.">
+  <defs><marker id="ahs" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <text x="24" y="34" font-size="12" class="mono t-s" letter-spacing="1.5">WHO ASKS</text>
+  <g font-size="13.5" font-weight="600" text-anchor="middle">
+    <rect x="24" y="46" width="150" height="44" rx="7" class="bx-n"/><text x="99" y="73">Quick dashboards</text>
+    <rect x="186" y="46" width="150" height="44" rx="7" class="bx-n"/><text x="261" y="73">Power BI reports</text>
+    <rect x="348" y="46" width="150" height="44" rx="7" class="bx-n"/><text x="423" y="73">AI agents</text>
+    <rect x="528" y="46" width="168" height="44" rx="7" class="bx-n"/><text x="612" y="66">Data science,</text><text x="612" y="82" font-weight="400" font-size="12" class="t-s">bulk extracts</text>
+  </g>
+  <g>
+    <line class="ln" x1="99" y1="90" x2="99" y2="114" marker-end="url(#ahs)"/>
+    <line class="ln" x1="261" y1="90" x2="261" y2="114" marker-end="url(#ahs)"/>
+    <line class="ln" x1="423" y1="90" x2="423" y2="114" marker-end="url(#ahs)"/>
+    <line class="ln" x1="612" y1="90" x2="612" y2="282" marker-end="url(#ahs)"/>
+    <line class="ln" x1="110" y1="224" x2="110" y2="282" marker-end="url(#ahs)"/>
+  </g>
+  <text x="622" y="170" font-size="11" class="mono t-s">ROW DOOR</text>
+
+  <rect x="24" y="118" width="486" height="106" rx="9" class="bx-a"/>
+  <text x="42" y="146" font-size="13" class="mono t-a" font-weight="600" letter-spacing="1.2">LENS · ANSWER DOOR</text>
+  <g font-size="13.5" text-anchor="middle">
+    <rect x="42" y="160" width="104" height="44" rx="6" class="bx-w"/><text x="94" y="187">Measures</text>
+    <rect x="156" y="160" width="104" height="44" rx="6" class="bx-w"/><text x="208" y="187">Dimensions</text>
+    <rect x="270" y="160" width="104" height="44" rx="6" class="bx-w"/><text x="322" y="187">Segments</text>
+    <rect x="384" y="160" width="108" height="44" rx="6" class="bx-w"/><text x="438" y="187">Access rules</text>
+  </g>
+
+  <line class="dash-am" x1="24" y1="252" x2="696" y2="252" style="stroke-width:2.5"/>
+  <rect x="190" y="238" width="300" height="28" rx="5" class="bx-am"/>
+  <text x="340" y="257" font-size="12.5" class="mono t-am" font-weight="600" text-anchor="middle" letter-spacing="1.2">ROWS LIVE BELOW THIS LINE</text>
+
+  <rect x="24" y="286" width="672" height="112" rx="9" class="bx-s"/>
+  <text x="42" y="314" font-size="13" class="mono t-s" font-weight="600" letter-spacing="1.2">WAREHOUSE AND QUERY ENGINE · HOLDS THE ROWS</text>
+  <g font-size="13" text-anchor="middle">
+    <rect x="42" y="332" width="150" height="44" rx="6" class="bx-n"/><text x="117" y="359">Query engine</text>
+    <rect x="206" y="332" width="150" height="44" rx="6" class="bx-n"/><text x="281" y="359">Lakehouse tables</text>
+    <rect x="370" y="332" width="150" height="44" rx="6" class="bx-n"/><text x="445" y="359">Warehouse</text>
+    <rect x="534" y="332" width="144" height="44" rx="6" class="bx-n"/><text x="606" y="359">Files in S3</text>
+  </g>
+</svg>
+</div>
+<figcaption>Anything that wants a number enters above the line; only jobs that need individual rows should go below it.</figcaption>
+</figure>
+
+<p>Quick, Power BI and agents all enter above the line, where definitions live. Data science and bulk extracts enter below it, including loads into SPICE (Quick's in-memory copy of a dataset, refreshed on a schedule). The year-over-year widget tried to use the answer door to do a row-door job.</p>
+
+<h2 id="s3">3 · What a semantic model holds</h2>
+<div class="kicker">tablet nps as the example</div>
+<p>A semantic model is a written-down agreement about what a number means. For Tablet NPS it holds four kinds of thing. The measure is the formula: share of promoters minus share of detractors, worked out from response counts. The dimensions are the ways you slice it, such as region, product line and survey month. A segment is a saved filter, for example enterprise accounts only; the <a href="https://dataos.info/resources/lens/">Lens documentation</a> calls these predefined filters. Access rules decide who sees what, and a <a href="https://dataos.info/resources/lens/data_sources/themis/">Lens model keeps them</a> in the same folder as its tables and views.</p>
+<p><strong>NPS can't be averaged. Every author pulling raw rows has to remember that. Lens only has to remember it once.</strong> Averaging five regional scores gives the wrong global score, because the regions have different numbers of respondents. The right answer recalculates from the counts.</p>
+
+<h2 id="s4">4 · One definition, every tool</h2>
+<div class="kicker">why power bi makes this more urgent</div>
+<p><strong>Two tools, two definitions, and nothing to tell you when they disagree.</strong> Lenovo runs Power BI as well as Quick, and each tool has its own place to define metrics. Power BI keeps measures inside its <a href="https://learn.microsoft.com/en-us/power-bi/connect-data/service-datasets-understand">semantic models</a>, written in DAX. Quick keeps them as calculated fields inside each analysis. So Tablet NPS can be defined in both, by different people. The diagram compares that with one shared definition.</p>
+
+<figure class="diag" id="fig-one">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tablet NPS copied into several tools leaves open questions about formula, owner and access; defined once in Lens, every tool gets the same number.">
+  <defs><marker id="ahf" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <text x="24" y="32" font-size="12" class="mono t-s" letter-spacing="1.5">NPS DEFINED IN EACH TOOL</text>
+  <text x="400" y="32" font-size="12" class="mono t-a" letter-spacing="1.5" font-weight="600">NPS DEFINED ONCE</text>
+
+  <rect x="14" y="44" width="330" height="262" rx="10" class="dash-am"/>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="30" y="62" width="130" height="36" rx="6" class="bx-n"/><text x="95" y="85">Quick field</text>
+    <rect x="176" y="62" width="130" height="36" rx="6" class="bx-n"/><text x="241" y="85">Power BI measure</text>
+    <rect x="46" y="112" width="130" height="36" rx="6" class="bx-n"/><text x="111" y="135">Quick, author 2</text>
+    <rect x="190" y="112" width="130" height="36" rx="6" class="bx-n"/><text x="255" y="135">Power BI copy</text>
+    <rect x="30" y="162" width="130" height="36" rx="6" class="bx-n"/><text x="95" y="185">Excel pivot</text>
+    <rect x="176" y="162" width="130" height="36" rx="6" class="bx-n"/><text x="241" y="185">Agent's own SQL</text>
+  </g>
+  <g font-size="12" text-anchor="middle">
+    <rect x="30" y="222" width="94" height="28" rx="5" class="bx-am"/><text x="77" y="241" class="t-am">same formula?</text>
+    <rect x="134" y="222" width="94" height="28" rx="5" class="bx-am"/><text x="181" y="241" class="t-am">who owns it?</text>
+    <rect x="238" y="222" width="94" height="28" rx="5" class="bx-am"/><text x="285" y="241" class="t-am">access rules?</text>
+    <rect x="80" y="262" width="94" height="28" rx="5" class="bx-am"/><text x="127" y="281" class="t-am">which filter?</text>
+    <rect x="184" y="262" width="94" height="28" rx="5" class="bx-am"/><text x="231" y="281" class="t-am">last changed?</text>
+  </g>
+
+  <line class="ln" x1="350" y1="175" x2="382" y2="175" marker-end="url(#ahf)"/>
+
+  <rect x="388" y="44" width="308" height="262" rx="10" class="bx-a"/>
+  <text x="408" y="76" font-size="15" font-weight="700" class="t-a">tablet_nps · in Lens</text>
+  <g font-size="12.5">
+    <text x="408" y="110" class="mono t-s">measure</text><text x="500" y="110">promoters minus detractors</text>
+    <text x="408" y="140" class="mono t-s">slice by</text><text x="500" y="140">region, product, month</text>
+    <text x="408" y="170" class="mono t-s">segment</text><text x="500" y="170">enterprise accounts</text>
+    <text x="408" y="200" class="mono t-s">compare</text><text x="500" y="200">same month, prior year</text>
+    <text x="408" y="230" class="mono t-s">access</text><text x="500" y="230">rules by region</text>
+    <text x="408" y="260" class="mono t-s">owner</text><text x="500" y="260">one named team</text>
+  </g>
+  <text x="360" y="338" font-size="12.5" text-anchor="middle" class="t-s">Defined once. Quick, Power BI and agents all get the same number.</text>
+</svg>
+</div>
+<figcaption>Each copy on the left may be right, but nothing on the left can prove it.</figcaption>
+</figure>
+
+<p>The left side is the usual state after a few years with two BI tools. The first sign of drift is two dashboards showing different NPS in the same meeting. On the right, the definition lives once, below both tools. Power BI connects to the same Lens model through <a href="https://dataos.info/resources/lens/bi_integration/powerbi/">BI Sync</a>, and Quick reads the same measures through the SQL interface. When Lenovo adds AI agents, they ask the same model and get the same answer.</p>
+<p>This is a widely accepted pattern today. <a href="https://docs.cloud.google.com/looker/docs/what-is-lookml">LookML</a> defines metrics once inside Looker. <a href="https://docs.getdbt.com/docs/build/about-metricflow">dbt's semantic layer</a> does it in the transformation project. Databricks offers <a href="https://docs.databricks.com/aws/en/metric-views">metric views</a> in Unity Catalog, built in part for ratios and distinct counts that can't be safely re-added, the same problem as NPS. <a href="https://ossie.apache.org/">Apache Ossie</a>, formerly the Open Semantic Interchange, is an open specification for writing these definitions down so they can move between tools. It <a href="https://ossie.apache.org/updates/ossie-enters-apache-incubator/">joined the Apache Incubator</a> in June 2026.</p>
+
+<h2 id="s5">5 · Lens or warehouse</h2>
+<div class="kicker">a rule for quick authors</div>
+<p>Start with one test: would the result fit on a screen? If it would, it's a Lens question. The table gives the full rule. Each row is a yes-or-no check, and the two columns don't overlap.</p>
+
+<div class="tbl cmp"><table>
+<thead><tr><th>Prefer Lens when</th><th>Prefer the warehouse when</th></tr></thead>
+<tbody>
+<tr><td>The result is a number sliced by something (region, month, product) and fits on a screen</td><td>You need individual records, such as single survey responses or free-text comments</td></tr>
+<tr><td>The metric appears in more than one dashboard, tool or team</td><td>You're loading more than 50,000 rows into SPICE or another system</td></tr>
+<tr><td>The metric can't be added up: NPS, ratios, averages, distinct counts</td><td>The job is data science or model training on row-level data</td></tr>
+<tr><td>It compares periods: year over year, month over month, year to date</td><td>You're exploring a question nobody has defined a metric for yet</td></tr>
+<tr><td>Access rules must apply the same way in every tool</td><td>You're checking data quality or reconciling against a source system</td></tr>
+<tr><td>An AI agent or an app will ask the question</td><td>You need to join with data that isn't in the semantic model</td></tr>
+</tbody></table></div>
+
+<p><strong>If two people could compute it differently, it belongs in Lens.</strong> This tie-breaker settles most of the cases where authors are tempted to pull raw rows.</p>
+<p><strong>Explore on the warehouse. Promote to Lens the second time you need it.</strong> A question with no agreed metric starts on the warehouse. Once that metric shows up in a second dashboard, it moves into Lens, so the warehouse doesn't become a permanent way around the model.</p>
+<p>Going direct doesn't mean going without rules. The warehouse's own access controls still apply, but they sit on tables, not on business definitions like NPS.</p>
+
+<h2 id="s6">6 · What it costs, and what comes next</h2>
+<div class="kicker">the honest trade</div>
+<p>A semantic model takes work up front. Someone has to agree the NPS formula, name the dimensions and own the model. A measure nobody has modeled yet isn't available through Lens until someone does, so authors may wait on the data team for new metrics. Lens is also one more layer between tools and data that has to be kept running. In the author's experience, the time spent agreeing definitions once is less than the time spent later reconciling dashboards that disagree.</p>
+<p>For Lenovo, the next steps are concrete. First, rebuild the Tablet NPS year-over-year widget on a Lens measure, in a working session with one or two Quick authors. Second, connect Power BI to the same model, so both tools show the same NPS. Third, write the table from <a href="#s5">section 5</a> into a one-page guide for authors. Separately, the 800 MB NPS file that hit the 200 MB upload limit should go into S3 and become a data product from there, since browser upload isn't the right path for files that size.</p>
+
+<h2 id="sources">Sources</h2>
+<div class="kicker">primary where possible; vendor sources marked</div>
+<ul class="ref">
+  <li><a href="https://dataos.info/resources/lens/">DataOS, Lens overview</a>, <a href="https://dataos.info/resources/lens/data_sources/themis/">model folder structure</a> and <a href="https://dataos.info/resources/lens/bi_integration/powerbi/">semantic model sync with Power BI</a> (vendor)</li>
+  <li><a href="https://docs.aws.amazon.com/quick/latest/userguide/periodOverPeriodDifference-function.html">Amazon Quick, periodOverPeriodDifference function</a> (vendor)</li>
+  <li><a href="https://learn.microsoft.com/en-us/power-bi/connect-data/service-datasets-understand">Microsoft, semantic models in the Power BI service</a> (vendor)</li>
+  <li><a href="https://docs.cloud.google.com/looker/docs/what-is-lookml">Google Cloud, what is LookML</a>, <a href="https://docs.getdbt.com/docs/build/about-metricflow">dbt Labs, about MetricFlow</a> and <a href="https://docs.databricks.com/aws/en/metric-views">Databricks, Unity Catalog metric views</a> (vendor)</li>
+  <li><a href="https://ossie.apache.org/">Apache Ossie (incubating), project site</a> and <a href="https://ossie.apache.org/updates/ossie-enters-apache-incubator/">announcement of the move to the Apache Incubator</a></li>
+</ul>
+
+<p class="updated">Last updated 29 September 2026. Product details (the 50,000-row cap, BI Sync, upload limits) will change with releases; the pattern won't.</p>
+</main>
+</div>
+
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var targets=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1));});
+  function onScroll(){
+    var idx=0;
+    for(var i=0;i<targets.length;i++){ if(targets[i] && targets[i].getBoundingClientRect().top<=90) idx=i; }
+    links.forEach(function(a,i){a.classList.toggle('active',i===idx);});
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+})();
+</script>
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'), btn=sb&&sb.querySelector('.toc-toggle'), cur=document.getElementById('tocCurrent');
+  if(!btn) return;
+  function set(open){ sb.classList.toggle('open',open); btn.setAttribute('aria-expanded',open?'true':'false'); }
+  btn.addEventListener('click',function(){ set(!sb.classList.contains('open')); });
+  sb.querySelectorAll('.toc a').forEach(function(a){ a.addEventListener('click',function(){ set(false); }); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && sb.classList.contains('open')){ set(false); btn.focus(); }});
+  function label(){ var a=sb.querySelector('.toc a.active'); if(cur) cur.textContent=a?a.textContent:''; }
+  window.addEventListener('scroll',label,{passive:true}); label();
+})();
+</script>
+<!-- Interactive two-axis map only: paste assets/map.js here inside a <script> tag and fill its D object. -->
+</body>
+</html>
