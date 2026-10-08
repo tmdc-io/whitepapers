@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CData: From Connectors to the AI Gateway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FFFFFF; --ink:#171A20; --ink-soft:#4A4F5A;
+  --accent:#23407C; --accent-tint:#EFF3FA; --accent-line:#C4D0E8;
+  --amber:#B7791F; --amber-tint:#FDF6E3; --amber-ink:#8A5A13;
+  --green:#5B8C5A; --green-tint:#F2F8F2; --green-ink:#3A5F39;
+  --line:#E3E4E0; --engine-tint:#F2F3F5; --code-bg:#F6F6F3; --svg-bg:#FFFFFF; --sub:#FAFAF8;
+  --toc-w:248px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#14161B; --ink:#E7E9EE; --ink-soft:#A3A9B5;
+    --accent:#8FB0EE; --accent-tint:#1B2539; --accent-line:#34466B;
+    --amber:#E0A54A; --amber-tint:#2A2215; --amber-ink:#EBC07F;
+    --green:#7FB37E; --green-tint:#18241A; --green-ink:#A6D3A5;
+    --line:#2C3038; --engine-tint:#1D2027; --code-bg:#1A1C22; --svg-bg:#171A20; --sub:#181B21;
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#14161B; --ink:#E7E9EE; --ink-soft:#A3A9B5;
+  --accent:#8FB0EE; --accent-tint:#1B2539; --accent-line:#34466B;
+  --amber:#E0A54A; --amber-tint:#2A2215; --amber-ink:#EBC07F;
+  --green:#7FB37E; --green-tint:#18241A; --green-ink:#A6D3A5;
+  --line:#2C3038; --engine-tint:#1D2027; --code-bg:#1A1C22; --svg-bg:#171A20; --sub:#181B21;
+}
+:root { box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+*, *::before, *::after { box-sizing:inherit; margin:0; padding:0; }
+html { scroll-behavior:smooth; scroll-padding-top:calc(24px + env(safe-area-inset-top,0px)); background:var(--paper); }
+body { background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif; font-size:16px; line-height:1.6; }
+
+.layout { display:grid; grid-template-columns:var(--toc-w) minmax(0,760px); gap:40px; max-width:1200px; margin:0 auto; padding:48px 24px 96px; }
+main { min-width:0; }
+
+.sidebar { position:relative; }
+.toc { position:sticky; top:calc(24px + env(safe-area-inset-top,0px)); font-size:13.5px; }
+.toc .toc-title { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px; }
+.toc a { display:block; color:var(--ink-soft); text-decoration:none; padding:4px 10px; border-left:2px solid var(--line); line-height:1.4; border-bottom:none; }
+.toc a:hover { color:var(--accent); }
+.toc a.active { color:var(--accent); border-left-color:var(--accent); font-weight:600; }
+.toc a.sub { padding-left:22px; font-size:12.5px; }
+
+.eyebrow { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; }
+h1 { font-size:clamp(26px,4.5vw,38px); font-weight:700; line-height:1.15; letter-spacing:-.02em; margin-bottom:14px; }
+.subtitle { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:14px; color:var(--ink-soft); margin:-6px 0 14px; }
+.standfirst { font-size:18px; color:var(--ink-soft); margin-bottom:8px; }
+h2 { font-size:22px; font-weight:700; color:var(--accent); margin:44px 0 4px; }
+h3 { font-size:17px; font-weight:700; margin:26px 0 6px; }
+.meaning h3 { font-size:18px; padding-top:18px; border-top:1px solid var(--line); margin-top:0; }
+.kicker { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:12px; color:var(--ink-soft); margin-bottom:14px; }
+p { margin-bottom:10px; }
+ul.plain, ol.plain { margin:6px 0 12px 20px; }
+ul.plain li, ol.plain li { margin-bottom:6px; }
+
+.tbl { overflow-x:auto; margin:14px 0; border:1px solid var(--line); border-radius:8px; }
+table { width:100%; border-collapse:collapse; font-size:14.5px; background:var(--svg-bg); }
+th { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; text-align:left; padding:9px 13px; border-bottom:1.5px solid var(--ink); }
+td { padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+tr:last-child td { border-bottom:none; }
+td:first-child { font-weight:600; }
+code { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:.88em; background:var(--engine-tint); padding:0 4px; border-radius:3px; }
+
+figure.diag { margin:18px 0; }
+.diag-scroll { overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--svg-bg); }
+figure.diag svg { width:100%; min-width:600px; height:auto; display:block; }
+figure.diag figcaption { font-size:13px; color:var(--ink-soft); margin-top:6px; }
+figure.diag text { font-family:'IBM Plex Sans',system-ui,sans-serif; fill:var(--ink); }
+figure.diag text.mono { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; }
+figure.diag .t-s { fill:var(--ink-soft); }
+figure.diag .t-a { fill:var(--accent); }
+figure.diag .t-am { fill:var(--amber-ink); }
+figure.diag .t-g { fill:var(--green-ink); }
+.bx-n { fill:var(--engine-tint); stroke:var(--line); }
+.bx-a { fill:var(--accent-tint); stroke:var(--accent); stroke-width:1.5; }
+.bx-w { fill:var(--svg-bg); stroke:var(--accent-line); }
+.bx-am { fill:var(--amber-tint); stroke:var(--amber); }
+.bx-g { fill:var(--green-tint); stroke:var(--green); }
+.bx-s { fill:var(--sub); stroke:var(--line); }
+.ln { stroke:var(--ink-soft); stroke-width:1.5; fill:none; }
+.ln-am { stroke:var(--amber); stroke-width:1.5; fill:none; stroke-dasharray:5 5; }
+.dash-am { fill:none; stroke:var(--amber); stroke-width:1.8; stroke-dasharray:9 7; }
+.grid { stroke:var(--line); stroke-width:1; stroke-dasharray:4 5; }
+.axis { stroke:var(--ink-soft); stroke-width:1.2; }
+.arrowhead { fill:var(--ink-soft); stroke:none; }
+
+/* map dots */
+.dot { cursor:pointer; outline:none; }
+.dot .ring { stroke:transparent; stroke-width:3; fill:none; }
+.dot .solid { fill:var(--accent); }
+.dot .hollow { fill:var(--paper); stroke:var(--amber); stroke-width:2.2; }
+.dot .num { font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10px; font-weight:600; text-anchor:middle; }
+.dot .solid + .num { fill:var(--paper); }
+.dot .hollow + .num { fill:var(--amber-ink); }
+.dot:hover .ring, .dot:focus-visible .ring, .dot.sel .ring { stroke:var(--accent); }
+.dot text.lab { font-size:12.5px; }
+.panel { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; padding:12px 14px; margin-top:10px; background:var(--accent-tint); min-height:92px; }
+.panel .lbl { display:block; margin-bottom:4px; }
+.panel p { margin-bottom:6px; font-size:14.5px; }
+.panel p:last-child { margin-bottom:0; }
+.legend { display:flex; flex-wrap:wrap; gap:18px; font-size:13px; color:var(--ink-soft); margin-top:8px; }
+.legend span::before { content:""; display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:6px; vertical-align:-1px; }
+.legend .l-solid::before { background:var(--accent); }
+.legend .l-hollow::before { border:2px solid var(--amber); background:var(--paper); }
+
+.meaning { margin:30px 0 34px; }
+.lbl { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); }
+h4.albl { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:600; margin:14px 0 4px; }
+.anatomy h4.albl:first-child { margin-top:2px; }
+.anatomy p { margin-bottom:6px; }
+.verdict { display:inline-block; font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; padding:1px 7px; border-radius:4px; margin-right:6px; }
+.v-sig { background:var(--green-tint); color:var(--green-ink); border:1px solid var(--green); }
+.v-mix { background:var(--accent-tint); color:var(--accent); border:1px solid var(--accent-line); }
+.v-mkt { background:var(--amber-tint); color:var(--amber-ink); border:1px solid var(--amber); }
+.seam { font-size:14.5px; color:var(--ink-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:10px 2px; margin:22px 0; }
+.ask { border-left:3px solid var(--amber); background:var(--amber-tint); padding:9px 13px; margin:10px 0 4px; font-size:14.5px; border-radius:0 6px 6px 0; }
+.ask .lbl { color:var(--amber-ink); margin-right:6px; }
+.hook { border-left:3px solid var(--accent); background:var(--accent-tint); padding:12px 14px; margin-top:14px; font-size:15px; border-radius:0 6px 6px 0; }
+.hook p:last-child { margin-bottom:0; }
+
+a { color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-line); }
+a:hover { border-bottom-color:var(--accent); }
+a:focus-visible, .dot:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.ref { font-size:13.5px; color:var(--ink-soft); line-height:1.9; }
+.ref li { margin-left:18px; }
+strong { font-weight:600; }
+.updated { font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:12px; color:var(--ink-soft); margin-top:40px; border-top:1px solid var(--line); padding-top:12px; }
+
+.hint { font-style:italic; font-size:14.5px; color:var(--ink-soft); margin:18px 0 -8px; display:flex; align-items:center; gap:8px; }
+.hint-mark { width:12px; height:12px; border-radius:50%; border:2px solid var(--accent); flex:none; }
+.glance { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:12px; color:var(--ink-soft); margin:0 0 12px; }
+.glance span { color:var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:.08em; font-size:11px; margin-right:5px; }
+.glance { display:flex; flex-wrap:wrap; column-gap:18px; row-gap:2px; }
+.glance i { font-style:normal; }
+.tag { font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--amber-ink); background:var(--amber-tint); border:1px solid var(--amber); border-radius:4px; padding:1px 6px; vertical-align:3px; margin-left:6px; }
+.meaning p { max-width:72ch; }
+figure.spot { margin:14px 0 18px; }
+figure.spot .diag-scroll { background:var(--sub); }
+figure.spot svg { min-width:560px; }
+figure.spot figcaption { font-size:12.5px; }
+.ln-a { stroke:var(--accent); stroke-width:2.5; fill:none; }
+.band-am { fill:var(--amber-tint); }
+.faded { opacity:.45; }
+.seam + .seam { margin-top:-22px; border-top:none; }
+@media (max-width:900px) {
+  .layout { display:block; padding:28px 18px 72px; }
+  .sidebar { margin-bottom:24px; }
+  .toc { position:static; border:1px solid var(--line); border-radius:8px; padding:12px 14px; }
+  h2 { margin-top:34px; }
+}
+@media (max-width:520px) { body { font-size:15px; } }
+@media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+.toc-toggle { display:none; }
+@media (max-width:900px) {
+  html { scroll-padding-top:calc(64px + env(safe-area-inset-top,0px)); }
+  .sidebar { position:sticky; top:env(safe-area-inset-top,0px); z-index:20; background:var(--paper); margin:-28px -18px 24px; padding:0 18px; border-bottom:1px solid var(--line); }
+  .toc-toggle { display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; color:var(--ink); font:inherit; font-size:14px; padding:12px 0; cursor:pointer; text-align:left; }
+  .toc-toggle:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .toc-toggle-label { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
+  .toc-current { margin-left:auto; font-size:13px; color:var(--accent); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:55%; }
+  .burger { position:relative; width:20px; height:14px; flex:none; }
+  .burger span { position:absolute; left:0; width:20px; height:2px; background:var(--ink); border-radius:1px; transition:transform .2s ease, opacity .2s ease; }
+  .burger span:nth-child(1) { top:0; } .burger span:nth-child(2) { top:6px; } .burger span:nth-child(3) { top:12px; }
+  .sidebar.open .burger span:nth-child(1) { transform:translateY(6px) rotate(45deg); }
+  .sidebar.open .burger span:nth-child(2) { opacity:0; }
+  .sidebar.open .burger span:nth-child(3) { transform:translateY(-6px) rotate(-45deg); }
+  .sidebar .toc { display:none; border:none; padding:0 0 14px; max-height:calc(70vh - env(safe-area-inset-top,0px)); overflow-y:auto; }
+  .sidebar .toc .toc-title { display:none; }
+  .sidebar.open .toc { display:block; }
+}
+@media (prefers-reduced-motion:reduce) { .burger span { transition:none; } }
+.tag.lead { margin-left:0; margin-right:6px; vertical-align:1px; }
+th .tag { vertical-align:1px; }
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="toc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <nav class="toc" id="toc" aria-label="Contents">
+    <div class="toc-title">Contents</div>
+    <a href="#s1">1 · Company snapshot</a>
+    <a href="#s2">2 · Value and buyers</a>
+    <a class="sub" href="#s2-1">2.1 What customers pay for</a>
+    <a class="sub" href="#s2-2">2.2 Who buys, and how</a>
+    <a href="#s3">3 · Products and architecture</a>
+    <a href="#s4">4 · What changed this year</a>
+    <a href="#s5">5 · What it replaces</a>
+    <a href="#s6">6 · Positioning and competitors</a>
+    <a href="#s7">7 · Versus Denodo and Starburst</a>
+    <a href="#sources">Sources</a>
+  </nav>
+</aside>
+
+<main>
+<div class="eyebrow">Internal · Competitive brief · October 2026 · Animesh</div>
+<h1>CData: From Connectors to the AI Gateway</h1>
+<p class="subtitle">What CData sells, how it is built, and where it competes</p>
+<p class="standfirst">CData is a connector company moving up the stack into the AI control plane. Its moat is a decade of drivers that make hundreds of SaaS apps, databases and ERPs look like SQL tables. Everything it now sells, from managed MCP to a context engine to model routing, sits on that relational core. Since 29 September 2026 it describes itself as the AI gateway between AI and the systems that run the business.</p>
+
+<div class="seam"><strong>A note on bias:</strong> the author builds data platform software in an adjacent market. This page describes CData on its own terms and argues for no vendor, including his own. Sentences tagged <span class="tag lead">Our read</span> are judgement, not documented fact.</div>
+<div class="seam"><strong>Who this is for:</strong> product, engineering and sales leads who need a fast, sourced picture of CData. Sellers will get most from sections <a href="#s2">2</a>, <a href="#s5">5</a> and <a href="#s6">6</a>. Architects should start with <a href="#s3">section 3</a> and <a href="#s7">section 7</a>. It isn't a product evaluation; nobody here has run CData in production.</div>
+
+<h2 id="s1">1 · Company snapshot</h2>
+<div class="kicker">a profitable connector business with fresh growth capital</div>
+<div class="tbl"><table>
+<thead><tr><th>Item</th><th>Detail</th></tr></thead>
+<tbody>
+<tr><td>Founded</td><td>2016 in Chapel Hill, North Carolina. CEO and co-founder Amit Sharma.</td></tr>
+<tr><td>Funding</td><td>About $350M growth round in June 2024, <a href="https://www.cdata.com/company/press/cdata-software-secures-350-million-in-strategic-growth-funding/">led by Warburg Pincus with Accel</a>. Updata Partners put in $20M (2020) and $140M (2021).</td></tr>
+<tr><td>Valuation and revenue</td><td>Reported above $800M. Growing more than 40% a year and targeting about $100M ARR by end of 2024, <a href="https://tech.yahoo.com/general/articles/data-connectivity-company-cdata-software-120355219.html">per Reuters</a>. Profitable since founding.</td></tr>
+<tr><td>Customers</td><td>Claims more than 10,000, including Adobe, GSK and Office Depot.</td></tr>
+<tr><td>OEM channel</td><td>Embedded in Palantir, Google Cloud, Salesforce Data Cloud, SAP and Informatica.</td></tr>
+<tr><td>Acquisition</td><td><a href="https://www.cdata.com/company/press/cdata-software-acquires-data-virtuality">Bought Data Virtuality</a>, a Leipzig data virtualization vendor, in April 2024.</td></tr>
+</tbody></table></div>
+
+<h2 id="s2">2 · Value and buyers</h2>
+<div class="kicker">integration work customers no longer have to build</div>
+<h3 id="s2-1">2.1 What customers pay for</h3>
+<p>CData sells customers the integration work they would otherwise build and maintain themselves. Each kind of value lands with a different person.</p>
+<div class="tbl"><table>
+<thead><tr><th>Value</th><th>Evidence</th><th>Who cares most <span class="tag">Our read</span></th></tr></thead>
+<tbody>
+<tr><td>No integration code to write or maintain</td><td>CData owns the drivers and <a href="https://www.cdata.com/developers/fundamentals/using-drivers-and-connectors/">absorbs upstream API changes</a></td><td>Engineering leads, ISV product teams</td></tr>
+<tr><td>Fast connection to hard systems</td><td>Adobe: new app onboarding from weeks to hours; SAP test delivery from 10 weeks to about one (<a href="https://www.cdata.com/company/press/cdata-launches-connect-ai-gateway/">launch release</a>)</td><td>AI and platform engineers</td></tr>
+<tr><td>Cheaper, more accurate AI</td><td>One multi-source query fell from 22 tool calls and 183,541 tokens to one call and 4,427 tokens, in <a href="https://www.cdata.com/ai/context-engine/">CData's own benchmark</a></td><td>Heads of AI, finance</td></tr>
+<tr><td>Governance security will sign off</td><td>Passthrough identity, query-level audit log, and kill switches per user, connection or account (<a href="https://www.cdata.com/ai/pricing/">pricing page</a>)</td><td>CISO, IT</td></tr>
+</tbody></table></div>
+
+<h3 id="s2-2">2.2 Who buys, and how</h3>
+<p>The buyer has moved up the org chart, from BI developers to AI engineers to the executive who owns the AI budget.</p>
+<div class="tbl"><table>
+<thead><tr><th>Product line</th><th>Primary buyer <span class="tag">Our read</span></th><th>How it is bought</th></tr></thead>
+<tbody>
+<tr><td>Connect AI Gateway</td><td>CIO, CISO, head of AI platform</td><td>Enterprise sale, early access only; pitched on AI return and spend control</td></tr>
+<tr><td>Connect AI, Business tier</td><td>IT teams and AI architects moving to production (<a href="https://www.cdata.com/blog/cdata-connect-ai-june-release">June release</a>)</td><td>Annual contract once SSO, SCIM, passthrough identity or custom tools are needed</td></tr>
+<tr><td>Connect AI, Standard and Growth</td><td>Individual AI users and developers</td><td>Self-serve at $99 to $199 a month, plus add-on users and sources</td></tr>
+<tr><td>Embed</td><td>Product and engineering leaders at software vendors</td><td>OEM deals; Google, Salesforce and Informatica embed it</td></tr>
+<tr><td>Drivers and Sync</td><td>BI developers, data engineers, analysts</td><td>Self-serve licences plus inside sales (not checked)</td></tr>
+</tbody></table></div>
+<p><span class="tag lead">Our read</span> It is land-and-expand. Self-serve lands one user and one source. Storefronts feed that funnel: CData is an <a href="https://www.cdata.com/company/press/cdata-featured-mcp-launch-partner-databricks-marketplace">Agent Bricks launch partner in Databricks Marketplace</a> and is listed in Anthropic's Claude connector directory. Enterprise sales closes the large deals, backed by analyst events and vendor benchmarks. We also think the Gateway exists partly to move CData from small engineering budgets into the AI budget.</p>
+
+<h2 id="s3">3 · Products and architecture</h2>
+<div class="kicker">one connector core, several front doors</div>
+<p>Four product lines share one connector core: Drivers (ODBC, JDBC, ADO.NET, Python, SSIS), Replication (Sync, Arc, DBAmp), Embed for OEM, and <a href="https://docs.cloud.cdata.com/en">Connect AI</a>, the managed platform <a href="https://www.cdata.com/blog/connect-cloud-is-connect-ai">renamed from Connect Cloud</a> in September 2025. The diagram shows Connect AI as layers, from consumers down to the sources it reads.</p>
+
+<figure class="diag" id="fig-stack">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Every Connect AI layer sits on one connector core, and each source sets the limits below it">
+  <defs><marker id="ah" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <text x="24" y="34" font-size="12" class="mono t-s" letter-spacing="1.5">CONSUMERS</text>
+  <g font-size="14" font-weight="600" text-anchor="middle">
+    <rect x="24" y="46" width="156" height="44" rx="7" class="bx-n"/><text x="102" y="73">AI agents</text>
+    <rect x="196" y="46" width="156" height="44" rx="7" class="bx-n"/><text x="274" y="73">BI tools</text>
+    <rect x="368" y="46" width="156" height="44" rx="7" class="bx-n"/><text x="446" y="73">Lakehouses</text>
+    <rect x="540" y="46" width="156" height="44" rx="7" class="bx-n"/><text x="618" y="73">ISV apps</text>
+  </g>
+  <g><line class="ln" x1="102" y1="90" x2="102" y2="114" marker-end="url(#ah)"/><line class="ln" x1="274" y1="90" x2="274" y2="114" marker-end="url(#ah)"/><line class="ln" x1="446" y1="90" x2="446" y2="114" marker-end="url(#ah)"/><line class="ln" x1="618" y1="90" x2="618" y2="114" marker-end="url(#ah)"/></g>
+
+  <rect x="24" y="118" width="672" height="164" rx="9" class="bx-a"/>
+  <text x="42" y="146" font-size="13" class="mono t-a" font-weight="600" letter-spacing="1.2">CONNECT AI · RUN BY CDATA</text>
+  <g font-size="13.5" text-anchor="middle">
+    <rect x="42" y="160" width="148" height="46" rx="6" class="bx-w"/><text x="116" y="179" font-weight="600">Front doors</text><text x="116" y="197" font-size="12" class="t-s">MCP, SQL, OData</text>
+    <rect x="204" y="160" width="148" height="46" rx="6" class="bx-w"/><text x="278" y="179" font-weight="600">Context</text><text x="278" y="197" font-size="12" class="t-s">concept files, beta</text>
+    <rect x="366" y="160" width="148" height="46" rx="6" class="bx-w"/><text x="440" y="179" font-weight="600">Governance</text><text x="440" y="197" font-size="12" class="t-s">identity, roles, audit</text>
+    <rect x="528" y="160" width="150" height="46" rx="6" class="bx-w"/><text x="603" y="179" font-weight="600">Federation</text><text x="603" y="197" font-size="12" class="t-s">two query engines</text>
+    <rect x="42" y="218" width="636" height="46" rx="6" class="bx-w"/><text x="360" y="246"><tspan font-weight="600">Connector core</tspan><tspan font-size="12.5" class="t-s"> · one SQL-92 engine per source, pushing work down where the API allows</tspan></text>
+  </g>
+
+  <line class="dash-am" x1="24" y1="316" x2="696" y2="316" style="stroke-width:2.5"/>
+  <rect x="140" y="302" width="440" height="28" rx="5" class="bx-am"/>
+  <text x="360" y="321" font-size="12.5" class="mono t-am" font-weight="600" text-anchor="middle" letter-spacing="1.2">BELOW THE LINE, EACH SOURCE SETS THE LIMITS</text>
+
+  <rect x="24" y="350" width="672" height="90" rx="9" class="bx-s"/>
+  <text x="42" y="376" font-size="13" class="mono t-s" font-weight="600" letter-spacing="1.2">SOURCES · OWNED BY THE CUSTOMER</text>
+  <g font-size="13" text-anchor="middle">
+    <rect x="42" y="388" width="148" height="38" rx="6" class="bx-n"/><text x="116" y="411">SaaS apps</text>
+    <rect x="204" y="388" width="148" height="38" rx="6" class="bx-n"/><text x="278" y="411">ERPs</text>
+    <rect x="366" y="388" width="148" height="38" rx="6" class="bx-n"/><text x="440" y="411">Warehouses</text>
+    <rect x="528" y="388" width="150" height="38" rx="6" class="bx-n"/><text x="603" y="411">On-prem systems</text>
+  </g>
+</svg>
+</div>
+<figcaption>Every front door, including MCP, sits on the same connector core, while each source's API sets the rate limits and permissions below the line.</figcaption>
+</figure>
+
+<p>Reading the layers from the bottom up, the table gives what each one does and where the claim comes from.</p>
+<div class="tbl"><table>
+<thead><tr><th>Layer</th><th>What it is</th><th>Evidence</th></tr></thead>
+<tbody>
+<tr><td>Front doors</td><td>MCP for agents, ODBC/JDBC for BI tools, REST/OData for apps, and a virtual SQL Server (TDS) endpoint. MCP offers about 10 generic tools plus source tools, custom SQL tools and per-use-case toolkits. The query tool is SELECT-only and writes go through dedicated tools. Generic tools can't delete; Salesforce, Slack and OneNote source tools can.</td><td><a href="https://docs.cloud.cdata.com/en/ReleaseNotes">Release notes</a>. Tool count unconfirmed: <a href="https://www.cdata.com/blog/mcp-isnt-dead">CData said 9</a> in December 2025; a docs-based count gives 11.</td></tr>
+<tr><td>Context</td><td>One markdown file per concept, which agents retrieve with <code>search_context</code>. Metrics arrive only by import from dbt or a Snowflake semantic view; anything written in the editor is saved as a glossary entry. In beta.</td><td><a href="https://docs.cloud.cdata.com/en/Context-Editor">Context Editor docs</a></td></tr>
+<tr><td>Governance</td><td>Per-user passthrough identity, additive access roles, PII masking, a query-level audit log, and kill switches per user, connection or account.</td><td><a href="https://www.cdata.com/ai/pricing/">Pricing page</a>, <a href="https://docs.cloud.cdata.com/en/Roles">roles docs</a></td></tr>
+<tr><td>Federation</td><td>CData's own Query Federation driver by default, with the Data Virtuality engine opt-in per account. Adds derived views, a cache in a customer-owned Postgres, and an on-prem gateway for SAP and SQL Server.</td><td><a href="https://docs.cloud.cdata.com/llms.txt">Docs index</a>. That the Data Virtuality engine is built on Teiid is unconfirmed.</td></tr>
+<tr><td>Connector core</td><td>Every source is modelled as relational tables. Each driver carries a SQL-92 engine that pushes down what the source supports and computes the rest locally.</td><td><a href="https://www.cdata.com/blog/cdata-driver-architecture">Driver architecture post</a></td></tr>
+</tbody></table></div>
+<p><span class="tag lead">Our read</span> Two query planners over one connector library is integration debt. The MCP discovery tools mirror JDBC metadata calls, so agents see a database catalog, not business concepts. The docs imply, without stating it, that agents read retrieved context and still write their own SQL against raw tables. That makes the context layer guidance an agent reads, not a semantic layer that executes definitions. The <a href="https://www.cdata.com/ai/context-engine/">marketing</a> promises more: a graph that learns from corrections, query patterns and Slack or Teams, with changes approved as diffs.</p>
+
+<h2 id="s4">4 · What changed this year</h2>
+<div class="kicker">from data access, to agent access, to the whole agent path</div>
+<div class="tbl"><table>
+<thead><tr><th>Date</th><th>Change</th></tr></thead>
+<tbody>
+<tr><td>29 Sep 2026</td><td><a href="https://www.cdata.com/company/press/cdata-launches-connect-ai-gateway/">Connect AI Gateway</a> in early access: model routing and failover, spend budgets by team and agent, record-level policy, and governance of third-party MCP servers.</td></tr>
+<tr><td>Jun 2026</td><td>PII detection and masking, service accounts for agents, role-based access, and 17 new sources (<a href="https://www.cdata.com/blog/cdata-connect-ai-june-release">release post</a>).</td></tr>
+<tr><td>9 Mar 2026</td><td>Agent toolkits and identity controls, plus a benchmark claiming 98.5% accuracy against 65 to 75% for other MCP providers (<a href="https://www.cdata.com/company/press/cdata-expands-connect-ai-platform/">press release</a>).</td></tr>
+<tr><td>6 Nov 2025</td><td>MCP launch partner for Databricks Agent Bricks.</td></tr>
+<tr><td>24 Sep 2025</td><td>Connect Cloud renamed Connect AI and <a href="https://cdata.com/company/press/cdata-launches-connect-ai">pitched as the first managed MCP platform</a>.</td></tr>
+</tbody></table></div>
+<p>CData reports <a href="https://www.cdata.com/blog/vibe-querying-2025-wrapped">191 million tool calls</a> through Connect AI in 2025. Treat the 98.5% figure with care: CData ran the test itself, across 378 prompts, and nobody has independently repeated it.</p>
+
+<h2 id="s5">5 · What it replaces</h2>
+<div class="kicker">mostly things customers build themselves</div>
+<p>Replacing homegrown work is an easier sale than displacing a vendor, and most of CData's pitch does that.</p>
+<div class="tbl"><table>
+<thead><tr><th>Today the customer has</th><th>CData's replacement</th></tr></thead>
+<tbody>
+<tr><td>One homegrown MCP server per system, plus API glue for agents that write</td><td>One managed platform with governed tools; MCP servers the customer already runs come under the same policy</td></tr>
+<tr><td>Copying data into a warehouse just to query it</td><td>Live queries in place, and scheduled exports to the warehouse without a separate ETL tool</td></tr>
+<tr><td>Connectors built in-house by software vendors</td><td>Embed, positioned against iPaaS and unified APIs</td></tr>
+<tr><td>A standalone LLM proxy for routing and spend</td><td>The Gateway's model routing, failover and spend budgets</td></tr>
+</tbody></table></div>
+<p>CData says Connect AI is not a replacement for catalog platforms and imports existing semantic models instead. <span class="tag lead">Our read</span> Watch it anyway. Today the context store holds imported metrics and hand-written glossary entries, but if teams start writing definitions there, it competes with semantic layers.</p>
+
+<h2 id="s6">6 · Positioning and competitors</h2>
+<div class="kicker">four fronts at once, which is both the pitch and the risk</div>
+<p>CData sells three things: neutrality (no warehouse to fill, no favoured model), depth on hard systems like SAP and NetSuite, and write-back that is checked against each system's own rules. Adobe is the showcase. Futurum's Brad Shimmin reads the Gateway as CData <a href="https://futurumgroup.com/insights/beyond-retrieval-cdata-connect-ai-gateway-tackles-transactional-agents">moving from background drivers into the runtime governance tier</a>.</p>
+<div class="tbl"><table>
+<thead><tr><th>Front</th><th>Who they meet</th></tr></thead>
+<tbody>
+<tr><td>Agent connectivity (MCP)</td><td>Hyperscaler MCP catalogs (Bedrock, Azure AI), Composio, Workato, Zapier</td></tr>
+<tr><td>Integration and replication</td><td>MuleSoft, Boomi, Fivetran, Airbyte; Merge and Paragon against Embed</td></tr>
+<tr><td>Virtualization and context</td><td>Denodo, Starburst, dbt Semantic Layer, Cube, AtScale, Atlan, Teradata's Tera</td></tr>
+<tr><td>Model gateway</td><td>Portkey, LiteLLM, Kong</td></tr>
+</tbody></table></div>
+<p>Futurum names the hyperscalers, MuleSoft, Boomi and LLM proxies. The other names are our read.</p>
+<p><strong>Buyers' reviews will probe weak spots.</strong> Access roles only add permissions, and caching works only with shared authentication (<a href="https://docs.cloud.cdata.com/en/Roles">roles</a>, <a href="https://docs.cloud.cdata.com/en/Caching">caching</a>). Unverified reports add that workspace access overrides source permissions, that per-user passthrough doesn't work with OData, and that queries cap at 100 per user per minute. Check these before quoting them. <span class="tag lead">Our read</span> Pricing by source and seat makes the multi-source agent CData advertises expensive on self-serve plans. Many connectors added in mid-2026 look like lighter, profile-based connectors, so depth likely varies more than the headline count suggests.</p>
+<p><strong>The roadmap is partly stated.</strong> CData lists Databricks and Snowflake catalog integration as near-term on its <a href="https://www.cdata.com/ai/context-engine/">context engine page</a>. <span class="tag lead">Our read</span> The Gateway moves toward general availability, with news likely at its Foundations event on 5 November 2026. Human approval steps and rollback for agent writes come next, because security teams won't approve write-back without them, followed by more packaging for regulated industries and possibly another acquisition.</p>
+
+<h2 id="s7">7 · Versus Denodo and Starburst</h2>
+<div class="kicker">same promise, different engines underneath</div>
+<p>All three put a virtual SQL layer over data that stays where it is, and all three now serve it to agents over MCP. The difference is what sits underneath: Starburst is a query engine, Denodo a modelling layer, CData a connector library.</p>
+<div class="tbl"><table>
+<thead><tr><th></th><th>CData</th><th>Denodo</th><th>Starburst</th></tr></thead>
+<tbody>
+<tr><td>Core asset</td><td>Hand-built connectors, mostly SaaS apps and ERPs</td><td>Logical data model and optimizer over databases</td><td>Trino, a distributed SQL engine</td></tr>
+<tr><td>Sweet spot</td><td>Long tail of apps: Salesforce, NetSuite, SAP, Gong</td><td>Company-wide virtual semantic layer</td><td>Large analytical queries over the lakehouse</td></tr>
+<tr><td>Writes</td><td>Governed writes back into source apps</td><td>Writes through some views; mostly read in practice (our read)</td><td>Read-only over MCP</td></tr>
+<tr><td>Deployment</td><td>Managed service first; drivers self-hosted</td><td>Customer-run, also cloud</td><td>Self-managed, or Galaxy as a service</td></tr>
+<tr><td>Who builds the model</td><td>Schemas ship with connectors; context is retrieved text, metrics only by import</td><td>Data architects, with AI-suggested joins</td><td>Data teams publish data products</td></tr>
+<tr><td>MCP status</td><td>Managed platform since September 2025</td><td><a href="https://community.denodo.com/newsletter/technical/2026/03/202603.html">Native MCP in 9.4</a>; <a href="https://www.aap.com.au/aapreleases/globenewswire9721772/">Bedrock AgentCore integration</a>, May 2026</td><td><a href="https://www.starburst.io/info/mcp-server-building-your-agent-with-starburst/">MCP server exposing data products</a></td></tr>
+</tbody></table></div>
+<p>CData competes head-on with Denodo, because both now pitch a semantic layer to agents. <span class="tag lead">Our read</span> The Data Virtuality acquisition also puts CData into the same virtualization tenders. On semantics Denodo is ahead today, because its views execute definitions while CData's context is text the agent reads. CData's edge is reach into SaaS apps. It more often complements Starburst: Starburst handles lakehouse scale, while CData handles SaaS data and agent write-back.</p>
+<p><strong>Lakehouse fit confirms the Starburst point.</strong> CData's docs list no Iceberg or Delta connector, and the Parquet connector was removed in July 2026 (<a href="https://docs.cloud.cdata.com/en/ReleaseNotes">release notes</a>), so CData reaches lakehouse data only through a running warehouse. In reverse, Databricks can query CData as a virtual SQL Server through Lakehouse Federation. <span class="tag lead">Our read</span> Every user then shares one stored token, lineage stops at CData, and large joins pull whole SaaS tables through rate-limited APIs. The diagram shows the pattern that follows.</p>
+
+<figure class="diag" id="fig-fit">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Federate small SaaS tables live through CData; replicate large ones into the lakehouse first">
+  <defs><marker id="ahc" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <text x="30" y="36" font-size="12" class="t-s">Our read: live federation suits small SaaS tables; big joins belong after replication.</text>
+  <g font-size="13.5" text-anchor="middle">
+    <rect x="30" y="130" width="160" height="56" rx="7" class="bx-n"/>
+    <text x="110" y="153" font-weight="600">Lakehouse query</text>
+    <text x="110" y="172" font-size="12" class="t-s">needs SaaS data</text>
+    <line class="ln" x1="190" y1="158" x2="248" y2="158" marker-end="url(#ahc)"/>
+
+    <rect x="252" y="122" width="188" height="72" rx="7" class="bx-a"/>
+    <text x="346" y="150" font-weight="600" class="t-a">How much SaaS data?</text>
+    <text x="346" y="169" font-size="12" class="t-s">rows pulled through</text>
+    <text x="346" y="184" font-size="12" class="t-s">the source's API</text>
+
+    <line class="ln" x1="440" y1="140" x2="510" y2="84" marker-end="url(#ahc)"/>
+    <text x="466" y="98" font-size="11.5" class="mono t-s">SMALL</text>
+    <rect x="514" y="46" width="182" height="58" rx="7" class="bx-g"/>
+    <text x="605" y="70" font-weight="600" class="t-g">Federate live</text>
+    <text x="605" y="89" font-size="12" class="t-s">fresh, nothing copied</text>
+
+    <line class="ln" x1="440" y1="176" x2="510" y2="232" marker-end="url(#ahc)"/>
+    <text x="463" y="222" font-size="11.5" class="mono t-am">LARGE</text>
+    <rect x="514" y="212" width="182" height="102" rx="7" class="bx-am"/>
+    <text x="605" y="238" font-weight="600" class="t-am">Replicate first</text>
+    <text x="605" y="260" font-size="12" class="t-s">Sync or a pipeline</text>
+    <text x="605" y="278" font-size="12" class="t-s">into Delta or Iceberg,</text>
+    <text x="605" y="296" font-size="12" class="t-s">then join there</text>
+  </g>
+</svg>
+</div>
+<figcaption>Account and project lists can stay live; anything large or join-heavy should be copied in first, which is why CData sells both live access and replication.</figcaption>
+</figure>
+
+<p>This is CData's two-mode pitch in practice. Live access gets it in the door, and replication through Sync carries the heavy work.</p>
+
+<h2 id="sources">Sources</h2>
+<div class="kicker">primary where possible; vendor sources marked</div>
+<ul class="ref">
+  <li><a href="https://docs.cloud.cdata.com/en">CData Connect AI documentation</a>; <a href="https://docs.cloud.cdata.com/llms.txt">docs index</a>; <a href="https://docs.cloud.cdata.com/en/ReleaseNotes">release notes</a>; <a href="https://docs.cloud.cdata.com/en/Context-Editor">Context Editor</a>; <a href="https://docs.cloud.cdata.com/en/Roles">roles</a>; <a href="https://docs.cloud.cdata.com/en/Caching">caching</a> (vendor)</li>
+  <li><a href="https://www.cdata.com/company/press/cdata-launches-connect-ai-gateway/">CData, Connect AI Gateway launch</a>; <a href="https://www.cdata.com/company/press/cdata-expands-connect-ai-platform/">Connect AI expansion, March 2026</a>; <a href="https://cdata.com/company/press/cdata-launches-connect-ai">Connect AI launch, September 2025</a>; <a href="https://www.cdata.com/company/press/cdata-featured-mcp-launch-partner-databricks-marketplace">Databricks Marketplace partnership</a> (vendor)</li>
+  <li><a href="https://www.cdata.com/company/press/cdata-software-secures-350-million-in-strategic-growth-funding/">CData, $350M growth funding</a>; <a href="https://www.cdata.com/company/press/cdata-software-acquires-data-virtuality">Data Virtuality acquisition</a> (vendor)</li>
+  <li><a href="https://www.cdata.com/ai/context-engine/">CData, Context Engine</a>; <a href="https://www.cdata.com/ai/pricing/">Connect AI pricing</a> (vendor)</li>
+  <li><a href="https://www.cdata.com/blog/connect-cloud-is-connect-ai">CData, Connect Cloud is now Connect AI</a>; <a href="https://www.cdata.com/blog/cdata-connect-ai-june-release">June 2026 release</a>; <a href="https://www.cdata.com/blog/mcp-isnt-dead">MCP isn't dead</a>; <a href="https://www.cdata.com/blog/vibe-querying-2025-wrapped">2025 wrapped</a>; <a href="https://www.cdata.com/blog/cdata-driver-architecture">driver architecture</a>; <a href="https://www.cdata.com/developers/fundamentals/using-drivers-and-connectors/">using drivers and connectors</a> (vendor)</li>
+  <li><a href="https://tech.yahoo.com/general/articles/data-connectivity-company-cdata-software-120355219.html">Reuters, CData raises $350 million</a></li>
+  <li><a href="https://futurumgroup.com/insights/beyond-retrieval-cdata-connect-ai-gateway-tackles-transactional-agents">Futurum, Beyond Retrieval: CData Connect AI Gateway Tackles Transactional Agents</a></li>
+  <li><a href="https://community.denodo.com/newsletter/technical/2026/03/202603.html">Denodo, technical newsletter, March 2026</a>; <a href="https://www.aap.com.au/aapreleases/globenewswire9721772/">Denodo and AWS integrations, May 2026</a> (vendor)</li>
+  <li><a href="https://www.starburst.io/info/mcp-server-building-your-agent-with-starburst/">Starburst, MCP server workshop</a> (vendor)</li>
+</ul>
+
+<p class="updated">Last updated 8 October 2026. The Gateway is in early access and the MCP tool counts change with releases, so <a href="#s3">section 3</a> and <a href="#s4">section 4</a> will date first.</p>
+</main>
+</div>
+
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var targets=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1));});
+  function onScroll(){
+    var idx=0;
+    for(var i=0;i<targets.length;i++){ if(targets[i] && targets[i].getBoundingClientRect().top<=90) idx=i; }
+    links.forEach(function(a,i){a.classList.toggle('active',i===idx);});
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+})();
+</script>
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'), btn=sb&&sb.querySelector('.toc-toggle'), cur=document.getElementById('tocCurrent');
+  if(!btn) return;
+  function set(open){ sb.classList.toggle('open',open); btn.setAttribute('aria-expanded',open?'true':'false'); }
+  btn.addEventListener('click',function(){ set(!sb.classList.contains('open')); });
+  sb.querySelectorAll('.toc a').forEach(function(a){ a.addEventListener('click',function(){ set(false); }); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && sb.classList.contains('open')){ set(false); btn.focus(); }});
+  function label(){ var a=sb.querySelector('.toc a.active'); if(cur) cur.textContent=a?a.textContent:''; }
+  window.addEventListener('scroll',label,{passive:true}); label();
+})();
+</script>
+</body>
+</html>
