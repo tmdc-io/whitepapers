@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DataOS Vulcan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,7 +54,8 @@ strong,b{font-weight:600}
 a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--link-line)}
 a:hover{border-bottom-color:var(--accent)}
 code,.mono{font-family:var(--mono);font-size:.88em}
-:not(pre)>code{background:var(--sunk);padding:0 4px;border-radius:3px}
+:not(pre)>code{background:var(--sunk);padding:0 4px;border-radius:3px;overflow-wrap:anywhere}
+p,li,dd,td,legend,label{overflow-wrap:break-word}
 pre{font-family:var(--mono);font-size:12.5px;line-height:1.55;background:var(--code);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin:0;overflow-x:auto;white-space:pre;color:var(--ink)}
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
