@@ -1761,15 +1761,21 @@ const hlObs=new MutationObserver(ms=>{const set=new Set();ms.forEach(mu=>{let n=
 const nav=$("#nav"),mnav=$("#mnav"),main=$("#main");const seen=new Set(store("vlab3-seen")||[]);
 MODULES.forEach((x,k)=>{const li=h(`<li><a href="#${x.id}" data-k="${k}"><span class="num">${String(k+1).padStart(2,"0")}</span><span>${x.title}</span></a></li>`);li.querySelector("a").onclick=e=>{e.preventDefault();go(k)};nav.append(li);mnav.append(h(`<option value="${k}">${k+1}. ${x.title}</option>`))});
 mnav.onchange=()=>go(+mnav.value);
-function go(k){hlObs.disconnect();main.innerHTML="";const m=MODULES[k].render(k);main.append(m);
+function go(k){hlObs.disconnect();modObs.disconnect();main.innerHTML="";const m=MODULES[k].render(k);main.append(m);
   const rm=readMore(MODULES[k].id),qz=m.querySelector(".quiz");if(rm){qz?m.insertBefore(rm,qz):m.append(rm)}
   const nx=m.querySelector(".next"),ebw=m.querySelector(".eyebrow");if(nx&&ebw){const top=h(`<div class="mod-top"></div>`);ebw.before(top);top.append(ebw,nx)}
   m.querySelectorAll(".bench").forEach(bn=>{bn.classList.add("flat");if(bn.dataset.try||bn.querySelector("button,input,select,textarea,[role=button]"))bn.classList.add("try")});
-  main.querySelectorAll("pre").forEach(hl);hlObs.observe(main,{childList:true,subtree:true,characterData:true});
+  main.querySelectorAll("pre").forEach(hl);hlObs.observe(main,{childList:true,subtree:true,characterData:true});linkMods(main);modObs.observe(main,{childList:true,subtree:true});
   seen.add(k);store("vlab3-seen",[...seen]);
   nav.querySelectorAll("li").forEach((li,j)=>{const a=li.querySelector("a");a.classList.toggle("active",j===k);a.classList.toggle("seen",seen.has(j));a.setAttribute("aria-current",j===k?"page":"false");
 });
   mnav.value=k;$("#progtext").textContent=`${seen.size} of ${MODULES.length} modules opened`;$("#progbar").style.width=(seen.size/MODULES.length*100)+"%";
   try{history.replaceState(null,"","#"+MODULES[k].id)}catch(e){}window.scrollTo(0,0)}
+function linkMods(root){const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement.closest("a,pre,code,button,select,option,label,.eyebrow,.mod-top,svg,textarea")||!/Module \d/.test(n.data)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  const ns=[];while(w.nextNode())ns.push(w.currentNode);
+  ns.forEach(n=>{const f=document.createDocumentFragment();let last=0;n.data.replace(/\bModule (\d+)/g,(mt,d,off)=>{const i=+d-1;if(!MODULES[i])return mt;f.append(n.data.slice(last,off));const a=document.createElement("a");a.href="#"+MODULES[i].id;a.className="modlink";a.dataset.mod=i;a.textContent=mt;f.append(a);last=off+mt.length;return mt});
+    if(last){f.append(n.data.slice(last));n.replaceWith(f)}})}
+main.addEventListener("click",e=>{const a=e.target.closest("a.modlink");if(!a)return;e.preventDefault();go(+a.dataset.mod)});
+const modObs=new MutationObserver(ms=>ms.forEach(r=>r.addedNodes.forEach(x=>{if(x.nodeType===1)linkMods(x);else if(x.nodeType===3&&x.parentElement)linkMods(x.parentElement)})));
 const start=MODULES.findIndex(x=>"#"+x.id===location.hash);go(start>=0?start:0);
 </script>
