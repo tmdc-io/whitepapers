@@ -3,50 +3,51 @@
 <title>DataOS Vulcan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 /* Layout: TMDC document style. A contents rail on the left, one module at a time on the right. */
-/* Palette: The Modern Data Company website. Teal for structure, coral for notes, cream for working surfaces, brand black for text. IBM Plex for type. */
+/* Palette: The Modern Data Company brand guide (v1.01). Cream background, Slate text, Dark Teal accent, Ember for problems, Sandpaper for neutral work. Arial for text, IBM Plex Mono only for code. */
 :root{
-  --paper:#FFFFFF; --bg:#FFFFFF; --surface:#FFFFFF; --panel:#EDE9E5; --sunk:#F3F0EC; --code:#F7F5F2;
-  --ink:#2B323C; --muted:#666666; --line:#DED8D1;
-  --accent:#007A7B; --accent-ink:#FFFFFF; --accent-soft:#DDF6F3; --link-line:#9FD9D4; --brand:#54DED1;
-  --amber:#C2413F; --amber-tint:#FAEFEF;
-  --ok:#1D7748; --ok-soft:#ECFDF3; --warn:#C2410C; --warn-soft:#FDEDE3; --bad:#B42318; --bad-soft:#FEF3F2;
-  --info:#007A7B; --info-soft:#DDF6F3; --idle:#8E99A5;
-  --bronze:#F4E3D3; --silver:#F3F0EC; --gold:#FBF3D9; --sem:#DDF6F3;
-  --hl-kw:#007A7B; --hl-str:#1D6B45; --hl-num:#B4531F; --hl-com:#7A808C; --hl-key:#6B3FA0; --hl-fn:#8A5A12; --hl-type:#35505B;
-  --display:"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
-  --body:"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --paper:#EDE9E5; --bg:#EDE9E5; --surface:#F5F4F0; --panel:#F5F4F0; --sunk:#E4DED8; --code:#F5F4F0;
+  --ink:#242422; --muted:#6B6966; --line:#D6CDC6;
+  --accent:#007577; --accent-ink:#FFFFFF; --accent-soft:#DDF1EE; --link-line:#9FD3CD; --brand:#54DED1;
+  --amber:#733635; --amber-tint:#FDE0DC; --ember:#FF5537;
+  --ok:#007577; --ok-soft:#DDF1EE; --warn:#242422; --warn-soft:#D6CDC6; --bad:#733635; --bad-soft:#FDE0DC;
+  --info:#007577; --info-soft:#DDF1EE; --idle:#8B857D;
+  --bronze:#D6CDC6; --silver:#F5F4F0; --gold:#DDF1EE; --sem:#C4E6E1;
+  --hl-kw:#007577; --hl-str:#35505B; --hl-num:#733635; --hl-com:#767474; --hl-key:#202F36; --hl-fn:#6B4E1E; --hl-type:#35505B;
+  --display:Arial, Helvetica, sans-serif;
+  --body:Arial, Helvetica, sans-serif;
+  --label:Arial, Helvetica, sans-serif;
   --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --r:8px;
+  --r:12px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --paper:#202F36; --bg:#202F36; --surface:#2B323C; --panel:#263840; --sunk:#2A3B43; --code:#1B282E;
-  --ink:#EDE9E5; --muted:#A9B4BC; --line:#3A4A52;
-  --accent:#54DED1; --accent-ink:#0E2A2A; --accent-soft:#1D4446; --link-line:#2E6E6C; --brand:#54DED1;
-  --amber:#FF8A88; --amber-tint:#3A2A2A;
-  --ok:#4CC38A; --ok-soft:#14321F; --warn:#F08A4B; --warn-soft:#3A2316; --bad:#F2695C; --bad-soft:#3D1814;
-  --info:#54DED1; --info-soft:#1D4446; --idle:#6B7B85;
-  --bronze:#3A2E25; --silver:#2A3B43; --gold:#3A3420; --sem:#1D4446;
-  --hl-kw:#54DED1; --hl-str:#7FD1A3; --hl-num:#F0A36B; --hl-com:#8A99A3; --hl-key:#C4A3F0; --hl-fn:#E3B866; --hl-type:#9FC6D0; color-scheme:dark}}
+  --paper:#242422; --bg:#242422; --surface:#2E2E2B; --panel:#2E2E2B; --sunk:#363632; --code:#1C1C1A;
+  --ink:#EDE9E5; --muted:#B5AFA8; --line:#45453F;
+  --accent:#54DED1; --accent-ink:#242422; --accent-soft:#1E3F3E; --link-line:#2E6E6C; --brand:#54DED1;
+  --amber:#FFA797; --amber-tint:#3D2826; --ember:#FF5537;
+  --ok:#54DED1; --ok-soft:#1E3F3E; --warn:#EDE9E5; --warn-soft:#45453F; --bad:#FFA797; --bad-soft:#3D2826;
+  --info:#54DED1; --info-soft:#1E3F3E; --idle:#8B857D;
+  --bronze:#45453F; --silver:#2E2E2B; --gold:#1E3F3E; --sem:#24504D;
+  --hl-kw:#54DED1; --hl-str:#A4D0CF; --hl-num:#FFA797; --hl-com:#9C968F; --hl-key:#D6CDC6; --hl-fn:#E3C38A; --hl-type:#A4D0CF; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --paper:#202F36; --bg:#202F36; --surface:#2B323C; --panel:#263840; --sunk:#2A3B43; --code:#1B282E;
-  --ink:#EDE9E5; --muted:#A9B4BC; --line:#3A4A52;
-  --accent:#54DED1; --accent-ink:#0E2A2A; --accent-soft:#1D4446; --link-line:#2E6E6C; --brand:#54DED1;
-  --amber:#FF8A88; --amber-tint:#3A2A2A;
-  --ok:#4CC38A; --ok-soft:#14321F; --warn:#F08A4B; --warn-soft:#3A2316; --bad:#F2695C; --bad-soft:#3D1814;
-  --info:#54DED1; --info-soft:#1D4446; --idle:#6B7B85;
-  --bronze:#3A2E25; --silver:#2A3B43; --gold:#3A3420; --sem:#1D4446;
-  --hl-kw:#54DED1; --hl-str:#7FD1A3; --hl-num:#F0A36B; --hl-com:#8A99A3; --hl-key:#C4A3F0; --hl-fn:#E3B866; --hl-type:#9FC6D0; color-scheme:dark}
+  --paper:#242422; --bg:#242422; --surface:#2E2E2B; --panel:#2E2E2B; --sunk:#363632; --code:#1C1C1A;
+  --ink:#EDE9E5; --muted:#B5AFA8; --line:#45453F;
+  --accent:#54DED1; --accent-ink:#242422; --accent-soft:#1E3F3E; --link-line:#2E6E6C; --brand:#54DED1;
+  --amber:#FFA797; --amber-tint:#3D2826; --ember:#FF5537;
+  --ok:#54DED1; --ok-soft:#1E3F3E; --warn:#EDE9E5; --warn-soft:#45453F; --bad:#FFA797; --bad-soft:#3D2826;
+  --info:#54DED1; --info-soft:#1E3F3E; --idle:#8B857D;
+  --bronze:#45453F; --silver:#2E2E2B; --gold:#1E3F3E; --sem:#24504D;
+  --hl-kw:#54DED1; --hl-str:#A4D0CF; --hl-num:#FFA797; --hl-com:#9C968F; --hl-key:#D6CDC6; --hl-fn:#E3C38A; --hl-type:#A4D0CF; color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 html{scroll-padding-top:24px}
 body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6}
 h1,h2,h3,h4{font-family:var(--display);line-height:1.2;text-wrap:balance;margin:0}
-h1{font-size:clamp(26px,4.2vw,36px);font-weight:700;letter-spacing:-.02em}
+h1{font-size:clamp(26px,4.2vw,36px);font-weight:400;letter-spacing:-.02em}
 h1 .accent{color:var(--accent)}
-h2{font-size:26px;font-weight:700;color:var(--accent)}
+h2{font-size:26px;font-weight:400;color:var(--ink)}
 h3{font-size:17px;font-weight:700}
 h4{font-size:14.5px;font-weight:600}
 p{margin:0}
@@ -77,11 +78,11 @@ button{font:inherit;color:inherit}
 .app{display:block;min-height:100vh}
 .rail{position:fixed;top:0;left:0;bottom:0;width:248px;z-index:4;overflow-y:auto;overscroll-behavior:contain;background:var(--panel);border-right:1px solid var(--line);padding:calc(28px + env(safe-area-inset-top,0px)) 12px 24px 20px;display:flex;flex-direction:column;gap:14px}
 .toc-brand{font-family:var(--display);font-weight:700;font-size:18px;color:var(--ink);padding-left:10px}
-.toc-title{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-left:10px}
+.toc-title{font-family:var(--label);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-left:10px}
 .nav{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;font-size:13.5px}
 .nav a{display:flex;gap:8px;color:var(--muted);border-bottom:none;padding:4px 10px;border-left:2px solid var(--line);line-height:1.4}
 .nav a:hover{color:var(--accent)}
-.nav a .num{font-family:var(--mono);font-size:11px;min-width:18px;padding-top:2px}
+.nav a .num{font-family:var(--label);font-size:11px;min-width:18px;padding-top:2px}
 .nav a.active{color:var(--accent);border-left-color:var(--accent);font-weight:600}
 .nav a.seen:not(.active) .num{color:var(--ok)}
 .nav .subs{display:flex;flex-direction:column}
@@ -92,8 +93,8 @@ button{font:inherit;color:inherit}
 
 main{margin-left:248px;padding-inline:clamp(16px,4vw,40px);padding-block:36px 88px;min-width:0}
 .module{max-width:980px;display:flex;flex-direction:column;gap:22px}
-.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.subtitle{font-family:var(--mono);font-size:14px;color:var(--muted);margin-top:-12px}
+.eyebrow{font-family:var(--label);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.subtitle{font-family:var(--label);font-size:14px;color:var(--muted);margin-top:-12px}
 .lede{font-size:17px;color:var(--muted);max-width:68ch}
 .prose{max-width:72ch;display:flex;flex-direction:column;gap:10px}
 .prose ul,.prose ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
@@ -101,17 +102,17 @@ main{margin-left:248px;padding-inline:clamp(16px,4vw,40px);padding-block:36px 88
 .concept>h3{font-size:20px;padding-top:14px}
 .term{border-bottom:1.5px dotted var(--accent);font-weight:600}
 .callout{border-left:3px solid var(--amber);background:var(--amber-tint);padding:9px 13px;border-radius:0 6px 6px 0;max-width:78ch;font-size:14.5px}
-.callout>b:first-child{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin-right:6px;font-weight:600}
+.callout>b:first-child{font-family:var(--label);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin-right:6px;font-weight:600}
 .callout.warn{border-color:var(--warn);background:var(--warn-soft)} .callout.warn>b:first-child{color:var(--warn)}
 .callout.bad{border-color:var(--bad);background:var(--bad-soft)} .callout.bad>b:first-child{color:var(--bad)}
 .bench{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
 .bench.flat{background:none;border:0;border-radius:0;padding:0}
 .bench.try{border-left:3px solid var(--brand);padding-left:18px}
 .bench.try>.bench-head>h3{padding-top:0}
-.bench.try>.bench-head>h3::before{content:"Try it";display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:var(--brand);color:#0E2A2A;padding:2px 8px;border-radius:999px;margin-right:10px;vertical-align:3px}
+.bench.try>.bench-head>h3::before{content:"Try it";display:inline-block;font-family:var(--label);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:var(--brand);color:#242422;padding:2px 8px;border-radius:999px;margin-right:10px;vertical-align:3px}
 .bench.flat>.bench-head>h3{font-size:20px;padding-top:14px}
 .bench-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
-.bench-head .tag{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.bench-head .tag{font-family:var(--label);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(280px,100%),1fr));gap:14px}
 .cols>*{min-width:0}
@@ -124,11 +125,20 @@ main{margin-left:248px;padding-inline:clamp(16px,4vw,40px);padding-block:36px 88
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .chip{cursor:pointer;border:1px solid var(--line);background:var(--surface);padding:3px 10px;border-radius:999px;font-size:13px}
 .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
-.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--label);font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;white-space:nowrap}
 .pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
 .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.info{background:var(--info-soft);color:var(--info)}
 .pill.idle{background:var(--sunk);color:var(--muted)}
 .next{display:flex;justify-content:flex-end}
+.next-bottom{padding-top:8px}
+/* A result that changed after the reader used a control: a light pastel lavender layer over the block,
+   above its own backgrounds, for 1.5 s, then a 0.25 s fade. Multiply keeps the text dark and readable. */
+.flash-layer{position:absolute;pointer-events:none;z-index:60;border-radius:var(--r);background:#F6F3FE;mix-blend-mode:multiply;opacity:0;transition:opacity .25s ease}
+.flash-layer.on{opacity:.9}
+.flash-layer.off{opacity:0;transition:opacity .25s ease}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .flash-layer{background:#B9A8F0;mix-blend-mode:normal}:root:not([data-theme="light"]) .flash-layer.on{opacity:.1}}
+:root[data-theme="dark"] .flash-layer{background:#B9A8F0;mix-blend-mode:normal}:root[data-theme="dark"] .flash-layer.on{opacity:.1}
+@media (prefers-reduced-motion: reduce){.flash-layer,.flash-layer.off{transition:none}}
 .mod-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .mod-top .btn{padding:4px 12px;font-size:13px}
 input[type=text],textarea,select{font:inherit;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 8px;min-width:0}
@@ -136,7 +146,7 @@ textarea{font-family:var(--mono);font-size:12.5px;width:100%;resize:vertical;lin
 label{font-size:13px;color:var(--muted)}
 .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
 table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
-th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;text-align:left;padding:8px 12px;border-bottom:1.5px solid var(--ink);color:var(--ink);font-weight:600;white-space:nowrap}
+th{font-family:var(--label);font-size:11px;letter-spacing:.08em;text-transform:uppercase;text-align:left;padding:8px 12px;border-bottom:1.5px solid var(--ink);color:var(--ink);font-weight:600;white-space:nowrap}
 td{text-align:left;padding:7px 12px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:top}
 tr:last-child td{border-bottom:0}
 tr.new td{background:var(--ok-soft)} tr.chg td{background:var(--warn-soft)} tr.gone td{background:var(--bad-soft);color:var(--muted)}
@@ -146,7 +156,7 @@ td.okcell{color:var(--ok)}
 .log{font-family:var(--mono);font-size:12px;background:var(--code);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-height:70px;max-height:280px;overflow:auto;display:flex;flex-direction:column;gap:3px}
 .log .ok{color:var(--ok)} .log .bad{color:var(--bad)} .log .warn{color:var(--warn)} .log .muted{color:var(--muted)}
 .notice{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:10px 12px;display:flex;flex-direction:column;gap:5px;font-size:14px}
-.notice .who{font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--muted)}
+.notice .who{font-family:var(--label);font-size:11px;letter-spacing:.04em;color:var(--muted)}
 .notice.bad{border-left:3px solid var(--bad)}
 .notice.ok,.notice.bad{position:relative;padding-right:42px}
 .notice.ok::after,.notice.bad::after{position:absolute;top:9px;right:10px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;line-height:1;color:var(--paper)}
@@ -158,11 +168,11 @@ td.okcell{color:var(--ok)}
 .tabs button:focus-visible{outline:2px solid var(--accent)}
 .quiz{border-left:3px solid var(--amber);padding-left:18px;display:flex;flex-direction:column;gap:12px;margin-top:6px}
 .quiz .quiz-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.qpill{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:var(--amber);color:var(--paper);padding:2px 8px;border-radius:999px}
+.qpill{display:inline-block;font-family:var(--label);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:var(--amber);color:var(--paper);padding:2px 8px;border-radius:999px}
 .qdots{display:flex;gap:6px;margin-left:auto}
 .qdots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
 .qdots i.cur{background:var(--accent)} .qdots i.ok{background:var(--ok)} .qdots i.bad{background:var(--bad)}
-.qmeta{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.qmeta{font-family:var(--label);font-size:12px;color:var(--muted)}
 .qresult{display:flex;flex-direction:column;gap:4px}
 .qbig{font-size:28px;font-weight:700;color:var(--accent)}
 .q .opt input:disabled{cursor:default}
@@ -179,7 +189,7 @@ td.okcell{color:var(--ok)}
 .q .opt.wrong{background:var(--bad-soft)} .q .opt.wrong input{accent-color:var(--bad)}
 .q .why{font-size:14px;color:var(--muted);font-style:italic}
 .readmore{display:flex;flex-direction:column;gap:8px}
-.readmore .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.readmore .lbl{font-family:var(--label);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
 .readmore ul{list-style:disc;margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:14.5px}
 .readmore li::marker{color:var(--accent)}
 .fig{display:flex;flex-direction:column;gap:6px;margin:0}
@@ -190,17 +200,17 @@ td.okcell{color:var(--ok)}
 .fbox{stroke:var(--line);stroke-width:1.5}
 .fbox.acc{stroke:var(--accent);stroke-width:1.75}
 .ft{fill:var(--ink);font-size:13px;font-weight:600}
-.fs{fill:var(--muted);font-size:10.5px;font-family:var(--mono)}
+.fs{fill:var(--muted);font-size:10.5px;font-family:var(--label)}
 .fc{fill:var(--muted);font-size:11.5px}
 .fa{stroke:var(--idle);stroke-width:1.5;fill:none}
-.fal{fill:var(--muted);font-size:10.5px;font-family:var(--mono);paint-order:stroke;stroke:var(--paper);stroke-width:4px;stroke-linejoin:round}
+.fal{fill:var(--muted);font-size:10.5px;font-family:var(--label);paint-order:stroke;stroke:var(--paper);stroke-width:4px;stroke-linejoin:round}
 .fbound{stroke:var(--amber);stroke-width:1.5;stroke-dasharray:6 4;fill:none}
-.fbl{fill:var(--amber);font-size:10px;font-family:var(--mono);letter-spacing:.1em;font-weight:600}
+.fbl{fill:var(--amber);font-size:10px;font-family:var(--label);letter-spacing:.1em;font-weight:600}
 .dag-node{cursor:pointer}
 .dag-node rect{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
 .dag-node text{fill:var(--ink);font-size:13px}
-.dag-node .k{fill:var(--muted);font-size:10px;font-family:var(--mono);letter-spacing:.04em}
-.dag-node .ord{fill:var(--accent-ink);font-size:11px;font-family:var(--mono);font-weight:600}
+.dag-node .k{fill:var(--muted);font-size:10px;font-family:var(--label);letter-spacing:.04em}
+.dag-node .ord{fill:var(--accent-ink);font-size:11px;font-family:var(--label);font-weight:600}
 .dag-node .ordbg{fill:var(--accent);stroke:none}
 .dag-node.sel rect{stroke:var(--accent);stroke-width:2.5}
 .dag-node.s-bad rect{fill:var(--bad-soft);stroke:var(--bad)}
@@ -210,7 +220,7 @@ td.okcell{color:var(--ok)}
 .dag-node.s-idle rect{fill:var(--sunk);stroke:var(--idle);stroke-dasharray:4 3}
 .dag-node.s-new rect{stroke:var(--accent);stroke-width:2.5;stroke-dasharray:6 3}
 .dag-edge{stroke:var(--idle);stroke-width:1.5;fill:none}
-.band text{font-family:var(--mono);font-size:10.5px;fill:var(--muted);letter-spacing:.1em}
+.band text{font-family:var(--label);font-size:10.5px;fill:var(--muted);letter-spacing:.1em}
 .files{display:grid;grid-template-columns:240px minmax(0,1fr);gap:14px}
 .tree{font-family:var(--mono);font-size:12.5px;display:flex;flex-direction:column}
 .tree details{margin-left:12px}
@@ -227,8 +237,8 @@ td.okcell{color:var(--ok)}
 .explain{font-size:14px;display:flex;flex-direction:column;gap:6px}
 .days{display:grid;grid-template-columns:120px repeat(10,minmax(32px,1fr));gap:4px;align-items:center;font-size:12px;min-width:520px}
 .hours{display:grid;grid-template-columns:110px repeat(25,minmax(20px,1fr));gap:2px;align-items:center;font-size:11px;min-width:720px}
-.days .lab,.hours .lab{font-family:var(--mono);font-size:11px;color:var(--muted)}
-.cell{height:28px;border-radius:4px;background:var(--sunk);border:1px solid var(--line);display:grid;place-items:center;font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.days .lab,.hours .lab{font-family:var(--label);font-size:11px;color:var(--muted)}
+.cell{height:28px;border-radius:4px;background:var(--sunk);border:1px solid var(--line);display:grid;place-items:center;font-family:var(--label);font-size:10.5px;color:var(--muted)}
 .cell.done{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
 .cell.now{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .cell.wait{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
@@ -238,12 +248,12 @@ td.okcell{color:var(--ok)}
 .lane{display:flex;flex-direction:column;gap:8px}
 .ev{display:grid;grid-template-columns:76px 1fr;gap:10px;font-size:14px;opacity:.28;transition:opacity .3s}
 .ev.on{opacity:1}
-.ev .t{font-family:var(--mono);font-size:11px;color:var(--muted);padding-top:3px}
+.ev .t{font-family:var(--label);font-size:11px;color:var(--muted);padding-top:3px}
 .ev .b{border-left:3px solid var(--line);padding-left:10px}
 .ev.bad .b{border-color:var(--bad)} .ev.ok .b{border-color:var(--ok)} .ev.warn .b{border-color:var(--warn)} .ev.info .b{border-color:var(--info)}
 .compare td{white-space:normal;font-size:14px}
 .compare td:first-child{font-weight:600;white-space:nowrap}
-.chart text{fill:var(--muted);font-size:11px;font-family:var(--mono)}
+.chart text{fill:var(--muted);font-size:11px;font-family:var(--label)}
 .chart .grid{stroke:var(--line);stroke-width:1}
 .chart .bar{fill:var(--accent)} .chart .bar.badbar{fill:var(--bad)}
 .chart .band{fill:var(--ok-soft)}
@@ -252,7 +262,7 @@ td.okcell{color:var(--ok)}
 .stage{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--surface);display:flex;flex-direction:column;gap:4px;cursor:pointer;text-align:left}
 .stage:hover{border-color:var(--accent)}
 .stage[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
-.stage .n{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.stage .n{font-family:var(--label);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
 .stage .d{font-size:13px;color:var(--muted)}
 .stages-v{display:grid;grid-template-columns:200px minmax(0,1fr);gap:0;padding:0;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
 .stage-list{display:flex;flex-direction:column;border-right:1px solid var(--line);background:var(--sunk)}
@@ -263,13 +273,13 @@ td.okcell{color:var(--ok)}
 .stage-list .stage[aria-selected="true"] b{color:var(--accent)}
 .stage-panel{padding:16px 20px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .stage-title{display:flex;flex-direction:column;gap:2px}
-.stage-title .n{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stage-title .n{font-family:var(--label);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .stage-title h4{font-size:17px;color:var(--accent)}
-.stage-panel .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.stage-panel .lbl{font-family:var(--label);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 @media (max-width:640px){.stages-v{grid-template-columns:1fr}.stage-list{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}.stage-list .stage{border-left:0;border-bottom:3px solid transparent;border-right:1px solid var(--line);white-space:nowrap}.stage-list .stage[aria-selected="true"]{border-bottom-color:var(--accent)}}
 .layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px}
 .layer{border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:5px;border:1px solid var(--line);font-size:14px}
-.layer .sch{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.layer .sch{font-family:var(--label);font-size:11px;color:var(--muted)}
 .meter{height:10px;background:var(--sunk);border-radius:5px;overflow:hidden;border:1px solid var(--line)}
 .meter i{display:block;height:100%;transition:width .3s}
 .mobile-nav{display:none}
@@ -311,13 +321,13 @@ const FILES={
 domain: retail
 description: Sales of the Bean Street coffee shops.
 users:
-  - username: maya
-    email: maya@beanstreet.example
+  - username: emily
+    email: emily@beanstreet.example
     type: data_engineer
 modelDefaults:
   dialect: postgres
   cron: '@daily'
-  owner: maya
+  owner: emily
 
 linter:
   enabled: true
@@ -353,7 +363,7 @@ afterAuthorize: "plugins.auth_ext:resolve_user_groups"`,
       columns: "[order_id, store_id]"
     - name: unique_values
       columns: "[order_id]"`,
- explain:["An <span class='term'>input</span> is a table that a different system owns. The POS system writes this table. Vulcan only reads it.","Each input has its own file in the <code>inputs/</code> folder. The file name must end in <code>.yaml</code>. Vulcan ignores <code>.yml</code> files in this folder, and it does not show a warning.","The two assertions operate before a model reads the table. If the POS system sends an order with no ID, the silver models do not run.","In input files, the key is <code>audits</code>, and each assertion is a list item with its arguments in quotes."]},
+ explain:["An <span class='term'>input</span> is a table that a different system owns. The POS system writes this table. Vulcan only reads it.","Each input has its own file in the <code>inputs/</code> folder.","The two assertions operate before a model reads the table. If the POS system sends an order with no ID, the silver models do not run.","In an input file, the checks are in the <code>audits</code> list. Each item has the <code>name</code> of the assertion and its arguments."]},
 "inputs/loyalty_members.yaml":{node:"loyalty_members",text:`- name: raw.loyalty_members
   description: Members of the loyalty app. The app team owns this table.
   columns:
@@ -409,7 +419,7 @@ SELECT
   order_date
 FROM raw.pos_orders
 WHERE order_date BETWEEN @start_ds AND @end_ds`,
- explain:["The <code>MODEL</code> block tells Vulcan how to build the table. The <code>SELECT</code> tells Vulcan what goes in the table. You write only the logic of this one step.","<code>INCREMENTAL_BY_TIME_RANGE</code> means that each run adds only the days that are missing. Module 6 shows this.","<code>signals</code> makes Vulcan wait until all stores closed the day in the POS system. Module 5 shows this.","The <span class='term'>assertions</span> are rules that every row must obey. A coffee order of more than 100 is not real. If a row breaks a rule, Vulcan does not build the gold models.","Vulcan replaces <code>@start_ds</code> and <code>@end_ds</code> with the first and the last day that it processes."]},
+ explain:["The <code>MODEL</code> block tells Vulcan how to build the table. The <code>SELECT</code> tells Vulcan what goes in the table. You write only the logic of this one step.","<code>INCREMENTAL_BY_TIME_RANGE</code> means that each run adds only the days that are missing. Module 6 shows this.","<code>signals</code> makes Vulcan wait until all stores closed the day in the POS system. Module 5 shows this.","The <span class='term'>assertions</span> are rules that every row must obey. A coffee order of more than 100 is not real. If a row breaks a rule, Vulcan does not build the gold models.","In a model, the list can have the name <code>assertions</code> or <code>audits</code>. Both names do the same thing. Use one of them in a model, not both.","Vulcan replaces <code>@start_ds</code> and <code>@end_ds</code> with the first and the last day that it processes."]},
 "models/silver/customers.sql":{node:"customers",text:`MODEL (
   name bean_internal.customers,
   kind SCD_TYPE_2_BY_TIME (
@@ -581,13 +591,24 @@ measures:
   - name: total_revenue
     type: sum
     expression: "{sales.revenue}"
+    behavior:
+      type: flow
   - name: order_count
     type: sum
     expression: "{sales.order_count}"
+    behavior:
+      type: flow
+  - name: avg_order_value
+    type: number
+    expression: "SUM({sales.revenue}) / NULLIF(SUM({sales.order_count}), 0)"
+    behavior:
+      type: ratio
+      numerator: total_revenue
+      denominator: order_count
 segments:
   - name: completed
     expression: "status = 'completed'"`,
- explain:["A <span class='term'>semantic model</span> gives business names to the gold table. Dimensions are the ways to group. Measures are the values that you add up. Segments are saved filters.","It reads only gold. Vulcan makes sure that each name points to a real column. If a column goes away, the plan stops.","<code>ai_context</code> helps AI agents use the model correctly. Module 13 shows this."]},
+ explain:["A <span class='term'>semantic model</span> gives business names to the gold table. Dimensions are the ways to group. Measures are the values that you add up. Segments are saved filters.","It reads only gold. Vulcan makes sure that each name points to a real column. If a column goes away, the plan stops.","<code>behavior</code> tells how each measure adds up over a period. Read <a class='seclink' data-mod='semantics' data-sec='how-a-measure-adds-up' href='#semantics/how-a-measure-adds-up'>How a measure adds up</a> in Module 11.","<code>ai_context</code> helps AI agents use the model correctly. Module 13 shows this."]},
 "models/metrics/weekly_revenue.yml":{node:"weekly_revenue",text:`kind: metric
 name: weekly_revenue
 measure: sales.total_revenue
@@ -663,7 +684,8 @@ function quiz(qs){const w=h(`<div class="quiz"></div>`);let cur=-1,res=[];const 
   return w}
 function nextBtn(i){const n=MODULES[i+1];if(!n)return h(`<div></div>`);const d=h(`<div class="next"><button class="btn primary">Next: ${n.title} →</button></div>`);d.querySelector("button").onclick=()=>go(i+1);return d}
 function section(eyebrow,title,lede){return h(`<section class="module"><div class="eyebrow">${eyebrow}</div><h2>${title}</h2>${lede?`<p class="lede">${lede}</p>`:""}</section>`)}
-function concept(title,html){return h(`<div class="concept">${title?`<h3>${title}</h3>`:""}${html}</div>`)}
+function slug(t){return String(t).toLowerCase().replace(/<[^>]+>/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
+function concept(title,html){return h(`<div class="concept"${title?` id="sec-${slug(title)}"`:""}>${title?`<h3>${title}</h3>`:""}${html}</div>`)}
 
 /* =================== modules =================== */
 const MODULES=[
@@ -710,12 +732,15 @@ function mIntro(i){
    <li><b>Shorter MTTR.</b> MTTR (mean time to recover) is the time until the data is correct again. Plans show the effect of a change before you apply it, and Vulcan builds again only what a correction affects.</li>
    <li><b>Consumers do not need the author.</b> The meaning, the owner and the rules come with the data.</li></ul></div>`));
   m.append(concept("How to use this lab",`<div class="prose"><p>The lab uses one fictional example from start to end: Bean Street, a chain of three coffee shops. Its POS system (point of sale: the cash registers in the shops) and its loyalty app are the two sources of a data product with daily sales, a weekly revenue metric and an API.</p>
-   <p>Do the modules in the contents list in order. Each module explains the concepts, gives you a section to try (marked <span class="pill" style="background:var(--brand);color:#0E2A2A">TRY IT</span>), and ends with a quiz and links to the documentation. Your browser remembers which modules you opened.</p></div>`));
+   <p>Do the modules in the contents list in order. Each module explains the concepts, gives you a section to try (marked <span class="pill" style="background:var(--brand);color:#242422">TRY IT</span>), and ends with a quiz and links to the documentation. Your browser remembers which modules you opened.</p></div>`));
   m.append(quiz([{q:"What is drift?",o:["A slow query","A difference between the data and the tools that describe it","A failed run"],a:1,w:"Copies of a definition in different tools stop agreeing, and nobody sees it."},
    {q:"In which step of the DataOS journey do you use Vulcan?",o:["Discover","Build","Consume"],a:1,w:"Vulcan builds the data product."},
    {q:"Where does Vulcan do the transformations?",o:["On a separate Vulcan cluster, after it copies the data","In the database that you use at this time","In your browser"],a:1,w:"Vulcan sends SQL to your engine."},
    {q:"An assertion fails on a silver table. What does the semantic layer show?",o:["The bad rows","The last correct data, because Vulcan did not build the gold table","An empty result"],a:1,w:"The semantic layer reads only gold."},
-   {q:"What does MTTD measure?",o:["The time to build a table","The time until a person knows about a data problem","The time to repair a table"],a:1,w:"MTTD is the time to detect."}]));
+   {q:"What does MTTD measure?",o:["The time to build a table","The time until a person knows about a data problem","The time to repair a table"],a:1,w:"MTTD is the time to detect."},
+   {"q": "What does MTTR measure?", "o": ["The time to build the first table", "The time until the data is correct again", "The time between two runs"], "a": 1, "w": "MTTR is the mean time to recover: from the moment that a person knows about a problem until the data is correct again."},
+   {"q": "Which layer can consumers read?", "o": ["Bronze", "Silver", "Gold"], "a": 2, "w": "Consumers get access to the gold schema only. Bronze and silver are internal."},
+   {"q": "What is a data product?", "o": ["One table in the warehouse", "A managed unit with an owner, a contract, quality and access rules, and named consumers", "A dashboard"], "a": 1, "w": "A data product keeps the data, its meaning, its rules and its owner together."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 3 Example project ---------- */
@@ -736,9 +761,12 @@ function mProject(i){
     drawDag(b.querySelector("#dag"),{sel:F.node,onPick:id=>open(DAG.nodes.find(n=>n.id===id).file)})}
   open("models/silver/orders.sql");
   m.append(quiz([{q:"In which schema is the table that consumers use?",o:["raw","bean_internal","bean_street"],a:2,w:"bean_street holds gold."},
-   {q:"You add a third input in inputs/payments.yml. What occurs?",o:["Vulcan loads it","Vulcan ignores the file and shows no warning","Vulcan shows an error"],a:1,w:"Vulcan reads only .yaml files from the inputs folder."},
+   {q:"Who writes the rows of an input such as pos_orders?",o:["Vulcan","A different system, here the POS system","The semantic layer"],a:1,w:"An input is a table that a different system owns. Vulcan only reads it and examines it with assertions."},
    {q:"Where do you write a rule that returns bad rows with your own SQL?",o:["audits/","seeds/","inputs/"],a:0,w:"A standalone assertion is a query in the audits folder."},
-   {q:"Which file makes the orders model wait until all stores closed the day?",o:["signals/__init__.py","policies/daily_sales_access.yml","tests/test_daily_sales.yaml"],a:0,w:"The signal pos_day_closed is in signals/__init__.py, and orders.sql attaches it."}]));
+   {q:"Which file makes the orders model wait until all stores closed the day?",o:["signals/__init__.py","policies/daily_sales_access.yml","tests/test_daily_sales.yaml"],a:0,w:"The signal pos_day_closed is in signals/__init__.py, and orders.sql attaches it."},
+   {"q": "Which file holds the settings for the full project, such as the dialect and the users?", "o": ["config.yaml", "seeds/stores.csv", "signals/__init__.py"], "a": 0, "w": "config.yaml holds the settings that all models share."},
+   {"q": "What is stores.csv?", "o": ["An input that the POS system writes", "A seed file that you keep in Git with the models", "A unit test"], "a": 1, "w": "A seed is a small CSV file in the project. Vulcan loads it into a table."},
+   {"q": "In which folder are the unit tests?", "o": ["tests/", "audits/", "policies/"], "a": 0, "w": "Unit tests are YAML files in tests/."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 4 The graph ---------- */
@@ -794,7 +822,9 @@ function mGraph(i){
    {q:"You change bean_internal.customers. Which models run after it?",o:["All models","Only the models that read it, directly or through other models","Only customers"],a:1,w:"Vulcan follows the graph from the changed model."},
    {q:"What is a parent of daily_sales?",o:["bean_internal.orders","weekly_revenue","sales"],a:0,w:"daily_sales reads orders, so orders is a parent."},
    {q:"A model reads bean_internal.payments, but no model or input has that name. What does the plan do?",o:["It makes an empty table","It shows that Vulcan does not know the table","It ignores the model"],a:1,w:"Each table that a model reads must be an input or a model."},
-   {q:"Model A reads model B, and model B reads model A. What occurs?",o:["Vulcan builds both two times","Vulcan shows an error, because a graph cannot have a loop","Vulcan builds A first"],a:1,w:"A loop has no first step, so Vulcan cannot find an order."}]));
+   {q:"Model A reads model B, and model B reads model A. What occurs?",o:["Vulcan builds both two times","Vulcan shows an error, because a graph cannot have a loop","Vulcan builds A first"],a:1,w:"A loop has no first step, so Vulcan cannot find an order."},
+   {"q": "How does Vulcan find the parents of a SQL model?", "o": ["From a list that you write in config.yaml", "From the tables in the FROM and JOIN clauses", "From the file name"], "a": 1, "w": "Vulcan reads the SQL of each model and finds the tables that it reads."},
+   {"q": "In which order does Vulcan build orders and daily_sales?", "o": ["daily_sales first", "orders first, because it is a parent of daily_sales", "Both at the same time"], "a": 1, "w": "Vulcan builds parents before children."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 5 Engine ---------- */
@@ -868,7 +898,10 @@ function mEngine(i){
    {q:"Your team moves from Postgres to Snowflake. What occurs to your models?",o:["You write them again in Snowflake SQL","Vulcan translates them to the Snowflake dialect","They stop"],a:1,w:"You keep one dialect in your files."},
    {q:"At 10:30, which interval does an hourly model get?",o:["10:00 to 11:00","9:00 to 10:00","All of today"],a:1,w:"Vulcan builds only completed intervals."},
    {q:"A daily model reads an hourly model. Is this safe?",o:["Yes, the daily child builds after the parent built all hours of the day","No, data goes missing","Only on Snowflake"],a:0,w:"A child that is less frequent than its parent is safe."},
-   {q:"An hourly model reads a daily model. What occurs?",o:["Nothing special","The hourly child reads the day before the parent built it, and those hours do not get the data later","Vulcan changes the cron"],a:1,w:"Do not give a model a cron that is more frequent than its parents."}]));
+   {q:"An hourly model reads a daily model. What occurs?",o:["Nothing special","The hourly child reads the day before the parent built it, and those hours do not get the data later","Vulcan changes the cron"],a:1,w:"Do not give a model a cron that is more frequent than its parents."},
+   {"q": "What is an interval?", "o": ["One time period of data, for example one day of orders", "A Vulcan server", "A SQL dialect"], "a": 0, "w": "Vulcan records each interval that it built and builds only the missing ones."},
+   {"q": "At 10:30 on 2026-10-06, which day does a daily model get?", "o": ["2026-10-06", "2026-10-05", "Both days"], "a": 1, "w": "Vulcan builds an interval only when it is complete. A daily model gets yesterday, not today."},
+   {"q": "What does the cron of a model set?", "o": ["How frequently the model is due, and the size of each interval", "The dialect of the model", "The owner of the model"], "a": 0, "w": "For example, @daily makes one interval for each day."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 6 Signals ---------- */
@@ -920,7 +953,9 @@ function mSignals(i){
    {q:"Where do you write a signal?",o:["In a Python file in signals/","In config.yaml","In the SELECT of the model"],a:0,w:"Signals are Python functions with @signal()."},
    {q:"A model has two signals. When is an interval ready?",o:["When one signal gives it back","When all signals give it back","Always"],a:1,w:"All signals must agree."},
    {q:"The orders model waits for 2026-10-09. What does daily_sales do?",o:["It builds 2026-10-09 with no orders","It also waits for that day","It shows an error"],a:1,w:"Children wait for the intervals that their parents did not build."},
-   {q:"Does Vulcan send a message when a signal makes a day wait?",o:["Yes, an alert to the owner","No, so add a freshness check or watch the run messages","Only on Slack"],a:1,w:"The run only reports that no models were ready to run."}]));
+   {q:"Does Vulcan send a message when a signal makes a day wait?",o:["Yes, an alert to the owner","No, so add a freshness check or watch the run messages","Only on Slack"],a:1,w:"The run only reports that no models were ready to run."},
+   {"q": "What does the signal pos_day_closed examine?", "o": ["That all stores closed the day in the POS system", "That the warehouse is online", "That the owner approved the run"], "a": 0, "w": "The orders model waits until the POS system has all orders of the day."},
+   {"q": "Why use a signal and not a later cron?", "o": ["A signal waits until the source is ready, at any time", "A signal makes the run faster", "A signal changes the dialect"], "a": 0, "w": "A fixed time cannot know when the source is ready. A signal examines the source itself."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 7 Model kinds ---------- */
@@ -979,7 +1014,10 @@ function mKinds(i){
   m.append(quiz([{q:"Orders arrive each day and old orders do not change. Which kind is correct?",o:["FULL","INCREMENTAL_BY_TIME_RANGE","SCD_TYPE_2_BY_TIME"],a:1,w:"Each run builds only the missing days."},
    {q:"Finance asks which loyalty tier a customer had on 1 September. Which kind keeps that answer?",o:["INCREMENTAL_BY_UNIQUE_KEY","VIEW","SCD_TYPE_2_BY_TIME"],a:2,w:"SCD type 2 keeps each old version with valid_from and valid_to."},
    {q:"Vulcan builds the same day of an INCREMENTAL_BY_TIME_RANGE model two times. What occurs?",o:["The day has duplicate rows","Vulcan replaces the rows of that day, so there are no duplicates","The second build fails"],a:1,w:"Vulcan replaces the rows of the day that it builds."},
-   {q:"Which kind stores no table?",o:["SEED","VIEW","FULL"],a:1,w:"A view is calculated at the time of each query."}]));
+   {q:"Which kind stores no table?",o:["SEED","VIEW","FULL"],a:1,w:"A view is calculated at the time of each query."},
+   {"q": "Which kind builds the full table again in each run?", "o": ["FULL", "INCREMENTAL_BY_TIME_RANGE", "VIEW"], "a": 0, "w": "A FULL model replaces all its rows in each run. Use it for small tables."},
+   {"q": "Which kind loads a small CSV file that you keep in the project?", "o": ["SEED", "VIEW", "FULL"], "a": 0, "w": "stores is a SEED model that loads seeds/stores.csv."},
+   {"q": "Each order has a unique key, and its status can change later. Which kind updates the changed rows?", "o": ["INCREMENTAL_BY_UNIQUE_KEY", "SEED", "VIEW"], "a": 0, "w": "This kind updates the rows that have a key that it already knows, and adds the new ones."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- Python models ---------- */
@@ -1091,14 +1129,49 @@ def execute(
         "SELECT DATEADD(day, SEQ4(), CURRENT_DATE()) AS forecast_date "
         "FROM TABLE(GENERATOR(ROWCOUNT => 7))"
     )
-    return average.cross_join(days).select("STORE_ID", "FORECAST_DATE", "REVENUE")`};
+    return average.cross_join(days).select("STORE_ID", "FORECAST_DATE", "REVENUE")`,
+bigframe:`import typing as t
+from datetime import datetime
+
+import bigframes.pandas as bpd
+from vulcan import ExecutionContext, model
+
+
+@model(
+    "bean_street.revenue_forecast",
+    cron="@daily",
+    columns={
+        "store_id": "string",
+        "forecast_date": "date",
+        "revenue": "numeric",
+    },
+)
+def execute(
+    context: ExecutionContext,
+    start: datetime,
+    end: datetime,
+    execution_time: datetime,
+    **kwargs: t.Any,
+) -> bpd.DataFrame:
+    sales_table = context.resolve_table("bean_street.daily_sales")
+    # The query runs in BigQuery. No rows come to the Vulcan process.
+    sales = context.bigframe.read_gbq(
+        f"SELECT store_id, order_date, revenue FROM {sales_table} "
+        f"WHERE order_date >= DATE_SUB((SELECT MAX(order_date) FROM {sales_table}), INTERVAL 6 DAY)"
+    )
+    average = sales.groupby("store_id", as_index=False)["revenue"].mean()
+    days = context.bigframe.read_gbq(
+        "SELECT day AS forecast_date "
+        "FROM UNNEST(GENERATE_DATE_ARRAY(CURRENT_DATE(), DATE_ADD(CURRENT_DATE(), INTERVAL 6 DAY))) AS day"
+    )
+    return average.merge(days, how="cross")[["store_id", "forecast_date", "revenue"]]`};
 const PY_ENG={
  postgres:{name:"Postgres",native:null,write:"Vulcan sends the rows as INSERT statements with 400 rows each.",batch:400},
  trino:{name:"Trino",native:null,write:"Vulcan sends the rows as INSERT statements with 10,000 rows each.",batch:10000},
  spark:{name:"Spark",native:"pyspark",nativeName:"PySpark",avail:true,write:"Vulcan makes a Spark DataFrame from the pandas data and writes it through a temporary view.",batch:0},
- databricks:{name:"Databricks",native:"pyspark",nativeName:"PySpark",avail:false,why:"The Databricks image of the DataOS runner does not include databricks-connect, so context.spark is not available. Add databricks-connect and all its dependencies as wheel files to use PySpark.",write:"Vulcan sends the rows as INSERT statements with 10,000 rows each.",batch:10000},
+ databricks:{name:"Databricks",native:"pyspark",nativeName:"PySpark",avail:true,write:"Vulcan sends the rows as INSERT statements with 10,000 rows each.",batch:10000},
  snowflake:{name:"Snowflake",native:"snowpark",nativeName:"Snowpark",avail:true,write:"Vulcan loads the rows into a temporary table in parts of 10,000 rows, then copies them into the model.",batch:10000},
- bigquery:{name:"BigQuery",native:null,nativeName:"BigQuery DataFrames",avail:false,why:"BigQuery DataFrames (context.bigframe) is not in the BigQuery image of the DataOS runner. Add the bigframes package as wheel files to use it.",write:"Vulcan loads the rows into a temporary table with a load job, then copies them into the model.",batch:0}};
+ bigquery:{name:"BigQuery",native:"bigframe",nativeName:"BigQuery DataFrames",avail:true,write:"Vulcan loads the rows into a temporary table with a load job, then copies them into the model.",batch:0}};
 function mPython(i){
   const m=section(eb(i),"Write a model in Python when SQL is not sufficient.");
   m.append(concept("When to use Python",`<div class="prose"><p>Most models are SQL. SQL runs in the engine, it is fast, and Vulcan can compare old and new SQL to find the category of a change. Use a <span class="term">Python model</span> only when SQL cannot do the work. Examples are a call to an external API, a statistical or forecast library, or a machine learning model.</p>
@@ -1118,11 +1191,11 @@ function mPython(i){
     <rect class="fbox" x="590" y="26" width="180" height="54" rx="8" fill="var(--gold)"/><text class="ft" x="680" y="49" text-anchor="middle">Warehouse</text><text class="fs" x="680" y="67" text-anchor="middle">revenue_forecast</text>
     <path class="fa" d="M212,53 L297,53" marker-end="url(#ar)"/><text class="fal" x="255" y="45" text-anchor="middle">rows</text>
     <path class="fa" d="M502,53 L587,53" marker-end="url(#ar)"/><text class="fal" x="545" y="45" text-anchor="middle">rows</text>
-    <text class="fs" x="10" y="126">PYSPARK OR SNOWPARK</text>
-    <rect class="fbox" x="10" y="136" width="760" height="70" rx="8" fill="var(--gold)"/><text class="ft" x="390" y="160" text-anchor="middle">Warehouse: Spark or Snowflake does the work</text><text class="fs" x="390" y="180" text-anchor="middle">daily_sales  →  calculation  →  revenue_forecast</text>
+    <text class="fs" x="10" y="126">ENGINE DATAFRAME: PYSPARK, SNOWPARK OR BIGQUERY DATAFRAMES</text>
+    <rect class="fbox" x="10" y="136" width="760" height="70" rx="8" fill="var(--gold)"/><text class="ft" x="390" y="160" text-anchor="middle">Warehouse: the engine does the work</text><text class="fs" x="390" y="180" text-anchor="middle">daily_sales  →  calculation  →  revenue_forecast</text>
     <rect class="fbox acc" x="590" y="146" width="170" height="20" rx="4" fill="var(--accent-soft)"/><text class="fs" x="675" y="160" text-anchor="middle">runner sends instructions</text></svg></div>
    <div class="prose"><ul><li>With <b>pandas</b>, all rows come to the memory of the runner. After the function, Vulcan writes the rows back to the engine. This works on all engines, but it is slow for large tables and the runner can run out of memory.</li>
-   <li>With an <b>engine DataFrame</b>, the runner only sends instructions. The engine reads, calculates and writes. No rows travel. Spark gives <code>context.spark</code> (PySpark), and Snowflake gives <code>context.snowpark</code> (Snowpark).</li></ul></div>`));
+   <li>With an <b>engine DataFrame</b>, the runner only sends instructions. The engine reads, calculates and writes. No rows travel. Spark and Databricks give <code>context.spark</code> (PySpark), Snowflake gives <code>context.snowpark</code> (Snowpark), and BigQuery gives <code>context.bigframe</code> (BigQuery DataFrames).</li></ul></div>`));
   const b=h(`<div class="bench flat"><div class="bench-head"><h3>Select an engine and a size</h3><span class="tag">see where the data goes</span></div>
    <div class="row" id="pe"></div><div class="row" id="pdf"></div>
    <div class="row"><label for="prows">Rows in daily_sales</label><input type="range" id="prows" min="0" max="4" step="1" value="1" style="flex:1;max-width:320px"><b id="prowsl" class="mono"></b></div>
@@ -1139,8 +1212,6 @@ function mPython(i){
     else if(native){html=`<div class="notice ok"><span class="who">${E.nativeName}</span><b>The engine does all the work.</b><p>Rows that travel to the runner: 0. Memory in the runner: small, for any size of table. The runner sends instructions, and ${E.name} reads, calculates and writes ${rows.toLocaleString("en-US")} rows.</p></div>`}
     else{const batches=E.batch?Math.ceil(rows/E.batch):1;const risky=mb>2000;
       html=`<div class="notice ${risky?"bad":rows>=1e6?"warn":"ok"}"><span class="who">pandas on ${E.name}</span><b>${rows.toLocaleString("en-US")} rows travel to the runner and back.</b><p>Memory in the runner: approximately ${mb>=1000?(mb/1000).toFixed(1)+" GB":Math.max(mb,1)+" MB"}. ${E.write}${E.batch&&(eng==="postgres"||eng==="trino"||eng==="databricks")?` That is ${batches.toLocaleString("en-US")} statements.`:""}</p>${risky?"<p>At this size, the runner can run out of memory. Use an engine DataFrame, or use <code>yield</code> to give the data in parts.</p>":""}</div>`}
-    if(eng==="databricks"&&kind==="pandas")html+=`<div class="notice idle"><p>${PY_ENG.databricks.why}</p></div>`;
-    if(eng==="bigquery"&&kind==="pandas")html+=`<div class="notice idle"><p>${PY_ENG.bigquery.why}</p></div>`;
     b.querySelector("#pres").innerHTML=`<h4>What occurs</h4>`+html;
     b.querySelector("#pcode").textContent=native&&E.avail?PY_CODE[E.native]:PY_CODE.pandas}
   b.querySelector("#prows").oninput=paint;paint();
@@ -1181,8 +1252,8 @@ sales = context.fetchdf(f"SELECT * FROM {sales_table}")</textarea>
    <li><b>Each change is breaking.</b> Vulcan cannot compare two versions of Python code. By default, each edit that changes the code is a breaking change. Vulcan builds the model and all its children again.</li>
    <li><b>Some kinds cannot be Python.</b> VIEW, SEED, EMBEDDED, MANAGED, SEMANTIC and METRIC models must be SQL or YAML. FULL, the incremental kinds and the SCD type 2 kinds can be Python.</li>
    <li><b>Large data needs parts.</b> With pandas, give the data in parts with <code>yield</code>. For an INCREMENTAL_BY_TIME_RANGE model on some engines, Vulcan joins the parts in memory again before it writes, so use an engine DataFrame for large data.</li>
-   <li><b>Libraries must be in the runner.</b> pandas is always available. PySpark is in the Spark image and Snowpark is in the Snowflake image. For other libraries, see the next section.</li></ul></div>`));
-  m.append(concept("Add Python libraries",`<div class="prose"><p>When the DataOS runner starts, it installs the libraries that you put in the project. It cannot download from the internet, so you give each library as a <span class="term">wheel</span> file (<code>.whl</code>):</p>
+   <li><b>Libraries are ready.</b> pandas, PySpark, Snowpark and BigQuery DataFrames are already in the runner. For other libraries, see the next section.</li></ul></div>`));
+  m.append(concept("Add Python libraries",`<div class="prose"><p>To use another library, for example a forecast library such as prophet, add it to the project as <span class="term">wheel</span> files (<code>.whl</code>). The runner installs them when it starts:</p>
    <ol><li>Build or download the wheel files of the library and of all the libraries that it needs.</li><li>Put the files in <code>dependencies/python/</code> in the project.</li><li>Deploy the project. The runner installs the files before it runs Vulcan.</li></ol></div><pre>bean-street/
   dependencies/
     python/
@@ -1191,12 +1262,15 @@ sales = context.fetchdf(f"SELECT * FROM {sales_table}")</textarea>
   models/
     gold/
       revenue_forecast.py</pre>
-   <div class="callout warn"><b>Include all dependencies.</b> The runner does not download missing libraries, and a failed installation does not stop the start. The model then fails later when it imports the library. Make sure that the wheel files are for Linux and for the Python version of the runner.</div>`));
+   <div class="callout warn"><b>Include all dependencies.</b> Add the wheel files of the library and of each library that it needs. Use wheel files for Linux and for the Python version of the runner.</div>`));
   m.append(quiz([{q:"Where does the function of a Python model run?",o:["In the warehouse","In the Vulcan runner","In the browser"],a:1,w:"The function runs in the runner. Only engine DataFrames keep the work in the warehouse."},
    {q:"A pandas Python model reads 50 million rows on Postgres. What occurs?",o:["Postgres does all the work","All rows travel to the runner memory, and Vulcan writes them back in many INSERT statements","Vulcan refuses the model"],a:1,w:"With pandas, the rows come to the runner. On Postgres, Vulcan writes 400 rows in each statement."},
    {q:"Why must a Python model declare columns?",o:["For documentation only","Because Vulcan makes the table before the code runs","Because pandas needs it"],a:1,w:"Vulcan needs the schema before it runs the function."},
    {q:"The code calls context.resolve_table(name), where name is a variable. What occurs?",o:["Vulcan finds the table","Vulcan shows an error when it loads the project","Vulcan ignores the call"],a:1,w:"The table name must be fixed when Vulcan reads the code, or you must use depends_on."},
-   {q:"You change one line in a Python model. Which category does the change get by default?",o:["NON_BREAKING","METADATA","BREAKING"],a:2,w:"Vulcan cannot compare Python code, so each edit is breaking."}]));
+   {q:"You change one line in a Python model. Which category does the change get by default?",o:["NON_BREAKING","METADATA","BREAKING"],a:2,w:"Vulcan cannot compare Python code, so each edit is breaking."},
+   {"q": "On Databricks, which DataFrame keeps the work in the engine?", "o": ["pandas", "PySpark, through context.spark", "A CSV file"], "a": 1, "w": "With an engine DataFrame, the runner only sends instructions, and no rows travel."},
+   {"q": "How do you add a library such as prophet?", "o": ["Put its wheel files in dependencies/python/", "Write pip install in the model", "Copy the library into models/"], "a": 0, "w": "The runner installs the wheel files when it starts."},
+   {"q": "A Python model has no rows to give back. What do you write?", "o": ["return an empty DataFrame", "yield from ()", "return None"], "a": 1, "w": "An empty DataFrame causes an error. yield from () gives back no rows correctly."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 8 Changes ---------- */
@@ -1263,7 +1337,7 @@ function mChanges(i){
     const work=cat==="METADATA"?"Vulcan builds nothing. It only records the new description.":fo?"Vulcan builds nothing again. The new logic applies from the next day that Vulcan builds. The old days keep the old logic.":rebuild.map(r=>r==="orders"?`<b>orders</b>: build ${days.length} days again (${days[0]} to ${days[days.length-1]})`:`<b>${r}</b>: build the full table again`).join("<br>");
     out.innerHTML=`${guard}<div class="row"><b>Category for ${model}:</b> <span class="pill ${pill}">${cat}</span></div><p>${why}</p><div id="pd"></div>
      <div class="cols"><div><h4>Column changes, and the models that read them</h4><div class="tbl-wrap"><table><thead><tr><th>change</th><th>what</th><th>read by</th></tr></thead><tbody>${rd.join("")}</tbody></table></div></div>
-     <div class="stack"><h4>Work that Vulcan will do</h4><p>${work}</p><div class="notice info"><span class="who">Slack · plan_change</span><b>Plan applied by maya</b><span class="mini">directly modified: ${model} · downstream affected: ${down.length} · breaking: ${cat==="BREAKING"?"yes":"no"} · backfill: ${rebuild.length&&!fo?"yes":"no"}</span></div></div></div>`;
+     <div class="stack"><h4>Work that Vulcan will do</h4><p>${work}</p><div class="notice info"><span class="who">Slack · plan_change</span><b>Plan applied by Emily</b><span class="mini">directly modified: ${model} · downstream affected: ${down.length} · breaking: ${cat==="BREAKING"?"yes":"no"} · backfill: ${rebuild.length&&!fo?"yes":"no"}</span></div></div></div>`;
     drawDag(out.querySelector("#pd"),{states,labels})};
   load();
   m.append(h(`<div class="callout"><b>What this gives you for MTTR.</b> Without a plan, a person guesses what a change touches, and often finds the problem the next morning. With a plan, the effect shows before the build, and the build includes only what the change affects.</div>`));
@@ -1271,7 +1345,10 @@ function mChanges(i){
    {q:"You change amount to amount * 1.23 in orders. What occurs to daily_sales?",o:["Vulcan builds it again, because its input data changed","Nothing","Vulcan removes it"],a:0,w:"The change is breaking, so daily_sales is indirectly breaking."},
    {q:"You remove revenue from daily_sales. Why does the plan stop?",o:["Because the measure total_revenue reads that column","Because FULL models cannot change","Because of a syntax error"],a:0,w:"Vulcan makes sure that semantic terms point to real columns before it applies the plan."},
    {q:"You change only the description of a model. Which category does Vulcan give?",o:["BREAKING","NON_BREAKING","METADATA"],a:2,w:"A metadata change builds nothing."},
-   {q:"The POS system sent wrong data for two days. The logic is correct. What do you do?",o:["Make a breaking change","Restate those two days","Remove the model"],a:1,w:"A restatement builds only the days that you select, and their children."}]));
+   {q:"The POS system sent wrong data for two days. The logic is correct. What do you do?",o:["Make a breaking change","Restate those two days","Remove the model"],a:1,w:"A restatement builds only the days that you select, and their children."},
+   {"q": "You make a breaking change forward-only. What occurs to the old days?", "o": ["Vulcan builds them again", "They stay as they are, and only new data uses the change", "Vulcan deletes them"], "a": 1, "w": "Forward-only applies the change only to new intervals."},
+   {"q": "What do you read before you apply a change?", "o": ["The plan", "The run log of yesterday", "The seed file"], "a": 0, "w": "The plan lists each model that the change affects, and its category."},
+   {"q": "Which change is breaking?", "o": ["A new column at the end of the SELECT", "A new filter in the WHERE clause", "A new description"], "a": 1, "w": "A new filter changes the rows that the children read, so they must be built again."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 9 Quality ---------- */
@@ -1389,7 +1466,10 @@ function mQuality(i){
    {q:"Why must the test of daily_sales give rows for customers and stores?",o:["Because daily_sales reads those tables","Because all tests need three tables","It is not necessary"],a:0,w:"A test gives input rows for each table that the model reads."},
    {q:"The POS system sends an order with no order_id. Where does Vulcan stop it?",o:["At the input pos_orders, before silver runs","In gold","Vulcan does not stop it"],a:0,w:"The not_null assertion on the input fails, so the children do not run."},
    {q:"An assertion on orders fails, and it is blocking. Where are the bad rows?",o:["In all tables after orders","Only in the silver table orders","In no table"],a:1,w:"Vulcan writes orders, then the assertion fails, and Vulcan skips gold."},
-   {q:"The number of orders decreases by 75% on one day. Which check finds it?",o:["not_null","A data quality check for anomalies on row_count","The linter"],a:1,w:"No single row is wrong. Only the pattern is wrong."}]));
+   {q:"The number of orders decreases by 75% on one day. Which check finds it?",o:["not_null","A data quality check for anomalies on row_count","The linter"],a:1,w:"No single row is wrong. Only the pattern is wrong."},
+   {"q": "What does a unit test use as input?", "o": ["Rows from the warehouse", "Fixed rows that you write in the test", "The rows of yesterday"], "a": 1, "w": "A unit test does not use warehouse data. It proves the logic with rows that you know."},
+   {"q": "Does a data quality check stop the run?", "o": ["Yes, always", "No. It records pass, warn or fail, and sends a message", "Only on gold tables"], "a": 1, "w": "Assertions stop the run. Data quality checks report."},
+   {"q": "Where can you write an assertion?", "o": ["In the MODEL block, in an input file, or as a standalone file in audits/", "Only in config.yaml", "Only in tests/"], "a": 0, "w": "All three places run the same kind of rule on real data."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 10 Notifications ---------- */
@@ -1407,7 +1487,7 @@ function mNotify(i){
     <rect class="fbox" x="250" y="20" width="200" height="54" rx="8" fill="var(--surface)"/><text class="ft" x="350" y="43" text-anchor="middle">Project targets</text><text class="fs" x="350" y="61" text-anchor="middle">notificationTargets</text>
     <rect class="fbox" x="250" y="122" width="200" height="54" rx="8" fill="var(--surface)"/><text class="ft" x="350" y="145" text-anchor="middle">Targets of the owner</text><text class="fs" x="350" y="163" text-anchor="middle">only for audit_failure</text>
     <rect class="fbox" x="560" y="20" width="200" height="54" rx="8" fill="var(--ok-soft)"/><text class="ft" x="660" y="43" text-anchor="middle">#data-alerts</text><text class="fs" x="660" y="61" text-anchor="middle">if the event is in notifyOn</text>
-    <rect class="fbox" x="560" y="122" width="200" height="54" rx="8" fill="var(--ok-soft)"/><text class="ft" x="660" y="145" text-anchor="middle">E-mail to maya</text><text class="fs" x="660" y="163" text-anchor="middle">if the event is in notifyOn</text>
+    <rect class="fbox" x="560" y="122" width="200" height="54" rx="8" fill="var(--ok-soft)"/><text class="ft" x="660" y="145" text-anchor="middle">E-mail to Emily</text><text class="fs" x="660" y="163" text-anchor="middle">if the event is in notifyOn</text>
     <path class="fa" d="M162,90 C200,90 210,47 247,47" marker-end="url(#ar)"/><path class="fa" d="M162,104 C200,104 210,149 247,149" marker-end="url(#ar)"/>
     <path class="fa" d="M452,47 L557,47" marker-end="url(#ar)"/><path class="fa" d="M452,149 L557,149" marker-end="url(#ar)"/></svg></div>`));
   m.append(concept("The configuration",`<pre>notificationTargets:
@@ -1416,8 +1496,8 @@ function mNotify(i){
     notifyOn: [run_failure, audit_failure, plan_change, dq_end]
 
 users:
-  - username: maya
-    email: maya@beanstreet.example
+  - username: emily
+    email: emily@beanstreet.example
     type: data_engineer
     notificationTargets:
       - type: smtp
@@ -1426,30 +1506,31 @@ users:
         password: "{{ env_var('SMTP_PASSWORD') }}"
         sender: vulcan@beanstreet.example
         notifyOn: [audit_failure]</pre>
-   <div class="prose"><p>The e-mail target of maya has no <code>recipients</code>. In that case, Vulcan sends the e-mail to the <code>email</code> of the user. Each model has an <code>owner</code>. If a model has no owner, Vulcan uses <code>modelDefaults.owner</code>, or the first user in the list.</p></div>
-   <div class="callout bad"><b>A target with a missing field sends nothing.</b> If a Slack or Teams target has no <code>url</code>, or an e-mail target has no host, user, password or sender, Vulcan skips it. It does not show a warning. Do a test of each target after you add it.</div>`));
+   <div class="prose"><p>The e-mail target of Emily has no <code>recipients</code>. In that case, Vulcan sends the e-mail to the <code>email</code> of the user. Each model has an <code>owner</code>. If a model has no owner, Vulcan uses <code>modelDefaults.owner</code>, or the first user in the list.</p></div>`));
   const b=h(`<div class="bench flat"><div class="bench-head"><h3>Route the messages</h3><span class="tag">set the targets, then make events occur</span></div>
-   <div class="cols"><div class="stack"><h4>Slack channel #data-alerts</h4><label class="row" style="gap:6px"><input type="checkbox" id="surl" checked> The target has a url</label><div class="row" id="sev"></div>
-    <h4>Teams channel Bean Ops</h4><label class="row" style="gap:6px"><input type="checkbox" id="turl"> The target has a url</label><div class="row" id="tev"></div>
-    <h4>E-mail of maya (owner of orders)</h4><div class="row" id="mev"></div></div>
+   <div class="cols"><div class="stack"><h4>Slack channel #data-alerts</h4><div class="row" id="sev"></div>
+    <h4>Teams channel Bean Ops</h4><div class="row" id="tev"></div>
+    <h4>E-mail of Emily (owner of orders)</h4><div class="row" id="mev"></div></div>
     <div class="stack"><h4>Make an event occur</h4><div class="row" id="fire"></div><div id="inbox" class="stack"></div><h4>The configuration that you made</h4><pre id="ncfg"></pre></div></div></div>`);m.append(b);
-  const cfg={slack:new Set(["run_failure","audit_failure","plan_change","dq_end"]),teams:new Set(["run_end"]),maya:new Set(["audit_failure"])};
+  const cfg={slack:new Set(["run_failure","audit_failure","plan_change","dq_end"]),teams:new Set(["run_end"]),emily:new Set(["audit_failure"])};
   const chips=(key,el)=>{EVENTS.forEach(([e])=>{const c=h(`<button class="chip" aria-pressed="${cfg[key].has(e)}">${e}</button>`);c.onclick=()=>{cfg[key].has(e)?cfg[key].delete(e):cfg[key].add(e);c.setAttribute("aria-pressed",cfg[key].has(e));yaml()};el.append(c)})};
-  chips("slack",b.querySelector("#sev"));chips("teams",b.querySelector("#tev"));chips("maya",b.querySelector("#mev"));
-  b.querySelector("#surl").onchange=yaml;b.querySelector("#turl").onchange=yaml;
-  function yaml(){const su=b.querySelector("#surl").checked,tu=b.querySelector("#turl").checked;const L=s=>"["+[...s].join(", ")+"]";
-    b.querySelector("#ncfg").textContent=`notificationTargets:\n  - type: slack_webhook\n${su?"    url: \"{{ env_var('SLACK_WEBHOOK_URL') }}\"\n":""}    notifyOn: ${L(cfg.slack)}\n  - type: teams_webhook\n${tu?"    url: \"{{ env_var('TEAMS_WEBHOOK_URL') }}\"\n":""}    notifyOn: ${L(cfg.teams)}\n\nusers:\n  - username: maya\n    email: maya@beanstreet.example\n    notificationTargets:\n      - type: smtp\n        ...\n        notifyOn: ${L(cfg.maya)}`}
+  chips("slack",b.querySelector("#sev"));chips("teams",b.querySelector("#tev"));chips("emily",b.querySelector("#mev"));
+  function yaml(){const L=s=>"["+[...s].join(", ")+"]";
+    b.querySelector("#ncfg").textContent=`notificationTargets:\n  - type: slack_webhook\n    url: \"{{ env_var('SLACK_WEBHOOK_URL') }}\"\n    notifyOn: ${L(cfg.slack)}\n  - type: teams_webhook\n    url: \"{{ env_var('TEAMS_WEBHOOK_URL') }}\"\n    notifyOn: ${L(cfg.teams)}\n\nusers:\n  - username: emily\n    email: emily@beanstreet.example\n    notificationTargets:\n      - type: smtp\n        ...\n        notifyOn: ${L(cfg.emily)}`}
   const TEXT={run_start:"Vulcan run started.",run_end:"Vulcan run finished.",run_failure:"Vulcan run failed. 1 model failed: bean_internal.orders.",audit_failure:"Audit accepted_range failed on model bean_internal.orders (6 rows).",plan_change:"Plan applied: 1 model directly modified, 3 downstream affected, breaking.",apply_failure:"Plan apply failed.",dq_end:"Data quality: 2 checks, 1 passed, 1 failed. Score 50%."};
-  EVENTS.forEach(([e,t])=>{const c=h(`<button class="btn">${t}</button>`);c.onclick=()=>{const out=[];const su=b.querySelector("#surl").checked,tu=b.querySelector("#turl").checked;
-    if(cfg.slack.has(e))out.push(su?["ok","Slack #data-alerts",TEXT[e]]:["idle","Slack #data-alerts","Skipped. The target has no url. Vulcan shows no warning."]);
-    if(cfg.teams.has(e))out.push(tu?["ok","Teams Bean Ops",TEXT[e]]:["idle","Teams Bean Ops","Skipped. The target has no url. Vulcan shows no warning."]);
-    if(cfg.maya.has(e))out.push(e==="audit_failure"?["ok","E-mail to maya@beanstreet.example",TEXT[e]+" You are the owner of this model."]:["idle","E-mail to maya","Not sent. Vulcan sends events to the targets of an owner only for assertion failures."]);
+  EVENTS.forEach(([e,t])=>{const c=h(`<button class="btn">${t}</button>`);c.onclick=()=>{const out=[];
+    if(cfg.slack.has(e))out.push(["ok","Slack #data-alerts",TEXT[e]]);
+    if(cfg.teams.has(e))out.push(["ok","Teams Bean Ops",TEXT[e]]);
+    if(cfg.emily.has(e))out.push(e==="audit_failure"?["ok","E-mail to emily@beanstreet.example",TEXT[e]+" You are the owner of this model."]:["idle","E-mail to Emily","Not sent. Vulcan sends events to the targets of an owner only for assertion failures."]);
     b.querySelector("#inbox").innerHTML=`<p class="mini">Event: <code>${e}</code></p>`+(out.length?out.map(([c,w,t])=>`<div class="notice ${c}"><span class="who">${w}</span><p>${t}</p></div>`).join(""):`<div class="notice idle"><p>No target lists this event. Nobody gets a message.</p></div>`)};b.querySelector("#fire").append(c)});
   yaml();
   m.append(quiz([{q:"Which part of the configuration tells Vulcan which events a target gets?",o:["notifyOn","owner","modelDefaults"],a:0,w:"Each target lists its events in notifyOn."},
-   {q:"A Teams target has no url. What occurs?",o:["Vulcan shows an error","Vulcan skips the target and shows no warning","Vulcan uses Slack"],a:1,w:"Do a test of each target after you add it."},
+   {q:"A Teams target has notifyOn: [run_end]. When does it get a message?",o:["After each run","Only when a run fails","Never"],a:0,w:"run_end occurs at the end of each run, so the target gets a message each time."},
    {q:"For which event does Vulcan also send a message to the targets of the model owner?",o:["run_start","audit_failure","plan_change"],a:1,w:"Only assertion failures go to the owner."},
-   {q:"The e-mail target of a user has no recipients. Where does the e-mail go?",o:["Nowhere","To the email of that user","To all users"],a:1,w:"Vulcan uses the email of the user."}]));
+   {q:"The e-mail target of a user has no recipients. Where does the e-mail go?",o:["Nowhere","To the email of that user","To all users"],a:1,w:"Vulcan uses the email of the user."},
+   {"q": "Which types of target can Vulcan send to?", "o": ["Slack, Microsoft Teams, e-mail, CloudEvents and the console", "Only e-mail", "Only Slack"], "a": 0, "w": "Each target has its own notifyOn list."},
+   {"q": "No target lists the event apply_failure. What occurs when a plan fails?", "o": ["Nobody gets a message", "Vulcan sends it to all targets", "Vulcan stops the next run"], "a": 0, "w": "Add the event to notifyOn of a target to get a message."},
+   {"q": "A model has no owner. Who is its owner?", "o": ["modelDefaults.owner, or else the first user in the list", "Nobody", "The user who made the last change"], "a": 0, "w": "Each model has an owner, so assertion failures always reach a person."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 11 Semantics ---------- */
@@ -1483,9 +1564,20 @@ measures:
     type: sum
     expression: "{sales.revenue}" # a column, as {model.column}
     description: Revenue in euros, with tax.
+    behavior:
+      type: flow                  # can be added across days
   - name: order_count
     type: sum
     expression: "{sales.order_count}"
+    behavior:
+      type: flow
+  - name: avg_order_value
+    type: number
+    expression: "SUM({sales.revenue}) / NULLIF(SUM({sales.order_count}), 0)"
+    behavior:
+      type: ratio                 # calculate from the parts
+      numerator: total_revenue
+      denominator: order_count
   - name: completed_revenue
     type: sum
     expression: "{sales.revenue}"
@@ -1497,11 +1589,32 @@ segments:
     expression: "status = 'completed'"</pre>
    <div class="prose"><ul>
    <li><b>Dimensions</b> are the ways to group and filter. The short form is a column name. The long form adds a <code>description</code>, a <code>format</code>, time <code>granularities</code>, or a <code>behavior</code> type: <code>categorical</code>, <code>identifier</code>, <code>ordinal</code> or <code>bucketing</code>.</li>
-   <li><b>Measures</b> are the values that you add up. The <code>type</code> is one of <code>count</code>, <code>count_distinct</code>, <code>count_distinct_approx</code>, <code>sum</code>, <code>avg</code>, <code>min</code>, <code>max</code> or <code>number</code>. The <code>expression</code> refers to columns as <code>{sales.revenue}</code>. <code>filters</code> limit the rows of one measure.</li>
+   <li><b>Measures</b> are the values that you add up. The <code>type</code> is one of <code>count</code>, <code>count_distinct</code>, <code>count_distinct_approx</code>, <code>sum</code>, <code>avg</code>, <code>min</code>, <code>max</code> or <code>number</code>. The <code>expression</code> refers to columns as <code>{sales.revenue}</code>. <code>filters</code> limit the rows of one measure. <code>behavior</code> tells how the measure adds up. The next section shows this.</li>
    <li><b>Segments</b> are saved filters that consumers can add to any question.</li>
    <li><b>Joins</b> connect two semantic models: <code>name</code> (the other model), <code>type</code> (<code>many_to_one</code>, <code>one_to_many</code> or <code>one_to_one</code>) and <code>on</code> (the column or condition). Then consumers can group by the dimensions of the other model.</li>
-   <li><b>Rollups</b> are summaries that Vulcan calculates before the query, so that frequent questions are fast. Read more in the documentation.</li></ul></div>
-   <div class="callout warn"><b>Stock measures.</b> Some values are a level at a point in time, for example monthly recurring revenue or the number of active customers. Do not add them up across days. Set <code>behavior: type: stock</code> on the measure, with a <code>time_dimension</code> and a <code>period_treatment</code> of <code>last</code>, <code>avg</code> or <code>first</code>. The other types are <code>simple</code> and <code>flow</code>.</div>`));
+   <li><b>Rollups</b> are summaries that Vulcan calculates before the query, so that frequent questions are fast. <a href="${DOC}/models/semantic-models/rollups" target="_blank" rel="noopener">Read more about rollups in the documentation.</a></li></ul></div>
+`));
+  m.append(concept("How a measure adds up",`<div class="prose"><p>A person, a dashboard or an AI agent often asks for a measure over a longer period, for example a month. Some measures can be added across days, and some cannot. The <code>behavior</code> of a measure tells consumers and AI agents which rule to use. Vulcan includes it in the metadata of the data product.</p></div>
+   <table><thead><tr><th>Type</th><th>What the measure is</th><th>Rule</th><th>Example</th></tr></thead><tbody>
+   <tr><td><code>simple</code></td><td>A value that adds up</td><td>Add it across any dimension.</td><td>Number of stores</td></tr>
+   <tr><td><code>flow</code></td><td>An amount in a period</td><td>Add it across days.</td><td><code>total_revenue</code>, <code>order_count</code></td></tr>
+   <tr><td><code>stock</code></td><td>A level at one point in time</td><td>Do not add it across days. Take the value at the end, the start or the average of the period.</td><td>Active loyalty members</td></tr>
+   <tr><td><code>ratio</code></td><td>One measure divided by another</td><td>Calculate it from the two parts for the period. Do not take the average of daily ratios.</td><td><code>avg_order_value</code></td></tr>
+   <tr><td><code>derived</code></td><td>A calculation from other measures</td><td>Calculate each part with its own rule, then combine them.</td><td>Revenue minus refunds</td></tr></tbody></table>
+   <div class="prose"><p>An example: Bean Street has 1,200 active loyalty members on each day of September. A person asks for active members in September. If the agent adds the 30 daily values, it answers 36,000. With <code>stock</code> and <code>period_treatment: last</code>, it takes the value of 30 September: 1,200.</p></div>
+   <pre data-lang="yaml">measures:
+  - name: active_members
+    type: count_distinct
+    expression: "{members.customer_id}"
+    behavior:
+      type: stock
+      time_dimension: snapshot_date   # the date of each level
+      period_treatment: last          # last, avg or first
+      period_grain: day               # one level for each day</pre>
+   <div class="prose"><ul><li>A <code>stock</code> measure needs <code>time_dimension</code>, <code>period_treatment</code> and <code>period_grain</code>.</li>
+   <li>A <code>ratio</code> measure needs <code>numerator</code> and <code>denominator</code>, the names of two other measures.</li>
+   <li>A <code>derived</code> measure lists its parts in <code>measure_refs</code>.</li>
+   <li>Only <code>simple</code> and <code>flow</code> measures are additive. Vulcan sets <code>is_additive</code> from the type.</li></ul></div>`));
   m.append(concept("Write a metric",`<div class="prose"><p>A metric is a YAML file, usually in <code>models/metrics/</code>. It takes one measure and puts it on a time axis.</p></div>
    <pre data-lang="yaml">kind: metric
 name: weekly_revenue
@@ -1517,7 +1630,7 @@ segments:
   m.append(concept("What the plan examines",`<div class="prose"><p>During each plan, Vulcan makes sure that the semantic layer agrees with the physical models. The plan stops when:</p><ul>
    <li>a dimension names a column that does not exist;</li><li>a reference such as <code>{sales.revenu}</code> points to nothing;</li><li>two members (dimensions, measures or segments) have the same name;</li><li>the <code>ts</code> of a metric is not a date or a timestamp;</li><li>the physical model has no <code>grains</code>.</li></ul></div>`));
   const SB_COLS={store_id:"varchar",store_name:"varchar",product:"varchar",order_date:"date",status:"varchar",loyalty_tier:"varchar",revenue:"decimal",order_count:"bigint"};
-  const sb={dims:{store_name:"",product:"",order_date:"",loyalty_tier:"",status:"",store_id:"identifier"},meas:[["total_revenue","sum","{sales.revenue}"],["order_count","sum","{sales.order_count}"]],seg:["completed","status = 'completed'"],metric:{measure:"total_revenue",ts:"order_date",gran:"week"}};
+  const sb={dims:{store_name:"",product:"",order_date:"",loyalty_tier:"",status:"",store_id:"identifier"},meas:[["total_revenue","sum","{sales.revenue}",{type:"flow"}],["order_count","sum","{sales.order_count}",{type:"flow"}]],seg:["completed","status = 'completed'"],metric:{measure:"total_revenue",ts:"order_date",gran:"week"}};
   const bb=h(`<div class="bench"><div class="bench-head"><h3>Build the sales model</h3><span class="tag">select, type, and read the result</span></div>
    <div class="stack"><h4>Dimensions: columns of bean_street.daily_sales</h4><div id="sbd" class="tbl-wrap"></div>
    <h4>Measures</h4><div id="sbm" class="stack" style="gap:6px"></div><div class="row"><button class="btn" id="sbadd">Add a measure</button></div>
@@ -1530,20 +1643,34 @@ segments:
   bb.querySelector("#sbsn").oninput=e=>{sb.seg[0]=e.target.value;sbOut()};bb.querySelector("#sbse").oninput=e=>{sb.seg[1]=e.target.value;sbOut()};
   bb.querySelector("#sbmm").onchange=e=>{sb.metric.measure=e.target.value;sbOut()};bb.querySelector("#sbts").onchange=e=>{sb.metric.ts=e.target.value;sbOut()};
   bb.querySelector("#sbg").value=sb.metric.gran;bb.querySelector("#sbg").onchange=e=>{sb.metric.gran=e.target.value;sbOut()};
-  bb.querySelector("#sbadd").onclick=()=>{sb.meas.push(["avg_order_value","avg","{sales.revenue}"]);sbMeas();sbOut()};
+  bb.querySelector("#sbadd").onclick=()=>{const used=sb.meas.map(x=>x[0]);sb.meas.push(used.includes("avg_order_value")?["new_measure","sum","{sales.revenue}",{type:"flow"}]:["avg_order_value","number","SUM({sales.revenue}) / NULLIF(SUM({sales.order_count}), 0)",{type:"ratio",num:"total_revenue",den:"order_count"}]);sbMeas();sbOut()};
   function sbDims(){bb.querySelector("#sbd").innerHTML=`<table><thead><tr><th>use</th><th>column</th><th>type</th><th>behavior</th></tr></thead><tbody>${Object.entries(SB_COLS).map(([c,t])=>`<tr><td><input type="checkbox" data-c="${c}" ${c in sb.dims?"checked":""} aria-label="Use ${c} as a dimension"></td><td><code>${c}</code></td><td class="mono">${t}</td><td><select data-b="${c}" aria-label="Behavior of ${c}" ${c in sb.dims?"":"disabled"}>${["","categorical","identifier","ordinal","bucketing"].map(b=>`<option value="${b}" ${(sb.dims[c]||"")===b?"selected":""}>${b||"(none)"}</option>`).join("")}</select></td></tr>`).join("")}</tbody></table>`;
     bb.querySelectorAll("#sbd input").forEach(x=>x.onchange=()=>{if(x.checked)sb.dims[x.dataset.c]="";else delete sb.dims[x.dataset.c];sbDims();sbOut()});
     bb.querySelectorAll("#sbd select").forEach(x=>x.onchange=()=>{sb.dims[x.dataset.b]=x.value;sbOut()})}
-  function sbMeas(){const el=bb.querySelector("#sbm");el.innerHTML="";sb.meas.forEach((ms,k)=>{const r=h(`<div class="row" style="flex-wrap:nowrap"><input type="text" value="${esc(ms[0])}" aria-label="Measure name" style="width:150px"><select aria-label="Measure type">${["count","count_distinct","sum","avg","min","max"].map(t=>`<option ${t===ms[1]?"selected":""}>${t}</option>`).join("")}</select><input type="text" value="${esc(ms[2])}" aria-label="Measure expression" style="flex:1"><button class="btn" aria-label="Remove measure">✕</button></div>`);
-    const [n,e]=r.querySelectorAll("input");n.oninput=()=>{ms[0]=n.value;sbOut()};e.oninput=()=>{ms[2]=e.value;sbOut()};r.querySelector("select").onchange=ev=>{ms[1]=ev.target.value;sbOut()};r.querySelector("button").onclick=()=>{sb.meas.splice(k,1);sbMeas();sbOut()};el.append(r)})}
+  function sbMeas(){const el=bb.querySelector("#sbm");el.innerHTML="";sb.meas.forEach((ms,k)=>{if(!ms[3])ms[3]={type:""};const B=ms[3];
+    const r=h(`<div class="stack" style="gap:4px"><div class="row" style="flex-wrap:nowrap"><input type="text" value="${esc(ms[0])}" aria-label="Measure name" style="width:150px"><select class="mtype" aria-label="Measure type">${["count","count_distinct","sum","avg","min","max","number"].map(t=>`<option ${t===ms[1]?"selected":""}>${t}</option>`).join("")}</select><input type="text" value="${esc(ms[2])}" aria-label="Measure expression" style="flex:1"><button class="btn" aria-label="Remove measure">✕</button></div>
+      <div class="row" style="padding-left:4px"><label class="mini">behavior</label><select class="mbeh" aria-label="Behavior of the measure">${["","simple","flow","stock","ratio"].map(b=>`<option value="${b}" ${B.type===b?"selected":""}>${b||"(none)"}</option>`).join("")}</select><span class="rparts row" style="gap:6px;${B.type==="ratio"?"":"display:none"}"><label class="mini">numerator</label><select class="rnum" aria-label="Numerator"></select><label class="mini">denominator</label><select class="rden" aria-label="Denominator"></select></span></div></div>`);
+    const [n,e]=r.querySelectorAll("input");n.oninput=()=>{ms[0]=n.value;sbOut()};e.oninput=()=>{ms[2]=e.value;sbOut()};r.querySelector(".mtype").onchange=ev=>{ms[1]=ev.target.value;sbOut()};
+    r.querySelector(".mbeh").onchange=ev=>{B.type=ev.target.value;r.querySelector(".rparts").style.display=B.type==="ratio"?"":"none";sbOut()};
+    r.querySelector(".rnum").onchange=ev=>{B.num=ev.target.value;sbOut()};r.querySelector(".rden").onchange=ev=>{B.den=ev.target.value;sbOut()};
+    r.querySelector("button").onclick=()=>{sb.meas.splice(k,1);sbMeas();sbOut()};r._ms=ms;el.append(r)})}
+  function sbRatioOptions(){const names=sb.meas.map(x=>x[0]).filter(Boolean);bb.querySelectorAll("#sbm > .stack").forEach(r=>{const B=r._ms[3];
+    [["rnum","num"],["rden","den"]].forEach(([c,f])=>{const sel=r.querySelector("."+c);sel.innerHTML=`<option value="">(select)</option>`+names.filter(x=>x!==r._ms[0]).map(x=>`<option ${B[f]===x?"selected":""}>${esc(x)}</option>`).join("")})})}
   function sbOut(){const errs=[];const dims=Object.keys(sb.dims);const names=[];
     if(!dims.length)errs.push("The model has no dimensions. Select at least one column.");
     dims.forEach(d=>names.push(d));
     sb.meas.forEach(([n,t,e])=>{if(!/^[a-z_][a-z0-9_]*$/.test(n))errs.push(`The measure name <code>${esc(n)||"(empty)"}</code> is not valid. Use lowercase letters, digits and underscores.`);names.push(n);
       if(!e.trim()&&t!=="count")errs.push(`The measure <code>${esc(n)}</code> has no expression.`);
       [...e.matchAll(/\{([^}]*)\}/g)].forEach(mm=>{const [mod,col]=mm[1].split(".");if(mod!=="sales"||!(col in SB_COLS))errs.push(`<code>{${esc(mm[1])}}</code> in <code>${esc(n)}</code> does not point to a column of bean_street.daily_sales.`)})});
+    const mnames0=sb.meas.map(x=>x[0]);const dateDim=dims.find(d=>/^(date|timestamp)/.test(SB_COLS[d]));
+    sb.meas.forEach(([n,t,e,B])=>{if(!B)return;
+      if(B.type==="stock"&&!dateDim)errs.push(`The stock measure <code>${esc(n)}</code> needs a time dimension. Select <code>order_date</code> as a dimension.`);
+      if(B.type==="ratio"){if(!B.num||!B.den)errs.push(`The ratio measure <code>${esc(n)}</code> needs a numerator and a denominator.`);
+        else{[B.num,B.den].forEach(x=>{if(x===n||!mnames0.includes(x))errs.push(`The ratio measure <code>${esc(n)}</code> uses <code>${esc(x)}</code>, which is not another measure of this model.`)});
+          if(B.num===B.den)errs.push(`The ratio measure <code>${esc(n)}</code> has the same numerator and denominator.`)}}});
     if(sb.seg[0].trim()){names.push(sb.seg[0].trim());if(!sb.seg[1].trim())errs.push(`The segment <code>${esc(sb.seg[0])}</code> has no expression.`)}
     const dup=[...new Set(names.filter((n,i)=>n&&names.indexOf(n)!==i))];dup.forEach(d=>errs.push(`Two members have the name <code>${esc(d)}</code>. Each name must be unique in the model.`));
+    sbRatioOptions();
     const mm=bb.querySelector("#sbmm"),ts=bb.querySelector("#sbts");const mnames=sb.meas.map(x=>x[0]).filter(Boolean);
     if(!mnames.includes(sb.metric.measure))sb.metric.measure=mnames[0]||"";mm.innerHTML=mnames.map(n=>`<option ${n===sb.metric.measure?"selected":""}>${esc(n)}</option>`).join("");
     if(!dims.includes(sb.metric.ts))sb.metric.ts=dims[0]||"";ts.innerHTML=dims.map(d=>`<option ${d===sb.metric.ts?"selected":""}>${d}</option>`).join("");
@@ -1552,11 +1679,12 @@ segments:
     if(!sb.metric.ts)errs.push("The metric has no time dimension.");
     bb.querySelector("#sbv").innerHTML=errs.length?`<div class="notice bad"><span class="who">vulcan plan · validation</span><b>The plan stops. ${errs.length} problem${errs.length>1?"s":""}:</b><ul style="margin:0;padding-left:18px">${errs.map(e=>`<li>${e}</li>`).join("")}</ul></div>`:`<div class="notice ok"><span class="who">vulcan plan · validation</span><b>The semantic model and the metric are valid.</b><p>Each member points to a real column, all names are unique, and the metric has a time dimension.</p></div>`;
     const dy=dims.map(d=>sb.dims[d]?`  - name: ${d}\n    behavior:\n      type: ${sb.dims[d]}`:`  - ${d}`).join("\n");
-    const my=sb.meas.map(([n,t,e])=>`  - name: ${n}\n    type: ${t}`+(e.trim()?`\n    expression: "${e}"`:"")).join("\n");
+    const by=B=>!B||!B.type?"":B.type==="stock"?`\n    behavior:\n      type: stock\n      time_dimension: ${dateDim||"(missing)"}\n      period_treatment: last\n      period_grain: day`:B.type==="ratio"?`\n    behavior:\n      type: ratio\n      numerator: ${B.num||"(missing)"}\n      denominator: ${B.den||"(missing)"}`:`\n    behavior:\n      type: ${B.type}`;
+    const my=sb.meas.map(([n,t,e,B])=>`  - name: ${n}\n    type: ${t}`+(e.trim()?`\n    expression: "${e}"`:"")+by(B)).join("\n");
     bb.querySelector("#sby").textContent=`kind: semantic\nname: sales\ndepends_on: bean_street.daily_sales\n\ndimensions:\n${dy||"  []"}\n\nmeasures:\n${my||"  []"}`+(sb.seg[0].trim()?`\n\nsegments:\n  - name: ${sb.seg[0]}\n    expression: "${sb.seg[1]}"`:"");
     bb.querySelector("#sbmy").textContent=`kind: metric\nname: ${sb.metric.gran}ly_${sb.metric.measure||"measure"}`.replace("dayly","daily")+`\nmeasure: sales.${sb.metric.measure}\nts: sales.${sb.metric.ts}\ngranularity: ${sb.metric.gran}`}
   sbDims();sbMeas();sbOut();
-  m.append(concept("",`<div class="prose"><p class="mini">Things to try: type <code>{sales.revenu}</code> in an expression. Give a measure the name <code>product</code>. Select <code>store_name</code> as the ts of the metric. Clear all dimensions.</p></div>`));
+  m.append(concept("",`<div class="prose"><p class="mini">Things to try: type <code>{sales.revenu}</code> in an expression. Give a measure the name <code>product</code>. Select <code>store_name</code> as the ts of the metric. Clear all dimensions. Add a measure, set its behavior to <code>ratio</code>, and select the same measure as the numerator and the denominator.</p></div>`));
   const b=h(`<div class="bench flat"><div class="bench-head"><h3>Ask a question</h3><span class="tag">select a measure, dimensions and a segment</span></div><div class="cols"><div class="stack"><h4>Measure</h4><div class="row" id="sm"></div><h4>Dimensions</h4><div class="row" id="sd"></div><h4>Segment</h4><div class="row" id="ss"></div></div>
    <div class="stack"><div class="tabs" role="tablist" id="sa"></div><pre id="sq"></pre></div></div><h4>Answer</h4><div id="sr"></div></div>`);m.append(b);
   const st={measure:"total_revenue",dims:new Set(["store_name"]),seg:true,api:"sql"};
@@ -1578,7 +1706,11 @@ segments:
   m.append(quiz([{q:"Two teams use total_revenue. One team changes the definition in sales.yml. What does the other team see?",o:["The old definition until they copy the new SQL","The new definition, because both teams use the same measure","An error"],a:1,w:"The definition is in one place."},
    {q:"Which member is a saved filter?",o:["Dimension","Measure","Segment"],a:2,w:"A segment is a saved filter, for example completed orders."},
    {q:"Which table does the semantic model sales read?",o:["bean_internal.orders","bean_street.daily_sales","raw.pos_orders"],a:1,w:"Semantic models read only gold."},
-   {q:"A change removes a column that a measure uses. When do you find out?",o:["When a dashboard breaks","During the plan, because the plan stops","Never"],a:1,w:"Vulcan makes sure that each member points to a real column."}]));
+   {q:"A change removes a column that a measure uses. When do you find out?",o:["When a dashboard breaks","During the plan, because the plan stops","Never"],a:1,w:"Vulcan makes sure that each member points to a real column."},
+   {"q": "What is a dimension?", "o": ["A way to group or filter the data, for example store_name", "A calculation, for example total_revenue", "A saved filter"], "a": 0, "w": "Dimensions are the ways to group. Measures are the calculations."},
+   {"q": "What does a metric such as weekly_revenue add to a measure?", "o": ["A time column and a granularity", "A new table in silver", "A new user"], "a": 0, "w": "A metric is a measure over time, for example each week."},
+   {"q": "How do consumers query the semantic layer?", "o": ["Through Semantic SQL, REST and GraphQL", "Only through a spreadsheet", "Only in the warehouse"], "a": 0, "w": "All three APIs use the same definitions and the same access rules."},
+   {"q": "A person asks for active members in September. The measure has the behavior stock with period_treatment last. What does the agent give?", "o": ["The sum of the 30 daily values", "The value of 30 September", "The average of the daily values"], "a": 1, "w": "A stock is a level at one point in time. Adding the days gives a number that is 30 times too large."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 12 Access policies ---------- */
@@ -1624,7 +1756,9 @@ GROUP BY 1, 2</pre>
    {q:"Where do you tell Vulcan what a hidden column contains?",o:["In the policy, under mask","In column_mask_expressions in the MODEL block","In config.yaml"],a:1,w:"The policy says who. The MODEL block says what."},
    {q:"Where does the value of {securityContext.store_id} come from?",o:["From the auth extension","From the warehouse","From the cron"],a:0,w:"The extension adds store_id to the security context."},
    {q:"An analyst reads bean_street.daily_sales directly in the warehouse. Does the policy apply?",o:["Yes","No, policies apply only to the Vulcan APIs","Only for finance"],a:1,w:"Give consumers access through the APIs."},
-   {q:"How do you register the extension?",o:["afterAuthorize: \"plugins.auth_ext:resolve_user_groups\" in config.yaml","In the policy file","In the MODEL block"],a:0,w:"The format is module:function."}]));
+   {q:"How do you register the extension?",o:["afterAuthorize: \"plugins.auth_ext:resolve_user_groups\" in config.yaml","In the policy file","In the MODEL block"],a:0,w:"The format is module:function."},
+   {"q": "A partner reads daily_sales through the API. What does the partner see in loyalty_tier?", "o": ["The real tier", "The value hidden, because of the mask", "An error"], "a": 1, "w": "The mask expression in the MODEL block replaces the value for groups that must not see it."},
+   {"q": "A group is not in the list of the policy. What does it get?", "o": ["All rows", "No access", "Only the hidden columns"], "a": 1, "w": "A policy gives access only to the groups that it names."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 13 AI readiness ---------- */
@@ -1664,18 +1798,21 @@ function mAI(i){
     const p=Math.round(st.filter(r=>r.ins&&r.syn&&r.ex).length/st.length*100);const tier=p>=75?["AGENT-READY","var(--ok)"]:p>=34?["NEEDS WORK","var(--warn)"]:["NOT AGENT-READY","var(--bad)"];
     b.querySelector("#aitier").textContent=tier[0];b.querySelector("#aitier").style.color=tier[1];b.querySelector("#aipct").textContent=`${p}% of members pass. Agent-ready needs 75% or more. Needs work is 34% to 74%.`;b.querySelector("#aibar").style.width=p+"%";b.querySelector("#aibar").style.background=tier[1]}
   paint();
+  m.append(h(`<div class="callout"><b>Behavior is also necessary.</b> The count above uses only <code>ai_context</code>. AI agents also read the <code>behavior</code> of each measure, so that they add up numbers correctly over a period. Read <a class="seclink" data-mod="semantics" data-sec="how-a-measure-adds-up" href="#semantics/how-a-measure-adds-up">How a measure adds up</a> in Module 11.</div>`));
   m.append(h(`<div class="callout"><b>For information: vulcan review.</b> Your team can do an AI review of the full data product with the command <code>vulcan review</code>. The review reads the models, the semantic layer, the metadata and the description of the project. It writes a report with findings from blocker to low, in three areas: structure, semantics and the contract with consumers. The report also gives the AI readiness tier that this bench shows. The review uses an AI model that your team sets in the <code>review</code> block of <code>config.yaml</code>. The review does not stop a plan. Its findings are advice.</div>`));
   m.append(quiz([{q:"An agent selects order_count when a person asks for income. What helps the most?",o:["A larger warehouse","Synonyms and instructions on total_revenue","A shorter cron"],a:1,w:"Synonyms tell the agent the other names that people use."},
    {q:"When does a member pass the AI readiness count?",o:["When it has a name","When it has instructions, synonyms and examples","When it has a description only"],a:1,w:"All three parts are necessary."},
    {q:"What percent of members must pass for the tier agent-ready?",o:["34%","50%","75%"],a:2,w:"75% or more is agent-ready."},
    {q:"Does vulcan review stop a plan?",o:["Yes, for blocker findings","No, its findings are advice","Only on Fridays"],a:1,w:"The review operates only when you ask for it."},
-   {q:"Which file tells consumers what the data product is not good for?",o:["usage.yml","stores.csv","auth_ext.py"],a:0,w:"usage.yml has good_for and not_for."}]));
+   {q:"Which file tells consumers what the data product is not good for?",o:["usage.yml","stores.csv","auth_ext.py"],a:0,w:"usage.yml has good_for and not_for."},
+   {"q": "What does ai_context add to a member?", "o": ["Instructions, synonyms and examples for AI agents", "A new column", "A new cron"], "a": 0, "w": "AI agents use this context to pick the correct member for a question."},
+   {"q": "When does vulcan review operate?", "o": ["Only when you ask for it", "In each run", "Each hour"], "a": 0, "w": "The review is a command that you start. Its findings are advice."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 14 Incident drill ---------- */
 function mIncident(i){
   const without=[["Thu 06:00","bad","The nightly job loads orders. The POS update sends amounts in cents: a latte costs 450, not 4.50. Nothing examines the values."],["Thu 06:20","bad","The job builds daily sales and updates the revenue dashboard. Revenue for Thursday is 100 times too high."],["Thu 09:30","bad","A finance report uses the dashboard numbers and goes to the leadership team."],["Fri 10:00","warn","A store manager asks why Harbor made approximately 3,000 in one day. A usual day is approximately 30. This is the moment of detection."],["Fri 11:00","warn","An analyst opens four SQL scripts and a BI tool to find the source of the number."],["Fri 15:00","warn","The analyst finds the problem and corrects the script. Nobody knows which tables used the bad data, so the team does the full pipeline again for all days."],["Fri 18:00","ok","The data is correct again. Finance sends a correction for the report."]];
-  const withv=[["Thu 06:00","info","Vulcan examines the input pos_orders. Each order has a unique ID, so the input assertions pass."],["Thu 06:01","bad","Vulcan builds orders in silver. The assertion accepted_range (amount from 0 to 100) fails. This is the moment of detection."],["Thu 06:01","bad","Vulcan skips daily_sales in gold. The semantic layer and the dashboard keep the correct data of Wednesday."],["Thu 06:01","warn","A Slack message goes to #data-alerts, and an e-mail goes to maya, the owner of orders. The message names the model, the assertion and the number of bad rows."],["Thu 08:15","info","Maya opens the query from the message and sees amounts such as 450. Column lineage shows that orders.amount comes from pos_orders.amount. Only rows with pos_version 2.0 are wrong."],["Thu 08:40","info","Maya changes amount in orders: divide by 100 when pos_version is 2.0. She makes the change forward-only. The plan shows that no old day is built again."],["Thu 08:45","ok","Maya restates Thursday for orders. Vulcan builds that one day, the assertions pass, and daily_sales follows."],["Thu 08:55","ok","Maya compares Thursday before and after the correction with table diff. Only the amounts of POS version 2.0 changed. The data quality checks pass."]];
+  const withv=[["Thu 06:00","info","Vulcan examines the input pos_orders. Each order has a unique ID, so the input assertions pass."],["Thu 06:01","bad","Vulcan builds orders in silver. The assertion accepted_range (amount from 0 to 100) fails. This is the moment of detection."],["Thu 06:01","bad","Vulcan skips daily_sales in gold. The semantic layer and the dashboard keep the correct data of Wednesday."],["Thu 06:01","warn","A Slack message goes to #data-alerts, and an e-mail goes to Emily, the owner of orders. The message names the model, the assertion and the number of bad rows."],["Thu 08:15","info","Emily opens the query from the message and sees amounts such as 450. Column lineage shows that orders.amount comes from pos_orders.amount. Only rows with pos_version 2.0 are wrong."],["Thu 08:40","info","Emily changes amount in orders: divide by 100 when pos_version is 2.0. She makes the change forward-only. The plan shows that no old day is built again."],["Thu 08:45","ok","Emily restates Thursday for orders. Vulcan builds that one day, the assertions pass, and daily_sales follows."],["Thu 08:55","ok","Emily compares Thursday before and after the correction with table diff. Only the amounts of POS version 2.0 changed. The data quality checks pass."]];
   const m=section(eb(i),"The same bad data, with Vulcan and without Vulcan.","On Thursday, the POS vendor sends an update. The new version sends prices in cents. Click Next event to see the two timelines next to each other.");
   m.append(h(`<div class="callout warn">The times in this example show the order of events. They are not measured results.</div>`));
   const b=h(`<div class="bench flat"><div class="bench-head"><h3>Play the two timelines</h3><span class="tag">click next event</span></div><div class="row"><button class="btn primary" id="ne">Next event</button><button class="btn" id="all">Show all</button><button class="btn" id="rz">Reset</button></div><div class="cols"><div class="lane"><h3>Without Vulcan</h3><div id="lw" class="lane"></div></div><div class="lane"><h3>With Vulcan</h3><div id="lv" class="lane"></div></div></div></div>`);m.append(b);
@@ -1694,7 +1831,10 @@ function mIncident(i){
   m.append(quiz([{q:"In the Vulcan timeline, why does the dashboard not show the wrong revenue?",o:["Vulcan deletes the bad rows","The assertion on silver stops the gold table, and the dashboard reads gold","The dashboard is off"],a:1,w:"The bad rows stay in silver."},
    {q:"Which part of Vulcan finds the source column of a wrong number?",o:["Column lineage","Signals","Seeds"],a:0,w:"Lineage shows the path of each column."},
    {q:"Why is the correction forward-only?",o:["Because only new data from POS version 2.0 has the problem, so old days do not need a new build","Because forward-only is faster to type","Because breaking changes are not permitted"],a:0,w:"Forward-only keeps the old rows and uses the new logic for new intervals."},
-   {q:"How does Maya prove what the correction changed?",o:["With table diff","With a new cron","With a seed"],a:0,w:"Table diff compares the rows before and after."}]));
+   {q:"How does Emily prove what the correction changed?",o:["With table diff","With a new cron","With a seed"],a:0,w:"Table diff compares the rows before and after."},
+   {"q": "In the timeline without Vulcan, who finds the problem?", "o": ["A store manager, the next day", "An assertion, in the same run", "The owner, in a message"], "a": 0, "w": "Without checks in each run, a consumer finds the problem late."},
+   {"q": "Which day does Emily restate?", "o": ["All days", "Only Thursday, the day with the problem", "No day"], "a": 1, "w": "Restatement builds again only the days with the problem, and the models after them."},
+   {"q": "What does the message to Emily name?", "o": ["The model, the assertion and the number of bad rows", "Only that something failed", "All rows of the table"], "a": 0, "w": "With these details, the owner can start at the cause."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 15 Daily work ---------- */
@@ -1717,7 +1857,10 @@ function mDaily(i){
   m.append(concept("Next step",`<div class="prose"><p>When the project is ready, your team deploys it to a DataOS environment with the <code>deployment</code> block of <code>config.yaml</code>. Then Vulcan builds the data on a schedule and serves the APIs.</p></div>`));
   m.append(quiz([{q:"Which of these makes detection faster?",o:["A larger warehouse","A blocking assertion where data enters","A less frequent cron"],a:1,w:"The assertion operates in the same run that brings the bad data."},
    {q:"Which of these makes recovery faster?",o:["Do all models again for all days","Restate only the days of the model that had the problem","Wait for the next run"],a:1,w:"A restatement builds only what the correction touches, and the children."},
-   {q:"A new team needs sales without the loyalty tier. What do you do?",o:["Make a copy of the table","Add a rule with a mask to the access policy","Give them access to silver"],a:1,w:"One table serves all groups through the policy."}]));
+   {q:"A new team needs sales without the loyalty tier. What do you do?",o:["Make a copy of the table","Add a rule with a mask to the access policy","Give them access to silver"],a:1,w:"One table serves all groups through the policy."},
+   {"q": "The source sends its data half a day late. What keeps a half day out of gold?", "o": ["A signal", "A bigger warehouse", "A seed file"], "a": 0, "w": "The signal waits until the source is ready."},
+   {"q": "You must remove a column. How do you find out which measures use it?", "o": ["The plan stops and names the measure that reads the column", "Wait one week", "Ask each team"], "a": 0, "w": "The plan shows the effect before you apply the change."},
+   {"q": "Your team moves to a different engine. What do you change in the models?", "o": ["Nothing, because Vulcan writes the new dialect", "All SQL", "Only the semantic layer"], "a": 0, "w": "You keep the models. Vulcan translates them to the dialect of the new engine."}]));
   return m}
 
 /* =================== documentation links =================== */
@@ -1763,19 +1906,43 @@ MODULES.forEach((x,k)=>{const li=h(`<li><a href="#${x.id}" data-k="${k}"><span c
 mnav.onchange=()=>go(+mnav.value);
 function go(k){hlObs.disconnect();modObs.disconnect();main.innerHTML="";const m=MODULES[k].render(k);main.append(m);
   const rm=readMore(MODULES[k].id),qz=m.querySelector(".quiz");if(rm){qz?m.insertBefore(rm,qz):m.append(rm)}
-  const nx=m.querySelector(".next"),ebw=m.querySelector(".eyebrow");if(nx&&ebw){const top=h(`<div class="mod-top"></div>`);ebw.before(top);top.append(ebw,nx)}
+  const nx=m.querySelector(".next"),ebw=m.querySelector(".eyebrow");if(nx&&ebw){const top=h(`<div class="mod-top"></div>`);ebw.before(top);top.append(ebw,nx);const nb=nextBtn(k);nb.classList.add("next-bottom");m.append(nb)}
   m.querySelectorAll(".bench").forEach(bn=>{bn.classList.add("flat");if(bn.dataset.try||bn.querySelector("button,input,select,textarea,[role=button]"))bn.classList.add("try")});
   main.querySelectorAll("pre").forEach(hl);hlObs.observe(main,{childList:true,subtree:true,characterData:true});linkMods(main);modObs.observe(main,{childList:true,subtree:true});
   seen.add(k);store("vlab3-seen",[...seen]);
   nav.querySelectorAll("li").forEach((li,j)=>{const a=li.querySelector("a");a.classList.toggle("active",j===k);a.classList.toggle("seen",seen.has(j));a.setAttribute("aria-current",j===k?"page":"false");
 });
   mnav.value=k;$("#progtext").textContent=`${seen.size} of ${MODULES.length} modules opened`;$("#progbar").style.width=(seen.size/MODULES.length*100)+"%";
-  try{history.replaceState(null,"","#"+MODULES[k].id)}catch(e){}window.scrollTo(0,0)}
+  try{history.replaceState(null,"","#"+MODULES[k].id)}catch(e){}window.scrollTo(0,0);snapAll(m);if(typeof clearFlashes==="function")clearFlashes()}
 function linkMods(root){const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement.closest("a,pre,code,button,select,option,label,.eyebrow,.mod-top,svg,textarea")||!/Module \d/.test(n.data)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
   const ns=[];while(w.nextNode())ns.push(w.currentNode);
   ns.forEach(n=>{const f=document.createDocumentFragment();let last=0;n.data.replace(/\bModule (\d+)/g,(mt,d,off)=>{const i=+d-1;if(!MODULES[i])return mt;f.append(n.data.slice(last,off));const a=document.createElement("a");a.href="#"+MODULES[i].id;a.className="modlink";a.dataset.mod=i;a.textContent=mt;f.append(a);last=off+mt.length;return mt});
     if(last){f.append(n.data.slice(last));n.replaceWith(f)}})}
-main.addEventListener("click",e=>{const a=e.target.closest("a.modlink");if(!a)return;e.preventDefault();go(+a.dataset.mod)});
+function goSection(id,sec){const k=MODULES.findIndex(x=>x.id===id);if(k<0)return;go(k);const el=document.getElementById("sec-"+sec);if(el){el.scrollIntoView({block:"start"});try{history.replaceState(null,"","#"+id+"/"+sec)}catch(e){}}}
+main.addEventListener("click",e=>{const s=e.target.closest("a.seclink");if(s){e.preventDefault();goSection(s.dataset.mod,s.dataset.sec);return}const a=e.target.closest("a.modlink");if(!a)return;e.preventDefault();go(+a.dataset.mod)});
 const modObs=new MutationObserver(ms=>ms.forEach(r=>r.addedNodes.forEach(x=>{if(x.nodeType===1)linkMods(x);else if(x.nodeType===3&&x.parentElement)linkMods(x.parentElement)})));
-const start=MODULES.findIndex(x=>"#"+x.id===location.hash);go(start>=0?start:0);
+/* Highlight the results that change after the reader uses a control in a Try it section. */
+let actEl=null,actAt=0;
+function noteAct(e){if(e.target.closest&&e.target.closest(".bench")){actEl=e.target;actAt=performance.now()}}
+["input","change","click"].forEach(ev=>main.addEventListener(ev,noteAct,true));
+function flashTarget(node,bench){for(let t=node;t&&t!==bench&&bench.contains(t);t=t.parentElement){
+  if(t.matches("button,input,select,textarea,option,label"))return null;
+  if(t.matches(FLASH_SEL)){if(t.contains(actEl))return null;if(!t.matches("pre,svg")&&t.querySelector("button,input,select,textarea"))return null;return t}}return null}
+const FLASH_SEL="pre,table,svg,.notice,.log,.svgwrap,[id]";const flashSnap=new WeakMap();
+function snapAll(root){root.querySelectorAll(".bench").forEach(b=>b.querySelectorAll(FLASH_SEL).forEach(el=>flashSnap.set(el,el.textContent)))}
+const flashLayers=new Map();
+function placeLayer(el,L){const r=el.getBoundingClientRect();if(!r.width||!el.isConnected){L.remove();flashLayers.delete(el);return false}
+  Object.assign(L.style,{left:(r.left+scrollX)+"px",top:(r.top+scrollY)+"px",width:r.width+"px",height:r.height+"px"});return true}
+function flash(el){let rec=flashLayers.get(el);if(rec){clearTimeout(rec.a);clearTimeout(rec.b);clearInterval(rec.t);rec.L.classList.remove("off")}
+  else{const L=document.createElement("div");L.className="flash-layer";L.setAttribute("aria-hidden","true");document.body.append(L);rec={L};flashLayers.set(el,rec)}
+  const L=rec.L;if(!placeLayer(el,L))return;requestAnimationFrame(()=>L.classList.add("on"));
+  rec.t=setInterval(()=>placeLayer(el,L),200);
+  rec.a=setTimeout(()=>{L.classList.add("off");L.classList.remove("on")},1500);
+  rec.b=setTimeout(()=>{clearInterval(rec.t);L.remove();flashLayers.delete(el)},1800)}
+function clearFlashes(){flashLayers.forEach(r=>{clearTimeout(r.a);clearTimeout(r.b);clearInterval(r.t);r.L.remove()});flashLayers.clear()}
+const flashObs=new MutationObserver(ms=>{if(!actEl||performance.now()-actAt>700)return;const bench=actEl.closest&&actEl.closest(".bench");if(!bench||!document.body.contains(bench))return;
+  const found=new Set();ms.forEach(m=>{if(m.type==="attributes")return;const n=m.target.nodeType===3?m.target.parentElement:m.target;if(!n)return;const t=flashTarget(n.closest?n:n.parentElement,bench);if(t)found.add(t)});
+  [...found].filter(t=>![...found].some(o=>o!==t&&o.contains(t))).forEach(t=>{const prev=flashSnap.get(t),cur=t.textContent;flashSnap.set(t,cur);if(prev!==cur)flash(t)})});
+flashObs.observe(main,{childList:true,subtree:true,characterData:true});
+const [hMod,hSec]=location.hash.slice(1).split("/");const start=MODULES.findIndex(x=>x.id===hMod);if(start>=0&&hSec)goSection(hMod,hSec);else go(start>=0?start:0);
 </script>
