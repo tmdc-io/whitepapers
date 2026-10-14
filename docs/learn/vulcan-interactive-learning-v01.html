@@ -337,8 +337,8 @@ notificationTargets:
 
 afterAuthorize: "plugins.auth_ext:resolve_user_groups"`,
  explain:["The project configuration. This version is short. A full project also has terms, an SLA and support contacts. Module 13 shows these.","<code>dialect: postgres</code> tells Vulcan that you write SQL in the Postgres dialect. Vulcan translates it for other engines. Module 4 shows this.","<code>users</code> lists the people of the data product. Each model owner must be in this list.","<code>notificationTargets</code> tells Vulcan where to send messages, and for which events. Module 10 shows this.","<code>afterAuthorize</code> names the extension that gives each API user a group. Module 12 shows this."]},
-"inputs/till_orders.yaml":{node:"till_orders",text:`- name: raw.till_orders
-  description: Orders that the till system writes. Vulcan only reads this table.
+"inputs/pos_orders.yaml":{node:"pos_orders",text:`- name: raw.pos_orders
+  description: Orders that the POS system writes. Vulcan only reads this table.
   columns:
     order_id: int
     store_id: varchar
@@ -346,14 +346,14 @@ afterAuthorize: "plugins.auth_ext:resolve_user_groups"`,
     product: varchar
     amount: decimal(10,2)
     status: varchar
-    till_version: varchar
+    pos_version: varchar
     order_date: date
   audits:
     - name: not_null
       columns: "[order_id, store_id]"
     - name: unique_values
       columns: "[order_id]"`,
- explain:["An <span class='term'>input</span> is a table that a different system owns. The till system writes this table. Vulcan only reads it.","Each input has its own file in the <code>inputs/</code> folder. The file name must end in <code>.yaml</code>. Vulcan ignores <code>.yml</code> files in this folder, and it does not show a warning.","The two assertions operate before a model reads the table. If the till sends an order with no ID, the silver models do not run.","In input files, the key is <code>audits</code>, and each assertion is a list item with its arguments in quotes."]},
+ explain:["An <span class='term'>input</span> is a table that a different system owns. The POS system writes this table. Vulcan only reads it.","Each input has its own file in the <code>inputs/</code> folder. The file name must end in <code>.yaml</code>. Vulcan ignores <code>.yml</code> files in this folder, and it does not show a warning.","The two assertions operate before a model reads the table. If the POS system sends an order with no ID, the silver models do not run.","In input files, the key is <code>audits</code>, and each assertion is a list item with its arguments in quotes."]},
 "inputs/loyalty_members.yaml":{node:"loyalty_members",text:`- name: raw.loyalty_members
   description: Members of the loyalty app. The app team owns this table.
   columns:
@@ -391,7 +391,7 @@ S3,Station,Porto`,
   grains (order_id),
   description 'Clean orders, one row for each order.',
   signals (
-    till_day_closed()
+    pos_day_closed()
   ),
   assertions (
     not_null(columns := (order_id, amount)),
@@ -407,9 +407,9 @@ SELECT
   amount,
   status,
   order_date
-FROM raw.till_orders
+FROM raw.pos_orders
 WHERE order_date BETWEEN @start_ds AND @end_ds`,
- explain:["The <code>MODEL</code> block tells Vulcan how to build the table. The <code>SELECT</code> tells Vulcan what goes in the table. You write only the logic of this one step.","<code>INCREMENTAL_BY_TIME_RANGE</code> means that each run adds only the days that are missing. Module 6 shows this.","<code>signals</code> makes Vulcan wait until all stores closed the day on the till. Module 5 shows this.","The <span class='term'>assertions</span> are rules that every row must obey. A coffee order of more than 100 is not real. If a row breaks a rule, Vulcan does not build the gold models.","Vulcan replaces <code>@start_ds</code> and <code>@end_ds</code> with the first and the last day that it processes."]},
+ explain:["The <code>MODEL</code> block tells Vulcan how to build the table. The <code>SELECT</code> tells Vulcan what goes in the table. You write only the logic of this one step.","<code>INCREMENTAL_BY_TIME_RANGE</code> means that each run adds only the days that are missing. Module 6 shows this.","<code>signals</code> makes Vulcan wait until all stores closed the day in the POS system. Module 5 shows this.","The <span class='term'>assertions</span> are rules that every row must obey. A coffee order of more than 100 is not real. If a row breaks a rule, Vulcan does not build the gold models.","Vulcan replaces <code>@start_ds</code> and <code>@end_ds</code> with the first and the last day that it processes."]},
 "models/silver/customers.sql":{node:"customers",text:`MODEL (
   name bean_internal.customers,
   kind SCD_TYPE_2_BY_TIME (
@@ -513,12 +513,12 @@ from vulcan import signal, DatetimeRanges, ExecutionContext
 
 
 @signal()
-def till_day_closed(
+def pos_day_closed(
     batch: DatetimeRanges, context: ExecutionContext
 ) -> t.Union[bool, DatetimeRanges]:
-    # Each store writes one row to raw.till_closures when it closes the day.
+    # Each store writes one row to raw.pos_closures when it closes the day.
     rows = context.engine_adapter.fetchall(
-        "SELECT closed_date FROM raw.till_closures "
+        "SELECT closed_date FROM raw.pos_closures "
         "GROUP BY closed_date HAVING COUNT(*) = 3"
     )
     closed = {row[0] for row in rows}
@@ -598,7 +598,7 @@ description: Revenue for each week for all stores.`,
 };
 const NW=150,NH=46;
 const DAG={nodes:[
- {id:"till_orders",label:"till_orders",kind:"INPUT",x:20,y:40,file:"inputs/till_orders.yaml"},
+ {id:"pos_orders",label:"pos_orders",kind:"INPUT",x:20,y:40,file:"inputs/pos_orders.yaml"},
  {id:"loyalty_members",label:"loyalty_members",kind:"INPUT",x:20,y:120,file:"inputs/loyalty_members.yaml"},
  {id:"orders",label:"orders",kind:"INCREMENTAL",x:230,y:40,file:"models/silver/orders.sql"},
  {id:"customers",label:"customers",kind:"SCD TYPE 2",x:230,y:120,file:"models/silver/customers.sql"},
@@ -606,7 +606,7 @@ const DAG={nodes:[
  {id:"daily_sales",label:"daily_sales",kind:"FULL",x:440,y:120,file:"models/gold/daily_sales.sql"},
  {id:"sales",label:"sales",kind:"SEMANTIC",x:650,y:120,file:"models/semantics/sales.yml"},
  {id:"weekly_revenue",label:"weekly_revenue",kind:"METRIC",x:860,y:120,file:"models/metrics/weekly_revenue.yml"}],
- edges:[["till_orders","orders"],["loyalty_members","customers"],["orders","daily_sales"],["customers","daily_sales"],["stores","daily_sales"],["daily_sales","sales"],["sales","weekly_revenue"]],
+ edges:[["pos_orders","orders"],["loyalty_members","customers"],["orders","daily_sales"],["customers","daily_sales"],["stores","daily_sales"],["daily_sales","sales"],["sales","weekly_revenue"]],
  bands:[["BRONZE · raw",10,170,"--bronze"],["SILVER · bean_internal",220,170,"--silver"],["GOLD · bean_street",430,170,"--gold"],["SEMANTICS",640,380,"--sem"]],W:1030,H:265};
 
 /* =================== helpers =================== */
@@ -709,7 +709,7 @@ function mIntro(i){
    <li><b>Shorter MTTD.</b> MTTD (mean time to detect) is the time until a person knows about a data problem. Checks operate in each run, so bad data stops where it arrives, and the owner gets a message.</li>
    <li><b>Shorter MTTR.</b> MTTR (mean time to recover) is the time until the data is correct again. Plans show the effect of a change before you apply it, and Vulcan builds again only what a correction affects.</li>
    <li><b>Consumers do not need the author.</b> The meaning, the owner and the rules come with the data.</li></ul></div>`));
-  m.append(concept("How to use this lab",`<div class="prose"><p>The lab uses one fictional example from start to end: Bean Street, a chain of three coffee shops. Its till system and its loyalty app are the two sources of a data product with daily sales, a weekly revenue metric and an API.</p>
+  m.append(concept("How to use this lab",`<div class="prose"><p>The lab uses one fictional example from start to end: Bean Street, a chain of three coffee shops. Its POS system (point of sale: the cash registers in the shops) and its loyalty app are the two sources of a data product with daily sales, a weekly revenue metric and an API.</p>
    <p>Do the modules in the contents list in order. Each module explains the concepts, gives you a section to try (marked <span class="pill" style="background:var(--brand);color:#0E2A2A">TRY IT</span>), and ends with a quiz and links to the documentation. Your browser remembers which modules you opened.</p></div>`));
   m.append(quiz([{q:"What is drift?",o:["A slow query","A difference between the data and the tools that describe it","A failed run"],a:1,w:"Copies of a definition in different tools stop agreeing, and nobody sees it."},
    {q:"In which step of the DataOS journey do you use Vulcan?",o:["Discover","Build","Consume"],a:1,w:"Vulcan builds the data product."},
@@ -738,7 +738,7 @@ function mProject(i){
   m.append(quiz([{q:"In which schema is the table that consumers use?",o:["raw","bean_internal","bean_street"],a:2,w:"bean_street holds gold."},
    {q:"You add a third input in inputs/payments.yml. What occurs?",o:["Vulcan loads it","Vulcan ignores the file and shows no warning","Vulcan shows an error"],a:1,w:"Vulcan reads only .yaml files from the inputs folder."},
    {q:"Where do you write a rule that returns bad rows with your own SQL?",o:["audits/","seeds/","inputs/"],a:0,w:"A standalone assertion is a query in the audits folder."},
-   {q:"Which file makes the orders model wait until all stores closed the day?",o:["signals/__init__.py","policies/daily_sales_access.yml","tests/test_daily_sales.yaml"],a:0,w:"The signal till_day_closed is in signals/__init__.py, and orders.sql attaches it."}]));
+   {q:"Which file makes the orders model wait until all stores closed the day?",o:["signals/__init__.py","policies/daily_sales_access.yml","tests/test_daily_sales.yaml"],a:0,w:"The signal pos_day_closed is in signals/__init__.py, and orders.sql attaches it."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 4 The graph ---------- */
@@ -760,7 +760,7 @@ function mGraph(i){
   const EX=[["bean_street.top_products",`SELECT\n  product,\n  SUM(amount) AS revenue\nFROM bean_internal.orders\nWHERE status = 'completed'\nGROUP BY product`],
    ["bean_street.gold_member_sales",`SELECT\n  o.order_date,\n  SUM(o.amount) AS revenue\nFROM bean_internal.orders AS o\nJOIN bean_internal.customers AS c\n  ON o.customer_id = c.customer_id\nWHERE c.tier = 'gold'\nGROUP BY o.order_date`],
    ["bean_street.store_ranking",`SELECT\n  store_name,\n  SUM(revenue) AS revenue,\n  RANK() OVER (ORDER BY SUM(revenue) DESC) AS rank\nFROM bean_street.daily_sales\nGROUP BY store_name`]];
-  const FQN={till_orders:"raw.till_orders",loyalty_members:"raw.loyalty_members",orders:"bean_internal.orders",customers:"bean_internal.customers",stores:"bean_internal.stores",daily_sales:"bean_street.daily_sales"};
+  const FQN={pos_orders:"raw.pos_orders",loyalty_members:"raw.loyalty_members",orders:"bean_internal.orders",customers:"bean_internal.customers",stores:"bean_internal.stores",daily_sales:"bean_street.daily_sales"};
   let exi=0;const base=()=>({nodes:DAG.nodes.filter(n=>FQN[n.id]).map(n=>({id:n.id,label:n.label,kind:n.kind,fqn:FQN[n.id]})),edges:DAG.edges.filter(([a,c])=>FQN[a]&&FQN[c]).map(e=>[...e])});
   let G=base(),added=new Set(),pick=null;
   function layout(){const depth={};const parents=id=>G.edges.filter(e=>e[1]===id).map(e=>e[0]);
@@ -840,7 +840,7 @@ function mEngine(i){
   b2.querySelector("#run").onclick=()=>{const missing=[];for(let k=0;k<today;k++)if(!done.has(k))missing.push(k);
     L(`Run started on ${DAYS[today]}. Vulcan reads its records.`);
     if(!missing.length){L("orders: no missing days. Nothing to do.","muted");L("daily_sales: no parent changed. Nothing to do.","muted");paint();return}
-    L("till_orders: input assertions passed.","ok");L(`orders: build ${missing.map(k=>DAYS[k]).join(", ")} (${missing.length} day${missing.length>1?"s":""}). The other days stay as they are.`,"ok");missing.forEach(k=>done.add(k));
+    L("pos_orders: input assertions passed.","ok");L(`orders: build ${missing.map(k=>DAYS[k]).join(", ")} (${missing.length} day${missing.length>1?"s":""}). The other days stay as they are.`,"ok");missing.forEach(k=>done.add(k));
     L(`daily_sales: FULL model. Build the full table again from all ${done.size} days.`,"ok");lastFull=today;paint({o:missing,f:true});L("Run finished. Vulcan recorded the new days as done.","muted")};
   reset();
   m.append(concept("Different crons in one graph",`<div class="prose"><p>Models in one graph can have different crons. Vulcan obeys these rules:</p>
@@ -874,26 +874,26 @@ function mEngine(i){
 /* ---------- 6 Signals ---------- */
 function mSignals(i){
   const m=section(eb(i),"Build a day only when its data is ready.");
-  m.append(concept("The problem",`<div class="prose"><p>A cron tells Vulcan when an interval is due. It does not tell Vulcan if the source data is ready. At Bean Street, each store sends its orders to the till system when it closes the day. One store sometimes sends its orders two hours late.</p><p>Without a signal, the next run builds the day with orders from only two stores. Vulcan records the day as done, and revenue for that day is too low.</p></div>`));
+  m.append(concept("The problem",`<div class="prose"><p>A cron tells Vulcan when an interval is due. It does not tell Vulcan if the source data is ready. At Bean Street, each store sends its orders to the POS system when it closes the day. One store sometimes sends its orders two hours late.</p><p>Without a signal, the next run builds the day with orders from only two stores. Vulcan records the day as done, and revenue for that day is too low.</p></div>`));
   m.append(concept("What a signal is",`<div class="prose"><p>A <span class="term">signal</span> is a Python function that tells Vulcan which missing intervals are ready to build. Vulcan uses the signal in each run, before it builds the model.</p>
    <ul><li>If the signal gives back <code>True</code>, all intervals in the batch are ready.</li><li>If the signal gives back <code>False</code>, no interval is ready.</li><li>If the signal gives back a list of intervals, only those intervals are ready.</li></ul>
    <p>Vulcan does not build the intervals that are not ready. They stay missing. In the next run, Vulcan uses the signal again. The children of the model also wait for those intervals.</p></div>
-   ${flow([{t:"Run starts",s:"cron is due"},{t:"Missing days",s:"from the records"},{t:"Signal",s:"till_day_closed()",tone:"accent"},{t:"Build ready days",s:"and the children",tone:"ok"}],{labels:["","","ready"],caption:"The days that the signal does not give back stay missing until the next run."})}`));
+   ${flow([{t:"Run starts",s:"cron is due"},{t:"Missing days",s:"from the records"},{t:"Signal",s:"pos_day_closed()",tone:"accent"},{t:"Build ready days",s:"and the children",tone:"ok"}],{labels:["","","ready"],caption:"The days that the signal does not give back stay missing until the next run."})}`));
   m.append(concept("Write a signal",`<div class="prose"><p>Put the function in the <code>signals/</code> folder of the project, for example in <code>signals/__init__.py</code>. Put <code>@signal()</code> on the function.</p></div><pre>${esc(FILES["signals/__init__.py"].text)}</pre>
    <div class="prose"><p>The first argument, <code>batch</code>, is the list of missing intervals. Each interval is a start time and an end time. The argument <code>context</code> gives access to your engine, so the function can read a table. You can also add your own arguments.</p></div>`));
   m.append(concept("Attach the signal to a model",`<div class="prose"><p>Name the signal in the MODEL block. A model can have more than one signal. An interval is ready only when all signals give it back.</p></div><pre>MODEL (
   name bean_internal.orders,
   kind INCREMENTAL_BY_TIME_RANGE (time_column order_date),
   signals (
-    till_day_closed()
+    pos_day_closed()
   ),
   ...
 );</pre>
    <div class="callout">Vulcan also has a built-in signal with the name <code>freshness</code>. It makes a model wait until an input table changed after the last build of the model.</div>`));
-  const b=h(`<div class="bench flat"><div class="bench-head"><h3>The till closes the day</h3><span class="tag">today is 2026-10-10, at 06:30</span></div>
+  const b=h(`<div class="bench flat"><div class="bench-head"><h3>The POS closes the day</h3><span class="tag">today is 2026-10-10, at 06:30</span></div>
    <p class="mini">Each row is one missing day. Select the stores that closed each day, then click <b>Run</b>. Clear the signal box to see a run without the signal.</p>
    <div id="sgrid"></div>
-   <div class="row"><label class="row" style="gap:6px"><input type="checkbox" id="use" checked> The orders model has the signal till_day_closed()</label><button class="btn primary" id="srun">Run</button><button class="btn" id="sreset">Reset</button></div>
+   <div class="row"><label class="row" style="gap:6px"><input type="checkbox" id="use" checked> The orders model has the signal pos_day_closed()</label><button class="btn primary" id="srun">Run</button><button class="btn" id="sreset">Reset</button></div>
    <div class="cols"><div class="log" id="slog"></div><div id="sout" class="stack"></div></div></div>`);m.append(b);
   const sd=["2026-10-07","2026-10-08","2026-10-09"];let closed,built;
   function reset(){closed={"2026-10-07":{S1:1,S2:1,S3:1},"2026-10-08":{S1:1,S2:1,S3:1},"2026-10-09":{S1:1,S2:0,S3:1}};built={};paint();b.querySelector("#slog").innerHTML=`<span class="muted">Click Run.</span>`;b.querySelector("#sout").innerHTML=""}
@@ -905,7 +905,7 @@ function mSignals(i){
     L("Run started. Missing days for orders: "+(missing.join(", ")||"none")+".");
     if(!missing.length){L("Nothing to do.","muted");return}
     let ready=missing;
-    if(use){ready=missing.filter(d=>Object.values(closed[d]).every(Boolean));L("Signal till_day_closed gives back: "+(ready.join(", ")||"no days")+".",ready.length?"ok":"warn");
+    if(use){ready=missing.filter(d=>Object.values(closed[d]).every(Boolean));L("Signal pos_day_closed gives back: "+(ready.join(", ")||"no days")+".",ready.length?"ok":"warn");
       missing.filter(d=>!ready.includes(d)).forEach(d=>L(`${d}: not ready. Vulcan waits. daily_sales also waits for this day.`,"warn"))}
     else L("No signal. Vulcan builds all missing days.","warn");
     ready.forEach(d=>{const full=Object.values(closed[d]).every(Boolean);built[d]=full?"full":"half";L(`orders: build ${d}.`+(full?"":" One store had not closed. Its orders are not in the table."),full?"ok":"bad")});
@@ -948,8 +948,8 @@ SEED:{when:"Small, static lists that you keep in Git. In Bean Street: stores.",s
  before:[{store_id:"S1",store_name:"Harbor"},{store_id:"S2",store_name:"Market"}],incoming:"You add a line to stores.csv.",
  after:[{store_id:"S1",store_name:"Harbor"},{store_id:"S2",store_name:"Market"},{store_id:"S3",store_name:"Station",_c:"new"}],
  note:"The CSV file is the source. When it changes, Vulcan loads the table again."},
-INPUT:{when:"Tables that a different system writes. In Bean Street: till_orders and loyalty_members.",snip:`# inputs/till_orders.yaml\n- name: raw.till_orders\n  columns:\n    order_id: int\n  audits:\n    - name: not_null\n      columns: "[order_id]"`,
- before:[{note:"The till system owns this table."}],incoming:"The till writes new rows.",after:[{note:"Vulcan examines the assertions. It does not write to the table."}],
+INPUT:{when:"Tables that a different system writes. In Bean Street: pos_orders and loyalty_members.",snip:`# inputs/pos_orders.yaml\n- name: raw.pos_orders\n  columns:\n    order_id: int\n  audits:\n    - name: not_null\n      columns: "[order_id]"`,
+ before:[{note:"The POS system owns this table."}],incoming:"The POS system writes new rows.",after:[{note:"Vulcan examines the assertions. It does not write to the table."}],
  note:"You declare the columns so that lineage, the linter and the translation know the table. Assertions on an input stop the models that read it."},
 EMBEDDED:{when:"A part of the logic that many models use, which does not need its own table.",snip:`kind EMBEDDED`,
  before:[{note:"Vulcan stores no table."}],incoming:"A child model reads it.",after:[{note:"Vulcan puts the SELECT in the query of the child."}],
@@ -1231,7 +1231,7 @@ function mChanges(i){
   function paintEd(){ced.innerHTML="";cur.cols.forEach((c,k)=>{const r=h(`<div class="row" style="flex-wrap:nowrap"><input type="text" value="${esc(c[0])}" aria-label="Column name" style="width:120px"><input type="text" value="${esc(c[1])}" aria-label="Column expression" style="flex:1"><button class="btn" aria-label="Remove column ${esc(c[0])}">✕</button></div>`);
     const [a,e]=r.querySelectorAll("input");a.oninput=()=>{c[0]=a.value;sql()};e.oninput=()=>{c[1]=e.value;sql()};r.querySelector("button").onclick=()=>{cur.cols.splice(k,1);paintEd()};ced.append(r)});sql()}
   function sql(){cur.where=b.querySelector("#cw").value;cur.desc=b.querySelector("#cdsc").value;
-    const from=model==="orders"?"FROM raw.till_orders":"FROM bean_internal.orders AS o\nJOIN bean_internal.stores AS s\n  ON o.store_id = s.store_id\nLEFT JOIN bean_internal.customers AS c\n  ON o.customer_id = c.customer_id\n  AND o.order_date >= c.valid_from\n  AND (o.order_date < c.valid_to OR c.valid_to IS NULL)";
+    const from=model==="orders"?"FROM raw.pos_orders":"FROM bean_internal.orders AS o\nJOIN bean_internal.stores AS s\n  ON o.store_id = s.store_id\nLEFT JOIN bean_internal.customers AS c\n  ON o.customer_id = c.customer_id\n  AND o.order_date >= c.valid_from\n  AND (o.order_date < c.valid_to OR c.valid_to IS NULL)";
     const gb=model==="daily_sales"?"\nGROUP BY "+cur.cols.map((c,k)=>/\b(SUM|COUNT|AVG|MIN|MAX)\(/i.test(c[1])?null:k+1).filter(Boolean).join(", "):"";
     b.querySelector("#csql").textContent=`-- description: '${cur.desc}'\nSELECT\n${cur.cols.map(c=>"  "+(c[1].trim()===c[0].trim()||c[1].trim().endsWith("."+c[0].trim())?c[1]:c[1]+" AS "+c[0])).join(",\n")}\n${from}${cur.where?"\nWHERE "+cur.where:""}${gb}`}
   b.querySelector("#cw").oninput=sql;b.querySelector("#cdsc").oninput=sql;
@@ -1271,7 +1271,7 @@ function mChanges(i){
    {q:"You change amount to amount * 1.23 in orders. What occurs to daily_sales?",o:["Vulcan builds it again, because its input data changed","Nothing","Vulcan removes it"],a:0,w:"The change is breaking, so daily_sales is indirectly breaking."},
    {q:"You remove revenue from daily_sales. Why does the plan stop?",o:["Because the measure total_revenue reads that column","Because FULL models cannot change","Because of a syntax error"],a:0,w:"Vulcan makes sure that semantic terms point to real columns before it applies the plan."},
    {q:"You change only the description of a model. Which category does Vulcan give?",o:["BREAKING","NON_BREAKING","METADATA"],a:2,w:"A metadata change builds nothing."},
-   {q:"The till sent wrong data for two days. The logic is correct. What do you do?",o:["Make a breaking change","Restate those two days","Remove the model"],a:1,w:"A restatement builds only the days that you select, and their children."}]));
+   {q:"The POS system sent wrong data for two days. The logic is correct. What do you do?",o:["Make a breaking change","Restate those two days","Remove the model"],a:1,w:"A restatement builds only the days that you select, and their children."}]));
   m.append(nextBtn(i));return m}
 
 /* ---------- 9 Quality ---------- */
@@ -1343,7 +1343,7 @@ function mQuality(i){
 
   function assert(){qb.append(h(`<div class="prose"><p>An <span class="term">assertion</span> is a rule that real data must obey. It is a query that finds bad rows. If it finds bad rows and it is <span class="term">blocking</span> (the default), Vulcan stops all children of the table.</p>
      <p>Assertions on an input operate before a model reads the input. Assertions on a model operate right after Vulcan builds the model. Vulcan writes the rows of the model first, then it does the assertions. If an assertion fails, the bad rows are in that table, but the children do not read them. Vulcan also does not record the interval as done, so the next run tries it again.</p>
-     <p>Below is the batch of till orders for 2026-10-08. Add a problem, then click <b>Run</b>. Look where each problem stops.</p></div>`));
+     <p>Below is the batch of POS orders for 2026-10-08. Add a problem, then click <b>Run</b>. Look where each problem stops.</p></div>`));
     const base=ORDERS.filter(o=>o.order_date==="2026-10-08").slice(0,6).map(o=>({order_id:o.order_id,store_id:o.store_id,product:o.product,amount:o.amount,status:o.status}));
     const w=h(`<div class="stack" style="gap:12px"><div class="row" id="inj"></div><div class="row"><label class="row" style="gap:6px"><input type="checkbox" id="nb"> Make accepted_range on orders non-blocking</label><button class="btn primary" id="ra">Run</button><button class="btn" id="rr">Reset</button></div><div id="rows"></div><div id="ad"></div><div class="cols"><div class="log" id="al"></div><div id="an" class="stack"></div></div></div>`);qb.append(w);
     const inj={nul:["Missing order_id",r=>{r[1].order_id=null;r[1]._bad=["order_id"]}],dup:["Duplicate order_id",r=>{r[3].order_id=r[2].order_id;r[3]._bad=["order_id"];r[2]._bad=["order_id"]}],cents:["Amount in cents (450, not 4.50)",r=>{r.forEach(x=>{x.amount=Math.round(x.amount*100);x._bad=(x._bad||[]).concat("amount")})}]};
@@ -1354,12 +1354,12 @@ function mQuality(i){
     w.querySelector("#ra").onclick=()=>{const log=w.querySelector("#al");log.innerHTML="";const L=(t,c="")=>log.append(h(`<div class="${c}">${t}</div>`));
       const nb=w.querySelector("#nb").checked;const states={},labels={},msgs=[];const later=["daily_sales","sales","weekly_revenue"];
       const nn=rows.filter(r=>r.order_id==null).length;const ids=rows.map(r=>r.order_id).filter(x=>x!=null);const du=ids.length-new Set(ids).size;
-      L("till_orders (input): assertions for 2026-10-08.");
+      L("pos_orders (input): assertions for 2026-10-08.");
       if(nn||du){L(nn?`assertion not_null: failed, ${nn} row`:"assertion not_null: passed",nn?"bad":"ok");L(du?`assertion unique_values: failed, ${du*2} rows`:"assertion unique_values: passed",du?"bad":"ok");
-        states.till_orders="bad";labels.till_orders="assertion failed";["orders",...later].forEach(d=>{states[d]="idle";labels[d]="skipped"});
+        states.pos_orders="bad";labels.pos_orders="assertion failed";["orders",...later].forEach(d=>{states[d]="idle";labels[d]="skipped"});
         L("orders: skipped, because its input failed. Silver does not change.","bad");L("daily_sales: skipped.","bad");L("Run failed. The problem stopped at bronze.","bad");
-        if(nn)msgs.push(["bad","till_orders","not_null",nn,"The silver and gold tables did not change."]);if(du)msgs.push(["bad","till_orders","unique_values",du*2,"The silver and gold tables did not change."])}
-      else{L("assertions not_null and unique_values: passed","ok");states.till_orders="ok";labels.till_orders="passed";
+        if(nn)msgs.push(["bad","pos_orders","not_null",nn,"The silver and gold tables did not change."]);if(du)msgs.push(["bad","pos_orders","unique_values",du*2,"The silver and gold tables did not change."])}
+      else{L("assertions not_null and unique_values: passed","ok");states.pos_orders="ok";labels.pos_orders="passed";
         const ar=rows.filter(r=>r.amount<0||r.amount>100).length;L(`orders (silver): build 2026-10-08. Rows written: ${rows.length}.`);L("assertion not_null: passed","ok");
         if(!ar){L("assertion accepted_range: passed","ok");states.orders="ok";labels.orders="passed";states.daily_sales="ok";labels.daily_sales="built";L("daily_sales (gold): built.","ok");L("Run finished.","ok")}
         else if(!nb){L(`assertion accepted_range: failed, ${ar} rows (blocking)`,"bad");states.orders="bad";labels.orders="assertion failed";later.forEach(d=>{states[d]="idle";labels[d]="skipped"});
@@ -1372,7 +1372,7 @@ function mQuality(i){
     qb.append(h(`<div class="callout"><b>Where to put which rule.</b> On inputs, examine what the source must always give, such as IDs that exist and are unique. On silver, examine the business rules after your cleaning logic, such as a price range. Then a problem in the source stops at bronze, and a problem in your logic stops at silver. Neither gets to gold.</div>`))}
 
   function dq(){qb.append(h(`<div class="prose"><p>A <span class="term">data quality check</span> looks for patterns that one row cannot show. Examples are a decrease in the number of orders, or a column that suddenly has new values. Vulcan does the data quality checks after a run or a plan that had no errors. If the run had an error, Vulcan does not do them.</p>
-     <p>Data quality checks do not stop data. They record a result (pass, warn or fail) and group it by a dimension such as completeness or validity. Then Vulcan sends a <code>dq_end</code> message. A pattern problem is not blocked, so it can get to gold.</p><p>Click a button to simulate a quiet day at the tills.</p></div>`));
+     <p>Data quality checks do not stop data. They record a result (pass, warn or fail) and group it by a dimension such as completeness or validity. Then Vulcan sends a <code>dq_end</code> message. A pattern problem is not blocked, so it can get to gold.</p><p>Click a button to simulate a quiet day at the registers.</p></div>`));
     const counts=DAYS.map((d,k)=>ORDERS.filter(o=>o.order_date===d).length||[24,25][k%2]);let drop=-1;
     const w=h(`<div class="stack" style="gap:12px"><div class="svgwrap" id="ch"></div><div class="row"><button class="btn" id="dr">Simulate a decrease on 10-10</button><button class="btn" id="dn">Usual day</button></div><div id="dqo"></div></div>`);qb.append(w);
     function paint(){const c=counts.map((v,k)=>k===drop?6:v);const W=640,H=200,pl=36,pb=26,max=40,bw=(W-pl-10)/c.length;const y=v=>H-pb-(v/max)*(H-pb-10);const mean=counts.slice(0,9).reduce((a,x)=>a+x)/9;
@@ -1380,14 +1380,14 @@ function mQuality(i){
       [0,10,20,30,40].forEach(v=>{s+=`<line class="grid" x1="${pl}" x2="${W-10}" y1="${y(v)}" y2="${y(v)}"/><text x="${pl-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`});
       c.forEach((v,k)=>{s+=`<rect class="bar${k===drop?" badbar":""}" x="${pl+k*bw+4}" y="${y(v)}" width="${bw-8}" height="${y(0)-y(v)}" rx="2"/><text x="${pl+k*bw+bw/2}" y="${H-8}" text-anchor="middle">${DAYS[k].slice(5)}</text>`});
       s+=`<text x="${W-14}" y="${y(mean+8)-4}" text-anchor="end">usual range</text></svg>`;w.querySelector("#ch").innerHTML=s;
-      w.querySelector("#dqo").innerHTML=drop<0?`<div class="notice ok"><span class="who">Slack · dq_end</span><b>bean_internal.orders: 2 of 2 checks passed</b><span class="mini">normal_order_volume: pass · known_status: pass</span></div>`:`<div class="notice warn"><span class="who">Slack · dq_end</span><b>bean_internal.orders: 1 of 2 checks failed</b><span class="mini">normal_order_volume: fail (6 rows, much less than the usual 20 to 35) · known_status: pass</span><p class="mini">The run passed, and Vulcan built gold. A person must now examine the tills.</p></div>`}
+      w.querySelector("#dqo").innerHTML=drop<0?`<div class="notice ok"><span class="who">Slack · dq_end</span><b>bean_internal.orders: 2 of 2 checks passed</b><span class="mini">normal_order_volume: pass · known_status: pass</span></div>`:`<div class="notice warn"><span class="who">Slack · dq_end</span><b>bean_internal.orders: 1 of 2 checks failed</b><span class="mini">normal_order_volume: fail (6 rows, much less than the usual 20 to 35) · known_status: pass</span><p class="mini">The run passed, and Vulcan built gold. A person must now examine the registers.</p></div>`}
     w.querySelector("#dr").onclick=()=>{drop=9;paint()};w.querySelector("#dn").onclick=()=>{drop=-1;paint()};paint();
     qb.append(h(`<div class="callout warn"><b>Assertion or data quality check?</b> Use an assertion when one bad row is sufficient to stop the data, for example a missing ID. Use a data quality check when the problem is a pattern, for example fewer orders than usual.</div>`))}
   show("test");
   m.append(h(`<div class="callout"><b>What this gives you for MTTD.</b> Without these checks, the person who finds a problem is usually the person who reads the dashboard. With them, Vulcan finds the problem in the run that brings the bad data.</div>`));
   m.append(quiz([{q:"When does Vulcan do the unit tests?",o:["During the plan, before it builds anything","After each run","Only at night"],a:0,w:"A failed test stops the plan."},
    {q:"Why must the test of daily_sales give rows for customers and stores?",o:["Because daily_sales reads those tables","Because all tests need three tables","It is not necessary"],a:0,w:"A test gives input rows for each table that the model reads."},
-   {q:"The till sends an order with no order_id. Where does Vulcan stop it?",o:["At the input till_orders, before silver runs","In gold","Vulcan does not stop it"],a:0,w:"The not_null assertion on the input fails, so the children do not run."},
+   {q:"The POS system sends an order with no order_id. Where does Vulcan stop it?",o:["At the input pos_orders, before silver runs","In gold","Vulcan does not stop it"],a:0,w:"The not_null assertion on the input fails, so the children do not run."},
    {q:"An assertion on orders fails, and it is blocking. Where are the bad rows?",o:["In all tables after orders","Only in the silver table orders","In no table"],a:1,w:"Vulcan writes orders, then the assertion fails, and Vulcan skips gold."},
    {q:"The number of orders decreases by 75% on one day. Which check finds it?",o:["not_null","A data quality check for anomalies on row_count","The linter"],a:1,w:"No single row is wrong. Only the pattern is wrong."}]));
   m.append(nextBtn(i));return m}
@@ -1577,7 +1577,7 @@ segments:
   paint();
   m.append(quiz([{q:"Two teams use total_revenue. One team changes the definition in sales.yml. What does the other team see?",o:["The old definition until they copy the new SQL","The new definition, because both teams use the same measure","An error"],a:1,w:"The definition is in one place."},
    {q:"Which member is a saved filter?",o:["Dimension","Measure","Segment"],a:2,w:"A segment is a saved filter, for example completed orders."},
-   {q:"Which table does the semantic model sales read?",o:["bean_internal.orders","bean_street.daily_sales","raw.till_orders"],a:1,w:"Semantic models read only gold."},
+   {q:"Which table does the semantic model sales read?",o:["bean_internal.orders","bean_street.daily_sales","raw.pos_orders"],a:1,w:"Semantic models read only gold."},
    {q:"A change removes a column that a measure uses. When do you find out?",o:["When a dashboard breaks","During the plan, because the plan stops","Never"],a:1,w:"Vulcan makes sure that each member points to a real column."}]));
   m.append(nextBtn(i));return m}
 
@@ -1674,9 +1674,9 @@ function mAI(i){
 
 /* ---------- 14 Incident drill ---------- */
 function mIncident(i){
-  const without=[["Thu 06:00","bad","The nightly job loads orders. The till update sends amounts in cents: a latte costs 450, not 4.50. Nothing examines the values."],["Thu 06:20","bad","The job builds daily sales and updates the revenue dashboard. Revenue for Thursday is 100 times too high."],["Thu 09:30","bad","A finance report uses the dashboard numbers and goes to the leadership team."],["Fri 10:00","warn","A store manager asks why Harbor made approximately 3,000 in one day. A usual day is approximately 30. This is the moment of detection."],["Fri 11:00","warn","An analyst opens four SQL scripts and a BI tool to find the source of the number."],["Fri 15:00","warn","The analyst finds the problem and corrects the script. Nobody knows which tables used the bad data, so the team does the full pipeline again for all days."],["Fri 18:00","ok","The data is correct again. Finance sends a correction for the report."]];
-  const withv=[["Thu 06:00","info","Vulcan examines the input till_orders. Each order has a unique ID, so the input assertions pass."],["Thu 06:01","bad","Vulcan builds orders in silver. The assertion accepted_range (amount from 0 to 100) fails. This is the moment of detection."],["Thu 06:01","bad","Vulcan skips daily_sales in gold. The semantic layer and the dashboard keep the correct data of Wednesday."],["Thu 06:01","warn","A Slack message goes to #data-alerts, and an e-mail goes to maya, the owner of orders. The message names the model, the assertion and the number of bad rows."],["Thu 08:15","info","Maya opens the query from the message and sees amounts such as 450. Column lineage shows that orders.amount comes from till_orders.amount. Only rows with till_version 2.0 are wrong."],["Thu 08:40","info","Maya changes amount in orders: divide by 100 when till_version is 2.0. She makes the change forward-only. The plan shows that no old day is built again."],["Thu 08:45","ok","Maya restates Thursday for orders. Vulcan builds that one day, the assertions pass, and daily_sales follows."],["Thu 08:55","ok","Maya compares Thursday before and after the correction with table diff. Only the amounts of till version 2.0 changed. The data quality checks pass."]];
-  const m=section(eb(i),"The same bad data, with Vulcan and without Vulcan.","On Thursday, the till company sends an update. The new version sends prices in cents. Click Next event to see the two timelines next to each other.");
+  const without=[["Thu 06:00","bad","The nightly job loads orders. The POS update sends amounts in cents: a latte costs 450, not 4.50. Nothing examines the values."],["Thu 06:20","bad","The job builds daily sales and updates the revenue dashboard. Revenue for Thursday is 100 times too high."],["Thu 09:30","bad","A finance report uses the dashboard numbers and goes to the leadership team."],["Fri 10:00","warn","A store manager asks why Harbor made approximately 3,000 in one day. A usual day is approximately 30. This is the moment of detection."],["Fri 11:00","warn","An analyst opens four SQL scripts and a BI tool to find the source of the number."],["Fri 15:00","warn","The analyst finds the problem and corrects the script. Nobody knows which tables used the bad data, so the team does the full pipeline again for all days."],["Fri 18:00","ok","The data is correct again. Finance sends a correction for the report."]];
+  const withv=[["Thu 06:00","info","Vulcan examines the input pos_orders. Each order has a unique ID, so the input assertions pass."],["Thu 06:01","bad","Vulcan builds orders in silver. The assertion accepted_range (amount from 0 to 100) fails. This is the moment of detection."],["Thu 06:01","bad","Vulcan skips daily_sales in gold. The semantic layer and the dashboard keep the correct data of Wednesday."],["Thu 06:01","warn","A Slack message goes to #data-alerts, and an e-mail goes to maya, the owner of orders. The message names the model, the assertion and the number of bad rows."],["Thu 08:15","info","Maya opens the query from the message and sees amounts such as 450. Column lineage shows that orders.amount comes from pos_orders.amount. Only rows with pos_version 2.0 are wrong."],["Thu 08:40","info","Maya changes amount in orders: divide by 100 when pos_version is 2.0. She makes the change forward-only. The plan shows that no old day is built again."],["Thu 08:45","ok","Maya restates Thursday for orders. Vulcan builds that one day, the assertions pass, and daily_sales follows."],["Thu 08:55","ok","Maya compares Thursday before and after the correction with table diff. Only the amounts of POS version 2.0 changed. The data quality checks pass."]];
+  const m=section(eb(i),"The same bad data, with Vulcan and without Vulcan.","On Thursday, the POS vendor sends an update. The new version sends prices in cents. Click Next event to see the two timelines next to each other.");
   m.append(h(`<div class="callout warn">The times in this example show the order of events. They are not measured results.</div>`));
   const b=h(`<div class="bench flat"><div class="bench-head"><h3>Play the two timelines</h3><span class="tag">click next event</span></div><div class="row"><button class="btn primary" id="ne">Next event</button><button class="btn" id="all">Show all</button><button class="btn" id="rz">Reset</button></div><div class="cols"><div class="lane"><h3>Without Vulcan</h3><div id="lw" class="lane"></div></div><div class="lane"><h3>With Vulcan</h3><div id="lv" class="lane"></div></div></div></div>`);m.append(b);
   let step=0;const lw=b.querySelector("#lw"),lv=b.querySelector("#lv");const ev=x=>h(`<div class="ev ${x[1]}"><div class="t">${x[0]}</div><div class="b">${x[2]}</div></div>`);
@@ -1693,7 +1693,7 @@ function mIncident(i){
    <div class="prose"><p><span class="term">Column lineage</span> is the path of a column from the input, through each model, to gold. Vulcan finds it from your SQL. <span class="term">Table diff</span> compares two tables by columns and by rows. It shows what a correction changed before you tell consumers.</p></div>`));
   m.append(quiz([{q:"In the Vulcan timeline, why does the dashboard not show the wrong revenue?",o:["Vulcan deletes the bad rows","The assertion on silver stops the gold table, and the dashboard reads gold","The dashboard is off"],a:1,w:"The bad rows stay in silver."},
    {q:"Which part of Vulcan finds the source column of a wrong number?",o:["Column lineage","Signals","Seeds"],a:0,w:"Lineage shows the path of each column."},
-   {q:"Why is the correction forward-only?",o:["Because only new data from till version 2.0 has the problem, so old days do not need a new build","Because forward-only is faster to type","Because breaking changes are not permitted"],a:0,w:"Forward-only keeps the old rows and uses the new logic for new intervals."},
+   {q:"Why is the correction forward-only?",o:["Because only new data from POS version 2.0 has the problem, so old days do not need a new build","Because forward-only is faster to type","Because breaking changes are not permitted"],a:0,w:"Forward-only keeps the old rows and uses the new logic for new intervals."},
    {q:"How does Maya prove what the correction changed?",o:["With table diff","With a new cron","With a seed"],a:0,w:"Table diff compares the rows before and after."}]));
   m.append(nextBtn(i));return m}
 
