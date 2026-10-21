@@ -114,6 +114,11 @@ kbd {
 .crumbs span { color: var(--text); overflow: hidden; text-overflow: ellipsis; }
 .actions { display: flex; gap: 8px; }
 
+/* List | Treemap switch (same on index.html and treemap.html) */
+.view-switch { display: inline-flex; padding: 2px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); }
+.view-switch a { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 6px; font: 500 13px var(--font); color: var(--muted); }
+.view-switch a:hover { color: var(--text); }
+.view-switch a.on { background: var(--accent-soft); color: var(--accent); }
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 8px 14px; border-radius: 8px;
@@ -399,7 +404,7 @@ main { outline: none; }
 }
 @media (max-width: 640px) {
   .topbar { padding: 10px 16px; gap: 10px; }
-  .brand-text, .crumbs, .search-btn span, .search-btn kbd, #rulesBtn span { display: none; }
+  .brand-text, .crumbs, .search-btn span, .search-btn kbd, #rulesBtn span, .view-switch span { display: none; }
   .actions { margin-left: auto; }
   .home, .layer { padding-left: 16px; padding-right: 16px; }
   .rail-wrap { top: 57px; margin: -14px -16px 0; padding: 0 16px; }
@@ -436,7 +441,8 @@ main { outline: none; }
         <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M10 2a8 8 0 0 1 6.32 12.9l5.39 5.4-1.41 1.4-5.4-5.39A8 8 0 1 1 10 2Zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"/></svg>
         <span>Search</span><kbd>/</kbd>
       </button>
-      <button class="btn" id="rulesBtn" title="Classification rules and filter tags"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg> <span>Rules</span></button>
+      <button class="btn" id="rulesBtn" title="Classification rules and filter tags"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15ZM5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 7h6"/></svg> <span>Rules</span></button>
+      <nav class="view-switch" aria-label="View"><a class="on" href="index.html" id="toList" aria-current="page" title="Browse as a list"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg><span>List</span></a><a class="" href="treemap.html" id="toTreemap" title="Explore as a treemap"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="11" height="18" rx="1.5"/><rect x="14" y="3" width="7" height="8" rx="1.5"/><rect x="14" y="11" width="7" height="10" rx="1.5"/></g></svg><span>Treemap</span></a></nav>
       <button class="btn icon" id="themeBtn" title="Toggle light / dark" aria-label="Toggle light / dark"></button>
     </div>
   </header>
@@ -833,6 +839,8 @@ main { outline: none; }
       document.documentElement.style.setProperty("--h", l ? HUES[l.id] : 10);
       document.title = (l ? l.id + " " + l.name + " · " : "") + "AI Landscape";
       wire();
+      // The switch opens the same place in the treemap (same address after the #, without the filter).
+      $("#toTreemap").setAttribute("href", "treemap.html" + (l ? "#/" + l.id + (r.bucket ? "/" + encodeURIComponent(r.bucket) : "") : ""));
       // Keep the industry filter in the address so a filtered view can be shared.
       if (l && l.isApps) {
         var base = "#/" + l.id + (r.bucket ? "/" + encodeURIComponent(r.bucket) : "");

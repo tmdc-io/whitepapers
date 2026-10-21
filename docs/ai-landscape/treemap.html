@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Landscape · Treemap</title>
+  <meta name="description" content="Zoom into the AI Landscape: layers, categories and companies as nested boxes sized by company count.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2323407C'/><text x='50' y='66' font-family='Arial' font-weight='700' font-size='46' fill='white' text-anchor='middle'>AI</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+/* Same look as index.html: IBM Plex, white page, navy accent, pastel layer groups. */
+:root {
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+:root, :root[data-theme="light"] {
+  --bg: #FFFFFF; --panel: #FAFAF8; --line: #E3E4E0; --text: #171A20; --muted: #4A4F5A; --chip: #F2F3F5;
+  --accent: #23407C; --accent-soft: #EFF3FA; --accent-line: #C4D0E8; --accent-ink: #FFFFFF;
+  --shadow: 0 16px 40px -24px rgba(23, 26, 32, .35); color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #14161B; --panel: #181B21; --line: #2C3038; --text: #E7E9EE; --muted: #A3A9B5; --chip: #1D2027;
+  --accent: #8FB0EE; --accent-soft: #1B2539; --accent-line: #34466B; --accent-ink: #14161B;
+  --shadow: 0 20px 50px -20px rgba(0, 0, 0, .6); color-scheme: dark;
+}
+/* Layer colour groups (same values as index.html) */
+[data-hue="peach"] { --hue: #E8915A; } [data-hue="lilac"] { --hue: #9B83D8; } [data-hue="mint"] { --hue: #4FB58E; }
+[data-hue="sky"] { --hue: #5B95DE; } [data-hue="rose"] { --hue: #DE7396; }
+:root[data-theme="dark"] [data-hue="peach"] { --hue: #CC7A47; } :root[data-theme="dark"] [data-hue="lilac"] { --hue: #9580D5; }
+:root[data-theme="dark"] [data-hue="mint"] { --hue: #3A9C77; } :root[data-theme="dark"] [data-hue="sky"] { --hue: #5891DA; }
+:root[data-theme="dark"] [data-hue="rose"] { --hue: #C9628A; }
+[data-hue] {
+  --t0: color-mix(in srgb, var(--hue) 12%, var(--bg)); --t1: color-mix(in srgb, var(--hue) 24%, var(--bg));
+  --t2: color-mix(in srgb, var(--hue) 40%, var(--bg)); --t3: color-mix(in srgb, var(--hue) 60%, var(--bg));
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 15px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; }
+
+/* top bar */
+.topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 16px; padding: 12px 24px;
+  background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 17px; white-space: nowrap; }
+.brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); font: 700 13px var(--font); }
+.brand b { color: var(--accent); }
+.crumbs { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); overflow: hidden; white-space: nowrap; }
+.crumbs a:hover { color: var(--accent); }
+.crumbs i { font-style: normal; opacity: .45; }
+.crumbs span { color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+.actions { display: flex; gap: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px; font: 500 13px var(--font);
+  background: var(--panel); border: 1px solid var(--line); cursor: pointer; }
+.btn:hover { border-color: var(--accent-line); }
+.btn.icon { padding: 8px 11px; }
+
+/* List | Treemap switch (same on index.html and treemap.html) */
+.view-switch { display: inline-flex; padding: 2px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); }
+.view-switch a { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 6px; font: 500 13px var(--font); color: var(--muted); }
+.view-switch a:hover { color: var(--text); }
+.view-switch a.on { background: var(--accent-soft); color: var(--accent); }
+/* page */
+main { max-width: 1400px; margin: 0 auto; padding: 22px 24px 40px; }
+.intro { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px; margin-bottom: 14px; }
+.eyebrow { margin: 0 0 4px; font: 500 12px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.gdot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--hue, var(--accent)); vertical-align: 1px; }
+h1 { margin: 0; font-size: clamp(24px, 3.2vw, 34px); line-height: 1.15; letter-spacing: -.02em; }
+.sub { margin: 4px 0 0; font-size: 14px; color: var(--muted); max-width: 760px; }
+.up { font-size: 13px; color: var(--accent); white-space: nowrap; }
+.up:hover { text-decoration: underline; text-underline-offset: 3px; }
+.hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+
+/* treemap */
+.tm { position: relative; width: 100%; overflow: hidden; border-radius: 10px; background: var(--panel); }
+.view { position: absolute; inset: 0; transform-origin: 0 0; }
+.view.zoom-in { transition: transform .42s var(--ease); }
+.view.fade { animation: fade .3s var(--ease) both; }
+.view.out { transition: opacity .25s; opacity: 0; pointer-events: none; }
+@keyframes fade { from { opacity: 0; } }
+
+.box { position: absolute; overflow: hidden; border-radius: 6px; text-align: left; padding: 0; border: 0;
+  background: var(--t1, var(--chip)); cursor: pointer; transition: background .15s, box-shadow .15s; }
+.box:hover, .box:focus-visible { background: var(--t2, var(--chip)); outline: none; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--hue, var(--accent)) 70%, var(--text)); }
+.box-label { position: absolute; left: 0; right: 0; top: 0; padding: 7px 9px 0; pointer-events: none; z-index: 2; }
+.box-label b { display: block; font-size: 14px; font-weight: 600; line-height: 1.25; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.box-label small { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.box.big .box-label b { font-size: 17px; }
+.box.tiny .box-label { display: none; }
+
+/* company tiles (last level) */
+.co { position: absolute; overflow: hidden; display: flex; flex-direction: column; border-radius: 6px; padding: 9px 11px 8px; background: var(--t0, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--hue, var(--accent)) 30%, var(--bg)); transition: background .15s; }
+.co:has(a.co-name):hover { background: var(--t1, var(--chip)); }
+.co-name { display: block; font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.co-name::after { content: ""; position: absolute; inset: 0; }
+.co-name.plain { color: var(--text); }
+.co-name.plain::after { display: none; }
+.co-of { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.co-desc { flex: 0 1 auto; min-height: 0; margin: 4px 0 0; font-size: 12.5px; line-height: 1.4; color: var(--text); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.co-links { flex: none; margin-top: auto; padding-top: 6px; display: flex; gap: 12px; font-size: 11.5px; }
+.co-links a { position: relative; z-index: 1; color: var(--muted); }
+.co-links a:hover { color: var(--accent); }
+.co.short .co-desc, .co.short .co-links { display: none; }
+.co.narrow .co-desc { -webkit-line-clamp: 2; }
+
+kbd { font: 600 11px var(--font); padding: 2px 6px; border-radius: 4px; background: var(--chip); border: 1px solid var(--line); color: var(--muted); }
+.muted { color: var(--muted); } .small { font-size: 13px; }
+.code { display: inline-flex; font: 700 12px var(--mono); padding: 3px 8px; border-radius: 6px; color: var(--accent); background: var(--accent-soft); }
+
+/* Rules panel (same as index.html) */
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 40; width: min(560px, 100vw); background: var(--bg); border-left: 1px solid var(--line);
+  box-shadow: -30px 0 60px -20px rgba(0, 0, 0, .5); transform: translateX(105%); transition: transform .5s var(--ease); overflow-y: auto; }
+.drawer-open .drawer { transform: none; }
+.drawer-inner { position: relative; padding: 32px 28px 60px; }
+.drawer .close { position: absolute; right: 20px; top: 22px; }
+.drawer h2 { margin: 0 0 8px; padding-right: 50px; font-size: 26px; letter-spacing: -.02em; }
+.drawer h3 { margin: 28px 0 10px; font-size: 17px; }
+.rules { padding-left: 20px; margin: 0; display: grid; gap: 10px; }
+.rules li::marker { color: var(--accent); font-weight: 700; }
+.tags { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.tags th { text-align: left; white-space: nowrap; padding: 8px 12px 8px 0; vertical-align: top; font-weight: 600; border-bottom: 1px solid var(--line); }
+.tags th .code { margin-right: 8px; min-width: 38px; }
+.tags td { padding: 8px 0; color: var(--muted); border-bottom: 1px solid var(--line); }
+.legend { padding-left: 18px; display: grid; gap: 10px; font-size: 14px; color: var(--muted); }
+.scrim { position: fixed; inset: 0; z-index: 30; background: rgba(5, 5, 15, .45); opacity: 0; pointer-events: none; transition: opacity .4s; }
+.drawer-open .scrim { opacity: 1; pointer-events: auto; }
+
+/* Search (same as index.html) */
+.search { position: fixed; inset: 0; z-index: 50; display: flex; justify-content: center; align-items: flex-start; padding: 12vh 16px 0;
+  background: rgba(5, 5, 15, .5); backdrop-filter: blur(6px); opacity: 0; pointer-events: none; transition: opacity .25s; }
+.search-open .search { opacity: 1; pointer-events: auto; }
+.search-box { width: min(640px, 100%); border-radius: 8px; overflow: hidden; background: var(--bg); border: 1px solid var(--line); box-shadow: var(--shadow); }
+#searchInput { width: 100%; padding: 20px 22px; font: 500 18px var(--font); color: var(--text); background: transparent; border: 0; border-bottom: 1px solid var(--line); outline: none; }
+.search-results { max-height: 52vh; overflow-y: auto; padding: 8px; }
+.search-results .empty { padding: 14px; margin: 0; color: var(--muted); font-size: 14px; }
+.sr { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; }
+.sr.sel, .sr:hover { background: var(--accent-soft); }
+.sr-kind { flex-shrink: 0; font-size: 12px; width: 70px; color: var(--accent); font-weight: 700; }
+.sr-main { display: flex; flex-direction: column; min-width: 0; }
+.sr-main small { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search-hint { padding: 10px 16px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); display: flex; gap: 6px; align-items: center; }
+
+/* a company opened from search briefly lights up */
+.co.flash { animation: flash 2.4s var(--ease); }
+@keyframes flash { 0%, 60% { box-shadow: 0 0 0 3px var(--accent); } 100% { box-shadow: 0 0 0 3px transparent; } }
+
+@media (max-width: 640px) {
+  .topbar { padding: 10px 16px; gap: 10px; }
+  .brand-text, .crumbs, .view-switch span, .search-btn span, .search-btn kbd, #rulesBtn span { display: none; }
+  .actions { margin-left: auto; }
+  main { padding: 16px 16px 30px; }
+  .box-label b { font-size: 13px; }
+  .box.big .box-label b { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .view.zoom-in, .view.out { transition: none; } .view.fade { animation: none; }
+}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a href="index.html" class="brand" aria-label="AI Landscape home"><span class="brand-mark">AI</span><span class="brand-text">AI <b>Landscape</b></span></a>
+    <nav class="crumbs" id="crumbs" aria-label="Breadcrumb"></nav>
+    <div class="actions">
+      <button class="btn search-btn" id="searchBtn" title="Search companies (press /)">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M10 2a8 8 0 0 1 6.32 12.9l5.39 5.4-1.41 1.4-5.4-5.39A8 8 0 1 1 10 2Zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"/></svg>
+        <span>Search</span><kbd>/</kbd>
+      </button>
+      <button class="btn" id="rulesBtn" title="Classification rules and filter tags"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15ZM5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 7h6"/></svg> <span>Rules</span></button>
+      <nav class="view-switch" aria-label="View"><a class="" href="index.html" id="toList" title="Browse as a list"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg><span>List</span></a><a class="on" href="treemap.html" id="toTreemap" aria-current="page" title="Explore as a treemap"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="11" height="18" rx="1.5"/><rect x="14" y="3" width="7" height="8" rx="1.5"/><rect x="14" y="11" width="7" height="10" rx="1.5"/></g></svg><span>Treemap</span></a></nav>
+      <button class="btn icon" id="themeBtn" type="button" aria-label="Toggle light / dark"></button>
+    </div>
+  </header>
+
+  <main>
+    <div class="intro" id="intro"></div>
+    <div class="tm" id="tm"></div>
+    <p class="hint">Select a box to zoom in. Box size shows how many companies it holds. Press Esc or use the path at the top to go back.</p>
+  </main>
+
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-inner">
+      <button class="btn icon close" id="drawerClose" aria-label="Close">✕</button>
+      <div id="drawerBody"></div>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <div class="search" id="search" aria-hidden="true">
+    <div class="search-box">
+      <input id="searchInput" type="text" placeholder="Search a company, product or bucket…" autocomplete="off" spellcheck="false" aria-label="Search">
+      <div class="search-results" id="searchResults"></div>
+      <div class="search-hint"><kbd>↑</kbd><kbd>↓</kbd> move · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</div>
+    </div>
+  </div>
+
+  <!-- data.js holds all layers, buckets and companies (shared with index.html). -->
+  <script src="data.js"></script>
+  <script>
+(function () {
+  "use strict";
+  var D = window.TAXONOMY_DATA;
+  var $ = function (s) { return document.querySelector(s); };
+  var tm = $("#tm");
+  if (!D) { tm.textContent = "Could not load data.js. Keep it in the same folder as this page."; return; }
+
+  /* ---------- data (same rules as index.html) ---------- */
+  var slugs = D.slugs || {}, profiles = D.profiles || {};
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function parseCompany(s) {
+    s = String(s); if (s.charAt(0) === "+") s = s.slice(1);
+    var o = { name: "", slug: null, of: null, q: null, ind: null }, parts = s.split(/(?=[@~?#])/);
+    o.name = parts[0].trim();
+    for (var i = 1; i < parts.length; i++) {
+      var p = parts[i], v = p.slice(1).trim();
+      if (p[0] === "@") o.slug = v; else if (p[0] === "~") o.of = v; else if (p[0] === "?") o.q = v;
+      else if (p[0] === "#") o.ind = v.split(",").map(function (x) { return x.trim(); });
+    }
+    if (!o.slug) o.slug = slugs[o.name] || (o.of && slugs[o.of]) || null;
+    var pr = profiles[o.name]; if (pr) { o.desc = pr.desc || ""; o.web = pr.web || ""; }
+    return o;
+  }
+  function liUrl(c) {
+    if (!c.slug) return "";
+    if (/^https?:\/\//.test(c.slug)) return /linkedin\.com/.test(c.slug) ? c.slug : "";
+    return "https://www.linkedin.com/company/" + c.slug + "/";
+  }
+  function webUrl(c) { return c.web || (c.slug && /^https?:\/\//.test(c.slug) && !/linkedin\.com/.test(c.slug) ? c.slug : ""); }
+
+  // Tree: root → layers → buckets (→ sub-buckets) → companies. Weight = number of companies.
+  function bucketNode(b, layer) {
+    var n = { kind: "bucket", id: b.code, name: b.name, desc: b.desc || "", label: b.label || "", layer: layer };
+    n.children = b.children ? b.children.map(function (x) { return bucketNode(x, layer); })
+      : (b.companies || []).map(function (s) { return { kind: "company", c: parseCompany(s), layer: layer }; })
+          .sort(function (a, b) { return a.c.name.localeCompare(b.c.name, undefined, { sensitivity: "base" }); });
+    return n;
+  }
+  var root = { kind: "root", name: "All layers", children: D.layers.map(function (l) {
+    var n = { kind: "layer", id: l.id, name: l.name, desc: l.tagline || "", layer: l };
+    n.children = l.buckets.map(function (b) { return bucketNode(b, l); });
+    return n;
+  }) };
+  (function weigh(n) {
+    n.weight = n.kind === "company" ? 1 : (n.children || []).reduce(function (s, c) { return s + weigh(c); }, 0) || 1;
+    (n.children || []).forEach(function (c) { c.parent = n; });
+    return n.weight;
+  })(root);
+
+  /* ---------- squarified treemap layout ---------- */
+  function worst(row, side) {
+    var sum = 0, mx = 0, mn = Infinity;
+    row.forEach(function (a) { sum += a; if (a > mx) mx = a; if (a < mn) mn = a; });
+    return Math.max(side * side * mx / (sum * sum), (sum * sum) / (side * side * mn));
+  }
+  function squarify(weights, x, y, w, h) {
+    var total = weights.reduce(function (s, v) { return s + v; }, 0) || 1, k = (w * h) / total;
+    var area = weights.map(function (v) { return v * k; }), out = [], i = 0;
+    while (i < area.length) {
+      var side = Math.min(w, h), row = [area[i]], j = i + 1, best = worst(row, side);
+      while (j < area.length) {
+        var next = row.concat(area[j]), wv = worst(next, side);
+        if (wv > best) break;
+        row = next; best = wv; j++;
+      }
+      var sum = row.reduce(function (s, v) { return s + v; }, 0);
+      if (w >= h) { var cw = sum / h, yy = y; for (var a = i; a < j; a++) { var hh = area[a] / cw; out[a] = { x: x, y: yy, w: cw, h: hh }; yy += hh; } x += cw; w -= cw; }
+      else { var rh = sum / w, xx = x; for (var b = i; b < j; b++) { var ww = area[b] / rh; out[b] = { x: xx, y: y, w: ww, h: rh }; xx += ww; } y += rh; h -= rh; }
+      i = j;
+    }
+    return out;
+  }
+  // Last level: companies all weigh the same, so an even A to Z grid reads better than a treemap.
+  function gridLayout(count, w, h, gap) {
+    var best = 1, bestScore = Infinity;
+    for (var cols = 1; cols <= count; cols++) {
+      var rows = Math.ceil(count / cols), tw = w / cols, th = h / rows, score = Math.abs(Math.log((tw / th) / 1.9));
+      if (tw < 150 && cols > 1) break;
+      if (score < bestScore) { bestScore = score; best = cols; }
+    }
+    var cols2 = best, rows2 = Math.ceil(count / cols2), cw = w / cols2, ch = Math.max(h / rows2, 124), out = [];
+    for (var i = 0; i < count; i++) {
+      var c = i % cols2, r = Math.floor(i / cols2);
+      out.push({ x: c * cw + gap / 2, y: r * ch + gap / 2, w: cw - gap, h: ch - gap });
+    }
+    out.height = rows2 * ch;
+    return out;
+  }
+  function layout(children, w, h, gap) {
+    // Bigger first gives the squarest boxes; companies (all equal) keep their A to Z order.
+    var order = children.map(function (c, i) { return i; });
+    if (children.length && children[0].kind !== "company") order.sort(function (a, b) { return children[b].weight - children[a].weight; });
+    var rects = squarify(order.map(function (i) { return children[i].weight; }), 0, 0, w, h), out = [];
+    order.forEach(function (ci, k) { var r = rects[k]; out[ci] = { x: r.x + gap / 2, y: r.y + gap / 2, w: Math.max(0, r.w - gap), h: Math.max(0, r.h - gap) }; });
+    return out;
+  }
+
+  /* ---------- addresses: treemap.html#/L5 or #/L5/<bucket code> ---------- */
+  function hrefOf(n) {
+    if (n.kind === "root") return "#/";
+    if (n.kind === "layer") return "#/" + n.id;
+    return "#/" + n.layer.id + "/" + encodeURIComponent(n.id);
+  }
+  function findByHash() {
+    var h = decodeURIComponent(location.hash.replace(/^#\/?/, "")).split("?")[0];
+    var parts = h.split("/").filter(Boolean);
+    if (!parts.length) return root;
+    var layer = root.children.filter(function (l) { return l.id === parts[0]; })[0];
+    if (!layer) return root;
+    if (!parts[1]) return layer;
+    var hit = null;
+    (function walk(n) { (n.children || []).forEach(function (c) { if (c.kind === "bucket") { if (c.id === parts[1]) hit = c; walk(c); } }); })(layer);
+    return hit || layer;
+  }
+  function trail(n) { var t = []; while (n) { t.unshift(n); n = n.parent; } return t; }
+  function hueOf(n) { return n.layer ? n.layer.hue : ""; }
+  function title(n) { return n.kind === "layer" ? n.id + " " + n.name : n.name; }
+  function companies(k) { return k + (k === 1 ? " company" : " companies"); }
+
+  /* ---------- rendering ---------- */
+  var current = null;
+  function sizeStage() {
+    var top = tm.getBoundingClientRect().top + window.scrollY;
+    var h = Math.max(420, Math.min(900, window.innerHeight - (top - window.scrollY) - 70));
+    tm.style.height = h + "px";
+    return { w: tm.clientWidth, h: h };
+  }
+  function boxHtml(n, r, i) {
+    var size = r.w < 64 || r.h < 34 ? " tiny" : r.w > 260 && r.h > 160 ? " big" : "";
+    var count = companies(n.weight);
+    return '<button class="box' + size + '" type="button" data-i="' + i + '" data-hue="' + hueOf(n) + '" title="' + esc(title(n) + " · " + count) + '"' +
+      ' style="left:' + r.x.toFixed(1) + "px;top:" + r.y.toFixed(1) + "px;width:" + r.w.toFixed(1) + "px;height:" + r.h.toFixed(1) + 'px">' +
+      '<span class="box-label"><b>' + esc(title(n)) + "</b><small>" + count + "</small></span></button>";
+  }
+  function companyHtml(n, r) {
+    var c = n.c, web = webUrl(c), li = liUrl(c), main = web || li, ext = ' target="_blank" rel="noopener noreferrer"';
+    var cls = (r.h < 90 ? " short" : "") + (r.w < 150 ? " narrow" : "");
+    var tip = c.name + (c.of ? " by " + c.of : "") + (c.desc ? " · " + c.desc : "");
+    return '<div class="co' + cls + '" data-name="' + esc(c.name) + '" data-hue="' + hueOf(n) + '" title="' + esc(tip) + '" style="left:' + r.x.toFixed(1) + "px;top:" + r.y.toFixed(1) + "px;width:" + r.w.toFixed(1) + "px;height:" + r.h.toFixed(1) + 'px">' +
+      (main ? '<a class="co-name" href="' + main + '"' + ext + ">" + esc(c.name) + "</a>" : '<span class="co-name plain">' + esc(c.name) + "</span>") +
+      (c.of ? '<span class="co-of">by ' + esc(c.of) + "</span>" : "") +
+      (c.desc ? '<p class="co-desc">' + esc(c.desc) + "</p>" : "") +
+      (web || li ? '<span class="co-links">' + (web ? '<a href="' + web + '"' + ext + ">Website</a>" : "") + (li ? '<a href="' + li + '"' + ext + ">LinkedIn</a>" : "") + "</span>" : "") +
+      "</div>";
+  }
+  function draw(n, from) {
+    var st = sizeStage(), leaf = n.children.length && n.children[0].kind === "company";
+    var rects = leaf ? gridLayout(n.children.length, st.w, st.h, 8) : layout(n.children, st.w, st.h, 4);
+    // A long company list can be taller than the frame: let the frame grow instead of squeezing the tiles.
+    tm.style.height = (leaf ? Math.max(st.h, rects.height) : st.h) + "px";
+    var view = document.createElement("div");
+    view.className = "view";
+    view.innerHTML = n.children.map(function (c, i) { return c.kind === "company" ? companyHtml(c, rects[i]) : boxHtml(c, rects[i], i); }).join("");
+    view.addEventListener("click", function (e) {
+      var b = e.target.closest(".box"); if (!b) return;
+      var child = n.children[+b.getAttribute("data-i")];
+      zoomFrom = { x: b.offsetLeft, y: b.offsetTop, w: b.offsetWidth, h: b.offsetHeight };
+      location.hash = hrefOf(child);
+    });
+    // Zoom in: the new view starts at the size and place of the box that was selected, then grows to fill the frame.
+    var old = tm.querySelector(".view:not(.out)");
+    if (from && from.w > 0) {
+      var H = parseFloat(tm.style.height) || st.h;
+      view.style.transform = "translate(" + from.x + "px," + from.y + "px) scale(" + (from.w / st.w) + "," + (from.h / H) + ")";
+      tm.appendChild(view);
+      view.getBoundingClientRect();
+      view.classList.add("zoom-in");
+      view.style.transform = "none";
+    } else { view.classList.add("fade"); tm.appendChild(view); }
+    if (old) { old.classList.add("out"); setTimeout(function () { if (old.parentNode) old.parentNode.removeChild(old); }, 450); }
+  }
+  function intro(n) {
+    var up = n.parent ? '<a class="up" href="' + hrefOf(n.parent) + '">↑ Up to ' + esc(n.parent.kind === "root" ? "all layers" : title(n.parent)) + "</a>" : "";
+    var count = companies(n.weight);
+    var eyebrow = n.kind === "root" ? "Treemap · " + D.layers.length + " layers · " + count
+      : '<i class="gdot" aria-hidden="true"></i>' + esc(n.layer.id + " " + n.layer.name) + (n.label ? " · " + esc(n.label) : "") + " · " + count;
+    $("#intro").setAttribute("data-hue", n.kind === "root" ? "" : hueOf(n));
+    $("#intro").innerHTML = "<div><p class=\"eyebrow\">" + eyebrow + "</p><h1>" + esc(n.kind === "root" ? (D.title || "AI Landscape") : title(n)) + "</h1>" +
+      (n.desc ? '<p class="sub">' + esc(n.desc) + "</p>" : "") + "</div>" + up;
+    $("#crumbs").innerHTML = trail(n).map(function (t, i, all) {
+      var label = t.kind === "root" ? "Layers" : title(t);
+      return i === all.length - 1 ? '<span aria-current="page">' + esc(label) + "</span>" : '<a href="' + hrefOf(t) + '">' + esc(label) + "</a><i>/</i>";
+    }).join("");
+    document.title = (n.kind === "root" ? "" : title(n) + " · ") + "AI Landscape · Treemap";
+    // The switch opens the same place in the list view.
+    $("#toList").setAttribute("href", "index.html" + (n.kind === "root" ? "" : hrefOf(n)));
+  }
+  var zoomFrom = null;
+  function render() {
+    var n = findByHash(), zoomingIn = current && n.parent === current;
+    intro(n);
+    draw(n, zoomingIn ? zoomFrom : null);
+    current = n; zoomFrom = null;
+    var hl = (location.hash.match(/[?&]hl=([^&]*)/) || [])[1];
+    if (hl) setTimeout(function () {
+      var name = decodeURIComponent(hl), el = Array.prototype.filter.call(tm.querySelectorAll(".view:not(.out) .co"), function (e) { return e.getAttribute("data-name") === name; })[0];
+      if (el) { el.scrollIntoView({ block: "center", behavior: "smooth" }); el.classList.add("flash"); }
+    }, 480);
+  }
+
+  /* ---------- Rules panel (same content as index.html) ---------- */
+  function openDrawer() {
+    var apps = D.layers.filter(function (l) { return l.isApps; })[0], appsId = apps ? apps.id : "the applications layer";
+    $("#drawerBody").innerHTML =
+      '<h2>How the taxonomy works</h2><p class="muted">' + esc(D.mece) + "</p>" +
+      '<h3>Five classification rules</h3><ol class="rules">' + (D.rules || []).map(function (r) { return "<li><b>" + esc(r.rule) + "</b> " + esc(r.example) + "</li>"; }).join("") + "</ol>" +
+      '<h3>Filter tags</h3><p class="muted">Every product carries these tags; filter on them within a bucket. The list view lets you filter ' + appsId + " by F1 Industry.</p>" +
+      '<table class="tags"><tbody>' + (D.filterTags || []).map(function (t) { return '<tr><th><span class="code">' + esc(t.code) + "</span>" + esc(t.name) + "</th><td>" + esc(t.desc) + "</td></tr>"; }).join("") + "</tbody></table>" +
+      '<h3>Reading the treemap</h3><ul class="legend"><li>Each box is a layer, a category or a bucket. Its size shows how many companies it holds.</li><li>Select a box to zoom in. At the last level, each tile is a company with links to its website and LinkedIn page.</li><li>Search finds any company or category directly.</li></ul>' +
+      '<p class="muted small">Company names are illustrative and reflect the landscape as of roughly mid-2026.</p>';
+    document.body.classList.add("drawer-open"); $("#drawer").setAttribute("aria-hidden", "false");
+  }
+  function closeDrawer() { document.body.classList.remove("drawer-open"); $("#drawer").setAttribute("aria-hidden", "true"); }
+
+  /* ---------- search (same behaviour as index.html) ---------- */
+  var index = [];
+  (function walk(n, path) {
+    (n.children || []).forEach(function (c) {
+      if (c.kind === "company") {
+        index.push({ kind: "company", label: c.c.name, of: c.c.of, sub: (c.c.of ? "by " + c.c.of + " · " : "") + path.join(" › "), href: hrefOf(n) + "?hl=" + encodeURIComponent(c.c.name), hue: hueOf(c) });
+      } else {
+        var p = path.concat([title(c)]);
+        index.push({ kind: c.kind === "layer" ? "layer" : "bucket", label: title(c), sub: c.kind === "layer" ? c.desc : p.slice(0, -1).join(" › "), href: hrefOf(c), hue: hueOf(c) });
+        walk(c, p);
+      }
+    });
+  })(root, []);
+  var sel = 0;
+  function runSearch() {
+    var q = $("#searchInput").value.trim().toLowerCase(), results;
+    if (!q) results = index.filter(function (r) { return r.kind === "layer"; }).reverse();
+    else results = index.filter(function (r) { return (r.label + " " + (r.of || "")).toLowerCase().indexOf(q) >= 0; })
+      .sort(function (a, b) {
+        var as = a.label.toLowerCase().indexOf(q) === 0 ? 0 : 1, bs = b.label.toLowerCase().indexOf(q) === 0 ? 0 : 1;
+        return as - bs || (a.kind === "company" ? 0 : 1) - (b.kind === "company" ? 0 : 1);
+      }).slice(0, 40);
+    sel = 0;
+    $("#searchResults").innerHTML = results.length ? results.map(function (r, i) {
+      return '<a class="sr' + (i === sel ? " sel" : "") + '" href="' + r.href + '"' + (r.hue ? ' data-hue="' + r.hue + '"' : "") + '><span class="sr-kind">' + (r.hue ? '<i class="gdot" aria-hidden="true"></i>' : "") + r.kind +
+        '</span><span class="sr-main"><b>' + esc(r.label) + "</b><small>" + esc(r.sub) + "</small></span></a>";
+    }).join("") : '<p class="empty">Nothing matches “' + esc(q) + "”.</p>";
+  }
+  function moveSel(d) {
+    var items = document.querySelectorAll(".sr"); if (!items.length) return;
+    sel = (sel + d + items.length) % items.length;
+    Array.prototype.forEach.call(items, function (el, i) { el.classList.toggle("sel", i === sel); });
+    items[sel].scrollIntoView({ block: "nearest" });
+  }
+  function openSearch() {
+    document.body.classList.add("search-open"); $("#search").setAttribute("aria-hidden", "false");
+    $("#searchInput").value = ""; runSearch(); setTimeout(function () { $("#searchInput").focus(); }, 30);
+  }
+  function closeSearch() { document.body.classList.remove("search-open"); $("#search").setAttribute("aria-hidden", "true"); }
+  $("#searchBtn").addEventListener("click", openSearch);
+  $("#rulesBtn").addEventListener("click", openDrawer);
+  $("#drawerClose").addEventListener("click", closeDrawer);
+  $("#scrim").addEventListener("click", closeDrawer);
+  $("#search").addEventListener("click", function (e) { if (e.target.id === "search") closeSearch(); });
+  $("#searchInput").addEventListener("input", runSearch);
+  $("#searchInput").addEventListener("keydown", function (e) {
+    if (e.key === "ArrowDown") { e.preventDefault(); moveSel(1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); moveSel(-1); }
+    else if (e.key === "Enter") { var a = document.querySelectorAll(".sr")[sel]; if (a) { location.hash = a.getAttribute("href"); closeSearch(); } }
+  });
+  $("#searchResults").addEventListener("click", function (e) { if (e.target.closest(".sr")) closeSearch(); });
+
+  /* ---------- controls ---------- */
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      if (document.body.classList.contains("search-open")) return closeSearch();
+      if (document.body.classList.contains("drawer-open")) return closeDrawer();
+      if (current && current.parent) location.hash = hrefOf(current.parent);
+      return;
+    }
+    if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    if (e.key === "/" || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) { e.preventDefault(); openSearch(); }
+  });
+  var t; window.addEventListener("resize", function () { clearTimeout(t); t = setTimeout(function () { current = null; render(); }, 150); });
+  window.addEventListener("hashchange", render);
+
+  // Theme: shares the saved choice with index.html.
+  var SUN = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></svg>';
+  var MOON = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>';
+  function store(k, d) { try { var v = localStorage.getItem("aistack." + k); return v === null ? d : v; } catch (e) { return d; } }
+  function save(k, v) { try { localStorage.setItem("aistack." + k, v); } catch (e) {} }
+  function setTheme(th) { document.documentElement.setAttribute("data-theme", th); save("theme", th); $("#themeBtn").innerHTML = th === "dark" ? SUN : MOON; }
+  setTheme(store("theme", window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
+  $("#themeBtn").addEventListener("click", function () { setTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark"); });
+
+  render();
+})();
+  </script>
+</body>
+</html>
