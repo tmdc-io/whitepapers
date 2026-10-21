@@ -13,6 +13,8 @@
  *   "Speak?Speak language app"        ?keyword is the LinkedIn search text when there is no confirmed page
  *   "Abridge#Healthcare,Insurance"    #tags are the industries (L11 only). The default is Horizontal.
  *
+ * You can combine the parts in any order after the name, for example "Rufus~Amazon#Retail".
+ *
  * LinkedIn link rule: an explicit @slug wins. Otherwise, a name (or parent) in "slugs" gets that page.
  * A value in "slugs" can also be a full link, such as a LinkedIn showcase page or the company website.
  * Any other name opens a LinkedIn company search for that name.
@@ -25,7 +27,7 @@
  * above an archetype name (for example "Act"), seeAlso links to related buckets, and was / wasAlso hold old codes so old links still work.
  * Links in the overview: write [words](https://address) or [words](#/L1) for a link to a layer.
  * Top-level fields: title, author (shown on the home page), asOf (the date shown), overview, mece, industries, slugs, layers, filterTags, rules.
- * Layer fields: id, name, tagline, definition (a short plain-English paragraph), test, buckets. Set "isApps": true on the applications layer.
+ * Layer fields: id, name, hue (colour group: peach, lilac, mint, sky or rose), tagline, definition (a short plain-English paragraph), test, buckets. Set "isApps": true on the applications layer.
  */
 window.TAXONOMY_DATA = {
   "title": "AI Landscape",
@@ -5627,6 +5629,7 @@ window.TAXONOMY_DATA = {
     {
       "id": "L1",
       "name": "Physical infrastructure",
+      "hue": "peach",
       "tagline": "Where the power and floor space come from, increasingly the binding constraint on AI capacity.",
       "definition": "Physical infrastructure is the land, buildings, electricity and cooling that AI computers need. A large AI data center can use as much electricity as a small city. This layer supplies that power and the space for the computers.",
       "test": "Does it supply electricity, land, buildings or cooling for compute?",
@@ -5714,6 +5717,7 @@ window.TAXONOMY_DATA = {
     {
       "id": "L2",
       "name": "Compute hardware",
+      "hue": "peach",
       "tagline": "The chips and systems that run the math.",
       "definition": "Compute hardware is the physical equipment that does the calculations for AI. It includes the chips, the memory near the chips, the network that links chips together, and the servers that hold them. It also includes the low-level software that lets programs use the chips.",
       "test": "Is it a physical chip, system or the low-level software that makes that chip usable?",
@@ -5909,6 +5913,7 @@ window.TAXONOMY_DATA = {
     {
       "id": "L3",
       "name": "Compute provisioning",
+      "hue": "peach",
       "tagline": "Who rents out the hardware.",
       "definition": "Compute provisioning is the business of renting computers to other people. Most AI companies do not own their chips. They rent time on them from a cloud provider and pay only for what they use.",
       "test": "Is the customer paying for access to someone else's hardware?",
@@ -6012,6 +6017,7 @@ window.TAXONOMY_DATA = {
     {
       "id": "L4",
       "name": "Training data",
+      "hue": "lilac",
       "tagline": "Data that goes into model weights.",
       "definition": "Training data is the text, images, audio and other examples that a model learns from. During training, the model adjusts its internal numbers (its weights) to match patterns in this data. After training, the data is part of the model and you cannot easily remove it.",
       "test": "Does this data end up baked into the weights during training?",
@@ -6128,6 +6134,7 @@ window.TAXONOMY_DATA = {
     {
       "id": "L5",
       "name": "Models",
+      "hue": "lilac",
       "tagline": "Trained weights, sorted by capability scope. Open-weight vs closed and size (frontier, mid-size, small/on-device) are tags, not buckets.",
       "definition": "A model is a large file of numbers, called weights, that a program learned during training. You give it an input, such as a question or an image, and it gives back an output. Some companies publish their weights openly, and others give access only through a paid service.",
       "test": "Is the product the trained weights themselves?",
@@ -6352,6 +6359,7 @@ window.TAXONOMY_DATA = {
     {
       "id": "L6",
       "name": "Model development tooling",
+      "hue": "mint",
       "tagline": "Tools that create or change weights.",
       "definition": "Model development tooling is the software that people use to build a new model or change an existing one. It includes programs that run training across many chips, tools that adapt a model to one task (fine-tuning), and tools that make a model smaller. The result is always new or changed weights.",
       "test": "Does using it produce new or modified weights?",
@@ -6444,6 +6452,7 @@ window.TAXONOMY_DATA = {
     {
       "id": "L7",
       "name": "Inference",
+      "hue": "mint",
       "tagline": "Tools and services that run weights.",
       "definition": "Inference means using a trained model to produce an answer. Training happens once, but inference happens each time someone asks the model a question. This layer holds the software and services that run models fast and at low cost.",
       "test": "Does it run existing weights to produce outputs?",
@@ -6555,6 +6564,7 @@ window.TAXONOMY_DATA = {
     {
       "id": "L8",
       "name": "Context and knowledge plumbing",
+      "hue": "mint",
       "tagline": "Data fed to models at runtime (training data lives in L4).",
       "definition": "Context is the information that a system sends to a model together with a question. A model only knows what it learned in training, so a system often looks up current or private facts first. This layer finds those facts and puts them into the prompt (the text sent to the model).",
       "test": "Does it get data into the prompt at runtime?",
@@ -6659,6 +6669,7 @@ window.TAXONOMY_DATA = {
     {
       "id": "L9",
       "name": "Orchestration and agent infrastructure",
+      "hue": "sky",
       "tagline": "What turns a model into a system.",
       "definition": "Orchestration is the work of connecting a model to tools, data and memory so that it can complete a task. An agent is a system that plans its own steps and uses tools to reach a goal. This layer holds the frameworks, standards and platforms that build these systems.",
       "test": "Does it wire models, tools and memory together into a working system?",
@@ -6848,6 +6859,7 @@ window.TAXONOMY_DATA = {
     {
       "id": "L10",
       "name": "LLMOps and trust",
+      "hue": "sky",
       "tagline": "How AI systems are measured, secured and governed. LLMOps stands for LLM Operations.",
       "definition": "LLMOps (Large Language Model Operations) is the work of keeping an AI system correct, safe and under control after you build it. It includes tests that score the answers, logs that show what the system did, and filters that block harmful input or output. This layer watches and controls AI systems but does not run them.",
       "test": "Does it measure, secure or govern an AI system rather than run it?",
@@ -6960,6 +6972,7 @@ window.TAXONOMY_DATA = {
     {
       "id": "L11",
       "name": "Applications",
+      "hue": "rose",
       "tagline": "Sorted by the main job the product does for its user, never by industry or modality.",
       "definition": "Applications are the AI products that people use to get work done, for example a chat assistant or a meeting note-taker. The customer buys the result, not the AI parts underneath it. This layer sorts each product by the main job that the model does for the user.",
       "test": "Does the customer use it to get work done (not to build AI)?",

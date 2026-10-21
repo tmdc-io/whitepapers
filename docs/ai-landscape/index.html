@@ -175,7 +175,7 @@ main { outline: none; }
 .rail-item b { font-family: var(--display); width: 30px; flex: none; font-weight: 600; color: inherit; }
 .rail-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rail-item:hover { background: var(--chip); color: var(--text); }
-.rail-item.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.rail-item.on { background: var(--tint, var(--accent-soft)); color: var(--accent); font-weight: 600; }
 
 .layer-head, .bucket-head { position: relative; padding: 10px 0 26px; animation: rise .4s var(--ease) both; }
 .watermark { display: none; }
@@ -210,6 +210,7 @@ main { outline: none; }
 .catrow b { display: block; font-size: 16px; font-weight: 600; color: var(--accent); }
 .catrow small { display: block; margin-top: 2px; font-size: 14px; color: var(--muted); }
 .catrow .go { color: var(--muted); transition: transform .2s var(--ease), color .2s; }
+.catrow:hover { background: var(--tint, transparent); }
 .catrow:hover .go { transform: translateX(3px); color: var(--accent); }
 .catrow.dim { opacity: .4; }
 .catrow.subrow { padding: 9px 4px 9px 24px; }
@@ -223,7 +224,10 @@ main { outline: none; }
 /* company list (bucket view): one text link per line, in columns */
 /* bucket view: one company per row in a single column, sorted A to Z */
 .tiles { max-width: 820px; margin-top: 18px; }
-.tile { padding: 12px 4px; border-bottom: 1px solid var(--line); border-radius: 4px; }
+.tile { position: relative; padding: 12px 8px; border-bottom: 1px solid var(--line); border-radius: 4px; transition: background .15s; }
+/* the whole row opens the company (same as its name); Website and LinkedIn stay separate links on top */
+.tile:has(a.t-name):hover { background: var(--tint, var(--chip)); }
+.tile a.t-name::after { content: ""; position: absolute; inset: 0; border-radius: 4px; }
 .t-head { line-height: 1.5; }
 .t-name { font: 600 15px/1.5 var(--font); color: var(--accent); border-bottom: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); transition: border-color .15s; }
 .t-name:hover { border-bottom-color: var(--accent); }
@@ -231,7 +235,7 @@ main { outline: none; }
 .t-of, .t-ind { font-size: 13px; color: var(--muted); }
 .t-desc { margin: 3px 0 0; font-size: 14px; line-height: 1.5; color: var(--text); }
 .t-links { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 12px; color: var(--muted); }
-.t-links a { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); transition: color .15s; }
+.t-links a { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 5px; color: var(--muted); transition: color .15s; }
 .t-links a:hover { color: var(--accent); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .concept-panel { margin-top: 22px; padding: 16px; border-radius: 8px; border: 1px dashed var(--line); }
@@ -247,17 +251,37 @@ main { outline: none; }
 .see-also a { color: var(--accent); border-bottom: 1px solid var(--accent-line); }
 .see-also a:hover { border-bottom-color: var(--accent); }
 
+/* ===== Layer colour groups =====
+   Five pastel hues, one per group of layers (checked with the data-viz colour checker for
+   colour-blind separation in light and dark mode). Text and links never use them. */
+[data-hue="peach"] { --hue: #E8915A; }
+[data-hue="lilac"] { --hue: #9B83D8; }
+[data-hue="mint"]  { --hue: #4FB58E; }
+[data-hue="sky"]   { --hue: #5B95DE; }
+[data-hue="rose"]  { --hue: #DE7396; }
+:root[data-theme="dark"] [data-hue="peach"] { --hue: #CC7A47; }
+:root[data-theme="dark"] [data-hue="lilac"] { --hue: #9580D5; }
+:root[data-theme="dark"] [data-hue="mint"]  { --hue: #3A9C77; }
+:root[data-theme="dark"] [data-hue="sky"]   { --hue: #5891DA; }
+:root[data-theme="dark"] [data-hue="rose"]  { --hue: #C9628A; }
+[data-hue] {
+  --tint: color-mix(in srgb, var(--hue) 14%, var(--bg));
+  --g0: color-mix(in srgb, var(--hue) 22%, var(--bg)); --g1: color-mix(in srgb, var(--hue) 40%, var(--bg));
+  --g2: color-mix(in srgb, var(--hue) 58%, var(--bg)); --g3: color-mix(in srgb, var(--hue) 78%, var(--bg)); --g4: var(--hue);
+}
+.gdot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--hue, var(--accent)); vertical-align: 1px; }
+
 /* ===== Crowding ===== */
 :root { --crowd-0: color-mix(in srgb, var(--accent) 14%, var(--bg)); --crowd-1: color-mix(in srgb, var(--accent) 32%, var(--bg));
   --crowd-2: color-mix(in srgb, var(--accent) 52%, var(--bg)); --crowd-3: color-mix(in srgb, var(--accent) 74%, var(--bg)); --crowd-4: var(--accent); }
 .crowd-cells { display: flex; gap: 2px; height: 22px; min-width: 0; }
 .crowd-cell { min-width: 3px; border-radius: 3px; transition: outline-color .1s; outline: 2px solid transparent; outline-offset: 1px; }
 .crowd-cell:hover, .crowd-cell:focus-visible { outline-color: var(--text); }
-.crowd-cell.s0 { background: var(--crowd-0); }
-.crowd-cell.s1 { background: var(--crowd-1); }
-.crowd-cell.s2 { background: var(--crowd-2); }
-.crowd-cell.s3 { background: var(--crowd-3); }
-.crowd-cell.s4 { background: var(--crowd-4); }
+.crowd-cell.s0 { background: var(--g0, var(--crowd-0)); }
+.crowd-cell.s1 { background: var(--g1, var(--crowd-1)); }
+.crowd-cell.s2 { background: var(--g2, var(--crowd-2)); }
+.crowd-cell.s3 { background: var(--g3, var(--crowd-3)); }
+.crowd-cell.s4 { background: var(--g4, var(--crowd-4)); }
 .crowd-one { max-width: 820px; margin: 4px 0 26px; }
 .crowd-title { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .crowd-note { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
@@ -630,7 +654,7 @@ main { outline: none; }
       '<span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>' +
       '<span class="rail-label">Layers</span><span class="rail-current">' + (cur ? cur.id + " " + esc(cur.name) : "") + "</span></button>" +
       '<nav class="rail" id="railNav" aria-label="Layers">' + T.layers.slice().reverse().map(function (l, i) {
-      return '<a href="#/' + l.id + '" class="rail-item' + (l.id === active ? " on" : "") + '" style="--h:' + HUES[l.id] + ";--n:" + i + ";view-transition-name:lyr-" + l.id + '" title="' + esc(l.name) + '">' +
+      return '<a href="#/' + l.id + '" class="rail-item' + (l.id === active ? " on" : "") + '" data-hue="' + l.hue + '" style="--h:' + HUES[l.id] + ";--n:" + i + ";view-transition-name:lyr-" + l.id + '" title="' + esc(l.name) + '">' +
         "<b>" + l.id + "</b><span>" + esc(l.name) + "</span></a>";
     }).join("") + "</nav></aside>";
   }
@@ -674,7 +698,7 @@ main { outline: none; }
   function layerHeader(l, crumbExtra) {
     return '<header class="layer-head">' + layerPn(l, "top") +
       '<span class="watermark">' + l.id + "</span>" +
-      '<div class="lh-row"><div><p class="eyebrow">Layer ' + l.id.slice(1) + " of " + T.layers.length + "</p><h1>" + esc(l.name) + "</h1></div></div>" +
+      '<div class="lh-row"><div><p class="eyebrow"><i class="gdot" aria-hidden="true"></i>Layer ' + l.id.slice(1) + " of " + T.layers.length + "</p><h1>" + esc(l.name) + "</h1></div></div>" +
       '<p class="lede">' + esc(l.definition || l.tagline) + "</p>" +
       '<details class="placement"><summary>How products are placed here</summary><p>' + esc(l.test) + "</p></details>" +
       "</header>";
@@ -690,7 +714,7 @@ main { outline: none; }
     return out;
   }
   function crowdCells(l) {
-    return '<div class="crowd-cells">' + leaves(l).map(function (b) {
+    return '<div class="crowd-cells" data-hue="' + l.hue + '">' + leaves(l).map(function (b) {
       var n = (b.companies || []).length;
       return '<a class="crowd-cell s' + crowdBin(n) + '" style="flex:' + Math.max(n, 1) + '" href="' + nodeHref(l, b) + '" data-tip="' + esc(b.name + ": " + n + (n === 1 ? " company" : " companies")) + '" aria-label="' + esc(b.name + ", " + n + " companies") + '"></a>';
     }).join("") + "</div>";
@@ -717,7 +741,7 @@ main { outline: none; }
 
   function viewLayer(l) {
     var body = l.isApps ? industrySelect(l) : "";
-    return '<section class="layer" style="--h:' + HUES[l.id] + '">' + rail(l.id) +
+    return '<section class="layer" data-hue="' + l.hue + '" style="--h:' + HUES[l.id] + '">' + rail(l.id) +
       '<div class="layer-main">' + layerHeader(l) + layerCrowd(l) + body +
       outline(l) +
       layerPn(l, "bottom") + "</div></section>";
@@ -747,18 +771,18 @@ main { outline: none; }
     content += emptyNote(node, l);
     if (!node.children && !vis.length && !node.concepts && !emptyNote(node, l)) content += '<p class="empty">No named examples yet.</p>';
 
-    return '<section class="layer bucket" style="--h:' + HUES[l.id] + '">' + rail(l.id) +
+    return '<section class="layer bucket" data-hue="' + l.hue + '" style="--h:' + HUES[l.id] + '">' + rail(l.id) +
       '<div class="layer-main">' +
       '<header class="bucket-head">' + pn("top") +
       '<div class="bh-row">' +
-      codeBadge(node, l, "xl") + "<div>" + (node.label ? '<p class="eyebrow">' + esc(node.label) + "</p>" : "") + "<h1>" + esc(node.name) + "</h1></div></div>" +
+      codeBadge(node, l, "xl") + '<div><p class="eyebrow"><i class="gdot" aria-hidden="true"></i>' + esc(l.id + " " + l.name) + (node.label ? " · " + esc(node.label) : "") + "</p><h1>" + esc(node.name) + "</h1></div></div>" +
       (node.desc ? '<p class="lede">' + esc(node.desc) + "</p>" : "") + seeAlso(node, l) +
       "</header>" + top + content + pn("bottom") +
       "</div></section>";
   }
 
   function viewMissing() {
-    return '<section class="missing"><h1>Lost in the stack</h1><p>That page does not exist.</p><a class="btn primary" href="#/">Back to the stack</a></section>';
+    return '<section class="missing"><h1>Page not found</h1><p>That page does not exist.</p><a class="btn primary" href="#/">Back to all layers</a></section>';
   }
 
   /* ---------- routing ---------- */
@@ -777,7 +801,7 @@ main { outline: none; }
   function render(opts) {
     var r = parse();
     if (r.ind && T.industries.indexOf(r.ind) >= 0) state.industries = new Set([r.ind]);
-    var html, crumbs = [{ t: "Stack", h: "#/" }], l = r.layer && layerById(r.layer);
+    var html, crumbs = [{ t: "Layers", h: "#/" }], l = r.layer && layerById(r.layer);
     if (!r.layer) html = viewHome();
     else if (r.layer === "crowding") { location.replace("#/"); return; } // the crowding graph now lives on the home page
     else if (!l) html = viewMissing();
@@ -900,13 +924,13 @@ main { outline: none; }
   function buildIndex() {
     index = [];
     T.layers.forEach(function (l) {
-      index.push({ kind: "layer", label: l.id + " " + l.name, sub: l.tagline, href: "#/" + l.id, h: HUES[l.id] });
+      index.push({ kind: "layer", label: l.id + " " + l.name, sub: l.tagline, href: "#/" + l.id, h: HUES[l.id], hue: l.hue });
       (function walk(nodes, path) {
         (nodes || []).forEach(function (n) {
           var p = path.concat([nodeTitle(n, l)]);
-          index.push({ kind: "bucket", label: nodeTitle(n, l), sub: l.id + " · " + p.slice(0, -1).join(" › "), href: "#/" + l.id + "/" + encodeURIComponent(n.code), h: HUES[l.id] });
+          index.push({ kind: "bucket", label: nodeTitle(n, l), sub: l.id + " · " + p.slice(0, -1).join(" › "), href: "#/" + l.id + "/" + encodeURIComponent(n.code), h: HUES[l.id], hue: l.hue });
           (n.companies || []).forEach(function (c) {
-            index.push({ kind: "company", c: c, label: c.name, sub: (c.of ? "by " + c.of + " · " : "") + l.id + " › " + p.join(" › "), href: "#/" + l.id + "/" + encodeURIComponent(n.code) + "?hl=" + encodeURIComponent(c.name), h: HUES[l.id] });
+            index.push({ kind: "company", c: c, label: c.name, sub: (c.of ? "by " + c.of + " · " : "") + l.id + " › " + p.join(" › "), href: "#/" + l.id + "/" + encodeURIComponent(n.code) + "?hl=" + encodeURIComponent(c.name), h: HUES[l.id], hue: l.hue });
           });
           walk(n.children, p);
         });
@@ -927,7 +951,7 @@ main { outline: none; }
     }
     sel = 0;
     $("#searchResults").innerHTML = results.length ? results.map(function (r, i) {
-      return '<a class="sr' + (i === sel ? " sel" : "") + '" href="' + r.href + '" style="--h:' + r.h + '"><span class="sr-kind">' + r.kind + "</span><span class=\"sr-main\"><b>" + esc(r.label) + "</b><small>" + esc(r.sub) + "</small></span></a>";
+      return '<a class="sr' + (i === sel ? " sel" : "") + '" href="' + r.href + '" style="--h:' + r.h + '"' + (r.hue ? ' data-hue="' + r.hue + '"' : "") + '><span class="sr-kind">' + (r.hue ? '<i class="gdot" aria-hidden="true"></i>' : "") + r.kind + "</span><span class=\"sr-main\"><b>" + esc(r.label) + "</b><small>" + esc(r.sub) + "</small></span></a>";
     }).join("") : '<p class="empty">Nothing matches “' + esc(q) + "”.</p>";
   }
   function moveSel(d) {
