@@ -114,7 +114,7 @@ kbd {
 .crumbs span { color: var(--text); overflow: hidden; text-overflow: ellipsis; }
 .actions { display: flex; gap: 8px; }
 
-/* List | Treemap switch (same on index.html and treemap.html) */
+/* List | Treemap switch (same place, other view) */
 .view-switch { display: inline-flex; padding: 2px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); }
 .view-switch a { display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 6px; font: 500 13px var(--font); color: var(--muted); }
 .view-switch a:hover { color: var(--text); }
@@ -301,6 +301,54 @@ main { outline: none; }
 .crowd-tip { position: fixed; z-index: 70; pointer-events: none; padding: 5px 9px; border-radius: 6px; font-size: 12px; color: var(--text); background: var(--panel-solid); border: 1px solid var(--line); box-shadow: var(--shadow); opacity: 0; transition: opacity .1s; white-space: nowrap; }
 .crowd-tip.on { opacity: 1; }
 
+/* ===== Treemap view (#/map) ===== */
+.map { max-width: 1400px; margin: 0 auto; padding: 22px 24px 40px; }
+.intro { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px; margin-bottom: 14px; }
+.eyebrow { margin: 0 0 4px; font: 500 12px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.gdot { display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--hue, var(--accent)); vertical-align: 1px; }
+h1 { margin: 0; font-size: clamp(24px, 3.2vw, 34px); line-height: 1.15; letter-spacing: -.02em; }
+.sub { margin: 4px 0 0; font-size: 14px; color: var(--muted); max-width: 760px; }
+.up { font-size: 13px; color: var(--accent); white-space: nowrap; }
+.up:hover { text-decoration: underline; text-underline-offset: 3px; }
+.map .hint { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+
+.tm { position: relative; width: 100%; overflow: hidden; border-radius: 10px; background: var(--panel); }
+.view { position: absolute; inset: 0; transform-origin: 0 0; }
+.view.zoom-in { transition: transform .42s var(--ease); }
+.view.fade { animation: fade .3s var(--ease) both; }
+.view.out { transition: opacity .25s; opacity: 0; pointer-events: none; }
+@keyframes fade { from { opacity: 0; } }
+
+.box { position: absolute; overflow: hidden; border-radius: 6px; text-align: left; padding: 0; border: 0;
+  background: var(--t1, var(--chip)); cursor: pointer; transition: background .15s, box-shadow .15s; }
+.box:hover, .box:focus-visible { background: var(--t2, var(--chip)); outline: none; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--hue, var(--accent)) 70%, var(--text)); }
+.box-label { position: absolute; left: 0; right: 0; top: 0; padding: 7px 9px 0; pointer-events: none; z-index: 2; }
+.box-label b { display: block; font-size: 14px; font-weight: 600; line-height: 1.25; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.box-label small { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.box.big .box-label b { font-size: 17px; }
+.box.tiny .box-label { display: none; }
+
+/* company tiles (last level) */
+.co { position: absolute; overflow: hidden; display: flex; flex-direction: column; border-radius: 6px; padding: 9px 11px 8px; background: var(--t0, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--hue, var(--accent)) 30%, var(--bg)); transition: background .15s; }
+.co:has(a.co-name):hover { background: var(--t1, var(--chip)); }
+.co-name { display: block; font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.co-name::after { content: ""; position: absolute; inset: 0; }
+.co-name.plain { color: var(--text); }
+.co-name.plain::after { display: none; }
+.co-of { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.co-desc { flex: 0 1 auto; min-height: 0; margin: 4px 0 0; font-size: 12.5px; line-height: 1.4; color: var(--text); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.co-links { flex: none; margin-top: auto; padding-top: 6px; display: flex; gap: 12px; font-size: 11.5px; }
+.co-links a { position: relative; z-index: 1; color: var(--muted); }
+.co-links a:hover { color: var(--accent); }
+.co.short .co-desc, .co.short .co-links { display: none; }
+.co.narrow .co-desc { -webkit-line-clamp: 2; }
+
+/* a company opened from search briefly lights up */
+.co.flash { animation: coflash 2.4s var(--ease); }
+@keyframes coflash { 0%, 60% { box-shadow: 0 0 0 3px var(--accent); } 100% { box-shadow: 0 0 0 3px transparent; } }
+[data-hue] { --t0: color-mix(in srgb, var(--hue) 12%, var(--bg)); --t1: color-mix(in srgb, var(--hue) 24%, var(--bg)); --t2: color-mix(in srgb, var(--hue) 40%, var(--bg)); --t3: color-mix(in srgb, var(--hue) 60%, var(--bg)); }
+
 /* ===== Drawer ===== */
 .drawer {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 40;
@@ -382,6 +430,7 @@ main { outline: none; }
   .layer { grid-template-columns: minmax(0, 1fr); }
   .layer { gap: 14px; padding-top: 14px; }
   .pn-links.top { display: flex; }
+  .map { padding: 16px 16px 30px; }
   .crowd-row { grid-template-columns: minmax(0, 1fr) 36px; gap: 4px 10px; }
   .crowd-row .crowd-name { grid-column: 1 / -1; }
   .home .crowd-row { grid-template-columns: minmax(0, 1fr) 36px; }
@@ -442,7 +491,7 @@ main { outline: none; }
         <span>Search</span><kbd>/</kbd>
       </button>
       <button class="btn" id="rulesBtn" title="Classification rules and filter tags"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15ZM5 19.5A1.5 1.5 0 0 0 6.5 21H19M9 7h6"/></svg> <span>Rules</span></button>
-      <nav class="view-switch" aria-label="View"><a class="on" href="index.html" id="toList" aria-current="page" title="Browse as a list"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg><span>List</span></a><a class="" href="treemap.html" id="toTreemap" title="Explore as a treemap"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="11" height="18" rx="1.5"/><rect x="14" y="3" width="7" height="8" rx="1.5"/><rect x="14" y="11" width="7" height="10" rx="1.5"/></g></svg><span>Treemap</span></a></nav>
+      <nav class="view-switch" aria-label="View"><a class="on" href="#/" id="toList" aria-current="page" title="Browse as a list"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg><span>List</span></a><a class="" href="#/map" id="toTreemap" title="Explore as a treemap"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="11" height="18" rx="1.5"/><rect x="14" y="3" width="7" height="8" rx="1.5"/><rect x="14" y="11" width="7" height="10" rx="1.5"/></g></svg><span>Treemap</span></a></nav>
       <button class="btn icon" id="themeBtn" title="Toggle light / dark" aria-label="Toggle light / dark"></button>
     </div>
   </header>
@@ -800,12 +849,14 @@ main { outline: none; }
     var parts = h.split("/").filter(Boolean);
     var hl = (q.match(/hl=([^&]*)/) || [])[1];
     var ind = (q.match(/ind=([^&]*)/) || [])[1];
-    return { layer: parts[0], bucket: parts[1], hl: hl ? decodeURIComponent(hl) : null, ind: ind ? decodeURIComponent(ind) : null };
+    var map = parts[0] === "map"; if (map) parts.shift();
+    return { map: map, layer: parts[0], bucket: parts[1], hl: hl ? decodeURIComponent(hl) : null, ind: ind ? decodeURIComponent(ind) : null };
   }
 
   var lastKey = null;
   function render(opts) {
     var r = parse();
+    if (r.map) { renderMap(r); return; }
     if (r.ind && T.industries.indexOf(r.ind) >= 0) state.industries = new Set([r.ind]);
     var html, crumbs = [{ t: "Layers", h: "#/" }], l = r.layer && layerById(r.layer);
     if (!r.layer) html = viewHome();
@@ -826,6 +877,7 @@ main { outline: none; }
         }
       } else html = viewLayer(l);
     }
+    mapCurrent = null;
     var key = (r.layer || "") + "/" + (r.bucket || "");
     var canMorph = false; // page-change animation turned off: it could briefly show the previous page
     // Without the View Transitions API, fake the "list slides into the sidebar" move with a CSS animation.
@@ -839,8 +891,7 @@ main { outline: none; }
       document.documentElement.style.setProperty("--h", l ? HUES[l.id] : 10);
       document.title = (l ? l.id + " " + l.name + " · " : "") + "AI Landscape";
       wire();
-      // The switch opens the same place in the treemap (same address after the #, without the filter).
-      $("#toTreemap").setAttribute("href", "treemap.html" + (l ? "#/" + l.id + (r.bucket ? "/" + encodeURIComponent(r.bucket) : "") : ""));
+      setSwitch(false, l ? "/" + l.id + (r.bucket ? "/" + encodeURIComponent(r.bucket) : "") : "");
       // Keep the industry filter in the address so a filtered view can be shared.
       if (l && l.isApps) {
         var base = "#/" + l.id + (r.bucket ? "/" + encodeURIComponent(r.bucket) : "");
@@ -866,6 +917,160 @@ main { outline: none; }
     }
     return null;
   }
+
+  /* ---------- treemap view (#/map, #/map/L5, #/map/L5/<bucket code>) ---------- */
+  // The switch opens the same place in the other view: "#/L5/5.2" <-> "#/map/L5/5.2".
+  function setSwitch(isMap, path) {
+    $("#toList").setAttribute("href", "#" + (path || "/"));
+    $("#toTreemap").setAttribute("href", "#/map" + (path || ""));
+    $("#toList").classList.toggle("on", !isMap); $("#toTreemap").classList.toggle("on", isMap);
+    if (isMap) { $("#toList").removeAttribute("aria-current"); $("#toTreemap").setAttribute("aria-current", "page"); }
+    else { $("#toTreemap").removeAttribute("aria-current"); $("#toList").setAttribute("aria-current", "page"); }
+  }
+  var mapRoot = null;
+  function mapTree() {
+    if (mapRoot) return mapRoot;
+    function bucketNode(b, l) {
+      var n = { kind: "bucket", id: b.code, name: b.name, desc: b.desc || "", label: b.label || "", layer: l };
+      n.children = b.children ? b.children.map(function (x) { return bucketNode(x, l); })
+        : (b.companies || []).map(function (c) { return { kind: "company", c: c, layer: l }; }).sort(function (a, b2) { return byName(a.c, b2.c); });
+      return n;
+    }
+    mapRoot = { kind: "root", name: "All layers", children: T.layers.map(function (l) {
+      var n = { kind: "layer", id: l.id, name: l.name, desc: l.tagline || "", layer: l };
+      n.children = l.buckets.map(function (b) { return bucketNode(b, l); });
+      return n;
+    }) };
+    (function weigh(n) {
+      n.weight = n.kind === "company" ? 1 : (n.children || []).reduce(function (s, c) { return s + weigh(c); }, 0) || 1;
+      (n.children || []).forEach(function (c) { c.parent = n; });
+      return n.weight;
+    })(mapRoot);
+    return mapRoot;
+  }
+  function mapHref(n) { return n.kind === "root" ? "#/map" : n.kind === "layer" ? "#/map/" + n.id : "#/map/" + n.layer.id + "/" + encodeURIComponent(n.id); }
+  function mapTitle(n) { return n.kind === "layer" ? n.id + " " + n.name : n.name; }
+  function companies(k) { return k + (k === 1 ? " company" : " companies"); }
+  function worst(row, side) {
+    var sum = 0, mx = 0, mn = Infinity;
+    row.forEach(function (a) { sum += a; if (a > mx) mx = a; if (a < mn) mn = a; });
+    return Math.max(side * side * mx / (sum * sum), (sum * sum) / (side * side * mn));
+  }
+  // Squarified treemap: keeps boxes close to square so names fit.
+  function squarify(weights, x, y, w, h) {
+    var total = weights.reduce(function (s, v) { return s + v; }, 0) || 1, k = (w * h) / total;
+    var area = weights.map(function (v) { return v * k; }), out = [], i = 0;
+    while (i < area.length) {
+      var side = Math.min(w, h), row = [area[i]], j = i + 1, best = worst(row, side);
+      while (j < area.length) { var next = row.concat(area[j]), wv = worst(next, side); if (wv > best) break; row = next; best = wv; j++; }
+      var sum = row.reduce(function (s, v) { return s + v; }, 0);
+      if (w >= h) { var cw = sum / h, yy = y; for (var a = i; a < j; a++) { var hh = area[a] / cw; out[a] = { x: x, y: yy, w: cw, h: hh }; yy += hh; } x += cw; w -= cw; }
+      else { var rh = sum / w, xx = x; for (var b = i; b < j; b++) { var ww = area[b] / rh; out[b] = { x: xx, y: y, w: ww, h: rh }; xx += ww; } y += rh; h -= rh; }
+      i = j;
+    }
+    return out;
+  }
+  function boxLayout(children, w, h, gap) {
+    var order = children.map(function (c, i) { return i; }).sort(function (a, b) { return children[b].weight - children[a].weight; });
+    var rects = squarify(order.map(function (i) { return children[i].weight; }), 0, 0, w, h), out = [];
+    order.forEach(function (ci, k) { var r = rects[k]; out[ci] = { x: r.x + gap / 2, y: r.y + gap / 2, w: Math.max(0, r.w - gap), h: Math.max(0, r.h - gap) }; });
+    return out;
+  }
+  // Last level: companies all weigh the same, so an even A to Z grid reads better.
+  function gridLayout(count, w, h, gap) {
+    var best = 1, bestScore = Infinity;
+    for (var cols = 1; cols <= count; cols++) {
+      var rows = Math.ceil(count / cols), tw = w / cols, th = h / rows, score = Math.abs(Math.log((tw / th) / 1.9));
+      if (tw < 150 && cols > 1) break;
+      if (score < bestScore) { bestScore = score; best = cols; }
+    }
+    var rows2 = Math.ceil(count / best), cw = w / best, ch = Math.max(h / rows2, 124), out = [];
+    for (var i = 0; i < count; i++) out.push({ x: (i % best) * cw + gap / 2, y: Math.floor(i / best) * ch + gap / 2, w: cw - gap, h: ch - gap });
+    out.height = rows2 * ch;
+    return out;
+  }
+  function px(r) { return "left:" + r.x.toFixed(1) + "px;top:" + r.y.toFixed(1) + "px;width:" + r.w.toFixed(1) + "px;height:" + r.h.toFixed(1) + "px"; }
+  function mapBox(n, r, i) {
+    var size = r.w < 64 || r.h < 34 ? " tiny" : r.w > 260 && r.h > 160 ? " big" : "";
+    return '<button class="box' + size + '" type="button" data-i="' + i + '" data-hue="' + n.layer.hue + '" title="' + esc(mapTitle(n) + " · " + companies(n.weight)) + '" style="' + px(r) + '">' +
+      '<span class="box-label"><b>' + esc(mapTitle(n)) + "</b><small>" + companies(n.weight) + "</small></span></button>";
+  }
+  function mapCompany(n, r) {
+    var c = n.c, web = webUrl(c), li = liUrl(c), main = web || li, ext = ' target="_blank" rel="noopener noreferrer"';
+    var cls = (r.h < 90 ? " short" : "") + (r.w < 150 ? " narrow" : "");
+    return '<div class="co' + cls + '" data-name="' + esc(c.name) + '" data-hue="' + n.layer.hue + '" title="' + esc(c.name + (c.of ? " by " + c.of : "") + (c.desc ? " · " + c.desc : "")) + '" style="' + px(r) + '">' +
+      (main ? '<a class="co-name" href="' + main + '"' + ext + ">" + esc(c.name) + "</a>" : '<span class="co-name plain">' + esc(c.name) + "</span>") +
+      (c.of ? '<span class="co-of">by ' + esc(c.of) + "</span>" : "") +
+      (c.desc ? '<p class="co-desc">' + esc(c.desc) + "</p>" : "") +
+      (web || li ? '<span class="co-links">' + (web ? '<a href="' + web + '"' + ext + ">Website</a>" : "") + (li ? '<a href="' + li + '"' + ext + ">LinkedIn</a>" : "") + "</span>" : "") + "</div>";
+  }
+  var mapCurrent = null, mapZoomFrom = null;
+  function mapFind(r) {
+    var root = mapTree();
+    if (!r.layer) return root;
+    var layer = root.children.filter(function (x) { return x.id === r.layer; })[0];
+    if (!layer || !r.bucket) return layer || root;
+    var hit = null;
+    (function walk(n) { (n.children || []).forEach(function (c) { if (c.kind === "bucket") { if (c.id === r.bucket) hit = c; walk(c); } }); })(layer);
+    return hit || layer;
+  }
+  function renderMap(r) {
+    var n = mapFind(r), zoomingIn = !!(mapCurrent && n.parent === mapCurrent && mapZoomFrom), prevCurrent = mapCurrent;
+    var trail = []; for (var x = n; x; x = x.parent) trail.unshift(x);
+    var eyebrow = n.kind === "root" ? "Treemap · " + T.layers.length + " layers · " + companies(n.weight)
+      : '<i class="gdot" aria-hidden="true"></i>' + esc(n.layer.id + " " + n.layer.name) + (n.label ? " · " + esc(n.label) : "") + " · " + companies(n.weight);
+    var up = n.parent ? '<a class="up" href="' + mapHref(n.parent) + '">↑ Up to ' + esc(n.parent.kind === "root" ? "all layers" : mapTitle(n.parent)) + "</a>" : "";
+    var keep = prevCurrent && $(".map") ? $(".map") : null;
+    if (!keep) {
+      app.innerHTML = '<section class="map"><div class="intro" id="mapIntro"></div><div class="tm" id="tm"></div>' +
+        '<p class="hint">Select a box to zoom in. Box size shows how many companies it holds. Press Esc or use the path at the top to go back.</p></section>';
+    }
+    var intro = $("#mapIntro");
+    intro.setAttribute("data-hue", n.kind === "root" ? "" : n.layer.hue);
+    intro.innerHTML = '<div><p class="eyebrow">' + eyebrow + "</p><h1>" + esc(n.kind === "root" ? (T.title || "AI Landscape") : mapTitle(n)) + "</h1>" +
+      (n.desc ? '<p class="sub">' + esc(n.desc) + "</p>" : "") + "</div>" + up;
+    $("#crumbs").innerHTML = trail.map(function (t, i) {
+      var label = t.kind === "root" ? "Layers" : mapTitle(t);
+      return i === trail.length - 1 ? '<span aria-current="page">' + esc(label) + "</span>" : '<a href="' + mapHref(t) + '">' + esc(label) + "</a><i>/</i>";
+    }).join("");
+    document.title = (n.kind === "root" ? "" : mapTitle(n) + " · ") + "AI Landscape · Treemap";
+    setSwitch(true, n.kind === "root" ? "" : mapHref(n).slice(5));
+    drawMap(n, zoomingIn ? mapZoomFrom : null);
+    mapCurrent = n; mapZoomFrom = null; lastKey = "map";
+    if (!keep) window.scrollTo(0, 0);
+    if (r.hl) setTimeout(function () {
+      var el = $$("#tm .view:not(.out) .co").filter(function (e) { return e.getAttribute("data-name") === r.hl; })[0];
+      if (el) { el.scrollIntoView({ block: "center", behavior: reduceMotion ? "auto" : "smooth" }); el.classList.add("flash"); }
+    }, 480);
+  }
+  function drawMap(n, from) {
+    var tm = $("#tm"), top = tm.getBoundingClientRect().top;
+    var W = tm.clientWidth, H = Math.max(420, Math.min(900, window.innerHeight - top - 70));
+    var leaf = n.children.length && n.children[0].kind === "company";
+    var rects = leaf ? gridLayout(n.children.length, W, H, 8) : boxLayout(n.children, W, H, 4);
+    var FH = leaf ? Math.max(H, rects.height) : H;
+    tm.style.height = FH + "px";
+    var view = document.createElement("div");
+    view.className = "view";
+    view.innerHTML = n.children.map(function (c, i) { return c.kind === "company" ? mapCompany(c, rects[i]) : mapBox(c, rects[i], i); }).join("");
+    view.addEventListener("click", function (e) {
+      var b = e.target.closest(".box"); if (!b) return;
+      mapZoomFrom = { x: b.offsetLeft, y: b.offsetTop, w: b.offsetWidth, h: b.offsetHeight };
+      location.hash = mapHref(n.children[+b.getAttribute("data-i")]);
+    });
+    var old = tm.querySelector(".view:not(.out)");
+    if (from && from.w > 0 && !reduceMotion) {
+      // Zoom in: the new view starts at the place and size of the selected box, then grows to fill the frame.
+      view.style.transform = "translate(" + from.x + "px," + from.y + "px) scale(" + (from.w / W) + "," + (from.h / FH) + ")";
+      tm.appendChild(view); view.getBoundingClientRect();
+      view.classList.add("zoom-in"); view.style.transform = "none";
+    } else { view.classList.add("fade"); tm.appendChild(view); }
+    if (old) { old.classList.add("out"); setTimeout(function () { if (old.parentNode) old.parentNode.removeChild(old); }, 450); }
+  }
+  var mapResize; window.addEventListener("resize", function () {
+    clearTimeout(mapResize);
+    mapResize = setTimeout(function () { if (parse().map && $("#tm")) { mapCurrent = null; renderMap(parse()); } }, 150);
+  });
 
   function highlight(name) {
     setTimeout(function () {
@@ -959,7 +1164,8 @@ main { outline: none; }
     }
     sel = 0;
     $("#searchResults").innerHTML = results.length ? results.map(function (r, i) {
-      return '<a class="sr' + (i === sel ? " sel" : "") + '" href="' + r.href + '" style="--h:' + r.h + '"' + (r.hue ? ' data-hue="' + r.hue + '"' : "") + '><span class="sr-kind">' + (r.hue ? '<i class="gdot" aria-hidden="true"></i>' : "") + r.kind + "</span><span class=\"sr-main\"><b>" + esc(r.label) + "</b><small>" + esc(r.sub) + "</small></span></a>";
+      var href = parse().map ? r.href.replace(/^#\//, "#/map/") : r.href;
+      return '<a class="sr' + (i === sel ? " sel" : "") + '" href="' + href + '" style="--h:' + r.h + '"' + (r.hue ? ' data-hue="' + r.hue + '"' : "") + '><span class="sr-kind">' + (r.hue ? '<i class="gdot" aria-hidden="true"></i>' : "") + r.kind + "</span><span class=\"sr-main\"><b>" + esc(r.label) + "</b><small>" + esc(r.sub) + "</small></span></a>";
     }).join("") : '<p class="empty">Nothing matches “' + esc(q) + "”.</p>";
   }
   function moveSel(d) {
@@ -1007,14 +1213,14 @@ main { outline: none; }
       var rw = $(".rail-wrap.open"); if (rw) { setRail(false); $(".rail-toggle").focus(); return; }
       if (document.body.classList.contains("search-open")) return closeSearch();
       if (document.body.classList.contains("drawer-open")) return closeDrawer();
-      var crumbsUp = $$("#crumbs a"); if (r0().bucket && crumbsUp.length) { location.hash = crumbsUp[crumbsUp.length - 1].getAttribute("href"); return; }
+      var crumbsUp = $$("#crumbs a"); if ((r0().bucket || r0().map) && crumbsUp.length) { location.hash = crumbsUp[crumbsUp.length - 1].getAttribute("href"); return; }
       if (parse().layer) location.hash = "#/";
       return;
     }
     if (typing) return;
     if (e.key === "/" || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) { e.preventDefault(); openSearch(); return; }
     var r = parse(), l = r.layer && layerById(r.layer);
-    if (l && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+    if (l && !r.map && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
       // Follow the page's own previous / next links (layers on a layer page, sibling buckets on a bucket page).
       var a = e.key === "ArrowRight" ? $(".pn-links .pn-next") : $(".pn-links a:not(.pn-next)");
       if (a) location.hash = a.getAttribute("href");
