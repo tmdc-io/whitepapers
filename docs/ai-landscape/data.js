@@ -13,8 +13,6 @@
  *   "Speak?Speak language app"        ?keyword is the LinkedIn search text when there is no confirmed page
  *   "Abridge#Healthcare,Insurance"    #tags are the industries (L11 only). The default is Horizontal.
  *
- * You can combine the parts in any order after the name, for example "Rufus~Amazon#Retail".
- *
  * LinkedIn link rule: an explicit @slug wins. Otherwise, a name (or parent) in "slugs" gets that page.
  * A value in "slugs" can also be a full link, such as a LinkedIn showcase page or the company website.
  * Any other name opens a LinkedIn company search for that name.
