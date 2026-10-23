@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DataOS Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Hanken+Grotesk:wght@400;600&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+:root{--ink:#242422;--ink-2:#4f504c;--ink-3:#7a7b76;--paper:#fff;--sand:#f4f1ee;--line:#dcd6d0;--teal:#009293}
+@media (prefers-color-scheme: dark){:root{--ink:#ecebe7;--ink-2:#c3c4bf;--ink-3:#8f918b;--paper:#151c1f;--sand:#1c2528;--line:#33413f;--teal:#54ded1;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Hanken Grotesk","Helvetica Neue",system-ui,sans-serif;line-height:1.6}
+.wrap{max-width:1040px;margin:0 auto;padding:48px 16px 64px}
+.brand{display:flex;align-items:center;gap:10px;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:18px}
+.brand svg{width:26px;height:26px;fill:currentColor}
+h1{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:clamp(32px,5vw,52px);line-height:1.1;margin:48px 0 12px}
+.lead{font-size:18px;color:var(--ink-2);max-width:56ch;margin:0 0 36px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.card.wide{grid-column:1/-1}.card{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);border-radius:10px;padding:24px;text-decoration:none;color:var(--ink);background:var(--paper)}
+.card:hover{border-color:var(--teal)}
+.card:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.kind{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal)}
+.card h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:24px;margin:0}
+.card p{margin:0;color:var(--ink-2);font-size:15px}
+.go{margin-top:auto;padding-top:8px;font-weight:600;color:var(--teal)}
+@media (max-width:760px){.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<div class="brand"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M17.3446 2.14778C24.329 2.14275 29.9948 7.79515 29.9998 14.7717L17.3537 14.7808L17.3446 2.14778Z"/><path d="M29.981 17.0615C29.986 24.038 24.3283 29.6986 17.3439 29.7036L17.3348 17.0706L29.981 17.0615Z"/><path d="M8.66882 29.8556C4.99111 29.8582 2.00755 26.8816 2.00491 23.2065C2.00226 19.5314 4.98153 16.5504 8.65924 16.5478C12.3369 16.5451 15.3205 19.5218 15.3231 23.1969C15.3258 26.872 12.3465 29.8529 8.66882 29.8556Z"/><path d="M14.9822 14.7883L14.9731 2.15527L2.327 2.16438L2.3361 14.7974L14.9822 14.7883Z"/></svg>DataOS Academy</div>
+<h1>Learn DataOS and Vulcan</h1>
+<p class="lead">Start with the Vulcan introduction and the interactive guide, then take the DataOS certification course.</p>
+<div class="cards">
+<a class="card" href="deck.html"><span class="kind">Slide deck</span><h2>Vulcan Introduction</h2><p>Fourteen slides on how Vulcan stops bad data and shortens recovery.</p><span class="go">Open the introduction &rarr;</span></a>
+<a class="card" href="guide.html"><span class="kind">Interactive guide</span><h2>Vulcan Interactive guide</h2><p>Fifteen modules on the Bean Street example. Each module has a section to try and a quiz.</p><span class="go">Open the guide &rarr;</span></a>
+<a class="card wide" href="course.html"><span class="kind">Course</span><h2>DataOS Certification</h2><p>Four levels with lessons, labs, knowledge checks and exams.</p><span class="go">Open the course &rarr;</span></a>
+</div>
+</main>
+</body>
+</html>
