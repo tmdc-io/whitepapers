@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DataOS for Engineering Leaders</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,8 +31,10 @@
   --grey-line:#56605a; --band:#1d252e; color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
 html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.62;
+body{margin:0;-webkit-text-size-adjust:100%;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.62;
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));}
 .page{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:200px minmax(0,1fr);gap:56px;padding-block:48px 96px}
 .sidebar{position:sticky;top:calc(env(safe-area-inset-top, 0px) + 24px);align-self:start}
@@ -247,7 +254,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 @media (prefers-reduced-motion: reduce){.burger span{transition:none}}
 @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
 </style>
-
+</head>
+<body>
 <div class="page">
 <aside class="sidebar" id="sidebar">
   <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="toc">
@@ -902,3 +910,5 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
 })();
 </script>
+</body>
+</html>
