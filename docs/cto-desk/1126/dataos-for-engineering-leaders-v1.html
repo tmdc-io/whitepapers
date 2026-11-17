@@ -258,7 +258,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
   <ul class="plain" style="margin:0">
     <li>The buyer: the engineering leader of a non-tech company, who must now drive AI adoption across the organization (<a href="#hypothesis">section 1</a>).</li>
     <li>The gap: no company gives engineers one neutral place to build, run and govern agents on the company's own systems. DataOS already has the pieces underneath: identity, access, policy and data products (<a href="#landscape">section 3</a>).</li>
-    <li>The motion: DataOS is SaaS. Engineers start for free, and the engineering leader pays when an agent reaches private systems and goes live for colleagues. Technical sellers act on product use. We do not use business sellers (<a href="#unleash">section 5</a>).</li>
+    <li>The motion: DataOS is SaaS. Engineers start for free, and the engineering leader pays when an agent reaches private systems and goes live for colleagues. Technical sellers act on product use (<a href="#unleash">section 5</a>).</li>
     <li>The identity: DataOS becomes its own brand, and one pod runs it end to end. Modern keeps the business user (<a href="#unleash">section 5</a>).</li>
   </ul>
 </div>
@@ -267,7 +267,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <h2><span class="n">1</span>Engineering leaders need an AI platform</h2>
 <div class="callout">
   <span class="label">Hypothesis</span>
-  <p>Modern sold DataOS mainly to business users, and the response was lukewarm. AI creates a new need. The engineering leaders of non-tech companies need a platform where the whole organization builds, runs and governs AI agents and apps. DataOS fits that need and can capture that market.</p>
+  <p>Modern sold DataOS mainly to business users, and growth was slower than we wanted. AI creates a new need. The engineering leaders of non-tech companies need a platform where the whole organization builds, runs and governs AI agents and apps. DataOS fits that need and can capture that market.</p>
 </div>
 
 <h3>What changed with AI</h3>
@@ -276,7 +276,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <p>So the engineering leader now has a new job: to help the whole company adopt AI safely. The measure of success is how much of the company uses AI safely. It is not how many requests the leader refuses. DataOS serves that job.</p>
 
 <h3>What our deals show</h3>
-<p>Our deal records show a pattern. In every account, a technical owner decides where DataOS runs, which data it can use and who controls it. <em>When a deal went around that person, it stalled.</em> Where that person pays for DataOS, the account is live, even when the work is hard.</p>
+<p>Our deal records show a pattern. In every account, a technical owner decides where DataOS runs, which data it can use and who controls it. <em>When the technical owner was not part of the deal, it stalled.</em> Where that person pays for DataOS, the account is live, even when the work is hard.</p>
 <div class="figure">
   <h4>A technical owner sets the terms in every account</h4>
   <p class="sub">Modern accounts, from internal records. The date shows when each record was written</p>
@@ -287,13 +287,13 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
       <tr><td>Aptos</td><td>Sep and Oct 2026</td><td>Leadership chose its internal Agent Foundry. Our proposed POV is paused until early January 2027</td></tr>
       <tr><td>Otis</td><td>May 2026</td><td>The architecture owner wants data products hosted in Snowflake. The next phase waits on that decision</td></tr>
       <tr><td>Gensler</td><td>Apr 2025</td><td>Suri owns the platform, and his team pays for DataOS. Gensler keeps governance under its own control</td></tr>
-      <tr><td>Lenovo</td><td>May 2026</td><td>Eight data products are live. The engineering team asks for PySpark instead of YAML</td></tr>
+      <tr><td>Lenovo</td><td>May 2026</td><td>Eight data products are live. The engineering team sets its preferred tools, for example PySpark</td></tr>
       <tr><td>Orascom</td><td>Jul 2026</td><td>Interested in DataOS, "but not as a standalone business-facing platform"</td></tr>
     </tbody>
   </table></div>
   <p class="src">Sources: internal Modern Notion pages, listed with their dates in <a href="#sources">Appendix C</a>. Some records are older snapshots, and the current status can be different.</p>
 </div>
-<p>The business sponsor wanted the result. The person who owns where software runs did not want another platform that someone else chose. <em>That person now must govern every agent that colleagues build. DataOS solves that problem.</em></p>
+<p>The business sponsor wanted the result. The person who owns where software runs wants to choose that platform. <em>That person now must govern every agent that colleagues build. DataOS solves that problem.</em></p>
 
 <h3>Where DataOS sits</h3>
 <p>DataOS sits between the tools that colleagues build and the systems that the company already runs. The engineering leader owns this middle layer. Requests come in from the left. Governed access goes out to the right, across a line that only the engineering leader controls.</p>
@@ -414,15 +414,15 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <h3>What Glean does, and what it shows us</h3>
 <p>Glean sells to the same buyer as DataOS, so we look at it closely. It started in 2019 as search across the documents, chat and tickets of a company, and it launched in 2021. Today it is a horizontal AI platform. Employees ask questions and build agents on company knowledge.</p>
 <p>Glean sells to the CIO and the CTO. It respects the existing permissions of each employee. It connects to more than 275 business systems (<a href="https://www.glean.com/platform/connectors">Glean</a>). It links people, content and work in a structure that it calls the Enterprise Graph.</p>
-<p>Glean starts from documents and conversations, and it now builds agents on top of them. DataOS starts from the company's systems and governs agents built anywhere. Because this plan leads with agents, Glean is a closer neighbor than before. In 2026, Glean began to read cloud data warehouses such as Snowflake and to turn questions into SQL (<a href="https://www.glean.com/jp/blog/glean-for-data-analysis">Glean</a>). It also offers a "Customer Hosted" version, which runs in the customer's own AWS or GCP account under Glean's management (<a href="https://docs.glean.com/get-started/build/about-deployment">Glean docs</a>). Glean sends its context to other agents through MCP. One of these is the agent tool of Snowflake (<a href="https://glean.com/connectors/snowflake">Glean</a>).</p>
+<p>Glean starts from documents and conversations, and it now builds agents on top of them. DataOS starts from company data and its meaning, and it now moves to building, running and governing agents. Because this plan leads with agents, Glean is a closer neighbor than before. In 2026, Glean began to read cloud data warehouses such as Snowflake and to turn questions into SQL (<a href="https://www.glean.com/jp/blog/glean-for-data-analysis">Glean</a>). It also offers a "Customer Hosted" version, which runs in the customer's own AWS or GCP account under Glean's management (<a href="https://docs.glean.com/get-started/build/about-deployment">Glean docs</a>). Glean sends its context to other agents through MCP. One of these is the agent tool of Snowflake (<a href="https://glean.com/connectors/snowflake">Glean</a>).</p>
 <div class="figure">
   <h4>Two platforms for the same leader, from opposite ends</h4>
   <p class="sub">Glean as its public material describes it, DataOS as this document proposes it</p>
   <div class="tbl" style="margin:0"><table>
     <thead><tr><th></th><th>Glean</th><th>DataOS</th></tr></thead>
     <tbody>
-      <tr><td>Starts from</td><td>Search across documents, chat and tickets</td><td>Building, running and governing agents on company systems</td></tr>
-      <tr><td>Moves toward</td><td>Structured data in cloud data warehouses</td><td>Data products and business meaning</td></tr>
+      <tr><td>Starts from</td><td>Search across documents, chat and tickets</td><td>Data products and business meaning on company data</td></tr>
+      <tr><td>Moves toward</td><td>Structured data in cloud data warehouses</td><td>Building, running and governing agents on company systems</td></tr>
       <tr><td>Who buys</td><td>The CIO or the CTO</td><td>The CIO, CTO, chief architect or VP of engineering</td></tr>
       <tr><td>How it sells</td><td>Through sales. Deals take about 4 to 5 months (<a href="https://sacra.com/c/glean">Sacra</a>)</td><td>Product-led sales: the product finds the buyer, and engineers help close</td></tr>
       <tr><td>How it charges</td><td>Per seat, an estimated $50 to $75 per user per month. The median contract is about $99K a year (<a href="https://www.vendr.com/buyer-guides/glean">Vendr</a>)</td><td>We will test per agent and per platform with usage</td></tr>
@@ -457,47 +457,40 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <h2><span class="n">4</span>Free use first, then a sales team</h2>
 <p>Product-led growth means that people use a product before anyone sells it to them. Developer-tool companies that grew this way had the same shape. They grew slowly from free use for years. Then an outside event made the product urgent, and growth turned.</p>
 <p>The companies that went deep into banks, retailers and manufacturers all added an enterprise sales team on top of free use. Most added it four to eight years after launch. Free use created the lead, and a seller closed it.</p>
-<p>The chart puts the three companies that this section looks at most closely on one time axis. Read it from left to right.</p>
+<p>The chart puts the three companies that this section looks at most closely on one time axis, from 2015. Read it from left to right.</p>
 <div class="figure">
   <h4>Each company took years to reach scale, then grew fast once AI made its product urgent</h4>
   <p class="sub">Annual recurring revenue (ARR), in millions of US dollars. The time axis is to scale</p>
   <div class="svgwrap">
-  <svg viewBox="0 0 740 320" role="img" aria-label="All three companies took years to reach scale, then grew fast once AI made their products urgent. Vercel bent upward after it launched v0 in 2023. Glean and WorkOS disclosed revenue only from 2025, and both grew fast from there.">
+  <svg viewBox="0 0 760 380" role="img" aria-label="Each company existed for years before it reached scale. Vercel was founded in 2015 and bent upward after v0 in 2023. Glean and WorkOS were founded in 2019 and grew fast from 2025, when AI made their products urgent.">
     <g stroke="var(--line)"><line x1="70" y1="250.0" x2="700" y2="250.0"/><line x1="70" y1="192.9" x2="700" y2="192.9"/><line x1="70" y1="135.7" x2="700" y2="135.7"/><line x1="70" y1="78.6" x2="700" y2="78.6"/></g>
     <g font-family="Inter, system-ui, sans-serif" font-size="12" fill="var(--muted)" text-anchor="end"><text x="62" y="254.0">$0</text><text x="62" y="196.9">$100M</text><text x="62" y="139.7">$200M</text><text x="62" y="82.6">$300M</text></g>
-    <line x1="80" y1="250" x2="80" y2="255" stroke="var(--grey-line)"/><line x1="156" y1="250" x2="156" y2="255" stroke="var(--grey-line)"/><line x1="232" y1="250" x2="232" y2="255" stroke="var(--grey-line)"/><line x1="308" y1="250" x2="308" y2="255" stroke="var(--grey-line)"/><line x1="384" y1="250" x2="384" y2="255" stroke="var(--grey-line)"/><line x1="460" y1="250" x2="460" y2="255" stroke="var(--grey-line)"/><line x1="536" y1="250" x2="536" y2="255" stroke="var(--grey-line)"/><line x1="612" y1="250" x2="612" y2="255" stroke="var(--grey-line)"/><line x1="688" y1="250" x2="688" y2="255" stroke="var(--grey-line)"/>
-    <line x1="441.0" y1="250" x2="441.0" y2="60" stroke="var(--grey-line)" stroke-dasharray="3 4"/>
-    <text x="435.0" y="72" font-family="Inter, system-ui, sans-serif" font-size="12" fill="var(--muted)" text-anchor="end">Vercel launches v0</text>
-    <text x="80" y="30" font-family="Inter, system-ui, sans-serif" font-size="12" fill="var(--muted)">Glean and WorkOS disclosed revenue only from 2025, so their lines start there.</text>
-    <polyline fill="none" stroke="var(--accent)" stroke-width="3" points="111.9,249.4 168.9,247.1 270.0,238.0 352.1,220.9 453.9,200.9 472.9,192.9 561.1,135.7 618.1,55.7"/>
-    <polyline fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-dasharray="9 5" points="542.1,192.9 637.1,78.6"/>
-    <polyline fill="none" stroke="var(--muted)" stroke-width="2.5" points="567.9,238.6 593.0,232.9"/>
-    <polyline fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-dasharray="3 4" points="593.0,232.9 669.0,192.9"/>
-    <g><circle cx="111.9" cy="249.4" r="4.5" fill="var(--accent)"/><circle cx="168.9" cy="247.1" r="4.5" fill="var(--accent)"/><circle cx="270.0" cy="238.0" r="4.5" fill="var(--accent)"/><circle cx="352.1" cy="220.9" r="4.5" fill="var(--accent)"/><circle cx="453.9" cy="200.9" r="4.5" fill="var(--accent)"/><circle cx="472.9" cy="192.9" r="4.5" fill="var(--accent)"/><circle cx="561.1" cy="135.7" r="4.5" fill="var(--accent)"/><circle cx="618.1" cy="55.7" r="4.5" fill="var(--accent)"/><circle cx="542.1" cy="192.9" r="4.5" fill="var(--accent-ink)"/><circle cx="637.1" cy="78.6" r="4.5" fill="var(--accent-ink)"/><circle cx="567.9" cy="238.6" r="4.5" fill="var(--muted)"/><circle cx="593.0" cy="232.9" r="4.5" fill="var(--muted)"/><circle cx="669.0" cy="192.9" r="4.5" fill="var(--muted)"/></g>
+    <line x1="80" y1="250" x2="80" y2="255" stroke="var(--grey-line)"/><line x1="130" y1="250" x2="130" y2="255" stroke="var(--grey-line)"/><line x1="180" y1="250" x2="180" y2="255" stroke="var(--grey-line)"/><line x1="230" y1="250" x2="230" y2="255" stroke="var(--grey-line)"/><line x1="280" y1="250" x2="280" y2="255" stroke="var(--grey-line)"/><line x1="330" y1="250" x2="330" y2="255" stroke="var(--grey-line)"/><line x1="380" y1="250" x2="380" y2="255" stroke="var(--grey-line)"/><line x1="430" y1="250" x2="430" y2="255" stroke="var(--grey-line)"/><line x1="480" y1="250" x2="480" y2="255" stroke="var(--grey-line)"/><line x1="530" y1="250" x2="530" y2="255" stroke="var(--grey-line)"/><line x1="580" y1="250" x2="580" y2="255" stroke="var(--grey-line)"/><line x1="630" y1="250" x2="630" y2="255" stroke="var(--grey-line)"/><line x1="680" y1="250" x2="680" y2="255" stroke="var(--grey-line)"/>
+    <line x1="517.5" y1="250" x2="517.5" y2="60" stroke="var(--grey-line)" stroke-dasharray="3 4"/>
+    <text x="511.5" y="72" text-anchor="end" font-family="Inter, system-ui, sans-serif" font-size="12" fill="var(--muted)">Vercel launches v0</text>
+    <polyline fill="none" stroke="var(--accent)" stroke-width="3" points="301.0,249.4 338.5,247.1 405.0,238.0 459.0,220.9 526.0,200.9 538.5,192.9 596.5,135.7 634.0,55.7"/>
+    <polyline fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-dasharray="9 5" points="584.0,192.9 646.5,78.6"/>
+    <polyline fill="none" stroke="var(--muted)" stroke-width="2.5" points="601.0,238.6 617.5,232.9"/>
+    <polyline fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-dasharray="3 4" points="617.5,232.9 667.5,192.9"/>
+    <g><circle cx="301.0" cy="249.4" r="4.5" fill="var(--accent)"/><circle cx="338.5" cy="247.1" r="4.5" fill="var(--accent)"/><circle cx="405.0" cy="238.0" r="4.5" fill="var(--accent)"/><circle cx="459.0" cy="220.9" r="4.5" fill="var(--accent)"/><circle cx="526.0" cy="200.9" r="4.5" fill="var(--accent)"/><circle cx="538.5" cy="192.9" r="4.5" fill="var(--accent)"/><circle cx="596.5" cy="135.7" r="4.5" fill="var(--accent)"/><circle cx="634.0" cy="55.7" r="4.5" fill="var(--accent)"/><circle cx="584.0" cy="192.9" r="4.5" fill="var(--accent-ink)"/><circle cx="646.5" cy="78.6" r="4.5" fill="var(--accent-ink)"/><circle cx="601.0" cy="238.6" r="4.5" fill="var(--muted)"/><circle cx="617.5" cy="232.9" r="4.5" fill="var(--muted)"/><circle cx="667.5" cy="192.9" r="4.5" fill="var(--muted)"/></g>
     <g font-family="Inter, system-ui, sans-serif" font-size="12.5" font-weight="600">
-      <text x="608.1" y="49.7" text-anchor="end" fill="var(--accent)">Vercel $340M</text>
-      <text x="646" y="90" text-anchor="start" fill="var(--accent-ink)">Glean $300M</text>
-      <text x="542.1" y="214.9" text-anchor="middle" fill="var(--accent-ink)">Glean $100M</text>
-      <text x="736" y="178" text-anchor="end" fill="var(--muted)">WorkOS ~$100M</text>
-      <text x="472.9" y="180.9" text-anchor="middle" fill="var(--accent)">$100M</text>
-      <text x="270.0" y="226.0" text-anchor="middle" fill="var(--accent)">$21M</text>
+      <text x="624.0" y="49.7" text-anchor="end" fill="var(--accent)">Vercel $340M</text>
+      <text x="656.5" y="82.6" fill="var(--accent-ink)">Glean $300M</text>
+      <text x="675.5" y="196.9" fill="var(--muted)">~$100M</text>
     </g>
-    <g font-family="Inter, system-ui, sans-serif" font-size="12" fill="var(--muted)" text-anchor="middle"><text x="80" y="270">2019</text><text x="156" y="270">2020</text><text x="232" y="270">2021</text><text x="308" y="270">2022</text><text x="384" y="270">2023</text><text x="460" y="270">2024</text><text x="536" y="270">2025</text><text x="612" y="270">2026</text><text x="688" y="270">2027</text></g>
-    <g font-family="Inter, system-ui, sans-serif" font-size="11.5" fill="var(--muted)" text-anchor="middle">
-      <text x="80" y="290">Glean, WorkOS founded</text>
-      <text x="232" y="290" dx="22">Glean launched</text>
-      <text x="169" y="306">WorkOS launched</text>
-    </g>
+    <g font-family="Inter, system-ui, sans-serif" font-size="12" fill="var(--muted)" text-anchor="middle"><text x="80" y="268">2015</text><text x="130" y="268">2016</text><text x="180" y="268">2017</text><text x="230" y="268">2018</text><text x="280" y="268">2019</text><text x="330" y="268">2020</text><text x="380" y="268">2021</text><text x="430" y="268">2022</text><text x="480" y="268">2023</text><text x="530" y="268">2024</text><text x="580" y="268">2025</text><text x="630" y="268">2026</text><text x="680" y="268">2027</text></g>
+    <g font-family="Inter, system-ui, sans-serif" font-size="11.5"><text x="72" y="302" text-anchor="end" fill="var(--accent)" font-weight="600">Vercel</text><rect x="80.0" y="294" width="221.0" height="8" rx="4" fill="var(--band)"/><line x1="301.0" y1="298" x2="680" y2="298" stroke="var(--accent)" stroke-width="2"/><rect x="77.0" y="292" width="3" height="12" fill="var(--accent)"/><circle cx="145.0" cy="298" r="4" fill="var(--surface)" stroke="var(--accent)" stroke-width="1.5"/><text x="72" y="320" text-anchor="end" fill="var(--accent-ink)" font-weight="600">Glean</text><rect x="280.0" y="312" width="304.0" height="8" rx="4" fill="var(--band)"/><line x1="584.0" y1="316" x2="680" y2="316" stroke="var(--accent-ink)" stroke-width="2"/><rect x="277.0" y="310" width="3" height="12" fill="var(--accent-ink)"/><circle cx="380.0" cy="316" r="4" fill="var(--surface)" stroke="var(--accent-ink)" stroke-width="1.5"/><text x="72" y="338" text-anchor="end" fill="var(--muted)" font-weight="600">WorkOS</text><rect x="280.0" y="330" width="321.0" height="8" rx="4" fill="var(--band)"/><line x1="601.0" y1="334" x2="680" y2="334" stroke="var(--muted)" stroke-width="2"/><rect x="277.0" y="328" width="3" height="12" fill="var(--muted)"/><circle cx="338.5" cy="334" r="4" fill="var(--surface)" stroke="var(--muted)" stroke-width="1.5"/></g>
+    <text x="80" y="370" font-family="Inter, system-ui, sans-serif" font-size="11.5" fill="var(--muted)">Bar: founding year. Grey band: years before the first public revenue figure. Circle: first product launch.</text>
   </svg>
   </div>
   <div class="legend">
     <span><i class="sw" style="border-top:3px solid var(--accent)"></i>Vercel, founded in 2015</span>
-    <span><i class="sw" style="border-top:3px dashed var(--accent-ink)"></i>Glean</span>
-    <span><i class="sw" style="border-top:2.5px solid var(--muted)"></i>WorkOS (dotted: a single source)</span>
+    <span><i class="sw" style="border-top:3px dashed var(--accent-ink)"></i>Glean, founded in 2019</span>
+    <span><i class="sw" style="border-top:2.5px solid var(--muted)"></i>WorkOS, founded in 2019 (dotted: a single source)</span>
   </div>
   <p class="src">Sources: Vercel from <a href="https://www.arr.club/research/vercel-at-600m">arr.club</a>, which compiles Sacra, Forbes, The Information and Dealroom. Glean from <a href="https://www.glean.com/press/glean-achieves-100m-arr-in-three-years-delivering-true-ai-roi-to-the-enterprise">Glean</a> and <a href="https://techcrunch.com/2026/05/28/gleans-top-line-crosses-300m-as-ai-budget-cutting-becomes-its-major-selling-point/">TechCrunch</a>. WorkOS from <a href="https://sacra.com/c/workos">Sacra</a> estimates, with one source for October 2026.</p>
 </div>
-<p>Two patterns stand out. Vercel grew slowly for four years, and its curve bent upward after it launched v0, its AI app builder, in 2023. Glean and WorkOS grew fast from 2025, when AI made their products urgent. In each case, an outside event turned the curve. The free tier alone did not.</p>
+<p>Two patterns stand out. Each company spent its first four to six years with little or no public revenue. Then the curve turned. Vercel bent upward after it launched v0, its AI app builder, in 2023, its eighth year. Glean and WorkOS grew fast from 2025, their sixth year, when AI made their products urgent. In each case, an outside event turned the curve. The free tier alone did not.</p>
 
 <h3>WorkOS: one checklist, sold to the developer</h3>
 
@@ -530,6 +523,21 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
   </tbody>
 </table></div>
 
+<h3>The companies from section 3</h3>
+<p>Most companies in <a href="#landscape">section 3</a> are too young to show a full growth curve. Several of them have figures from 2026, and these figures show the same two motions in our space today.</p>
+<div class="tbl"><table>
+  <thead><tr><th>Company</th><th>Type in section 3</th><th>How it grows</th><th>Latest figure</th></tr></thead>
+  <tbody>
+    <tr><td>Lovable</td><td>App builder</td><td>Free use</td><td>Passed $500M annualized revenue in June 2026 (<a href="https://techcrunch.com/2026/06/09/lovable-says-it-has-hit-500m-in-annualized-revenue-with-1-million-new-projects-a-week/">TechCrunch</a>)</td></tr>
+    <tr><td>Dust</td><td>AI workspace</td><td>Free use, then sales</td><td>Passed $20M ARR with more than 3,000 organizations in May 2026 (<a href="https://tech.eu/2026/05/18/dust-raises-40m-series-b-to-build-the-multiplayer-operating-system-for-enterprise-ai/">Tech.eu</a>)</td></tr>
+    <tr><td>Glean</td><td>AI workspace</td><td>Sales to the CIO</td><td>Passed $300M ARR in May 2026 (<a href="https://techcrunch.com/2026/05/28/gleans-top-line-crosses-300m-as-ai-budget-cutting-becomes-its-major-selling-point/">TechCrunch</a>)</td></tr>
+    <tr><td>Harvey</td><td>Vertical AI</td><td>Sales to the firm</td><td>Customers built more than 25,000 agents on it (<a href="https://itbrief.co.uk/story/harvey-launches-500-legal-ai-agents-builder-tool">IT Brief</a>)</td></tr>
+    <tr><td>Legora</td><td>Vertical AI</td><td>Sales to the firm</td><td>Raised $550M at $5.55B in March 2026 (<a href="https://legora.com/newsroom/legora-raises-550-million-series-d-to-fuel-us-growth">Legora</a>)</td></tr>
+    <tr><td>Basis</td><td>Vertical AI</td><td>Sales to the firm</td><td>About 30% of the 25 largest US accounting firms use it (<a href="https://www.accountingtoday.com/articles/ai-for-accounting-startup-basis-hits-1-15b-valuation">Accounting Today</a>)</td></tr>
+  </tbody>
+</table></div>
+<p>The split from the older companies runs through the market today. Free use gives the fastest growth, and sales gives the largest contracts. Companies that combine both, such as Dust, are the closest model for DataOS.</p>
+
 <h3>Two warnings</h3>
 <p>Pivotal sold its platform top-down to banks, insurers and carmakers, with services attached. Developers never chose it. It lost when Kubernetes became the standard, and VMware bought it in 2019 for about 30% of its peak value (<a href="https://redmonk.com/rstephens/2019/09/09/pivoting/">RedMonk</a>).</p>
 <p>Docker had the opposite problem. Developers liked it, but it did not turn that use into enterprise revenue. It sold its enterprise business in 2019 (<a href="https://siliconangle.com/2019/11/13/container-shakeup-docker-sells-enterprise-business-mirantis-appoints-new-ceo">SiliconANGLE</a>).</p>
@@ -551,7 +559,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 
 <h3>Where we land first</h3>
 <p>We start with mid-size enterprises, roughly 1,000 to 10,000 employees, in manufacturing, distribution, retail, insurance and financial services. Their boards push for AI now. They run more than one data platform and have private systems that agents need. Their engineering teams can adopt a product alone, but they are too small to build their own platform. They also buy faster than the largest companies.</p>
-<p>Our accounts at Lenovo, Otis and Weatherford show the same need at a larger scale. Gensler is a reference for the buyer, not a target segment. Professional-services firms come later, because partners decide slowly, and vertical products already take their AI budgets. The largest companies also come later, because they buy slowly and choose their cloud provider by default.</p>
+<p>Our accounts at Lenovo, Otis and Weatherford show the same need at a larger scale. Gensler is a reference for the buyer, not a target segment. Professional-services firms come later, because partners take longer to decide, and vertical products already take their AI budgets. The largest companies also come later, because they buy slowly and choose their cloud provider by default.</p>
 
 <h3>Why the engineering leader picks DataOS</h3>
 <p>At the moment of choice, the engineering leader compares DataOS with an agent platform from a cloud provider, a data platform or Glean. Four reasons decide it for DataOS:</p>
@@ -623,7 +631,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
   <p class="src">Adapted from the diagram in the business case of the CTO's office, 16 November 2026.</p>
 </div>
 <p>The free tier shows the value before anyone pays: working agents on real company data in the cloud. The leader finds these agents, and a governed way to take them further. The buyer arrives with demand already in hand, so the cost of sales is lower. The free tier has usage limits and abuse controls from day one, because it runs agents for anyone who signs up.</p>
-<p>Sales still has a role. At non-tech companies, procurement and security review still stand between a working agent and a signed contract. A product-led sales team closes that gap, as described below. The largest accounts can start with the leader instead, as Gensler did, and then follow the same loop.</p>
+<p>At non-tech companies, procurement and security review come before a signed contract. Engineers in the DataOS pod help the leader through that review, so the product and the sales motion work together. The largest accounts can start with a conversation with the leader, as Gensler did, and then follow the same loop.</p>
 <p>When engineers in many companies start to build on DataOS, the slow first phase of the curve is under way. <a href="#parallels">Section 4</a> shows that the companies before us turned their curve at that point, when an outside event made the product urgent.</p>
 
 <h3>How we find customers</h3>
@@ -640,8 +648,8 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 </table></div>
 <p>The pod records where each paying company came from. After two or three quarters, the numbers show which source works, and the budget follows them. A gate is a funding checkpoint with a goal (<a href="#appendix-a">Appendix A</a>). If most paying companies still come from seeding after gate 1, the self-serve loop does not work yet, and the gate catches it.</p>
 
-<h3>Product-led sales, not business sales</h3>
-<p>Product-led sales means that product use decides which company the team talks to, and when. The team does not cold-call business users, and it does not sell business outcomes. It talks to engineers and engineering leaders who already use DataOS.</p>
+<h3>Product-led sales for engineering buyers</h3>
+<p>Product-led sales means that product use decides which company the team talks to, and when. The team talks to engineers and engineering leaders who already use DataOS. Modern sales continues to serve business buyers.</p>
 <p>The team is technical. Its people are engineers who can help a leader through architecture and security review. MongoDB and Postman work this way: free use shows the team which accounts are ready (<a href="#parallels">section 4</a>). The table shows the signals that bring the team in, and what it does at each one.</p>
 <div class="tbl"><table>
   <thead><tr><th>Signal in the product</th><th>What the team does</th></tr></thead>
@@ -652,7 +660,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
     <tr><td>An engineering leader signs up</td><td>Sets up company sign-in and policy with the leader</td></tr>
   </tbody>
 </table></div>
-<p>The team is measured on companies that open the wall and expand to more teams. It is not measured on meetings booked or on new logos from cold outreach. It sits inside the DataOS pod and shares no quota with Modern sales.</p>
+<p>The team is measured on companies that open the wall and expand to more teams. It sits inside the DataOS pod, and its quota is separate from Modern sales.</p>
 
 <h3>How we grow them</h3>
 <p>A company starts with one team and one agent. Growth comes from more teams, more agents and more systems on the same platform. The data layer comes later. The table shows each step, what starts it and who helps.</p>
@@ -686,7 +694,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 
 <h3>One brand, one persona</h3>
 <p>Product-led growth works only when the site, the message and the funnel all say one thing (<a href="https://www.mckinsey.com/industries/technology-media-and-communications/our-insights/from-product-led-growth-to-product-led-sales-beyond-the-plg-hype">McKinsey</a>). Today, a buyer can hear about DataOS as a business-results story from Modern. The same buyer can also hear about it as a platform story from engineering.</p>
-<p>An engineering leader who hears a business pitch sees a vendor that goes around them. That happened at Target and Aptos. A business user who hears a platform pitch sees something that they cannot buy.</p>
+<p>An engineering leader expects a technical conversation, and a business pitch does not answer those questions. A business user who hears a platform pitch sees something that they cannot buy.</p>
 <div class="figure">
   <h4>Each persona hears one story, from the brand to the first login</h4>
   <p class="sub">Modern and DataOS run in two separate lanes, one for each persona</p>
@@ -702,21 +710,21 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
   <thead><tr><th>Option</th><th>What it means</th><th>Our view</th></tr></thead>
   <tbody>
     <tr><td>Separate brand</td><td>DataOS with its own site, pod and funnel, endorsed by Modern</td><td><span class="pill mid">Preferred</span> One story per persona. It costs a second marketing budget</td></tr>
-    <tr><td>Sub-brand</td><td>"DataOS by Modern", with its own site and a shared marketing team</td><td><span class="pill neutral">Possible</span> Cheaper, but the shared team drifts back to the business-user message</td></tr>
-    <tr><td>One brand, two product lines</td><td>Modern sells both, on two pages</td><td><span class="pill crowd">Not advised</span> One funnel, two stories. This is the confusion that we have today</td></tr>
+    <tr><td>Sub-brand</td><td>"DataOS by Modern", with its own site and a shared marketing team</td><td><span class="pill neutral">Possible</span> Cheaper, but one team must carry two messages at once</td></tr>
+    <tr><td>One brand, two product lines</td><td>Modern sells both, on two pages</td><td><span class="pill crowd">Not advised</span> One funnel, two stories, and each buyer hears a message meant for the other</td></tr>
   </tbody>
 </table></div>
 <p>Four rules keep the two motions apart:</p>
 <ul class="plain">
   <li>Existing DataOS customers, such as Gensler and Lenovo, keep their contracts and their support from Modern. The pod offers them the SaaS product when it is ready, and they become the first public references.</li>
   <li>The DataOS pod owns every new sign-up and every account that it creates.</li>
-  <li>Modern sellers do not pitch DataOS to engineering leaders. When a Modern deal needs a platform conversation, the DataOS pod runs it.</li>
+  <li>Engineering leaders hear about DataOS from the DataOS pod, so each buyer gets one message. When a Modern deal needs a platform conversation, the DataOS pod runs it.</li>
   <li>We agree before launch, in writing, how quota credit works when a Modern seller expands a self-serve account.</li>
 </ul>
 
 <h3>One pod runs the play</h3>
 <p>A pod is one small team that owns a goal from start to end. One DataOS pod runs this play, from the first sign-up to the paid account. It has its own goals, its own budget and its own decisions.</p>
-<p>The pod has its own engineers for the SaaS product, onboarding and the entry products, because these are new product work. It depends on core DataOS engineering only for platform releases, and that dependency has a written release commitment. Every other handover slows the loop, so the pod takes nothing else from the rest of Modern.</p>
+<p>The pod has its own engineers for the SaaS product, onboarding and the entry products, because these are new product work. It depends on core DataOS engineering only for platform releases, and that dependency has a written release commitment. The pod keeps the rest of its work inside the team, so the loop stays fast.</p>
 <div class="figure">
   <h4>One pod owns the loop from first sign-up to paid account</h4>
   <p class="sub">Everything the play needs sits inside the pod</p>
@@ -782,7 +790,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <h2 class="appendix-hd"><span class="n">Appendix B</span>The Gensler lessons</h2>
 <p>Gensler designs buildings. It does not sell software. Suri, its technology head, owns all platforms and IT and runs them to serve the business. Eric reports to him, and Eric's department pays for DataOS. Gensler bought DataOS to reduce friction in data work across the firm.</p>
 <p>Before DataOS, every team that needed data waited for engineering to connect sources, set access and keep it running. After DataOS, Suri's team runs one platform for sign-in, access control and the lakehouse. Colleagues use data without a new project each time.</p>
-<p>The work is not always smooth. In April 2025, Gensler reported serious issues after upgrades, and it asked to keep governance under its own control. Both facts show the same thing: the platform owner sets the terms.</p>
+<p>Gensler sets clear terms. In April 2025, it asked to keep governance under its own control, and it holds us to a high bar after each upgrade. This shows the same thing: the platform owner sets the terms.</p>
 <p>The AI version of this job is the same job with a new kind of request. Suri's colleagues now want to build agents and apps. Each request raises the same questions: where it runs, which data it can see, who can use it and who audits it.</p>
 <div class="figure">
   <h4>The same leader, the same job, a new kind of request</h4>
