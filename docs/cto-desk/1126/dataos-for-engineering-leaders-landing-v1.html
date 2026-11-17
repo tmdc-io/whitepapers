@@ -1,0 +1,180 @@
+<title>DataOS One-Pager</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one page. Thesis on top, a five-step argument chain you can click, the product loop, then the ask. Same tokens as the full document. */
+:root{
+  --bg:#fbfbfa; --surface:#ffffff; --ink:#16202b; --muted:#5b6571; --line:#d9dee4; --band:#f1f3f5;
+  --accent:#1f5fd1; --accent-soft:#e7eefb; --accent-ink:#163f8c; --warn:#9a5500; --warn-soft:#fbf1e3;
+  --f-display:"Instrument Sans","Inter",system-ui,sans-serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#11161c;--surface:#171e26;--ink:#e7ebef;--muted:#9aa4ae;--line:#2c3640;--band:#1d252e;--accent:#7aa7ff;--accent-soft:#1b2a44;--accent-ink:#b9cffd;--warn:#f0b366;--warn-soft:#33270f;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#11161c;--surface:#171e26;--ink:#e7ebef;--muted:#9aa4ae;--line:#2c3640;--band:#1d252e;--accent:#7aa7ff;--accent-soft:#1b2a44;--accent-ink:#b9cffd;--warn:#f0b366;--warn-soft:#33270f;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1080px;margin:0 auto;padding-block:36px 56px;display:flex;flex-direction:column;gap:28px}
+.eyebrow{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,4vw,40px);line-height:1.1;letter-spacing:-.015em;margin:8px 0 10px;text-wrap:balance}
+.thesis{font-size:18px;line-height:1.5;max-width:62ch;margin:0}
+.thesis b{font-weight:600}
+.lbl{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Argument chain */
+.chain{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;position:relative}
+.step{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--surface);position:relative;min-width:0}
+.step .n{font-family:var(--f-mono);font-size:12px;color:var(--accent)}
+.step .t{font-family:var(--f-display);font-weight:600;font-size:15px;line-height:1.25}
+.step .h{font-size:13px;color:var(--muted);line-height:1.4}
+.step[aria-pressed="true"]{border:2px solid var(--accent);background:var(--accent-soft);padding:13px 15px}
+.step[aria-pressed="true"] .h{color:var(--accent-ink)}
+.step:hover{border-color:var(--accent)}
+.step:not(:last-child)::after{content:"";position:absolute;right:-12px;top:50%;width:12px;height:2px;background:var(--muted)}
+.panel{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 20px;align-items:start}
+.panel h3{font-family:var(--f-display);font-weight:600;font-size:17px;margin:0;grid-column:1/-1}
+.panel ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:14.5px}
+.panel .src{font-size:12px;color:var(--muted);grid-column:1/-1;margin:0}
+.panel .go{white-space:nowrap;font-size:14px;font-weight:500;align-self:end}
+.hint{font-size:12.5px;color:var(--muted);margin:-16px 0 0}
+
+/* Motion loop */
+.loop{display:flex;align-items:stretch;gap:0;flex-wrap:nowrap}
+.pill{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);font-size:13px;line-height:1.35}
+.pill b{display:block;font-family:var(--f-display);font-weight:600;font-size:14px;margin-bottom:2px}
+.pill span{color:var(--muted)}
+.pill.wall{border:2px dashed var(--warn);background:var(--warn-soft)}
+.pill.wall span{color:var(--warn)}
+.pill.pay{border:2px solid var(--accent);background:var(--accent-soft)}
+.pill.pay span{color:var(--accent-ink)}
+.cn{flex:none;width:18px;align-self:center;height:2px;background:var(--muted);position:relative}
+.cn::after{content:"";position:absolute;right:-3px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.loopnote{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+
+/* Bottom */
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:16px}
+.card{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:18px 20px}
+.card.ask{border:2px solid var(--accent)}
+.card h3{font-family:var(--f-display);font-weight:600;font-size:17px;margin:0 0 8px}
+.card p{margin:0 0 8px;font-size:14.5px}
+.card ul{margin:0 0 10px;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14.5px}
+.gates{display:flex;gap:0;align-items:center;margin-top:6px;flex-wrap:nowrap}
+.gate{flex:1;min-width:0;border:1.5px solid var(--accent);border-radius:8px;background:var(--accent-soft);padding:8px 10px;font-size:12.5px;line-height:1.3;color:var(--accent-ink)}
+.gate b{display:block;font-weight:600;color:var(--ink);font-size:13px}
+.stop{font-size:12px;color:var(--warn);margin-top:8px}
+.foot{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:14px;border-top:1px solid var(--line);padding-top:16px;color:var(--muted)}
+.foot a{font-weight:500}
+
+@media (max-width: 860px){
+  .chain{grid-template-columns:minmax(0,1fr)}
+  .step:not(:last-child)::after{right:auto;left:28px;top:auto;bottom:-12px;width:2px;height:12px}
+  .loop{flex-direction:column;gap:0}
+  .cn{width:2px;height:16px;align-self:flex-start;margin-left:24px}
+  .cn::after{right:auto;left:-3px;top:auto;bottom:-3px}
+  .two{grid-template-columns:minmax(0,1fr)}
+  .gates{flex-direction:column;align-items:stretch;gap:8px}
+  .gates .cn{display:none}
+  .panel{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">CTO's Desk · 17 November 2026</div>
+    <h1>DataOS for Engineering Leaders</h1>
+    <p class="thesis">DataOS becomes the platform where the <b>engineering leader of a non-tech company</b> lets the whole company <b>build, run and govern AI agents</b> on its own systems. We sell it as its own brand through product-led growth.</p>
+  </header>
+
+  <section aria-labelledby="arg">
+    <p class="lbl" id="arg">The argument in five steps</p>
+    <div class="chain" role="group" aria-label="The argument in five steps">
+      <button class="step" data-i="0" aria-pressed="true"><span class="n">1 · The need</span><span class="t">Engineering leaders need an AI platform</span><span class="h">Everyone builds with AI. The leader is accountable.</span></button>
+      <button class="step" data-i="1" aria-pressed="false"><span class="n">2 · The market</span><span class="t">Large and growing fast</span><span class="h">Enterprise AI spend grew 5.4 times in a year.</span></button>
+      <button class="step" data-i="2" aria-pressed="false"><span class="n">3 · The gap</span><span class="t">No one covers the whole need</span><span class="h">Each competitor covers only a part.</span></button>
+      <button class="step" data-i="3" aria-pressed="false"><span class="n">4 · The proof</span><span class="t">Free use first, then a sales team</span><span class="h">Other companies took years. Then AI turned their curve.</span></button>
+      <button class="step" data-i="4" aria-pressed="false"><span class="n">5 · The plan</span><span class="t">How DataOS wins</span><span class="h">We lead with agents on SaaS, for mid-size enterprises.</span></button>
+    </div>
+  </section>
+
+  <div class="panel" id="panel" aria-live="polite">
+    <h3 id="ptitle">1 · Engineering leaders need an AI platform</h3>
+    <ul id="plist">
+      <li>84% of CIOs say that employees create agents and apps faster than IT can govern them.</li>
+      <li>Two-thirds of CIOs and CTOs are accountable for AI that they do not fully control.</li>
+      <li>In our own deals, the technical owner sets the terms. When that person was not part of the deal, it stalled.</li>
+    </ul>
+    <a class="go" id="plink" href="https://claude.ai/artifact/A4ce4gkGG55pJFoH6hdSKv#hypothesis">Read section 1 →</a>
+    <p class="src" id="psrc">Sources: Dataiku, IBM (2026), Modern deal records.</p>
+  </div>
+  <p class="hint">Select a step to see its evidence.</p>
+
+  <section aria-labelledby="motion">
+    <p class="lbl" id="motion">How it starts and grows</p>
+    <div class="loop">
+      <div class="pill"><b>Start free</b><span>an engineer signs up on SaaS</span></div><i class="cn"></i>
+      <div class="pill"><b>Build an agent</b><span>on cloud data, for one team</span></div><i class="cn"></i>
+      <div class="pill"><b>The team adopts it</b><span>more agents, more teams</span></div><i class="cn"></i>
+      <div class="pill wall"><b>The wall</b><span>the agent needs private systems</span></div><i class="cn"></i>
+      <div class="pill pay"><b>The leader pays</b><span>connects systems, sets policy</span></div>
+    </div>
+    <p class="loopnote">Then more teams build on the same platform. Engineers in the DataOS pod help the leader through security review. Data products and business meaning come next.</p>
+  </section>
+
+  <div class="two">
+    <div class="card">
+      <h3>One brand, one pod</h3>
+      <p>DataOS becomes its own brand for engineering leaders and their engineers. Modern keeps business users.</p>
+      <p>One pod, with its own goals and budget, runs the play from the first sign-up to the paid account.</p>
+    </div>
+    <div class="card ask">
+      <h3>How to execute</h3>
+      <ul>
+        <li>Set up the DataOS pod and fund phase 1.</li>
+        <li>Fund each next phase only after its gate.</li>
+        <li>Pick the first entry products and test the entry price.</li>
+      </ul>
+      <div class="gates">
+        <div class="gate"><b>Gate 1</b>Engineers build alone</div><i class="cn"></i>
+        <div class="gate"><b>Gate 2</b>Agents in production</div><i class="cn"></i>
+        <div class="gate"><b>Gate 3</b>Paid by the right buyer</div>
+      </div>    </div>
+  </div>
+
+  <div class="foot">
+    <a href="https://claude.ai/artifact/A4ce4gkGG55pJFoH6hdSKv">DataOS for Engineering Leaders →</a>
+  </div>
+</div>
+
+<script>
+const D="https://claude.ai/artifact/A4ce4gkGG55pJFoH6hdSKv";
+const steps=[
+ {t:"1 · Engineering leaders need an AI platform",l:["84% of CIOs say that employees create agents and apps faster than IT can govern them.","Two-thirds of CIOs and CTOs are accountable for AI that they do not fully control.","In our own deals, the technical owner sets the terms. When that person was not part of the deal, it stalled."],s:"Sources: Dataiku, IBM (2026), Modern deal records.",a:"#hypothesis",n:1},
+ {t:"2 · The market is large and growing fast",l:["US enterprises spent $176.8B to deploy AI in 2026, 5.4 times the 2025 level.","Where companies build and run AI, plus the data it needs, grows from $7.7B in 2025 to $19.0B in 2027.","Spending on AI agents and assistants grows from $16.5B to $65.5B over the same two years."],s:"Sources: Menlo Ventures (Nov 2026), Gartner (Sep 2026).",a:"#why",n:2},
+ {t:"3 · No one covers the whole need",l:["AI workspaces, app builders, governance tools, data layers and clouds each cover a part.","No one gives engineers one neutral place to build, run and govern agents on company systems.","DataOS already has the pieces underneath: identity, access, policy and data products."],s:"Source: our reading of public material, November 2026.",a:"#landscape",n:3},
+ {t:"4 · Free use first, then a sales team",l:["WorkOS, Vercel and Glean took four to six years to reach scale. Then AI turned their curve.","Free use creates the lead, and a technical seller closes it.","Today, Lovable passed $500M from free use, and Glean passed $300M from sales."],s:"Sources: Sacra, arr.club, TechCrunch (2025 and 2026).",a:"#parallels",n:4},
+ {t:"5 · How DataOS wins",l:["We start with mid-size enterprises. Their boards push for AI, and they are too small to build their own platform.","Engineers start free on SaaS. The engineering leader pays when an agent needs private systems.","Engineers in the DataOS pod sell to engineering buyers. Data products and business meaning come next."],s:"Details: entry products, pricing principles, brand and pod.",a:"#unleash",n:5}
+];
+const btns=[...document.querySelectorAll('.step')];
+function show(i){
+  btns.forEach((b,k)=>b.setAttribute('aria-pressed',k===i?'true':'false'));
+  const st=steps[i];
+  document.getElementById('ptitle').textContent=st.t;
+  const ul=document.getElementById('plist'); ul.innerHTML='';
+  st.l.forEach(x=>{const li=document.createElement('li');li.textContent=x;ul.appendChild(li);});
+  document.getElementById('psrc').textContent=st.s;
+  const a=document.getElementById('plink'); a.href=D+st.a; a.textContent='Read section '+st.n+' →';
+}
+btns.forEach((b,i)=>b.addEventListener('click',()=>show(i)));
+document.querySelector('.chain').addEventListener('keydown',e=>{
+  const i=btns.indexOf(document.activeElement); if(i<0) return;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();const j=Math.min(i+1,btns.length-1);btns[j].focus();show(j);}
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();const j=Math.max(i-1,0);btns[j].focus();show(j);}
+});
+</script>

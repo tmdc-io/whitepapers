@@ -30,7 +30,10 @@ html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.62;
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));}
 .page{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:200px minmax(0,1fr);gap:56px;padding-block:48px 96px}
-nav.toc{position:sticky;top:calc(env(safe-area-inset-top, 0px) + 24px);align-self:start;font-size:13px}
+.sidebar{position:sticky;top:calc(env(safe-area-inset-top, 0px) + 24px);align-self:start}
+nav.toc{font-size:13px}
+nav.toc a.active{color:var(--ink);font-weight:600}
+.toc-toggle{display:none}
 nav.toc p{font-family:var(--f-display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:11px;color:var(--muted);margin:0 0 10px}
 nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 nav.toc a{color:var(--muted);text-decoration:none;display:flex;gap:8px}
@@ -157,7 +160,22 @@ td strong{font-weight:600}
 footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
 @media (max-width: 900px){
   .page{grid-template-columns:minmax(0,1fr);gap:0;padding-block:28px 64px}
-  nav.toc{display:none}
+  html{scroll-padding-top:calc(64px + env(safe-area-inset-top,0px))}
+  .sidebar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);margin:-28px calc(-1 * max(16px, env(safe-area-inset-right,0px))) 24px calc(-1 * max(16px, env(safe-area-inset-left,0px)));padding:0 max(16px, env(safe-area-inset-right,0px)) 0 max(16px, env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
+  .toc-toggle{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;color:var(--ink);font:inherit;font-size:14px;padding:12px 0;cursor:pointer;text-align:left}
+  .toc-toggle-label{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .toc-current{margin-left:auto;font-size:13px;color:var(--accent);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+  .burger{position:relative;width:20px;height:14px;flex:none}
+  .burger span{position:absolute;left:0;width:20px;height:2px;background:var(--ink);border-radius:1px;transition:transform .2s ease,opacity .2s ease}
+  .burger span:nth-child(1){top:0}.burger span:nth-child(2){top:6px}.burger span:nth-child(3){top:12px}
+  .sidebar.open .burger span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+  .sidebar.open .burger span:nth-child(2){opacity:0}
+  .sidebar.open .burger span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+  .sidebar nav.toc{display:none;padding:0 0 14px;max-height:calc(70vh - env(safe-area-inset-top,0px));overflow-y:auto}
+  .sidebar nav.toc p{display:none}
+  .sidebar.open nav.toc{display:block}
+  nav.toc ol{gap:10px}
+  nav.toc a{font-size:14px}
 }
 @media (max-width: 680px){
   .flow,.compare,.kpis,.phases{grid-template-columns:minmax(0,1fr)}
@@ -225,11 +243,19 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 .judg{display:inline-block;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--warn);background:var(--warn-soft);border:1px solid var(--warn);border-radius:6px;padding:4px 10px;margin:0 0 14px}
 .legend .sw{display:inline-block;width:22px;height:0;vertical-align:middle}
 .boxflow .wallpill a,.judg a{color:inherit}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+@media (prefers-reduced-motion: reduce){.burger span{transition:none}}
 @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
 </style>
 
 <div class="page">
-<nav class="toc" aria-label="Contents">
+<aside class="sidebar" id="sidebar">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="toc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+<nav class="toc" id="toc" aria-label="Contents">
   <p>Contents</p>
   <ol>
     <li><a href="#hypothesis"><span class="k">1</span>Engineering leaders need an AI platform</a></li>
@@ -237,11 +263,12 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
     <li><a href="#landscape"><span class="k">3</span>No one covers the whole need</a></li>
     <li><a href="#parallels"><span class="k">4</span>Free use first, then a sales team</a></li>
     <li><a href="#unleash"><span class="k">5</span>How DataOS wins</a></li>
-    <li><a href="#appendix-a"><span class="k">A</span>Appendix: the ask</a></li>
+    <li><a href="#appendix-a"><span class="k">A</span>Appendix: how to execute</a></li>
     <li><a href="#appendix-b"><span class="k">B</span>Appendix: the Gensler lessons</a></li>
     <li><a href="#sources"><span class="k">C</span>Appendix: sources</a></li>
   </ol>
 </nav>
+</aside>
 
 <main>
 <header class="doc">
@@ -646,7 +673,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
     <tr><td>Channels</td><td>AI vendors that build DataOS into their agents, systems integrators and cloud partners. Known users who move to a new company also bring DataOS with them</td></tr>
   </tbody>
 </table></div>
-<p>The pod records where each paying company came from. After two or three quarters, the numbers show which source works, and the budget follows them. A gate is a funding checkpoint with a goal (<a href="#appendix-a">Appendix A</a>). If most paying companies still come from seeding after gate 1, the self-serve loop does not work yet, and the gate catches it.</p>
+<p>The pod records where each paying company came from. Over time, the numbers show which source works, and the budget follows them. A gate is a funding checkpoint with a goal (<a href="#appendix-a">Appendix A</a>). If most paying companies still come from seeding after gate 1, the self-serve loop does not work yet, and the gate catches it.</p>
 
 <h3>Product-led sales for engineering buyers</h3>
 <p>Product-led sales means that product use decides which company the team talks to, and when. The team talks to engineers and engineering leaders who already use DataOS. Modern sales continues to serve business buyers.</p>
@@ -746,7 +773,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 </section>
 
 <section id="appendix-a">
-<h2 class="appendix-hd"><span class="n">Appendix A</span>The ask, gate by gate</h2>
+<h2 class="appendix-hd"><span class="n">Appendix A</span>How to execute, gate by gate</h2>
 <p>If we agree on the alignment above, we ask to set up the DataOS pod and to fund it one gate at a time. The pod proposes a goal and a stop line for each gate. The CEO and the CRO agree them at launch.</p>
 <div class="figure">
   <h4>We fund each phase only after the pod passes its gate</h4>
@@ -782,7 +809,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 </table></div>
 <div class="callout">
   <span class="label">The decisions</span>
-  <p>Set up the DataOS pod with its own goals and budget, and fund phase 1. Agree the three gates. Agree the rules that keep the DataOS and Modern motions apart, including quota credit. In the next 60 days, research the entry products and pick the first ones. Test the entry price with engineering leaders at Gensler, Lenovo and current prospects.</p>
+  <p>Set up the DataOS pod with its own goals and budget, and fund phase 1. Agree the three gates. Agree the rules that keep the DataOS and Modern motions apart, including quota credit. Research the entry products and pick the first ones. Test the entry price with engineering leaders at Gensler, Lenovo and current prospects.</p>
 </div>
 </section>
 
@@ -856,3 +883,22 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <footer>DataOS for Engineering Leaders · CTO's Desk · 17 November 2026</footer>
 </main>
 </div>
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'), btn=sb&&sb.querySelector('.toc-toggle'), cur=document.getElementById('tocCurrent');
+  if(!btn) return;
+  var links=[].slice.call(sb.querySelectorAll('nav.toc a'));
+  var secs=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1));});
+  function set(open){ sb.classList.toggle('open',open); btn.setAttribute('aria-expanded',open?'true':'false'); }
+  btn.addEventListener('click',function(){ set(!sb.classList.contains('open')); });
+  links.forEach(function(a){ a.addEventListener('click',function(){ set(false); }); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && sb.classList.contains('open')){ set(false); btn.focus(); }});
+  function onScroll(){
+    var y=window.scrollY+120, idx=-1;
+    secs.forEach(function(sec,i){ if(sec && sec.getBoundingClientRect().top+window.scrollY<=y) idx=i; });
+    links.forEach(function(a,i){ a.classList.toggle('active',i===idx); });
+    if(cur){ var a=links[idx]; if(a){ var k=a.querySelector('.k'); cur.textContent=(k?k.textContent+' · ':'')+a.textContent.replace(k?k.textContent:'','').trim(); } else cur.textContent=''; }
+  }
+  window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+})();
+</script>
