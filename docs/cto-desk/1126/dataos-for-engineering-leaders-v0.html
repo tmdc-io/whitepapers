@@ -1,0 +1,828 @@
+<title>DataOS for Engineering Leaders</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (about 70ch) with framed diagrams; sticky contents rail on desktop. */
+:root{
+  --bg:#fbfbfa; --surface:#ffffff; --ink:#16202b; --muted:#5b6571; --line:#d9dee4;
+  --accent:#1f5fd1; --accent-soft:#e7eefb; --accent-ink:#163f8c; --warn:#9a5500; --warn-soft:#fbf1e3; --ok:#22744a; --ok-soft:#e5f3eb;
+  --grey-line:#b9bfb6; --band:#f1f3f5;
+  --f-display:"Instrument Sans", "Inter", system-ui, sans-serif;
+  --f-body:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161c; --surface:#171e26; --ink:#e7ebef; --muted:#9aa4ae; --line:#2c3640;
+    --accent:#7aa7ff; --accent-soft:#1b2a44; --accent-ink:#b9cffd; --warn:#f0b366; --warn-soft:#33270f; --ok:#7fd3a3; --ok-soft:#14301f;
+    --grey-line:#56605a; --band:#1d252e; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161c; --surface:#171e26; --ink:#e7ebef; --muted:#9aa4ae; --line:#2c3640;
+  --accent:#7aa7ff; --accent-soft:#1b2a44; --accent-ink:#b9cffd; --warn:#f0b366; --warn-soft:#33270f; --ok:#7fd3a3; --ok-soft:#14301f;
+  --grey-line:#56605a; --band:#1d252e; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.62;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));}
+.page{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:200px minmax(0,1fr);gap:56px;padding-block:48px 96px}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top, 0px) + 24px);align-self:start;font-size:13px}
+nav.toc p{font-family:var(--f-display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:11px;color:var(--muted);margin:0 0 10px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+nav.toc a{color:var(--muted);text-decoration:none;display:flex;gap:8px}
+nav.toc a .k{font-family:var(--f-mono);font-size:11px;color:var(--accent);min-width:14px;padding-top:2px}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--ink)}
+main{min-width:0;max-width:760px}
+header.doc{margin-bottom:40px}
+.eyebrow{font-family:var(--f-display);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:12px;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(32px,5vw,46px);line-height:1.08;letter-spacing:-.015em;margin:10px 0 14px;text-wrap:balance}
+.byline{color:var(--muted);font-size:14px;display:flex;flex-wrap:wrap;gap:6px 16px}
+h2{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.2;letter-spacing:-.01em;margin:64px 0 14px;text-wrap:balance;scroll-margin-top:24px}
+h2 .n{font-family:var(--f-mono);font-weight:500;font-size:14px;color:var(--accent);display:block;margin-bottom:6px;letter-spacing:0}
+h3{font-family:var(--f-display);font-weight:600;font-size:18px;margin:32px 0 8px;text-wrap:balance}
+p{margin:0 0 14px}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+ul.plain{margin:0 0 14px;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.lead{font-size:18px;line-height:1.55}
+.callout{background:var(--accent-soft);border-radius:10px;padding:20px 22px;margin:20px 0}
+.callout p:last-child{margin:0}
+.label{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:6px;display:block}
+.note{border:1px solid var(--line);background:var(--warn-soft);padding:14px 18px;border-radius:8px;margin:18px 0;font-size:15px}
+.tbl{overflow-x:auto;margin:18px 0 22px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.45}
+th,td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+th{font-family:var(--f-display);font-weight:600;font-size:12.5px;letter-spacing:.03em;color:var(--muted);background:var(--bg)}
+td strong{font-weight:600}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:999px;white-space:nowrap}
+.pill.crowd{background:var(--warn-soft);color:var(--warn)}
+.pill.open{background:var(--ok-soft);color:var(--ok)}
+.pill.mid{background:var(--accent-soft);color:var(--accent-ink)}
+.figure{margin:26px 0;padding:22px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.figure h4{font-family:var(--f-display);font-weight:600;font-size:17px;margin:0 0 4px;text-wrap:balance}
+.figure .sub{color:var(--muted);font-size:13.5px;margin:0 0 16px}
+.figure .src{color:var(--muted);font-size:12.5px;margin:14px 0 0}
+.svgwrap{overflow-x:auto}
+.svgwrap svg{display:block;width:100%;min-width:560px;height:auto}
+.svgwrap.narrow svg{min-width:0;max-width:520px;margin:0 auto}
+
+/* Stack diagram */
+.stack{display:flex;flex-direction:column;gap:8px}
+.stack .layer{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--bg)}
+.stack .layer.us{border:2px solid var(--accent);background:var(--accent-soft)}
+.stack .lname{font-family:var(--f-display);font-weight:600;font-size:14.5px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.stack .lname em{font-style:normal;font-weight:500;font-size:12.5px;color:var(--muted)}
+.stack .layer.us .lname em{color:var(--accent-ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:12.5px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);white-space:nowrap}
+.layer.us .chip{border-color:var(--accent);color:var(--accent-ink);background:var(--surface)}
+.stack .arrow{text-align:center;color:var(--muted);font-size:12.5px;line-height:1.2}
+
+/* Two-column outcome cards */
+.compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}
+.compare > div{border:1px solid var(--line);border-radius:10px;padding:16px 18px;background:var(--surface);min-width:0}
+.compare h4{font-family:var(--f-display);font-weight:600;font-size:15px;margin:0 0 8px}
+.compare ul{margin:0;padding-left:18px;font-size:14.5px;display:flex;flex-direction:column;gap:4px}
+.compare .bad{border-color:var(--warn)}
+.compare .good{border-color:var(--ok)}
+.compare .tag{font-size:12px;font-weight:600;margin-bottom:6px;display:block}
+.compare .bad .tag{color:var(--warn)}
+.compare .good .tag{color:var(--ok)}
+.acct{display:flex;flex-direction:column;gap:8px;font-size:14px}
+.acct div b{font-weight:600}
+
+/* Coverage matrix */
+.matrix td,.matrix th{text-align:center;vertical-align:middle}
+.matrix td:first-child,.matrix th:first-child{text-align:left}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid var(--accent);vertical-align:middle}
+.dot.full{background:var(--accent)}
+.dot.part{background:linear-gradient(90deg,var(--accent) 50%,transparent 50%)}
+.dot.none{border-color:var(--grey-line);background:transparent}
+.matrix tr.us td{background:var(--accent-soft);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);margin-top:12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+
+/* Flow */
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.flow .step{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--bg);font-size:13.5px;line-height:1.4}
+.flow .step b{display:block;font-family:var(--f-display);font-weight:600;font-size:15px;margin-bottom:3px}
+.flow .step span{color:var(--muted)}
+.flow .step.wall{border:2px solid var(--accent);background:var(--accent-soft)}
+.flow .step.pay{border-color:var(--accent)}
+.flow .step.wall span,.chain .stage.key .k{color:var(--accent-ink)}
+.flowlabel{font-size:12.5px;color:var(--muted);margin:14px 0 8px;font-weight:600}
+
+/* Conversion chain */
+.chain{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;align-items:stretch}
+.chain .stage{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--bg);text-align:center;min-width:0}
+.chain .stage .v{font-family:var(--f-display);font-weight:700;font-size:22px;font-variant-numeric:tabular-nums}
+.chain .stage .k{font-size:12.5px;color:var(--muted);line-height:1.35}
+.chain .stage.key{border:2px solid var(--accent);background:var(--accent-soft)}
+.chain .rate{display:none}
+.chainrates{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin-top:8px;font-size:12px;color:var(--accent-ink);font-weight:600;text-align:center}
+.chainrates span:first-child{visibility:hidden}
+
+/* Lanes */
+.lanes{display:grid;grid-template-columns:110px repeat(5,minmax(0,1fr));gap:8px;align-items:stretch;font-size:13px;line-height:1.35}
+.lanes .hd{font-family:var(--f-display);font-weight:600;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);align-self:end}
+.lanes .who{font-family:var(--f-display);font-weight:700;font-size:15px;align-self:center}
+.lanes .who small{display:block;font-family:var(--f-body);font-weight:400;font-size:12px;color:var(--muted)}
+.lanes .cell{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg)}
+.lanes .cell.d{border-color:var(--accent);background:var(--accent-soft)}
+.lanes .divider{grid-column:1 / -1;border-top:2px dashed var(--grey-line);margin:6px 0;position:relative;height:0}
+.lanes .divider span{position:absolute;left:50%;top:-11px;transform:translateX(-50%);background:var(--surface);padding:5px 12px;font-size:12px;color:var(--muted);white-space:nowrap}
+
+/* Phases */
+.phases{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:10px 14px}
+.phases .ph{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--bg);font-size:13.5px}
+.phases .gt{border:2px solid var(--accent);border-radius:10px;padding:12px 14px;background:var(--accent-soft);font-size:13.5px}
+.phases b{display:block;font-family:var(--f-display);font-weight:600;font-size:15px;margin-bottom:3px}
+
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+.kpis div{border-top:2px solid var(--accent);padding-top:10px}
+.kpis .v{font-family:var(--f-display);font-weight:700;font-size:26px;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpis .k{font-size:13px;color:var(--muted)}
+.sources{font-size:13.5px;color:var(--muted)}
+.sources ol{padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.appendix-hd{margin-top:80px;padding-top:20px;border-top:2px solid var(--line)}
+footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+@media (max-width: 900px){
+  .page{grid-template-columns:minmax(0,1fr);gap:0;padding-block:28px 64px}
+  nav.toc{display:none}
+}
+@media (max-width: 680px){
+  .flow,.compare,.kpis,.phases{grid-template-columns:minmax(0,1fr)}
+  .chain,.chainrates{grid-template-columns:minmax(0,1fr)}
+  .chainrates{display:none}
+  .chain{gap:6px}
+  .chain .rate{display:block;text-align:center;font-size:12px;color:var(--accent-ink);font-weight:600}
+  .lanes{grid-template-columns:minmax(0,1fr)}
+  .lanes .hd{display:none}
+  .lanes .cell::before{content:attr(data-h) ": ";font-weight:600;color:var(--muted)}
+  .lanes .divider span{white-space:normal;width:90%;text-align:center}
+  h2{margin-top:48px}
+}
+/* Box flow */
+.boxflow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:center}
+.boxflow .bx{border:1px solid var(--line);border-radius:10px;padding:18px 16px;background:var(--bg);text-align:center}
+.boxflow .bx b{display:block;font-family:var(--f-display);font-weight:600;font-size:17px;margin-bottom:4px}
+.boxflow .bx span{color:var(--muted);font-size:13.5px;line-height:1.35}
+.boxflow .bx.us{border:2px solid var(--accent);background:var(--accent-soft)}
+.boxflow .bx.us span{color:var(--accent-ink)}
+.boxflow .ar{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:110px;max-width:130px;text-align:center;align-self:stretch}
+.boxflow .ar .ln{display:block;width:100%;height:0;border-top:2px solid var(--muted);position:relative}
+.boxflow .ar .ln::after{content:"";position:absolute;right:-2px;top:-5px;width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.boxflow .ar small{font-size:12px;color:var(--muted);line-height:1.3;position:relative;z-index:1;background:var(--surface);padding:0 4px}
+.boxflow .ar.wall::before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:2.5px dashed var(--warn)}
+.boxflow .wallpill{position:relative;z-index:1;background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;white-space:nowrap}
+@media (max-width: 860px){
+  .boxflow{grid-template-columns:minmax(0,1fr)}
+  .boxflow .ar{max-width:none;min-width:0;padding:6px 0}
+  .boxflow .ar .ln{width:0;height:26px;border-top:0;border-left:2px solid var(--muted)}
+  .boxflow .ar .ln::after{right:auto;left:-4.25px;top:auto;bottom:-2px}
+  .boxflow .ar.wall::before{left:0;right:0;top:50%;bottom:auto;border-left:0;border-top:2.5px dashed var(--warn)}
+}
+/* Pod */
+.pod{border:2px solid var(--accent);border-radius:12px;padding:16px;background:var(--accent-soft);display:flex;flex-direction:column;gap:12px}
+.podhd{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
+.podhd b{font-family:var(--f-display);font-weight:700;font-size:17px}
+.podhd span{color:var(--accent-ink);font-size:13.5px}
+.podgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.role{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13.5px;line-height:1.4}
+.role b{display:block;font-family:var(--f-display);font-weight:600;font-size:14.5px;margin-bottom:3px}
+.role span{color:var(--muted)}
+.podft{font-size:13px;color:var(--accent-ink)}
+@media (max-width: 680px){ .podgrid{grid-template-columns:minmax(0,1fr)} }
+/* Vertical phase flow */
+.vflow{display:grid;grid-template-columns:minmax(0,1fr) 210px;align-items:center;max-width:720px;margin:0 auto}
+.vstep{border-radius:10px;padding:14px 18px;font-size:14px;line-height:1.45}
+.vstep b{display:block;font-family:var(--f-display);font-weight:600;font-size:15.5px;margin-bottom:3px}
+.vstep.ph{border:1px solid var(--line);background:var(--bg)}
+.vstep.ph span{color:var(--muted)}
+.vstep.gt{border:2px solid var(--accent);background:var(--accent-soft)}
+.vstep.gt span{color:var(--accent-ink)}
+.vstop{position:relative;padding-left:30px}
+.vstop::before{content:"";position:absolute;left:2px;top:50%;width:26px;border-top:2px dashed var(--warn)}
+.vstop span{display:block;border:1px solid var(--warn);background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:9px 12px;font-size:12.5px;line-height:1.35;font-weight:600}
+.varrow{position:relative;height:30px}
+.varrow::before{content:"";position:absolute;left:50%;top:0;bottom:4px;border-left:2px solid var(--muted)}
+.varrow::after{content:"";position:absolute;left:calc(50% - 3.25px);bottom:0;width:8px;height:8px;border-radius:50%;background:var(--muted)}
+@media (max-width: 680px){
+  .vflow{grid-template-columns:minmax(0,1fr)}
+  .vside{display:none}
+  .vstop{padding-left:0;padding-top:22px;padding-bottom:4px}
+  .vstop::before{left:24px;top:0;width:0;height:20px;border-top:0;border-left:2px dashed var(--warn)}
+}
+.pill.neutral{background:var(--band);color:var(--muted)}
+.judg{display:inline-block;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--warn);background:var(--warn-soft);border:1px solid var(--warn);border-radius:6px;padding:4px 10px;margin:0 0 14px}
+.legend .sw{display:inline-block;width:22px;height:0;vertical-align:middle}
+.boxflow .wallpill a,.judg a{color:inherit}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+</style>
+
+<div class="page">
+<nav class="toc" aria-label="Contents">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#hypothesis"><span class="k">1</span>Engineering leaders need an AI platform</a></li>
+    <li><a href="#why"><span class="k">2</span>The market is large and growing fast</a></li>
+    <li><a href="#landscape"><span class="k">3</span>No one covers the whole need</a></li>
+    <li><a href="#parallels"><span class="k">4</span>Free use first, then a sales team</a></li>
+    <li><a href="#unleash"><span class="k">5</span>How DataOS wins</a></li>
+    <li><a href="#appendix-a"><span class="k">A</span>Appendix: the ask</a></li>
+    <li><a href="#appendix-b"><span class="k">B</span>Appendix: the Gensler lessons</a></li>
+    <li><a href="#sources"><span class="k">C</span>Appendix: sources</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="doc">
+  <div class="eyebrow">CTO's Desk</div>
+  <h1>DataOS for Engineering Leaders</h1>
+  <div class="byline"><span>17 November 2026</span></div>
+</header>
+
+<p class="lead">This document aligns us on one idea. DataOS can become the platform that the engineering leader of a non-tech company uses to bring AI to the whole organization and drive its adoption.</p>
+<p>The engineering leader is the person who owns where the company's software runs and how it is built. This is the CIO, the CTO or the chief architect. At smaller companies, it is the VP of engineering. An agent is an AI program that does tasks for a person. The document gives the hypothesis, the competition, the lessons from other companies, the market and the brand that the idea needs.</p>
+
+<div class="callout">
+  <span class="label">What we are aligning on</span>
+  <ul class="plain" style="margin:0">
+    <li>The buyer: the engineering leader of a non-tech company, who must now drive AI adoption across the organization (<a href="#hypothesis">section 1</a>).</li>
+    <li>The gap: no company gives engineers one neutral place to build, run and govern agents on the company's own systems. DataOS already has the pieces underneath: identity, access, policy and data products (<a href="#landscape">section 3</a>).</li>
+    <li>The motion: DataOS is SaaS. Engineers start for free, and the engineering leader pays when an agent reaches private systems and goes live for colleagues. Engineers sell on product signals, not business sellers (<a href="#unleash">section 5</a>).</li>
+    <li>The identity: DataOS becomes its own brand, and one pod runs it end to end. Modern keeps the business user (<a href="#unleash">section 5</a>).</li>
+  </ul>
+</div>
+
+<section id="hypothesis">
+<h2><span class="n">1</span>Engineering leaders need an AI platform</h2>
+<div class="callout">
+  <span class="label">Hypothesis</span>
+  <p>Modern sold DataOS mainly to business users, and the response was lukewarm. AI creates a new need. The engineering leaders of non-tech companies need a platform where the whole organization builds, runs and governs AI agents and apps. DataOS fits that need and can capture that market.</p>
+</div>
+
+<h3>What our deals show</h3>
+<p>Our deal records show a pattern. In every account, a technical owner decides where DataOS runs, which data it can use and who controls it. <em>When a deal went around that person, it stalled.</em> Where that person pays for DataOS, the account is live, even when the work is hard.</p>
+<div class="figure">
+  <h4>A technical owner sets the terms in every account</h4>
+  <p class="sub">Modern accounts, from internal records. The date shows when each record was written</p>
+  <div class="tbl" style="margin:0"><table>
+    <thead><tr><th>Account</th><th>Record</th><th>What the technical owner decided</th></tr></thead>
+    <tbody>
+      <tr><td>Target</td><td>Internal discussion</td><td>The CTO moved AI work in-house, and a paid agent pilot stopped</td></tr>
+      <tr><td>Aptos</td><td>Sep and Oct 2026</td><td>Leadership chose its internal Agent Foundry. Our proposed POV is paused until early January 2027</td></tr>
+      <tr><td>Otis</td><td>May 2026</td><td>The architecture owner wants data products hosted in Snowflake. The next phase waits on that decision</td></tr>
+      <tr><td>Gensler</td><td>Apr 2025</td><td>Suri owns the platform, and his team pays for DataOS. Gensler keeps governance under its own control</td></tr>
+      <tr><td>Lenovo</td><td>May 2026</td><td>Eight data products are live. The engineering team asks for PySpark instead of YAML</td></tr>
+      <tr><td>Orascom</td><td>Jul 2026</td><td>Interested in DataOS, "but not as a standalone business-facing platform"</td></tr>
+    </tbody>
+  </table></div>
+  <p class="src">Sources: internal Modern Notion pages, listed with their dates in <a href="#sources">Appendix C</a>. Some records are older snapshots, and the current status can be different.</p>
+</div>
+<p>The business sponsor wanted the result. The person who owns where software runs did not want another platform that someone else chose. <em>That person now has a much larger problem than before, and DataOS can solve it.</em></p>
+
+<h3>What changed with AI</h3>
+<p>People in every function now build tools with AI. Of US workers who built a work tool with AI coding tools in the past year, 34% have no formal programming background (<a href="https://zapier.com/blog/ai-coding-survey/">Zapier, May 2026</a>). 84% of CIOs say that employees create agents and apps faster than IT can govern them. 81% of CIOs do not fully see the agents built outside approved systems (<a href="https://www.dataiku.com/company/news/global-ai-confessions-report-cio-edition-2026">Dataiku, 2026</a>).</p>
+<p>This demand comes to the engineering leader, who is accountable for it. Two-thirds of 2,000 CIOs and CTOs say that they are accountable for AI systems that they do not fully control (<a href="https://newsroom.ibm.com/2026-06-08-new-ibm-study-finds-cios-and-ctos-face-growing-ai-control-gap-as-enterprise-deployment-scales">IBM, Jun 2026</a>). Of 307 technology leaders, 93% are worried about AI-built tools in production. Only 8% say that their governance is strong (<a href="https://retool.com/blog/ai-governance-report-2026">Retool, Jun 2026</a>).</p>
+<p>So the engineering leader now has a new job: to help the whole company adopt AI safely. The measure of success is how much of the company uses AI safely. It is not how many requests the leader refuses. DataOS serves that job.</p>
+
+<h3>Where DataOS sits</h3>
+<p>DataOS sits between the tools that colleagues build and the systems that the company already runs. The engineering leader owns this middle layer. Requests come in from the left. Governed access goes out to the right, across a line that only the engineering leader controls.</p>
+<div class="figure">
+  <h4>DataOS is the layer between what colleagues build and the company's systems</h4>
+  <div class="boxflow">
+    <div class="bx"><b>Colleagues</b><span>build agents and apps</span></div>
+    <div class="ar"><i class="ln"></i><small>ask to run and go live</small></div>
+    <div class="bx us"><b>DataOS</b><span>build, run and govern agents</span></div>
+    <div class="ar wall"><span class="wallpill">The wall · <a href="#unleash">section 5</a></span><i class="ln"></i><small>engineering leader opens it</small></div>
+    <div class="bx"><b>Company systems</b><span>private data, apps and documents</span></div>
+  </div>
+</div>
+<p>The amber line is the wall: the point where an agent needs the company's real systems. Only the engineering leader can open it. <a href="#unleash">Section 5</a> shows how DataOS turns that moment into a sale.</p>
+
+<h3>Why DataOS fits</h3>
+<p>An agent in production needs three things. It needs a place to run. It needs safe operation: identity, policy, audit, monitoring and isolation. It needs access to company systems, where it sees only what the person who asked can see.</p>
+<p>DataOS already has the pieces underneath. Company sign-in and access control run on DataOS at Gensler today. DataOS Data Products add business meaning, the agreed definitions that make agents correct, for example which revenue figure is official. Business definitions raised the accuracy of text-to-SQL by 17 to 23 points on three frontier models (<a href="https://arxiv.org/abs/2604.25149">arXiv, Apr 2026</a>). We lead with agents. Data and business meaning come next.</p>
+<div class="tbl"><table>
+  <thead><tr><th>What the engineering leader must provide</th><th>What DataOS brings</th></tr></thead>
+  <tbody>
+    <tr><td>A place where colleagues build and run agents and apps, without a new project each time</td><td>New work: a SaaS product to build, host and run agents, with self-serve entry and public pricing</td></tr>
+    <tr><td>Agents that act as the person who asked, with the access of that person</td><td>Company sign-in and access policy, which already control access in DataOS</td></tr>
+    <tr><td>Safe access to private systems</td><td>Governed connections to company data sources, which DataOS customers already use</td></tr>
+    <tr><td>Proof for audit and security review</td><td>An audit record of who used which data, through which agent</td></tr>
+    <tr><td>Agents that give correct answers on company data</td><td>DataOS Data Products: business meaning on top of the data. This comes next, after agents</td></tr>
+  </tbody>
+</table></div>
+<p>Most rows exist in DataOS today. The first row is new work, and it is the core of this plan.</p>
+
+<h3>The clearest example</h3>
+<p>Gensler is the clearest example of this buyer. Its technology head bought DataOS to remove friction in data work for the rest of the firm. The AI version of that job is the same job. <a href="#appendix-b">Appendix B</a> tells the story and what it teaches.</p>
+<p>The profile fits many companies. They sell something other than software. They already rent platforms, for example a cloud account, an identity provider or a code platform. Their people started to build with AI. 65% of IT decision-makers now have a dedicated AI budget, up from 49% in 2025 (<a href="https://foundryco.com/research/research-ai-priorities/">Foundry AI Priorities, 2026</a>).</p>
+</section>
+
+<section id="why">
+<h2><span class="n">2</span>The market is large and growing fast</h2>
+<p>This section shows two things. The need is real now, and the market for it is large and growing fast. All figures are from 2026.</p>
+
+<h3>The signals</h3>
+<p>What colleagues build creates value only when it runs reliably on the company's own systems and data, inside compliance and budget. That increases the value of the layer below the apps. The table gives the evidence.</p>
+<div class="tbl"><table>
+  <thead><tr><th>Signal</th><th>Evidence</th></tr></thead>
+  <tbody>
+    <tr><td>Builders are everywhere</td><td>34% of US workers who build tools with AI have no programming background (<a href="https://zapier.com/blog/ai-coding-survey/">Zapier, May 2026</a>). Lovable passed $500M annualized revenue in June 2026 (<a href="https://techcrunch.com/2026/06/09/lovable-says-it-has-hit-500m-in-annualized-revenue-with-1-million-new-projects-a-week/">TechCrunch</a>).</td></tr>
+    <tr><td>Leaders cannot govern it yet</td><td>93% of 307 technology leaders are worried about AI-built tools in production. 8% say that their governance is strong (<a href="https://retool.com/blog/ai-governance-report-2026">Retool, Jun 2026</a>).</td></tr>
+    <tr><td>Agents have too much access</td><td>43% run agents on shared service accounts. 74% say that agents get more access than they need (<a href="https://cloudsecurityalliance.org/press-releases/2026/03/24/more-than-two-thirds-of-organizations-cannot-clearly-distinguish-ai-agent-from-human-actions">CSA and Aembit, Mar 2026</a>).</td></tr>
+    <tr><td>Nobody sees what runs</td><td>81% of CIOs do not fully see the agents built outside approved systems (<a href="https://www.dataiku.com/company/news/global-ai-confessions-report-cio-edition-2026">Dataiku, 2026</a>).</td></tr>
+    <tr><td>Hosted tools cannot reach company systems</td><td>Vercel's identity federation covers identity. It does not give network access to private systems (<a href="https://vercel.com/docs/oidc">Vercel docs</a>).</td></tr>
+    <tr><td>Agents multiply</td><td>Companies run about 12 agents each today and expect 67% more within two years (<a href="https://www.salesforce.com/news/stories/connectivity-report-announcement-2026/">MuleSoft, Feb 2026</a>). Among AI builders, 74% use agents, up from 27% in 2025 (<a href="https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/">Menlo Ventures, Nov 2026</a>).</td></tr>
+    <tr><td>Buyers buy from new vendors</td><td>AI-native vendors now get 77% of enterprise spend on AI applications and 90% of spend on AI infrastructure (<a href="https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/">Menlo Ventures, Nov 2026</a>).</td></tr>
+  </tbody>
+</table></div>
+
+<h3>Spend and growth</h3>
+<p>Companies spend far more on AI than they planned. US enterprises spent $176.8B to deploy AI in 2026, 5.4 times the $33B of 2025. The average company spent 4.7 times its 2025 level, against a plan of 1.9 times. 55% of the new spend came from new budgets, not from existing software budgets (<a href="https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/">Menlo Ventures, Nov 2026</a>).</p>
+<p>Agents drive this spending. Gartner forecasts that spending on AI agents and assistants grows from $16.5B in 2025 to $65.5B in 2027 (<a href="https://www.gartner.com/en/newsroom/press-releases/2026-09-16-gartner-forecasts-worldwide-ai-spending-to-grow-49-point-5-percent-in-2026">Gartner, Sep 2026</a>). Each of those agents needs a place to run, governance and access to company systems.</p>
+<p>The layer that DataOS serves has its own lines in the same forecast. AI application development platforms are where companies build and run AI apps and agents. DataOS lands there. AI data is the software that prepares company data for AI. DataOS expands there next. Together the two lines grow from $7.7B in 2025 to $12.7B in 2026 and $19.0B in 2027.</p>
+<div class="figure">
+  <h4>Where companies build and run AI, and the data it needs, grows about 2.5 times in two years</h4>
+  <p class="sub">Worldwide spending, in billions of US dollars. Bars are to scale</p>
+  <div class="svgwrap">
+  <svg viewBox="0 0 720 300" role="img" aria-label="The layer that DataOS serves grows from 7.7 billion dollars in 2025 to 19.0 billion dollars in 2027, about 2.5 times in two years.">
+    <g stroke="var(--line)"><line x1="70" y1="250" x2="700" y2="250"/><line x1="70" y1="200" x2="700" y2="200"/><line x1="70" y1="150" x2="700" y2="150"/><line x1="70" y1="100" x2="700" y2="100"/><line x1="70" y1="50" x2="700" y2="50"/></g>
+    <g font-family="Inter, system-ui, sans-serif" font-size="12" fill="var(--muted)" text-anchor="end"><text x="62" y="254">$0</text><text x="62" y="204">$5B</text><text x="62" y="154">$10B</text><text x="62" y="104">$15B</text><text x="62" y="54">$20B</text></g>
+    <g fill="var(--accent)"><rect x="140" y="181.2" width="100" height="68.8"/><rect x="310" y="154.6" width="100" height="95.4"/><rect x="480" y="125.2" width="100" height="124.8"/></g>
+    <g fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"><rect x="140" y="172.9" width="100" height="8.3"/><rect x="310" y="123.3" width="100" height="31.3"/><rect x="480" y="60.4" width="100" height="64.8"/></g>
+    <g font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="var(--ink)" text-anchor="middle"><text x="190" y="164">$7.7B</text><text x="360" y="114">$12.7B</text><text x="530" y="51">$19.0B</text></g>
+    <g font-family="Inter, system-ui, sans-serif" font-size="12.5" fill="var(--ink)" text-anchor="middle"><text x="190" y="272">2025</text><text x="360" y="272">2026</text><text x="530" y="272">2027</text></g>
+    <g font-family="Inter, system-ui, sans-serif" font-size="12" fill="var(--muted)">
+      <rect x="600" y="140" width="14" height="14" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/><text x="620" y="151">AI data (next)</text>
+      <rect x="600" y="166" width="14" height="14" fill="var(--accent)"/><text x="620" y="178">AI app</text><text x="620" y="195">development</text><text x="620" y="212">platforms</text>
+    </g>
+  </svg>
+  </div>
+  <p class="src">Source: <a href="https://www.gartner.com/en/newsroom/press-releases/2026-09-16-gartner-forecasts-worldwide-ai-spending-to-grow-49-point-5-percent-in-2026">Gartner AI spending forecast, 16 Sep 2026</a>, as reported by <a href="https://techstrong.ai/features/gartner-global-ai-spending-to-hit-2-7-trillion-in-2026/">Techstrong</a> and <a href="https://www.cio.com/article/4225785/ai-spend-will-jump-49-5-in-2026-says-gartner.html">CIO.com</a>. AI application development platforms: $6.9B, $9.5B, $12.5B. AI data: $0.8B, $3.1B, $6.5B.</p>
+</div>
+<p>Two more lines show the pull on this layer. Spending on AI governance platforms reaches $492M in 2026 and passes $1B by 2030 (<a href="https://www.gartner.com/en/newsroom/press-releases/2026-02-17-gartner-global-ai-regulations-fuel-billion-dollar-market-for-ai-governance-platforms">Gartner, Feb 2026</a>). Total AI spending reaches about $2.7 trillion in 2026, 49.5% more than in 2025.</p>
+<p>Investors follow the same curve. Legora raised $550M at $5.55B in March 2026 (<a href="https://legora.com/newsroom/legora-raises-550-million-series-d-to-fuel-us-growth">Legora</a>). Basis raised $100M at $1.15B in February 2026 (<a href="https://www.accountingtoday.com/articles/ai-for-accounting-startup-basis-hits-1-15b-valuation">Accounting Today</a>). Glean passed $300M ARR in May 2026 at a $7.2B valuation (<a href="https://techcrunch.com/2026/05/28/gleans-top-line-crosses-300m-as-ai-budget-cutting-becomes-its-major-selling-point/">TechCrunch</a>). Dust passed $20M ARR with more than 3,000 organizations (<a href="https://tech.eu/2026/05/18/dust-raises-40m-series-b-to-build-the-multiplayer-operating-system-for-enterprise-ai/">Tech.eu, May 2026</a>). LangChain raised $300M at $3B in November 2026 to grow its agent platform (<a href="https://letsdatascience.com/news/langchain-reportedly-raises-300m-at-3b-valuation-fbf16641">report</a>).</p>
+
+</section>
+
+<section id="landscape">
+<h2><span class="n">3</span>No one covers the whole need</h2>
+<p>Many well-funded startups go after parts of this space. They come in five types. None of them combines all the things that the engineering leader of a non-tech firm needs.</p>
+<div class="figure">
+  <h4>Each type of company covers only part of what the engineering leader needs</h4>
+  <p class="sub">What the engineering leader needs, by type of company</p>
+  <p class="judg">Our judgment from public material, not a measurement</p>
+  <div class="tbl" style="margin:0"><table class="matrix">
+    <thead><tr><th>Type</th><th>Place to build and run agents and apps</th><th>Identity, policy, audit</th><th>Reaches private systems</th><th>Neutral across clouds and models</th><th>Business meaning (next)</th></tr></thead>
+    <tbody>
+      <tr><td>Vertical AI (Harvey, Legora, Basis)</td><td><span class="dot full" aria-label="full"></span></td><td><span class="dot part" aria-label="partial"></span></td><td><span class="dot none" aria-label="none"></span></td><td><span class="dot none" aria-label="none"></span></td><td><span class="dot part" aria-label="partial"></span></td></tr>
+      <tr><td>Glean</td><td><span class="dot full" aria-label="full"></span></td><td><span class="dot part" aria-label="partial"></span></td><td><span class="dot part" aria-label="partial"></span></td><td><span class="dot part" aria-label="partial"></span></td><td><span class="dot part" aria-label="partial"></span></td></tr>
+      <tr><td>Other AI workspaces (Writer, Dust, Langdock)</td><td><span class="dot full" aria-label="full"></span></td><td><span class="dot part" aria-label="partial"></span></td><td><span class="dot none" aria-label="none"></span></td><td><span class="dot part" aria-label="partial"></span></td><td><span class="dot none" aria-label="none"></span></td></tr>
+      <tr><td>App builders (Lovable, Retool, Superblocks)</td><td><span class="dot full" aria-label="full"></span></td><td><span class="dot part" aria-label="partial"></span></td><td><span class="dot part" aria-label="partial"></span></td><td><span class="dot part" aria-label="partial"></span></td><td><span class="dot none" aria-label="none"></span></td></tr>
+      <tr><td>Agent governance (Airia, Credal, TrueFoundry)</td><td><span class="dot none" aria-label="none"></span></td><td><span class="dot full" aria-label="full"></span></td><td><span class="dot part" aria-label="partial"></span></td><td><span class="dot full" aria-label="full"></span></td><td><span class="dot none" aria-label="none"></span></td></tr>
+      <tr><td>Data for agents (dbt Labs, Cube, AtScale)</td><td><span class="dot none" aria-label="none"></span></td><td><span class="dot none" aria-label="none"></span></td><td><span class="dot part" aria-label="partial"></span></td><td><span class="dot full" aria-label="full"></span></td><td><span class="dot full" aria-label="full"></span></td></tr>
+      <tr><td>Clouds and data platforms (Microsoft, Google, Snowflake)</td><td><span class="dot full" aria-label="full"></span></td><td><span class="dot full" aria-label="full"></span></td><td><span class="dot full" aria-label="full"></span></td><td><span class="dot none" aria-label="none"></span></td><td><span class="dot part" aria-label="partial"></span></td></tr>
+      <tr class="us"><td>DataOS · <a href="#hypothesis">section 1</a></td><td><span class="dot part" aria-label="partial"></span></td><td><span class="dot full" aria-label="full"></span></td><td><span class="dot full" aria-label="full"></span></td><td><span class="dot full" aria-label="full"></span></td><td><span class="dot full" aria-label="full"></span></td></tr>
+    </tbody>
+  </table></div>
+  <div class="legend"><span><span class="dot full"></span>covers it</span><span><span class="dot part"></span>partly, or only inside its own product</span><span><span class="dot none"></span>does not cover it</span></div>
+  <p class="src">November 2026. DataOS is partial on a place to build and run agents, because the SaaS product is new work. Clouds are not neutral, because each one favors its own platform.</p>
+</div>
+<p>Only the DataOS row governs agents, reaches private systems and stays neutral across clouds and models. Its gap is the place where engineers build and run agents, and this plan closes that gap. Business meaning is the advantage that comes after.</p>
+<p>The table below describes each type. Two terms appear in it. Operational data is the data that runs the business, for example projects, billing and utilization. MCP is an open standard that connects agents to data and tools.</p>
+<div class="tbl"><table>
+  <thead><tr><th>Type</th><th>Who buys</th><th>What it covers</th><th>What it does not cover</th></tr></thead>
+  <tbody>
+    <tr><td>Vertical AI for professional services</td><td>The innovation or knowledge leader of the firm</td><td>Firms build their own agents inside the product. Harvey customers built more than 25,000 agents (<a href="https://itbrief.co.uk/story/harvey-launches-500-legal-ai-agents-builder-tool">IT Brief</a>)</td><td>Works on the documents of one profession, in the vendor's cloud. Does not cover operational data</td></tr>
+    <tr><td>AI workspaces</td><td>The CIO and IT, or business teams</td><td>A place where staff build agents on documents and chat</td><td>Mostly hosted by the vendor. Limited reach into private systems</td></tr>
+    <tr><td>App builders that add governance</td><td>Builders, then engineering and IT</td><td>Fast creation of apps. <a href="https://siliconangle.com/?p=697911">Superblocks</a> sells governed "enterprise vibe coding" to engineering leaders</td><td>Limited access to private systems. Governs only what is built inside it</td></tr>
+    <tr><td>Agent governance and gateways</td><td>The CISO, IT and platform engineering</td><td>Security, a list of agents, access and audit. <a href="https://www.businesswire.com/news/home/20250206649881/en">TrueFoundry</a> runs in the customer's cloud</td><td>Does not host or run what colleagues build</td></tr>
+    <tr><td>Data for agents</td><td>Data teams</td><td>Business meaning that agents read, often through MCP (<a href="https://siliconangle.com/2025/06/02/semantic-data-layer-startup-cube-automates-analytics-ai-agents">Cube</a>, <a href="https://www.techzine.eu/news/analytics/141758/fivetran-and-dbt-labs-complete-merger-data-infrastructure-for-reliable-agentic-ai/">dbt Labs and Fivetran</a>)</td><td>Supplies data only. Does not run, orchestrate or govern agents</td></tr>
+  </tbody>
+</table></div>
+
+<h3>What Glean does, and what it shows us</h3>
+<p>Glean is the company nearest to the buyer that we want, so we look at it more closely. It started in 2019 as search across the documents, chat and tickets of a company, and it launched in 2021. Today it is a horizontal AI platform. Employees ask questions and build agents on company knowledge.</p>
+<p>Glean sells to the CIO and the CTO. It respects the existing permissions of each employee. It connects to more than 275 business systems (<a href="https://www.glean.com/platform/connectors">Glean</a>). It links people, content and work in a structure that it calls the Enterprise Graph.</p>
+<p>Glean starts from documents and conversations, and it now builds agents on top of them. DataOS starts from the company's systems and governs agents built anywhere. Because this plan leads with agents, Glean is a closer neighbor than before. In 2026, Glean began to read cloud data warehouses such as Snowflake and to turn questions into SQL (<a href="https://www.glean.com/jp/blog/glean-for-data-analysis">Glean</a>). It also offers a "Customer Hosted" version, which runs in the customer's own AWS or GCP account under Glean's management (<a href="https://docs.glean.com/get-started/build/about-deployment">Glean docs</a>). Glean sends its context to other agents through MCP, which includes the agent tool of Snowflake (<a href="https://glean.com/connectors/snowflake">Glean</a>).</p>
+<div class="figure">
+  <h4>Two platforms for the same leader, from opposite ends</h4>
+  <p class="sub">Glean as its public material describes it, DataOS as this document proposes it</p>
+  <div class="tbl" style="margin:0"><table>
+    <thead><tr><th></th><th>Glean</th><th>DataOS</th></tr></thead>
+    <tbody>
+      <tr><td>Starts from</td><td>Search across documents, chat and tickets</td><td>Building, running and governing agents on company systems</td></tr>
+      <tr><td>Moves toward</td><td>Structured data in cloud data warehouses</td><td>Data products and business meaning</td></tr>
+      <tr><td>Who buys</td><td>The CIO or the CTO</td><td>The CIO, CTO, chief architect or VP of engineering</td></tr>
+      <tr><td>How it sells</td><td>Through sales. Deals take about 4 to 5 months (<a href="https://sacra.com/c/glean">Sacra</a>)</td><td>Product-led sales: the product finds the buyer, and engineers help close</td></tr>
+      <tr><td>How it charges</td><td>Per seat, an estimated $50 to $75 per user per month. The median contract is about $99K a year (<a href="https://www.vendr.com/buyer-guides/glean">Vendr</a>)</td><td>We will test per agent and per platform with usage</td></tr>
+      <tr><td>Where it runs</td><td>Glean's cloud, or the customer's cloud under Glean's management</td><td>SaaS first, with private connections to company systems. A version in the customer's cloud later, on request</td></tr>
+    </tbody>
+  </table></div>
+</div>
+<p>Glean shows us four things:</p>
+<ul class="plain">
+  <li>A platform that the CIO owns spreads across the company. 85% of Glean customers use it in five or more departments, and Ericsson staff built almost 3,000 agents on it (<a href="https://aimagazine.com/news/glean-enterprise-ai-search-and-ai-agents-pass-us-300m-in-ar">AI Magazine</a>). This is public evidence for our hypothesis.</li>
+  <li>This buyer pays real money. A median contract of about $99K a year shows that the CIO pays for a horizontal AI platform.</li>
+  <li>Generative AI changed the growth curve. <a href="#parallels">Section 4</a> shows the growth of Glean.</li>
+  <li>Openness earns trust. Glean gives its context to other agents through MCP. DataOS will do the same, so that agents built anywhere get governed access to company systems through DataOS. This includes agents built on Glean.</li>
+</ul>
+<p>So we treat Glean as a neighbor that we learn from and can work with. We do not set out to beat it. A firm can use Glean for knowledge across documents and DataOS to build, run and govern agents on its own systems. We watch one thing closely: how far Glean moves into running and governing agents on private systems.</p>
+
+<h3>Law, accounting and consulting</h3>
+<p>In law, Harvey and Legora already sell a platform to the innovation team of the firm, and they move fast. A horizontal platform loses if it competes with them on legal work. In accounting, Basis does the work itself. In consulting, Hebbia, Glean and StackAI target the segment, but no company owns it. In architecture and engineering, the startups make single-purpose tools, for example drawing reviews. We found no platform company there, and Gensler is in that open space.</p>
+<p>So in professional services, DataOS sits below these products. The firm uses Harvey for legal drafting. It uses DataOS for agents and apps on its own operational data: projects, staff, billing and clients. DataOS also governs all of these agents in one place. The innovation leader buys the vertical product, and the engineering leader buys the platform.</p>
+
+<h3>Who to watch</h3>
+<p>Three groups need attention:</p>
+<ul class="plain">
+  <li>Glean, for how far it moves into running and governing agents on company systems. It already <a href="https://www.glean.com/fr/webinars/glean-for-professional-services">targets professional services</a>.</li>
+  <li>The data clouds. Snowflake backs Sema4.ai (agents inside Snowflake), Dust and <a href="https://techcrunch.com/2026/06/10/jedify-raises-24m-to-help-companies-arm-ai-agents-with-context-on-their-business/">Jedify</a>. For a company on one data platform, that bundle is a strong default.</li>
+  <li>The cloud and productivity suites: Microsoft Copilot Studio, the agent platform of Google, and Palantir AIP. An IT leader often chooses them first, and they are not neutral.</li>
+</ul>
+<p class="note">Some funding and revenue figures in this section come from press reports and analyst estimates. We will make sure that they are correct before external use.</p>
+</section>
+
+<section id="parallels">
+<h2><span class="n">4</span>Free use first, then a sales team</h2>
+<p>Product-led growth means that people use a product before anyone sells it to them. Developer-tool companies that grew this way had the same shape. They grew slowly from free use for years. Then an outside event made the product urgent, and growth turned.</p>
+<p>The companies that went deep into banks, retailers and manufacturers all added an enterprise sales team on top of free use. Most added it four to eight years after launch. Free use created the lead, and a seller closed it.</p>
+<p>The chart puts the three companies that this section looks at most closely on one time axis. Read it from left to right.</p>
+<div class="figure">
+  <h4>Each company took years to reach scale, then grew fast once AI made its product urgent</h4>
+  <p class="sub">Annual recurring revenue (ARR), in millions of US dollars. The time axis is to scale</p>
+  <div class="svgwrap">
+  <svg viewBox="0 0 740 320" role="img" aria-label="All three companies took years to reach scale, then grew fast once AI made their products urgent. Vercel bent upward after it launched v0 in 2023. Glean and WorkOS disclosed revenue only from 2025, and both grew fast from there.">
+    <g stroke="var(--line)"><line x1="70" y1="250.0" x2="700" y2="250.0"/><line x1="70" y1="192.9" x2="700" y2="192.9"/><line x1="70" y1="135.7" x2="700" y2="135.7"/><line x1="70" y1="78.6" x2="700" y2="78.6"/></g>
+    <g font-family="Inter, system-ui, sans-serif" font-size="12" fill="var(--muted)" text-anchor="end"><text x="62" y="254.0">$0</text><text x="62" y="196.9">$100M</text><text x="62" y="139.7">$200M</text><text x="62" y="82.6">$300M</text></g>
+    <line x1="80" y1="250" x2="80" y2="255" stroke="var(--grey-line)"/><line x1="156" y1="250" x2="156" y2="255" stroke="var(--grey-line)"/><line x1="232" y1="250" x2="232" y2="255" stroke="var(--grey-line)"/><line x1="308" y1="250" x2="308" y2="255" stroke="var(--grey-line)"/><line x1="384" y1="250" x2="384" y2="255" stroke="var(--grey-line)"/><line x1="460" y1="250" x2="460" y2="255" stroke="var(--grey-line)"/><line x1="536" y1="250" x2="536" y2="255" stroke="var(--grey-line)"/><line x1="612" y1="250" x2="612" y2="255" stroke="var(--grey-line)"/><line x1="688" y1="250" x2="688" y2="255" stroke="var(--grey-line)"/>
+    <line x1="441.0" y1="250" x2="441.0" y2="60" stroke="var(--grey-line)" stroke-dasharray="3 4"/>
+    <text x="435.0" y="72" font-family="Inter, system-ui, sans-serif" font-size="12" fill="var(--muted)" text-anchor="end">Vercel launches v0</text>
+    <text x="80" y="30" font-family="Inter, system-ui, sans-serif" font-size="12" fill="var(--muted)">Glean and WorkOS disclosed revenue only from 2025, so their lines start there.</text>
+    <polyline fill="none" stroke="var(--accent)" stroke-width="3" points="111.9,249.4 168.9,247.1 270.0,238.0 352.1,220.9 453.9,200.9 472.9,192.9 561.1,135.7 618.1,55.7"/>
+    <polyline fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-dasharray="9 5" points="542.1,192.9 637.1,78.6"/>
+    <polyline fill="none" stroke="var(--muted)" stroke-width="2.5" points="567.9,238.6 593.0,232.9"/>
+    <polyline fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-dasharray="3 4" points="593.0,232.9 669.0,192.9"/>
+    <g><circle cx="111.9" cy="249.4" r="4.5" fill="var(--accent)"/><circle cx="168.9" cy="247.1" r="4.5" fill="var(--accent)"/><circle cx="270.0" cy="238.0" r="4.5" fill="var(--accent)"/><circle cx="352.1" cy="220.9" r="4.5" fill="var(--accent)"/><circle cx="453.9" cy="200.9" r="4.5" fill="var(--accent)"/><circle cx="472.9" cy="192.9" r="4.5" fill="var(--accent)"/><circle cx="561.1" cy="135.7" r="4.5" fill="var(--accent)"/><circle cx="618.1" cy="55.7" r="4.5" fill="var(--accent)"/><circle cx="542.1" cy="192.9" r="4.5" fill="var(--accent-ink)"/><circle cx="637.1" cy="78.6" r="4.5" fill="var(--accent-ink)"/><circle cx="567.9" cy="238.6" r="4.5" fill="var(--muted)"/><circle cx="593.0" cy="232.9" r="4.5" fill="var(--muted)"/><circle cx="669.0" cy="192.9" r="4.5" fill="var(--muted)"/></g>
+    <g font-family="Inter, system-ui, sans-serif" font-size="12.5" font-weight="600">
+      <text x="608.1" y="49.7" text-anchor="end" fill="var(--accent)">Vercel $340M</text>
+      <text x="646" y="90" text-anchor="start" fill="var(--accent-ink)">Glean $300M</text>
+      <text x="542.1" y="214.9" text-anchor="middle" fill="var(--accent-ink)">Glean $100M</text>
+      <text x="736" y="178" text-anchor="end" fill="var(--muted)">WorkOS ~$100M</text>
+      <text x="472.9" y="180.9" text-anchor="middle" fill="var(--accent)">$100M</text>
+      <text x="270.0" y="226.0" text-anchor="middle" fill="var(--accent)">$21M</text>
+    </g>
+    <g font-family="Inter, system-ui, sans-serif" font-size="12" fill="var(--muted)" text-anchor="middle"><text x="80" y="270">2019</text><text x="156" y="270">2020</text><text x="232" y="270">2021</text><text x="308" y="270">2022</text><text x="384" y="270">2023</text><text x="460" y="270">2024</text><text x="536" y="270">2025</text><text x="612" y="270">2026</text><text x="688" y="270">2027</text></g>
+    <g font-family="Inter, system-ui, sans-serif" font-size="11.5" fill="var(--muted)" text-anchor="middle">
+      <text x="80" y="290">Glean, WorkOS founded</text>
+      <text x="232" y="290" dx="22">Glean launched</text>
+      <text x="169" y="306">WorkOS launched</text>
+    </g>
+  </svg>
+  </div>
+  <div class="legend">
+    <span><i class="sw" style="border-top:3px solid var(--accent)"></i>Vercel, founded in 2015</span>
+    <span><i class="sw" style="border-top:3px dashed var(--accent-ink)"></i>Glean</span>
+    <span><i class="sw" style="border-top:2.5px solid var(--muted)"></i>WorkOS (dotted: a single source)</span>
+  </div>
+  <p class="src">Sources: Vercel from <a href="https://www.arr.club/research/vercel-at-600m">arr.club</a>, which compiles Sacra, Forbes, The Information and Dealroom. Glean from <a href="https://www.glean.com/press/glean-achieves-100m-arr-in-three-years-delivering-true-ai-roi-to-the-enterprise">Glean</a> and <a href="https://techcrunch.com/2026/05/28/gleans-top-line-crosses-300m-as-ai-budget-cutting-becomes-its-major-selling-point/">TechCrunch</a>. WorkOS from <a href="https://sacra.com/c/workos">Sacra</a> estimates, with one source for October 2026.</p>
+</div>
+<p>Two patterns stand out. Vercel grew slowly for four years, and its curve bent upward after it launched v0, its AI app builder, in 2023. Glean and WorkOS grew fast from 2025, when AI made their products urgent. In each case, an outside event turned the curve, not the free tier alone.</p>
+
+<h3>WorkOS: one checklist, sold to the developer</h3>
+
+<p>WorkOS started in 2019. The founder's previous company, Nylas, did not succeed with large companies, because it did not meet their security requirements (<a href="https://www.generalist.com/p/workos">The Generalist</a>). WorkOS turned that checklist into products that a developer adopts alone: single sign-on, user directories and audit logs.</p>
+<p>WorkOS had about 200 customers in June 2022 and more than 1,000 paying customers in early 2025. Analysts estimate about $20M ARR in June 2025, six years after founding (<a href="https://sacra.com/c/workos">Sacra</a>). Then AI companies such as OpenAI, Anthropic, Cursor and Perplexity had to sell to large companies from their first day, and growth turned (<a href="https://sacra.com/research/michael-grinich-workos-enterprise-ready-at-launch/">Sacra interview</a>).</p>
+<p>One estimate puts WorkOS near $100M ARR in October 2026, from a single source. WorkOS raised $100M at a $2B valuation in March 2026 (<a href="https://workos.com/blog/series-c">WorkOS</a>). At about $50M ARR, it still had only three sales reps (<a href="https://knuckleuphq.substack.com/p/michael-grinich">Knuckle Up podcast</a>). The lesson for us is that WorkOS charges for what the customer's security review demands. Our equivalent is the engineering leader, who must pass the company's own security review before an agent goes live.</p>
+
+<h3>Vercel: open source as the funnel, AI as the turn</h3>
+
+<p>Next.js is free and open source. Developers start on the free tier, teams move to Pro at $20 per seat, and companies sign Enterprise contracts. For most of its life, Vercel sold to large companies through developers. In 2025, it hired a former Stripe executive as COO, when enterprise demand for AI apps grew.</p>
+<p>Team and Enterprise accounts now give more than half of the revenue of v0, the AI app builder of Vercel (<a href="https://www.gic.com.sg/newsroom/all/vercel-closes-series-f-at-9-3b-valuation-to-scale-the-ai-cloud/">GIC</a>). Customers include Nike, Walmart and PayPal. Vercel raised $300M at $9.3B in September 2025 (<a href="https://www.businesswire.com/news/home/20250930898216/en">Business Wire</a>).</p>
+
+<h3>Glean: sold top-down to the CIO, turned by generative AI</h3>
+
+<p>Glean took the opposite path to WorkOS and Vercel. It sold top-down to the CIO from the start, with no free tier. It first found its market with technology companies of 500 to 2,000 people, and moved to large companies later (<a href="https://sacra.com/research/glean/">Sacra</a>).</p>
+<p>Two lessons follow for us. First, a CIO buys a horizontal AI platform at a six-figure price. Second, it is easier to start with companies whose people already build. For this reason, our first funding checkpoint measures builder activity at firms like Gensler before we go wider.</p>
+
+<h3>The others</h3>
+<p>The table shows seven more companies. Each had a free way in, and each found a different thing to charge for. The table also shows when each one added an enterprise sales team.</p>
+<div class="tbl"><table>
+  <thead><tr><th>Company</th><th>Free way in</th><th>What the company pays for</th><th>Enterprise sales team</th><th>The turn</th></tr></thead>
+  <tbody>
+    <tr><td>HashiCorp</td><td>Open-source Terraform and Vault</td><td>Governance and policy</td><td>About 4 years after founding</td><td>More than 300 of the Global 2000 at IPO, with banks first among industries (<a href="https://meritech.substack.com/p/hashicorp-ipo-s-1-breakdown">Meritech</a>)</td></tr>
+    <tr><td>Datadog</td><td>Free tier and free trial</td><td>Monitoring at company scale</td><td>2016, about 6 years after founding</td><td>Customers above $100K a year grew from about 130 in 2016 to about 450 in 2018 (<a href="https://www.sec.gov/Archives/edgar/data/1561550/000119312519227783/d745413ds1.htm">Datadog S-1</a>)</td></tr>
+    <tr><td>Postman</td><td>Free API client</td><td>Team and enterprise controls</td><td>About 6 years after launch (<a href="https://echai.ventures/gtm/r/postman-s-sales-playbook-scaling-enterprise-sales-without-breaking-plg--r-c-7">source</a>)</td><td>Wide free use inside banks. Now builds a sales team for banks and insurers</td></tr>
+    <tr><td>Twilio</td><td>Self-serve API with a credit card</td><td>Usage, then an enterprise plan with security and access controls</td><td>2016, about 8 years after founding (<a href="https://www.sec.gov/Archives/edgar/data/0001447669/000110465916155179/a16-16801_110q.htm">10-Q</a>)</td><td>Minimum-commit contracts on top of developer use</td></tr>
+    <tr><td>Atlassian</td><td>Low-cost self-serve, more than 400 partners</td><td>Seats, then enterprise plans</td><td>About 13 years, after $102M revenue with no sellers (<a href="https://echai.ventures/gtm/gtm-teardowns/how-did-atlassian-reach-100-million-dollars-in-revenue-with-no-salespeople-and-where-did-that-model-stop-working">source</a>)</td><td>"Low touch" did not mean "no touch"</td></tr>
+    <tr><td>MongoDB</td><td>Open source, then a free cloud tier</td><td>Managed cloud database</td><td>Direct sales from the start</td><td>Uses free-tier activity to choose which accounts sales calls (<a href="https://saastr.com/5-interesting-learnings-from-mongodb-at-2-4-billion-in-arr/">SaaStr</a>)</td></tr>
+    <tr><td>Supabase</td><td>Open source plus a free tier</td><td>Usage and team plans</td><td>Not known</td><td>AI app builders. An estimated $170M ARR in May 2026 (<a href="https://sacra.com/research/supabase-170m-year-growing-221-yoy/">Sacra</a>)</td></tr>
+  </tbody>
+</table></div>
+
+<h3>Two warnings</h3>
+<p>Pivotal sold its platform top-down to banks, insurers and carmakers, with services attached. Developers never chose it. It lost when Kubernetes became the standard, and VMware bought it in 2019 for about 30% of its peak value (<a href="https://redmonk.com/rstephens/2019/09/09/pivoting/">RedMonk</a>).</p>
+<p>Docker had the opposite problem. Developers liked it, but it did not turn that use into enterprise revenue. It sold its enterprise business in 2019 (<a href="https://siliconangle.com/2019/11/13/container-shakeup-docker-sells-enterprise-business-mirantis-appoints-new-ceo">SiliconANGLE</a>).</p>
+
+<h3>What we take from this</h3>
+<p>Five lessons apply to DataOS:</p>
+<ul class="plain">
+  <li>Plan for a long, flat period. An outside event turns the curve. Our event is that every function in the company builds with AI at the same time.</li>
+  <li>At non-tech firms, free use creates the lead and a technical seller closes it. McKinsey found that most companies that adopt product-led growth get no gain. The winners add a sales team that acts on product use (<a href="https://www.mckinsey.com/industries/technology-media-and-communications/our-insights/from-product-led-growth-to-product-led-sales-beyond-the-plg-hype">McKinsey</a>).</li>
+  <li>Charge for what the security review demands: identity, policy, audit and access to company data. Engineers can do without the rest, so the rest stays free.</li>
+  <li>Keep the paid layer on what a cloud provider cannot match alone: governed access to private systems, neutral across clouds and models.</li>
+  <li>Keep the free path for developers after sales arrives. Engineers who choose the product protected HashiCorp. Pivotal did not have them.</li>
+</ul>
+</section>
+
+<section id="unleash">
+<h2><span class="n">5</span>How DataOS wins</h2>
+<p>This section describes how DataOS reaches the engineering leader and wins. It covers why the leader picks DataOS, how product-led growth plays out on SaaS, product-led sales and the entry products. It then covers where we land first and how we should think about price. It also covers the brand and the team that run the play. It uses the lessons from <a href="#parallels">section 4</a>.</p>
+
+<h3>Why the engineering leader picks DataOS</h3>
+<p>At the moment of choice, the engineering leader compares DataOS with an agent platform from a cloud provider, a data platform or Glean. Four reasons decide it for DataOS:</p>
+<ul class="plain">
+  <li>Agents reach private systems safely. A SaaS product that connects to systems behind the firewall, with governance, is the step that hosted tools cannot take (<a href="#why">section 2</a>).</li>
+  <li>DataOS governs agents built anywhere. Colleagues can build in Claude, Lovable, Glean or DataOS itself, and the leader sees and controls all of them in one place.</li>
+  <li>DataOS is neutral across clouds and models. A company with more than one cloud or data platform does not have to pick one vendor for all its agents.</li>
+  <li>Agents give correct answers. DataOS Data Products add business meaning when a company needs it. This is the path from working agents to trusted agents.</li>
+</ul>
+
+<h3>How product-led growth plays out</h3>
+<p>DataOS starts as SaaS, because self-serve growth needs a product that an engineer can open in minutes. A version that runs in the company's own cloud comes later, for companies that require it. It is not the default.</p>
+<p>The free user is an engineer on the leader's team, or an engineer in a business unit. These are the people who receive the prototype of a colleague today. They start alone, with no sales call, and build or host one agent for one team. The free tier connects to data sources that are open to the internet, for example Snowflake, Salesforce or Google Drive, through a normal sign-in.</p>
+<p>The wall, from <a href="#hypothesis">section 1</a>, is the point where an agent needs private systems behind the firewall and must go live for other colleagues. At the wall, the company installs a secure connector, turns on company sign-in, sets policy and gets an audit record. Only the engineering leader can approve that step, and DataOS gives the leader a governed way to say yes.</p>
+<div class="figure">
+  <h4>Engineers build for free. The engineering leader pays when the wall opens</h4>
+  <p class="sub">The loop of product-led growth for DataOS</p>
+  <div class="svgwrap">
+  <svg viewBox="0 0 760 380" role="img" aria-label="Engineers build for free on SaaS until an agent needs private systems. At that wall, the engineering leader opens access and pays, and then more teams build on the same platform.">
+    <defs><marker id="ah" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="6" markerHeight="6"><circle cx="3" cy="3" r="2.4" fill="var(--muted)"/></marker></defs>
+    <g font-family="Inter, system-ui, sans-serif">
+      <text x="20" y="34" font-size="13" fill="var(--muted)">Engineers in the company, on SaaS: no sales call, no IT ticket</text>
+      <g stroke="var(--line)" stroke-width="1.5" fill="var(--bg)">
+        <rect x="20" y="52" width="160" height="66" rx="10"/><rect x="205" y="52" width="160" height="66" rx="10"/><rect x="390" y="52" width="160" height="66" rx="10"/>
+      </g>
+      <rect x="575" y="52" width="165" height="66" rx="10" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="2" stroke-dasharray="7 5"/>
+      <g stroke="var(--accent)" stroke-width="1.5" fill="var(--bg)">
+        <rect x="575" y="252" width="165" height="66" rx="10"/><rect x="390" y="252" width="160" height="66" rx="10"/><rect x="205" y="252" width="160" height="66" rx="10"/>
+      </g>
+      <g font-size="15" font-weight="600" fill="var(--ink)" text-anchor="middle">
+        <text x="100" y="80">Start free</text><text x="285" y="80">Build an agent</text><text x="470" y="80">Invite the team</text><text x="657" y="80">Reach the wall</text>
+        <text x="657" y="280">Leader opens it</text><text x="470" y="280">Pay as it grows</text><text x="285" y="280">Company standard</text>
+      </g>
+      <g font-size="12.5" fill="var(--muted)" text-anchor="middle">
+        <text x="100" y="101">an engineer</text><text x="285" y="101">on cloud data, one team</text><text x="470" y="101">spreads in the team</text>
+        <text x="657" y="301">connects, sets policy</text><text x="470" y="301">plan to be tested</text><text x="285" y="301">all teams, one platform</text>
+      </g>
+      <text x="657" y="101" font-size="12.5" fill="var(--warn)" text-anchor="middle">needs private systems</text>
+      <g stroke="var(--muted)" stroke-width="1.5" fill="none" marker-end="url(#ah)">
+        <line x1="180" y1="85" x2="200" y2="85"/><line x1="365" y1="85" x2="385" y2="85"/><line x1="550" y1="85" x2="570" y2="85"/>
+        <line x1="657" y1="118" x2="657" y2="247"/>
+        <line x1="575" y1="285" x2="555" y2="285"/><line x1="390" y1="285" x2="370" y2="285"/>
+        <line x1="285" y1="252" x2="285" y2="123"/>
+      </g>
+      <g font-size="12.5" fill="var(--muted)">
+        <text x="667" y="190">wants it live</text>
+        <text x="295" y="190">more teams build on it</text>
+      </g>
+      <text x="20" y="276" font-size="14" font-weight="600" fill="var(--ink)">The engineering</text>
+      <text x="20" y="294" font-size="14" font-weight="600" fill="var(--ink)">leader decides</text>
+      <text x="20" y="312" font-size="14" font-weight="600" fill="var(--ink)">and pays</text>
+      <text x="20" y="356" font-size="12.5" fill="var(--muted)">A product-led sales team of engineers helps when product use shows that a company is ready.</text>
+    </g>
+  </svg>
+  </div>
+  <p class="src">Adapted from the diagram in the business case of the CTO's office, 16 November 2026.</p>
+</div>
+<p>The free tier shows the value before anyone pays: working agents on real company data in the cloud. The leader finds these agents, and a governed way to take them further. The buyer arrives with demand already in hand, so the cost of sales is lower. The free tier has usage limits and abuse controls from day one, because it runs agents for anyone who signs up.</p>
+<p>Sales does not go away, but it changes shape. At non-tech firms, procurement and security review still stand between a working agent and a signed contract. A product-led sales team closes that gap, as the next part explains. The largest accounts can start with the leader instead, as Gensler did, and then follow the same loop.</p>
+<p>When engineers in many companies start to build on DataOS, the slow first phase of the curve is under way. <a href="#parallels">Section 4</a> shows that the companies before us turned their curve at that point, when an outside event made the product urgent.</p>
+
+<h3>Product-led sales, not business sales</h3>
+<p>Product-led sales means that product use decides which company the team talks to, and when. The team does not cold-call business users, and it does not sell business outcomes. It talks to engineers and engineering leaders who already use DataOS.</p>
+<p>The team is technical. Its people are engineers who can help a leader through architecture and security review. MongoDB and Postman work this way: free use shows the team which accounts are ready (<a href="#parallels">section 4</a>). The table shows the signals that bring the team in, and what it does at each one.</p>
+<div class="tbl"><table>
+  <thead><tr><th>Signal in the product</th><th>What the team does</th></tr></thead>
+  <tbody>
+    <tr><td>An engineer invites a second team</td><td>Offers a working session on the architecture of their agents</td></tr>
+    <tr><td>A team reaches the free usage limit</td><td>Shows the paid plan and the controls that come with it</td></tr>
+    <tr><td>A team asks to connect a private system</td><td>Brings in the engineering leader and helps with the security review</td></tr>
+    <tr><td>An engineering leader signs up</td><td>Sets up company sign-in and policy with the leader</td></tr>
+  </tbody>
+</table></div>
+<p>The team is measured on companies that open the wall and expand to more teams. It is not measured on meetings booked or on new logos from cold outreach. It sits inside the DataOS pod and shares no quota with Modern sales.</p>
+
+<h3>The entry products</h3>
+<p>Every company in <a href="#parallels">section 4</a> had a concrete free thing that developers wanted first, for example Next.js or Terraform. DataOS needs the same, and it can have more than one. There are five candidates. They are hosting for AI apps and agents with private connections, governance for agents, orchestration and the agent runtime, agent identity, and security.</p>
+<p>Some candidates are crowded. Orchestration has LangSmith, AWS, Google, Microsoft and Vercel. Okta and Microsoft give agent identity away inside products that companies already own. Large vendors are buying their way into agent security. Hosting with private connections and governance of agents built anywhere look stronger, but research decides.</p>
+<p>Five tests choose the first entry products:</p>
+<ul class="plain">
+  <li>Engineers feel the pain on day one.</li>
+  <li>An engineer can adopt it alone in an hour.</li>
+  <li>It leads directly to the paid wall.</li>
+  <li>A cloud provider does not give it away.</li>
+  <li>It plays to a strength of DataOS.</li>
+</ul>
+<p>If we align on this document, the pod researches the candidates and picks the first entry products. That choice is the next level of detail, and it comes after alignment.</p>
+
+<h3>Where we land first</h3>
+<p>We start with mid-size enterprises, roughly 1,000 to 10,000 employees, in manufacturing, distribution, retail, insurance and financial services. Their boards push for AI now. They run more than one data platform and have private systems that agents need. Their engineering teams can adopt a product alone, but they are too small to build their own platform. They also buy faster than the largest companies.</p>
+<p>Our accounts at Lenovo, Otis and Weatherford show the same need at a larger scale. Gensler is a reference for the buyer, not a target segment. Professional-services firms come later, because partners decide slowly, and vertical products already take their AI budgets. The largest companies also come later, because they buy slowly and choose their cloud provider by default.</p>
+
+<h3>The vendor channel</h3>
+<p>A second channel has the trigger closest to the one that turned WorkOS. AI and software vendors win enterprise deals only if their agent can reach the customer's private systems safely. DataOS gives them that reach as a product that they build into their own agent.</p>
+<p>The vendor's developer adopts DataOS, and the vendor's customer demands it, so the need comes from outside, as it did for WorkOS. Each deal that such a vendor closes puts DataOS inside another company. The pod runs this channel alongside the self-serve loop.</p>
+
+<h3>How we should think about price</h3>
+<p>The price follows the loop above. Six principles shape it:</p>
+<ul class="plain">
+  <li>Building is free, within usage limits. Engineers build and host agents on cloud data for one team without a contract.</li>
+  <li>Payment starts at the wall. A company pays when an agent reaches private systems and goes live for colleagues.</li>
+  <li>We charge for what the security review needs: company sign-in, policy, audit and governed access to private systems.</li>
+  <li>We test two models before we choose one: a price per agent or app in production, and a platform price with usage. A price per agent can make leaders count agents, and that can slow adoption.</li>
+  <li>An enterprise tier adds company-wide sign-on, support and, on request, a version in the company's own cloud.</li>
+  <li>The entry price is lower than a business-outcome deal and public on the site. We will test it with Gensler, Lenovo and current prospects.</li>
+</ul>
+
+<h3>One brand, one persona</h3>
+<p>Product-led growth works only when the site, the message and the funnel all say one thing (<a href="https://www.mckinsey.com/industries/technology-media-and-communications/our-insights/from-product-led-growth-to-product-led-sales-beyond-the-plg-hype">McKinsey</a>). Today, a buyer can hear about DataOS as a business-results story from Modern. The same buyer can also hear about it as a platform story from engineering.</p>
+<p>An engineering leader who hears a business pitch sees a vendor that goes around them. That happened at Target and Aptos. A business user who hears a platform pitch sees something that they cannot buy.</p>
+<p>So we split by persona. Modern speaks to business users. DataOS speaks to engineering leaders and their engineers. Each persona hears one story at every touchpoint, from the first ad to the first login.</p>
+<div class="figure">
+  <h4>Two lanes that do not cross</h4>
+  <p class="sub">Each persona hears one story, from the brand to the first login</p>
+  <div class="lanes">
+    <div></div><div class="hd">Brand</div><div class="hd">Outreach</div><div class="hd">Campaign</div><div class="hd">Experience</div><div class="hd">Access</div>
+    <div class="who">Modern<small>business users</small></div>
+    <div class="cell" data-h="Brand">Modern, business results from data</div>
+    <div class="cell" data-h="Outreach">Account-based sales, executive events</div>
+    <div class="cell" data-h="Campaign">Use cases and business results</div>
+    <div class="cell" data-h="Experience">Demo that a seller leads</div>
+    <div class="cell" data-h="Access">Contract first</div>
+    <div class="divider"><span>Platform conversations in a Modern deal go to the DataOS pod</span></div>
+    <div class="who">DataOS<small>engineering leaders and engineers</small></div>
+    <div class="cell d" data-h="Brand">DataOS, "build, run and govern the agents your colleagues need"</div>
+    <div class="cell d" data-h="Outreach">Docs, open repositories, engineering events, peer groups of CIOs and CTOs</div>
+    <div class="cell d" data-h="Campaign">Reference architectures, the Gensler story (<a href="#appendix-b">Appendix B</a>), a build-or-rent calculator</div>
+    <div class="cell d" data-h="Experience">A working agent within an hour, no sales call</div>
+    <div class="cell d" data-h="Access">Free SaaS tier, public pricing</div>
+  </div>
+</div>
+<p>The dashed line is the only point where the lanes meet. A platform conversation in a Modern deal moves to the DataOS pod. Three structures can give each persona one story. They differ in cost and in how well they keep the two messages apart. We prefer the first.</p>
+<div class="tbl"><table>
+  <thead><tr><th>Option</th><th>What it means</th><th>Our view</th></tr></thead>
+  <tbody>
+    <tr><td>Separate brand</td><td>DataOS with its own site, pod and funnel, endorsed by Modern</td><td><span class="pill mid">Preferred</span> One story per persona. It costs a second marketing budget</td></tr>
+    <tr><td>Sub-brand</td><td>"DataOS by Modern", with its own site and a shared marketing team</td><td><span class="pill neutral">Possible</span> Cheaper, but the shared team drifts back to the business-user message</td></tr>
+    <tr><td>One brand, two product lines</td><td>Modern sells both, on two pages</td><td><span class="pill crowd">Not advised</span> One funnel, two stories. This is the confusion that we have today</td></tr>
+  </tbody>
+</table></div>
+<p>Four rules keep the two motions apart:</p>
+<ul class="plain">
+  <li>Existing DataOS customers, such as Gensler and Lenovo, keep their contracts and their support from Modern. The pod offers them the SaaS product when it is ready, and they become the first public references.</li>
+  <li>The DataOS pod owns every new sign-up and every account that it creates.</li>
+  <li>Modern sellers do not pitch DataOS to engineering leaders. When a Modern deal needs a platform conversation, the DataOS pod runs it.</li>
+  <li>We agree before launch, in writing, how quota credit works when a Modern seller expands a self-serve account.</li>
+</ul>
+
+<h3>One pod runs the play</h3>
+<p>A pod is one small team that owns a goal from start to end. One DataOS pod runs this play, from the first sign-up to the paid account. It has its own goals, its own budget and its own decisions.</p>
+<p>The pod has its own engineers for the SaaS product, onboarding and the entry products, because these are new product work. It depends on core DataOS engineering only for platform releases, and that dependency has a written release commitment. Each other handover slows the loop, so the pod takes nothing else from the rest of Modern.</p>
+<div class="figure">
+  <h4>One pod owns the loop from first sign-up to paid account</h4>
+  <p class="sub">Everything the play needs sits inside the pod</p>
+  <div class="pod">
+    <div class="podhd"><b>DataOS pod</b><span>one goal, one budget, one message</span></div>
+    <div class="podgrid">
+      <div class="role"><b>Pod lead</b><span>owns the goals, the budget and the decisions</span></div>
+      <div class="role"><b>Product and engineering</b><span>the SaaS product, onboarding, entry products</span></div>
+      <div class="role"><b>Developer relations and docs</b><span>docs, examples, open repositories, events</span></div>
+      <div class="role"><b>Brand and growth</b><span>site, content, campaigns for engineering leaders</span></div>
+      <div class="role"><b>Product-led sales</b><span>engineers who act on product signals and help through security review</span></div>
+      <div class="role"><b>Customer success</b><span>first agents live, then more teams on the platform</span></div>
+    </div>
+    <div class="podft">Core DataOS releases come under a written commitment. No shared quota, no shared roadmap.</div>
+  </div>
+</div>
+<p>The pod works in three phases. Each phase ends at a gate, which is a checkpoint with a goal that the pod must meet before the next phase gets funding. <a href="#appendix-a">Appendix A</a> describes the phases and the gates.</p>
+</section>
+
+<section id="appendix-a">
+<h2 class="appendix-hd"><span class="n">Appendix A</span>The ask, gate by gate</h2>
+<p>If we agree on the alignment above, we ask to set up the DataOS pod and to fund it one gate at a time. The pod proposes a goal and a stop line for each gate. The CEO and the CRO agree them at launch.</p>
+<div class="figure">
+  <h4>We fund each phase only after the pod passes its gate</h4>
+  <p class="sub">Three phases, three gates</p>
+  <div class="vflow">
+    <div class="vstep ph"><b>Phase 1: engineers can start</b><span>Free SaaS tier with usage limits and the first entry products. One brand, one site, one message. Content for engineers and engineering leaders.</span></div>
+    <div class="vside"></div>
+    <div class="varrow" aria-hidden="true"></div><div class="vside"></div>
+    <div class="vstep gt"><b>Gate 1: engineers build alone</b><span>Engineers build agents and invite teammates without a sales call. Mid-size enterprises first.</span></div>
+    <div class="vstop"><span>Not met: stop here. The loss stays within this phase.</span></div>
+    <div class="varrow" aria-hidden="true"></div><div class="vside"></div>
+    <div class="vstep ph"><b>Phase 2: the wall opens</b><span>Leaders connect private systems and set policy. Agents act as the person who asked. Existing accounts go first.</span></div>
+    <div class="vside"></div>
+    <div class="varrow" aria-hidden="true"></div><div class="vside"></div>
+    <div class="vstep gt"><b>Gate 2: agents in production</b><span>Leaders open the wall. Agents reach production, and a domain expert built at least one of them.</span></div>
+    <div class="vstop"><span>Not met: stop here. The loss stays within this phase.</span></div>
+    <div class="varrow" aria-hidden="true"></div><div class="vside"></div>
+    <div class="vstep ph"><b>Phase 3: paid and spreading</b><span>Paid plans as tested. Enterprise tier, with a version in the company's own cloud on request. Vendor channel, and product-led sales for large accounts.</span></div>
+    <div class="vside"></div>
+    <div class="varrow" aria-hidden="true"></div><div class="vside"></div>
+    <div class="vstep gt"><b>Gate 3: paid by the right buyer</b><span>Companies pay, the engineering leader signs and accounts expand. One public reference.</span></div>
+    <div class="vstop"><span>Not met: stop here, before we scale.</span></div>
+  </div>
+</div>
+<p>Each gate has a stop path. If the pod does not meet a gate, we stop, and the loss stays within the phase that did not pass.</p>
+<div class="tbl"><table>
+  <thead><tr><th>Gate</th><th>What it proves</th><th>What we look for</th></tr></thead>
+  <tbody>
+    <tr><td>1. Engineers build alone</td><td>Sign-ups become active teams without a sales call</td><td>Engineers at mid-size enterprises build agents and invite teammates</td></tr>
+    <tr><td>2. Agents reach production</td><td>Engineering leaders open the wall</td><td>Leaders connect private systems, and agents go live for colleagues</td></tr>
+    <tr><td>3. Paid by the right buyer</td><td>Companies sign through the engineering leader</td><td>The engineering leader signs, accounts expand to more teams, and one company agrees to be a public reference</td></tr>
+  </tbody>
+</table></div>
+<div class="callout">
+  <span class="label">The decisions</span>
+  <p>Set up the DataOS pod with its own goals and budget, and fund phase 1. Agree the three gates. Agree the rules that keep the DataOS and Modern motions apart, including quota credit. In the next 60 days, research the entry products and pick the first ones. Test the entry price with engineering leaders at Gensler, Lenovo and current prospects.</p>
+</div>
+</section>
+
+<section id="appendix-b">
+<h2 class="appendix-hd"><span class="n">Appendix B</span>The Gensler lessons</h2>
+<p>Gensler designs buildings. It does not sell software. Suri, its technology head, owns all platforms and IT and runs them to serve the business. Eric reports to him, and Eric's department pays for DataOS. Gensler bought DataOS to reduce friction in data work across the firm.</p>
+<p>Before DataOS, every team that needed data waited for engineering to connect sources, set access and keep it running. After DataOS, Suri's team runs one platform for sign-in, access control and the lakehouse. Colleagues use data without a new project each time.</p>
+<p>The work is not always smooth. In April 2025, Gensler reported serious issues after upgrades, and it asked to keep governance under its own control. Both facts show the same thing: the platform owner sets the terms.</p>
+<p>The AI version of this job is the same job with a new kind of request. Suri's colleagues now want to build agents and apps. Each request raises the same questions: where it runs, which data it can see, who can use it and who audits it.</p>
+<div class="figure">
+  <h4>The same leader, the same job, a new kind of request</h4>
+  <p class="sub">Why an engineering leader bought DataOS for data, and why the same leader needs it for AI</p>
+  <div class="compare" style="margin:0">
+    <div>
+      <h4>Then: friction in data work</h4>
+      <ul>
+        <li>Colleagues need data from many systems</li>
+        <li>Each request becomes an engineering project</li>
+        <li>The team approves access and compliance case by case</li>
+        <li>The leader buys one platform, so his team can say yes once</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Now: friction in AI adoption</h4>
+      <ul>
+        <li>Colleagues build agents and apps with AI tools</li>
+        <li>Each app needs company data and a place to run</li>
+        <li>Security review delays 83% of AI projects, and 29% wait four months or more (<a href="https://www.protegrity.com/news/protegrity-research-reveals-the-hidden-ai-friction-tax-holding-back-enterprise-ai">EMA for Protegrity, Jul 2026</a>)</li>
+        <li>The leader buys one platform, so his team can say yes once</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<p>Gensler proves that this buyer pays for a platform that removes friction for the rest of the company. It does not yet prove that the buyer pays for the AI version. It also does not prove that the buyer arrives through self-serve sign-up. Our first question to Suri is how many AI requests reached his team in the last 12 months, and what he did with them.</p>
+</section>
+
+<section id="sources" class="sources">
+<h2 class="appendix-hd"><span class="n">Appendix C</span>Sources</h2>
+<p>Figures for private companies are often analyst estimates. Vendors sponsor most demand surveys. We will make sure that each figure is correct before external use.</p>
+<h3>Evidence note: internal records</h3>
+<p>The account facts in <a href="#hypothesis">section 1</a> come from internal Modern pages in Notion. The table gives each page, its date and what this document uses it for. Some pages are older snapshots, so the current status of an account can be different.</p>
+<div class="tbl"><table>
+  <thead><tr><th>Page</th><th>Date</th><th>Used for</th></tr></thead>
+  <tbody>
+    <tr><td><a href="https://app.notion.com/p/moderndata/Solution-Engineering-Prospect-Engagements-Solutions-Accelerators-Internal-Initiatives-2e8c5c1d487680a98a49ebf26c75b997">Solution Engineering: Prospect Engagements, Solutions, Accelerators and Internal Initiatives</a></td><td>Updated 13 Nov 2026</td><td>Current status of engagements</td></tr>
+    <tr><td><a href="https://app.notion.com/p/moderndata/SE-Updates-23rd-Jul-3b2c5c1d487680f5aa41e4f4bf6c5122">SE Updates, 23rd Jul</a></td><td>23 Jul 2026</td><td>Orascom</td></tr>
+    <tr><td><a href="https://app.notion.com/p/3fbc5c1d48768059ab44eb1671fa4480">SE Updates, 24th Sep</a></td><td>Sep 2026</td><td>Aptos pause</td></tr>
+    <tr><td><a href="https://app.notion.com/p/406c5c1d487680309c2ed0cbb5480dd7">SE Updates, 17th Oct</a></td><td>Oct 2026</td><td>Aptos pause</td></tr>
+    <tr><td><a href="https://app.notion.com/p/353c5c1d4876818cb1e5cd7ea1c72c25">Lenovo, Executive Summary</a></td><td>1 May 2026</td><td>Lenovo data products and engineering feedback</td></tr>
+    <tr><td><a href="https://app.notion.com/p/22ac5c1d48768086ac88c520378b9529">OTIS</a></td><td>Edited 15 Jun 2026</td><td>Otis account scope</td></tr>
+    <tr><td><a href="https://app.notion.com/p/353c5c1d4876813aa6f1ecdad0394f20">Otis, DataOS 2.0 Rollout Command Center</a></td><td>1 May 2026</td><td>Otis preference for Snowflake</td></tr>
+    <tr><td><a href="https://app.notion.com/p/1d5c5c1d487680a18c04e3eab0fda4ac">Gensler, DataOS Discussion Points</a></td><td>Apr 2025 (older snapshot)</td><td>Gensler budget owner, governance and upgrade issues</td></tr>
+    <tr><td><a href="https://app.notion.com/p/2cbc5c1d48768060a24fd9a48d555561">Customer Use Case Priority List (Technical)</a></td><td>Jan 2026</td><td>Gensler access control and lakehouse</td></tr>
+  </tbody>
+</table></div>
+<ol>
+  <li>Business case of the CTO's office, 16 November 2026, for the loop diagram in <a href="#unleash">section 5</a></li>
+  <li>Travis, <a href="https://app.notion.com/p/moderndata/DataOS-Strategy-The-Stable-Middle-for-Builders-Travis-3ffc5c1d487680db88cad4c30fba6c30">"DataOS Strategy: The Stable Middle for Builders"</a> (internal Notion page), 28 Sep 2026, and notes on domain-expert builders, 14 to 16 Nov 2026</li>
+  <li>Modern deal history: the internal Notion pages in the evidence note above</li>
+  <li>Demand and governance: <a href="https://zapier.com/blog/ai-coding-survey/">Zapier AI coding survey</a>, <a href="https://retool.com/blog/ai-governance-report-2026">Retool AI governance report 2026</a>, <a href="https://newsroom.ibm.com/2026-06-08-new-ibm-study-finds-cios-and-ctos-face-growing-ai-control-gap-as-enterprise-deployment-scales">IBM CIO and CTO study</a>, <a href="https://www.dataiku.com/company/news/global-ai-confessions-report-cio-edition-2026">Dataiku Global AI Confessions, CIO edition</a>, <a href="https://foundryco.com/research/research-ai-priorities/">Foundry AI Priorities 2026</a>, <a href="https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/">Menlo Ventures, State of Enterprise AI, Nov 2026</a>, <a href="https://www.gartner.com/en/newsroom/press-releases/2026-09-16-gartner-forecasts-worldwide-ai-spending-to-grow-49-point-5-percent-in-2026">Gartner AI spending forecast, Sep 2026</a>, <a href="https://www.gartner.com/en/newsroom/press-releases/2026-02-17-gartner-global-ai-regulations-fuel-billion-dollar-market-for-ai-governance-platforms">Gartner AI governance platforms, Feb 2026</a>, <a href="https://www.salesforce.com/news/stories/connectivity-report-announcement-2026/">MuleSoft Connectivity Benchmark 2026</a>, <a href="https://cloudsecurityalliance.org/press-releases/2026/03/24/more-than-two-thirds-of-organizations-cannot-clearly-distinguish-ai-agent-from-human-actions">CSA and Aembit</a>, <a href="https://www.protegrity.com/news/protegrity-research-reveals-the-hidden-ai-friction-tax-holding-back-enterprise-ai">EMA for Protegrity</a>, <a href="https://arxiv.org/abs/2604.25149">arXiv 2604.25149</a>, <a href="https://vercel.com/docs/oidc">Vercel OIDC documentation</a></li>
+  <li>Builders and platforms: <a href="https://techcrunch.com/2026/06/09/lovable-says-it-has-hit-500m-in-annualized-revenue-with-1-million-new-projects-a-week/">Lovable, TechCrunch</a>, <a href="https://letsdatascience.com/news/langchain-reportedly-raises-300m-at-3b-valuation-fbf16641">LangChain round</a></li>
+  <li>Glean: <a href="https://www.glean.com/press/glean-achieves-100m-arr-in-three-years-delivering-true-ai-roi-to-the-enterprise">$100M ARR announcement</a>, <a href="https://techcrunch.com/2026/05/28/gleans-top-line-crosses-300m-as-ai-budget-cutting-becomes-its-major-selling-point/">TechCrunch, $300M ARR</a>, <a href="https://docs.glean.com/get-started/build/about-deployment">deployment models</a>, <a href="https://www.glean.com/jp/blog/glean-for-data-analysis">Glean for Data Analysis</a>, <a href="https://glean.com/connectors/snowflake">Snowflake connector</a>, <a href="https://www.glean.com/platform/connectors">connectors</a>, <a href="https://sacra.com/c/glean">Sacra</a>, <a href="https://sacra.com/research/glean/">Sacra research</a>, <a href="https://www.vendr.com/buyer-guides/glean">Vendr pricing guide</a></li>
+  <li>WorkOS: <a href="https://www.generalist.com/p/workos">The Generalist</a>, <a href="https://sacra.com/c/workos">Sacra</a>, <a href="https://workos.com/blog/series-c">WorkOS Series C</a>, <a href="https://knuckleuphq.substack.com/p/michael-grinich">Knuckle Up podcast</a></li>
+  <li>Vercel: <a href="https://www.arr.club/research/vercel-at-600m">arr.club</a>, <a href="https://www.businesswire.com/news/home/20250930898216/en">Series F</a>, <a href="https://www.gic.com.sg/newsroom/all/vercel-closes-series-f-at-9-3b-valuation-to-scale-the-ai-cloud/">GIC</a></li>
+  <li>Other companies: <a href="https://meritech.substack.com/p/hashicorp-ipo-s-1-breakdown">HashiCorp S-1 breakdown</a>, <a href="https://saastr.com/5-interesting-learnings-from-mongodb-at-2-4-billion-in-arr/">MongoDB, SaaStr</a>, <a href="https://sacra.com/research/supabase-170m-year-growing-221-yoy/">Supabase, Sacra</a>, <a href="https://www.sec.gov/Archives/edgar/data/1561550/000119312519227783/d745413ds1.htm">Datadog S-1</a>, <a href="https://www.sec.gov/Archives/edgar/data/0001447669/000110465916155179/a16-16801_110q.htm">Twilio 10-Q</a></li>
+  <li>Warnings and method: <a href="https://redmonk.com/rstephens/2019/09/09/pivoting/">Pivotal, RedMonk</a>, <a href="https://siliconangle.com/2019/11/13/container-shakeup-docker-sells-enterprise-business-mirantis-appoints-new-ceo">Docker, SiliconANGLE</a>, <a href="https://www.mckinsey.com/industries/technology-media-and-communications/our-insights/from-product-led-growth-to-product-led-sales-beyond-the-plg-hype">McKinsey, product-led sales</a></li>
+  <li>Other companies in the space: <a href="https://www.harvey.ai/blog/introducing-workflow-builder">Harvey</a>, <a href="https://legora.com/newsroom/legora-raises-550-million-series-d-to-fuel-us-growth">Legora</a>, <a href="https://www.accountingtoday.com/articles/ai-for-accounting-startup-basis-hits-1-15b-valuation">Basis</a>, <a href="https://aimagazine.com/news/glean-enterprise-ai-search-and-ai-agents-pass-us-300m-in-ar">Glean, AI Magazine</a>, <a href="https://tech.eu/2026/05/18/dust-raises-40m-series-b-to-build-the-multiplayer-operating-system-for-enterprise-ai/">Dust</a>, <a href="https://siliconangle.com/?p=697911">Superblocks</a>, <a href="https://www.businesswire.com/news/home/20250206649881/en">TrueFoundry</a>, <a href="https://techcrunch.com/2026/06/10/jedify-raises-24m-to-help-companies-arm-ai-agents-with-context-on-their-business/">Jedify</a>, <a href="https://www.techzine.eu/news/analytics/141758/fivetran-and-dbt-labs-complete-merger-data-infrastructure-for-reliable-agentic-ai/">dbt Labs and Fivetran</a>, <a href="https://siliconangle.com/2025/06/02/semantic-data-layer-startup-cube-automates-analytics-ai-agents">Cube</a></li>
+</ol>
+</section>
+
+<footer>DataOS for Engineering Leaders · CTO's Desk · 17 November 2026</footer>
+</main>
+</div>
