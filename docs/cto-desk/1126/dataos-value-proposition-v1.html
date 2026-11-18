@@ -203,7 +203,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <tr><th scope="row">Data product</th><td>Company data packaged with its definitions, owner and quality checks.</td></tr>
 <tr><th scope="row">MCP</th><td>The open standard that connects AI agents to tools and data.</td></tr>
 <tr><th scope="row">Audit log</th><td>The record of who used which agent, and what data the agent read or changed.</td></tr>
-<tr><th scope="row">Free tier</th><td>A developer uses DataOS for free, for themselves only.</td></tr>
+<tr><th scope="row">Free tier</th><td>A developer uses DataOS for free, on real company data, for themselves only, with a limit on agents and workloads.</td></tr>
 <tr><th scope="row">The wall</th><td>The point where an agent reaches company systems for other people. Payment starts there.</td></tr>
 <tr><th scope="row">Viewer</th><td>A person who only uses agents. Viewers are free.</td></tr>
 </tbody>
@@ -272,10 +272,10 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <div class="tbl"><table class="fields"><tbody>
 <tr><th scope="row">Measured on</th><td>Delivery speed, uptime, requests closed and no security incidents.</td></tr>
 <tr><th scope="row">Job now</th><td>Ship the agents that colleagues ask for, and keep them safe.</td></tr>
-<tr><th scope="row">Pains, in her words</th><td>"Every system needs its own sign-in and its own connector." "I cannot share this without a review that takes weeks." "I get paged for apps that I never approved." "The agent got the margin wrong."</td></tr>
+<tr><th scope="row">Pains, in her words</th><td>"Every system needs its own sign-in and its own connector." "I cannot share this without a review that takes weeks." "I get paged for apps that I never approved." "My team blocks the apps that business teams build, and the queue keeps growing." "The agent got the margin wrong."</td></tr>
 <tr><th scope="row">What she builds today</th><td>A sign-in flow and a connector for each system. A map of who can see what. An audit log, masking for personal data, and limits on queries. Definitions for business numbers. None of this is her agent.</td></tr>
-<tr><th scope="row">What DataOS gives</th><td>One connection from her agent to company systems. Each call uses the user's own permissions. Ready tools for each source, one audit log, traces for each answer, masking and query limits. Business definitions follow as data products grow.</td></tr>
-<tr><th scope="row">First hour</th><td>She signs up with her work email. She adds one DataOS address to the agent tool that she already uses, and her agent reads sample data. She connects one real source with her own login. Within the hour, her agent answers a real question with her permissions, and a trace shows each record that it read.</td></tr>
+<tr><th scope="row">What DataOS gives</th><td>One connection from her agent to company systems. Each call uses the user's own permissions. Ready tools for each source, one audit log, traces for each answer, masking and query limits. Business definitions follow as data products grow. Her team stops being the bottleneck. It runs the platform, and business teams build on it.</td></tr>
+<tr><th scope="row">First hour</th><td>She signs up with her work email. She adds one DataOS address to the agent tool that she already uses. She connects one real source with her own login. Within the hour, her agent answers a real question with her permissions, and a trace shows each record that it read.</td></tr>
 <tr><th scope="row">Proof she needs</th><td>It works with her agent tool. It gives a governed answer on real data in an hour. The security team accepts the audit log.</td></tr>
 <tr><th scope="row">Objection</th><td>"I can build this myself."</td></tr>
 <tr><th scope="row">Our answer</th><td>She can build the first connector. Six connectors with per-person access, audit and masking, kept up to date, are a product. DataOS is free to start, and she owns her agent.</td></tr>
@@ -374,7 +374,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <h2 id="open" class="appendix">Appendix A: Assumptions and open questions</h2>
 <p>The page assumes these points. Each one needs a decision, or a fact from the product team.</p>
 <ul class="plainlist">
-<li>Free tier: the developer can connect real sources with their own login, but only they can use the agent. Sharing is the first payment. The other option is sample data only.</li>
+<li>Free tier: the plan is real data for the developer alone, with a limit on agents and workloads. Sharing is the first payment. Sample data only for a company whose security team blocks a free hosted service.</li>
 <li>Per-person access depends on each source system. Salesforce, SharePoint and most warehouses support sign-in on behalf of the user. Older ERP systems often do not.</li>
 <li>What data DataOS stores on the gateway path, and for how long.</li>
 <li>Which security certifications DataOS holds today.</li>
