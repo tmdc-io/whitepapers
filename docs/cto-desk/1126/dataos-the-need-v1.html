@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Need for DataOS</title>
+<meta name="description" content="Why non-tech companies need DataOS: building agents is easy, getting them safely into production is the bottleneck. The evidence, the loop and the hurdles.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* The need: five personas and what each one gets. Same tokens as the alignment paper. Blue = DataOS, amber = the wall to private systems, green = available today. */
+:root{
+  --bg:#fbfbfa; --surface:#ffffff; --ink:#16202b; --muted:#5b6571; --line:#d9dee4; --band:#f1f3f5;
+  --accent:#1f5fd1; --accent-soft:#e7eefb; --accent-ink:#163f8c;
+  --warn:#9a5500; --warn-soft:#fbf1e3; --ok:#1e7a4c; --ok-soft:#e5f4ec;
+  --f-display:"Instrument Sans","Inter",system-ui,sans-serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#11161c;--surface:#171e26;--ink:#e7ebef;--muted:#9aa4ae;--line:#2c3640;--band:#1d252e;--accent:#7aa7ff;--accent-soft:#1b2a44;--accent-ink:#b9cffd;--warn:#f0b366;--warn-soft:#33270f;--ok:#6fd3a0;--ok-soft:#14301f;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#11161c;--surface:#171e26;--ink:#e7ebef;--muted:#9aa4ae;--line:#2c3640;--band:#1d252e;--accent:#7aa7ff;--accent-soft:#1b2a44;--accent-ink:#b9cffd;--warn:#f0b366;--warn-soft:#33270f;--ok:#6fd3a0;--ok-soft:#14301f;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{margin:0;-webkit-text-size-adjust:100%;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.62;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+main{max-width:860px;margin:0 auto;padding-block:48px 96px}
+.wide{max-width:1120px;margin-inline:auto}
+.eyebrow{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,4.4vw,44px);line-height:1.1;letter-spacing:-.015em;margin:8px 0 10px;text-wrap:balance}
+.byline{font-size:14px;color:var(--muted);margin:0 0 28px}
+h2{font-family:var(--f-display);font-weight:700;font-size:clamp(22px,2.6vw,28px);line-height:1.2;letter-spacing:-.01em;margin:64px 0 12px;text-wrap:balance;scroll-margin-top:24px}
+h2 .n{font-family:var(--f-mono);font-size:14px;color:var(--accent);margin-right:10px;vertical-align:3px}
+h3{font-family:var(--f-display);font-weight:600;font-size:20px;line-height:1.3;margin:0 0 6px}
+p{margin:0 0 14px}
+.lead{font-size:19px;line-height:1.55}
+.callout{border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:16px 20px;margin:20px 0}
+.callout .label{display:block;font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.callout ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:12px;font-weight:500;padding:1px 7px;border-radius:999px;white-space:nowrap;vertical-align:1px}
+.tag.now{background:var(--ok-soft);color:var(--ok)}
+.tag.new{background:var(--accent-soft);color:var(--accent-ink)}
+.legend{font-size:13.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px;margin:8px 0 0}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:16px 0}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+th{font-family:var(--f-display);font-weight:600;font-size:13px;color:var(--muted);background:var(--band)}
+th[scope="row"]{font-size:14.5px;color:var(--ink);background:transparent;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.contents{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;margin:0 0 8px;padding:12px 0;border-block:1px solid var(--line)}
+.contents a{text-decoration:none;color:var(--muted)}
+.contents a:hover{color:var(--ink)}
+
+/* Overview: four stages as columns, four lanes as rows */
+.figure{margin:24px 0}
+.figure .ftitle{font-family:var(--f-display);font-weight:600;font-size:16px;margin:0 0 4px}
+.figure .sub{font-size:13.5px;color:var(--muted);margin:0 0 14px}
+.journey{display:grid;grid-template-columns:150px repeat(4,minmax(0,1fr));gap:8px;font-size:13.5px;line-height:1.4}
+.journey .hd{font-family:var(--f-display);font-weight:700;font-size:15px;padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--accent-ink)}
+.journey .hd small{display:block;font-family:var(--f-mono);font-weight:400;font-size:12px;color:var(--accent-ink);margin-bottom:2px}
+.journey .hd.wall{background:var(--warn-soft);color:var(--warn);border:2px dashed var(--warn)}
+.journey .hd.wall small{color:var(--warn)}
+.journey .lane{font-family:var(--f-display);font-weight:600;font-size:13px;color:var(--muted);padding:10px 0;align-self:start}
+.journey .c{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.journey .c.us{border-color:var(--accent);border-width:1.5px}
+.journey .c.pay{font-weight:600}
+.journey .corner{visibility:hidden}
+.jnote{font-size:13px;color:var(--muted);margin:10px 0 0}
+
+.journey.five{grid-template-columns:150px repeat(5,minmax(0,1fr))}
+main ol{padding-left:22px;margin:0 0 12px;display:flex;flex-direction:column;gap:4px}
+.plainlist{padding-left:20px;display:flex;flex-direction:column;gap:6px}
+th[scope="row"] a{font-weight:600}
+.cov{font-size:14px}
+.cov th,.cov td{text-align:center;white-space:nowrap;padding:10px 8px}
+.cov thead th{white-space:normal;vertical-align:bottom;line-height:1.3}
+.cov th[scope="row"],.cov thead th:first-child{text-align:left}
+.cov td.y{color:var(--ok);font-weight:600}
+.cov td.p{color:var(--warn)}
+.cov td.n{color:var(--muted)}
+.cov tr.us-row th,.cov tr.us-row td{background:var(--accent-soft)}
+.cov tr.us-row th,.cov tr.us-row td.n{color:var(--accent-ink)}
+.src{font-size:14.5px}
+.srcnote{font-size:13.5px;color:var(--muted)}
+.journey .hd.sup{background:var(--band);color:var(--ink)}
+.journey .hd.sup small{color:var(--muted)}
+.pintro{margin:4px 0 12px}
+.fields th[scope="row"]{width:180px;white-space:normal;vertical-align:top}
+.vline{font-family:var(--f-display);font-weight:600;font-size:17px;line-height:1.4;color:var(--accent-ink);background:var(--accent-soft);border-radius:10px;padding:12px 16px;margin:4px 0 0}
+@media (max-width:600px){.fields th[scope="row"]{width:110px}}
+.gapfig{display:flex;flex-direction:column;gap:14px;max-width:860px}
+.gaprow{display:grid;grid-template-columns:220px minmax(0,1fr) 64px;align-items:center;gap:12px;font-size:14px}
+.gaplbl{color:var(--ink)}
+.gapbar{height:22px;border-radius:4px;display:block;min-width:4px}
+.gapbar.big{background:var(--accent)}
+.gapbar.small{background:var(--warn)}
+.gapval{font-family:var(--f-display);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+.loopfig{display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr) 22px minmax(0,1fr) 22px minmax(0,1fr) 22px minmax(0,1fr);align-items:stretch;margin:20px 0 6px}
+.lp{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:10px 12px;font-size:13px;line-height:1.4;color:var(--muted)}
+.lp b{display:block;font-family:var(--f-display);font-size:14px;color:var(--ink);margin-bottom:3px}
+.lp.warn{border:2px dashed var(--warn);background:var(--warn-soft);color:var(--warn)}
+.la{align-self:center;height:2px;background:var(--muted);position:relative;margin:0 4px}
+.la::after{content:"";position:absolute;right:-3px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.loopback{font-size:13.5px;color:var(--warn);font-weight:600;border-top:2px dashed var(--warn);padding-top:8px;margin:6px 0 18px}
+.gapfig.money .gaprow{grid-template-columns:150px minmax(0,1fr) 48px}
+.gapfig.money .gapval{font-size:15px}
+.rounds td:first-child,.rounds th:first-child{white-space:nowrap;min-width:84px}
+.rounds td:nth-child(3){white-space:nowrap}
+.hurd td.hl ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.hurd td.hl li{line-height:1.45}
+.hurd td.pl{color:var(--ok)}
+.hurd td.ap{color:var(--muted)}
+.stage .plainlist{margin-top:8px}
+@media (max-width:860px){
+  .loopfig{grid-template-columns:minmax(0,1fr);row-gap:0}
+  .la{width:2px;height:18px;justify-self:center;margin:4px 0 8px}
+  .la::after{right:-3px;top:auto;bottom:-4px}
+  .gaprow{grid-template-columns:minmax(0,1fr) 56px}
+  .gaplbl{grid-column:1/-1}
+  .gapfig.money .gaprow{grid-template-columns:minmax(0,1fr) 48px}
+}
+/* Steps */
+.stage{margin-top:40px}
+.stage > .shd{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--accent);padding-bottom:8px;margin-bottom:8px}
+.stage > .shd b{font-family:var(--f-display);font-size:20px}
+.stage > .shd span{font-size:14px;color:var(--muted)}
+.stage.wallst > .shd{border-bottom-color:var(--warn)}
+.step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:0 14px;padding:18px 0;border-bottom:1px solid var(--line)}
+.step .num{font-family:var(--f-display);font-weight:700;font-size:15px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink)}
+.step p:last-child{margin-bottom:0}
+.step ul{margin:0 0 12px;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.meta div{border-radius:10px;padding:10px 14px;font-size:14px;line-height:1.45}
+.meta .plan{background:var(--band)}
+.meta .us{background:var(--accent-soft);color:var(--accent-ink)}
+.meta b{display:block;font-family:var(--f-display);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px}
+.meta .plan b{color:var(--muted)}
+.caps{font-size:13px;color:var(--muted);margin-top:10px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.appendix{margin-top:80px;padding-top:20px;border-top:2px solid var(--line)}
+main > ul{padding-left:20px;display:flex;flex-direction:column;gap:6px}
+
+/* Contents: the same numbered style as the main paper */
+.ftoc{position:fixed;top:48px;left:calc((100vw - 860px)/2 - 236px);width:204px;max-height:calc(100vh - 96px);overflow-y:auto;font-size:13px;transition:opacity .25s ease;z-index:5;scrollbar-width:thin}
+.ftoc p{font-family:var(--f-display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:12px;color:var(--muted);margin:0 0 10px}
+.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.toc a{color:var(--muted);text-decoration:none;display:flex;gap:8px;line-height:1.4}
+.toc a .k{font-family:var(--f-mono);font-size:12px;color:var(--accent);min-width:14px;padding-top:1px;flex:none}
+.toc a:hover,.toc a:focus-visible{color:var(--ink)}
+.toc a.active,.toc a.parent-active{color:var(--ink);font-weight:600}
+.toc ol.sub{gap:0;margin:6px 0 4px 6px;border-left:1px solid var(--line)}
+.toc ol.sub a{display:block;font-size:12.5px;line-height:1.35;padding:3px 0 3px 12px;margin-left:-1px;border-left:2px solid transparent}
+.toc ol.sub a.active{border-left-color:var(--accent);color:var(--ink);font-weight:500}
+.ftoc.away{opacity:0;pointer-events:none}
+/* Below 1320px there is no room in the margin: a sticky menu bar, the same as the main paper */
+.mbar{display:none}
+@media (max-width:1319px){
+  .ftoc{display:none}
+  html{scroll-padding-top:calc(56px + env(safe-area-inset-top,0px))}
+  .mbar{display:block;position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);margin:0 calc(-1 * max(16px,env(safe-area-inset-right,0px))) 0 calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+  .mbar > *{max-width:1120px;margin-inline:auto}
+  .toc-toggle{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;color:var(--ink);font:inherit;font-size:14px;padding:12px 0;cursor:pointer;text-align:left;min-height:44px}
+  .toc-toggle-label{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .toc-current{margin-left:auto;font-size:13px;color:var(--accent);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
+  .burger{position:relative;width:20px;height:14px;flex:none}
+  .burger span{position:absolute;left:0;width:20px;height:2px;background:var(--ink);border-radius:1px;transition:transform .2s ease,opacity .2s ease}
+  .burger span:nth-child(1){top:0}.burger span:nth-child(2){top:6px}.burger span:nth-child(3){top:12px}
+  .mbar.open .burger span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+  .mbar.open .burger span:nth-child(2){opacity:0}
+  .mbar.open .burger span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+  .mtoc{display:none;padding:0 0 14px;max-height:calc(70vh - env(safe-area-inset-top,0px));overflow-y:auto}
+  .mbar.open .mtoc{display:block}
+  .mtoc.toc ol{gap:10px}
+  .mtoc.toc a{font-size:14.5px}
+  .mtoc.toc ol.sub a{font-size:14px;padding:5px 0 5px 12px}
+  main{padding-top:28px}
+}
+@media (prefers-reduced-motion: reduce){ .burger span,.ftoc{transition:none} }
+footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+
+@media (max-width:860px){
+  .journey{grid-template-columns:minmax(0,1fr)}
+  .journey .lane,.journey .corner{display:none}
+  .journey .hd{margin-top:10px}
+  .journey .c::before{content:attr(data-l);display:block;font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+  .journey{display:flex;flex-direction:column}
+  .journey .s5{order:5}.journey .s1{order:1}.journey .s2{order:2}.journey .s3{order:3}.journey .s4{order:4}
+  .meta{grid-template-columns:minmax(0,1fr)}
+  .step{grid-template-columns:minmax(0,1fr);gap:8px}
+}
+</style>
+</head>
+<body>
+<aside class="ftoc toc" aria-label="Contents">
+  <p>Contents</p>
+  <ol><li><a href="#terms"><span class="k"></span>Terms used below</a></li><li><a href="#moved"><span class="k">1</span>The bottleneck moved</a></li><li><a href="#chain"><span class="k">2</span>The evidence chain</a><ol class="sub"><li><a href="#l1">Building is cheap</a></li><li><a href="#l2">Unsafe by default</a></li><li><a href="#l3">Cannot govern it</a></li><li><a href="#l4">Money is moving</a></li></ol></li><li><a href="#gap"><span class="k">3</span>The gap into production</a></li><li><a href="#money"><span class="k">4</span>Where the money goes</a></li><li><a href="#loop"><span class="k">5</span>Why non-tech companies feel it most</a></li><li><a href="#hurdles"><span class="k">6</span>What stands between an agent and production</a></li><li><a href="#requirements"><span class="k">7</span>What the platform must provide</a></li><li><a href="#strength"><span class="k">8</span>How strong the evidence is</a></li><li><a href="#open"><span class="k">A</span>Appendix: sources</a></li></ol>
+</aside>
+<div class="mbar" id="mbar">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="mtoc"><span class="burger" aria-hidden="true"><span></span><span></span><span></span></span><span class="toc-toggle-label">Contents</span><span class="toc-current" id="tocCurrent"></span></button>
+  <nav class="mtoc toc" id="mtoc" aria-label="Contents"><ol><li><a href="#terms"><span class="k"></span>Terms used below</a></li><li><a href="#moved"><span class="k">1</span>The bottleneck moved</a></li><li><a href="#chain"><span class="k">2</span>The evidence chain</a><ol class="sub"><li><a href="#l1">Building is cheap</a></li><li><a href="#l2">Unsafe by default</a></li><li><a href="#l3">Cannot govern it</a></li><li><a href="#l4">Money is moving</a></li></ol></li><li><a href="#gap"><span class="k">3</span>The gap into production</a></li><li><a href="#money"><span class="k">4</span>Where the money goes</a></li><li><a href="#loop"><span class="k">5</span>Why non-tech companies feel it most</a></li><li><a href="#hurdles"><span class="k">6</span>What stands between an agent and production</a></li><li><a href="#requirements"><span class="k">7</span>What the platform must provide</a></li><li><a href="#strength"><span class="k">8</span>How strong the evidence is</a></li><li><a href="#open"><span class="k">A</span>Appendix: sources</a></li></ol></nav>
+</div>
+<main>
+
+<header>
+  <div class="eyebrow">CTO's Desk</div>
+  <h1>The need</h1>
+  <p class="byline">Why non-tech companies need DataOS · 18 November 2026</p>
+</header>
+
+<p class="lead">Business teams can now build agents in hours. Getting one safely into production still takes weeks, and most never make it. Non-tech companies need a platform that makes the safe path the fast path.</p>
+<p>This page sets out the evidence for that need. It expands <a href="dataos-for-engineering-leaders-v1.html#hypothesis" target="dataos-full">section 1 of "DataOS for Engineering Leaders"</a>. Sources are inline and in appendix A. Section 8 says which sources are independent and which come from vendors.</p>
+
+<div class="callout">
+  <span class="label">The need in five lines</span>
+  <ul>
+    <li>Building is no longer the hard part. People in every function build agents and apps with AI.</li>
+    <li>What they build is unsafe by default. It fails in identity and data access.</li>
+    <li>Companies cannot govern it today, so few builds reach production.</li>
+    <li>Non-tech companies feel this most. With few engineers, their safe answer is to block, and the block feeds the next round of sprawl.</li>
+    <li>The need is a platform that makes the safe path the fast path, for agents built in any tool.</li>
+  </ul>
+</div>
+
+<h2 id="terms">Terms used below</h2>
+<div class="tbl"><table>
+<tbody>
+<tr><th scope="row">Agent</th><td>An AI program that does a task for a person.</td></tr>
+<tr><th scope="row">Vibe coding</th><td>Building software by describing it to an AI tool, often without programming skills.</td></tr>
+<tr><th scope="row">Production</th><td>The state where an agent or app runs for real users on real company data.</td></tr>
+<tr><th scope="row">Sprawl</th><td>Many agents in many tools that nobody can list, trust, maintain or cost.</td></tr>
+<tr><th scope="row">OWASP</th><td>A nonprofit that publishes the standard lists of software security risks.</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="moved"><span class="n">1</span>The bottleneck moved</h2>
+<p>For years, the hard part of software was building it. A company that wanted a new internal tool needed engineers, a project and months of work. AI changed that. Today, a sales manager or a planner can describe a tool and get a working version in an afternoon.</p>
+<p>The hard part is now the path into production. A working agent still needs sign-in, access to company systems with each person's own permissions, a security review, monitoring and an owner. None of that comes from the AI tool that built it. So the queue moved. It used to wait for engineers to build. Now it waits for someone to make the result safe.</p>
+<p>This is the need that DataOS answers. The rest of this page shows the evidence.</p>
+
+<h2 id="chain"><span class="n">2</span>The evidence chain</h2>
+<p>The need rests on four links. Each link has its own evidence.</p>
+
+<section class="stage" aria-labelledby="l1">
+<div class="shd"><b id="l1">Building is cheap and widespread</b><span>Link 1</span></div>
+<ul class="plainlist">
+<li>Of US workers who built a work tool with AI coding tools in the past year, 34% have no formal programming background (<a href="https://zapier.com/blog/ai-coding-survey/" target="_blank" rel="noopener">Zapier, May 2026</a>).</li>
+<li>Companies run about 12 agents each today and expect 67% more within two years (<a href="https://www.salesforce.com/news/stories/connectivity-report-announcement-2026/" target="_blank" rel="noopener">MuleSoft, Feb 2026</a>).</li>
+<li>At State Farm, staff created more than 3,000 AI agent identities in Microsoft Power Platform (<a href="https://www.microsoft.com/en/customers/story/26947-state-farm-microsoft-power-platform" target="_blank" rel="noopener">Microsoft, Aug 2026</a>).</li>
+<li>Gartner forecasts that 40% of new enterprise production software will be built with vibe coding by 2028, as cited by Island (<a href="https://www.island.io/press/island-secures-vibe-coding-with-new-enterprise-vibe-publishing" target="_blank" rel="noopener">Island, Aug 2026</a>).</li>
+</ul>
+</section>
+
+<section class="stage" aria-labelledby="l2">
+<div class="shd"><b id="l2">What gets built is unsafe by default</b><span>Link 2</span></div>
+<ul class="plainlist">
+<li>AI-generated code contained an OWASP Top 10 flaw in about 44% of tasks, across more than 100 models. The rate barely changed from 2025 (<a href="https://www.veracode.com/blog/2026-genai-code-security-report" target="_blank" rel="noopener">Veracode, Jul 2026</a>).</li>
+<li>Real breaches failed in the same two places, identity and data access. The Tea app exposed about 72,000 ID photos from an open storage bucket (<a href="https://www.engadget.com/cybersecurity/tea-app-suffers-breach-exposing-thousands-of-user-images-190731414.html" target="_blank" rel="noopener">Engadget, Jul 2025</a>). A flaw in the Base44 platform let anyone register for private enterprise apps (<a href="https://thehackernews.com/2025/07/wiz-uncovers-critical-access-bypass.html" target="_blank" rel="noopener">The Hacker News, Jul 2025</a>).</li>
+<li>Scans of vibe-coded apps report missing database protection and leaked keys in a large share of apps (<a href="https://supaexplorer.com/cybersecurity-insight-report-january-2026" target="_blank" rel="noopener">SupaExplorer, Jan 2026</a>).</li>
+<li>Agents add their own risks. The OWASP list for AI applications ranks prompt injection first. It also lists excessive agency, where an agent gets more tools or access than its task needs (<a href="https://www.hackerone.com/blog/owasp-top-10-llms-2025-how-genai-risks-are-evolving" target="_blank" rel="noopener">HackerOne on OWASP, 2025</a>).</li>
+</ul>
+</section>
+
+<section class="stage" aria-labelledby="l3">
+<div class="shd"><b id="l3">Companies cannot govern it today</b><span>Link 3</span></div>
+<ul class="plainlist">
+<li>84% of CIOs say that employees create agents and apps faster than IT can govern them. 81% do not fully see the agents built outside approved systems (<a href="https://www.dataiku.com/company/news/global-ai-confessions-report-cio-edition-2026" target="_blank" rel="noopener">Dataiku, 2026</a>).</li>
+<li>74% of organizations say that agents get more access than they need. 43% run agents on shared service accounts (<a href="https://cloudsecurityalliance.org/press-releases/2026/03/24/more-than-two-thirds-of-organizations-cannot-clearly-distinguish-ai-agent-from-human-actions" target="_blank" rel="noopener">CSA and Aembit, Mar 2026</a>).</li>
+<li>Of 307 technology leaders, 93% worry about AI-built tools in production. Only 8% call their governance strong (<a href="https://retool.com/blog/ai-governance-report-2026" target="_blank" rel="noopener">Retool, Jun 2026</a>).</li>
+<li>Two-thirds of 2,000 CIOs and CTOs say that they are accountable for AI systems that they do not fully control (<a href="https://newsroom.ibm.com/2026-06-08-new-ibm-study-finds-cios-and-ctos-face-growing-ai-control-gap-as-enterprise-deployment-scales" target="_blank" rel="noopener">IBM, Jun 2026</a>).</li>
+</ul>
+</section>
+
+<section class="stage" aria-labelledby="l4">
+<div class="shd"><b id="l4">Money is moving to fix it</b><span>Link 4</span></div>
+<ul class="plainlist">
+<li>The average company spent 4.7 times its 2025 level on AI in 2026, against a plan of 1.9 times (<a href="https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/" target="_blank" rel="noopener">Menlo Ventures, Nov 2026</a>).</li>
+<li>Microsoft now gives every new Copilot Studio agent its own identity, governed through Agent 365 (<a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/security-and-governance" target="_blank" rel="noopener">Microsoft</a>).</li>
+<li>Investors put more than $1.7B into eight companies in this space in 2026. Section 4 lists them.</li>
+</ul>
+</section>
+
+  <h2 id="gap"><span class="n">3</span>The gap into production</h2>
+<div class="figure">
+    <p class="ftitle">One company: thousands of agent identities, dozens of builds in production</p>
+    <p class="sub">State Farm, Microsoft Power Platform. Bars are to scale</p>
+    <div class="gapfig" role="img" aria-label="Bar chart. More than 3,000 AI agent identities. 41 builds that passed risk assessment and run in production.">
+      <div class="gaprow"><span class="gaplbl">AI agent identities</span><span class="gapbar big" style="width:100%"></span><span class="gapval">3,000+</span></div>
+      <div class="gaprow"><span class="gaplbl">Builds in production after risk assessment</span><span class="gapbar small" style="width:1.37%"></span><span class="gapval">41</span></div>
+    </div>
+    <p class="jnote">Source: <a href="https://www.microsoft.com/en/customers/story/26947-state-farm-microsoft-power-platform" target="_blank" rel="noopener">Microsoft customer story, August 2026</a>. The story gives both numbers. It does not say how many builds were submitted for review, so the gap is not a review funnel. It shows how much is built compared with how much reaches production.</p>
+  </div>
+
+
+
+<h2 id="money"><span class="n">4</span>Where the money goes</h2>
+<p>Investors back the layer between what people build with AI and the company's systems. In 2026, eight companies in this layer raised more than $1.7B together. The table lists them by date.</p>
+<div class="figure">
+  <p class="ftitle">Large rounds in 2026 went to governance, identity and platforms for company agents</p>
+  <p class="sub">Size of each round, in millions of US dollars. Bars are to scale</p>
+  <div class="gapfig money" role="img" aria-label="Bar chart of eight 2026 funding rounds. Wonderful 550, Island 400, LangChain 300, Zenity 125, Oasis 120, Onyx 113, Obsidian 85, Geordie AI 30.">
+    <div class="gaprow"><span class="gaplbl">Wonderful</span><span class="gapbar big" style="width:100%"></span><span class="gapval">550</span></div>
+    <div class="gaprow"><span class="gaplbl">Island</span><span class="gapbar big" style="width:72.7%"></span><span class="gapval">400</span></div>
+    <div class="gaprow"><span class="gaplbl">LangChain</span><span class="gapbar big" style="width:54.5%"></span><span class="gapval">300</span></div>
+    <div class="gaprow"><span class="gaplbl">Zenity</span><span class="gapbar big" style="width:22.7%"></span><span class="gapval">125</span></div>
+    <div class="gaprow"><span class="gaplbl">Oasis Security</span><span class="gapbar big" style="width:21.8%"></span><span class="gapval">120</span></div>
+    <div class="gaprow"><span class="gaplbl">Onyx Security</span><span class="gapbar big" style="width:20.5%"></span><span class="gapval">113</span></div>
+    <div class="gaprow"><span class="gaplbl">Obsidian Security</span><span class="gapbar big" style="width:15.5%"></span><span class="gapval">85</span></div>
+    <div class="gaprow"><span class="gaplbl">Geordie AI</span><span class="gapbar big" style="width:5.5%"></span><span class="gapval">30</span></div>
+  </div>
+</div>
+<div class="tbl"><table class="rounds">
+<thead><tr><th>Date</th><th>Company</th><th>Round</th><th>What it builds</th></tr></thead>
+<tbody>
+<tr><td>Mar 2026</td><td>Oasis Security</td><td>$120M Series B</td><td>Access control for AI agents and other machine identities (<a href="https://www.newswire.com/news/oasis-security-raises-120m-series-b-to-secure-the-rise-of-enterprise-22748198" target="_blank" rel="noopener">Newswire</a>)</td></tr>
+<tr><td>May 2026</td><td>Geordie AI</td><td>$30M Series A</td><td>Security and governance for AI agents (<a href="https://fortune.com/2026/05/28/geordie-security-governance-ai-agents/" target="_blank" rel="noopener">Fortune</a>)</td></tr>
+<tr><td>Jul 2026</td><td>Onyx Security</td><td>$113M Series B</td><td>Security for AI agents, as reported by a funding tracker (<a href="https://gravity.fast/blog/ai-agent-funding-tracker-q3-2026/" target="_blank" rel="noopener">Gravity</a>)</td></tr>
+<tr><td>Aug 2026</td><td>Zenity</td><td>$125M Series C</td><td>Security and governance for agents built in Microsoft Copilot, Claude and in-house (<a href="https://zenity.io/press-release/zenity-raises-125-million-to-secure-the-era-of-1-billion-ai-agents" target="_blank" rel="noopener">Zenity</a>)</td></tr>
+<tr><td>Aug 2026</td><td>Obsidian Security</td><td>$85M Series D</td><td>Security for machine identities and AI agents (<a href="https://www.obsidiansecurity.com/news/unlocking-ai-potential-securely" target="_blank" rel="noopener">Obsidian</a>)</td></tr>
+<tr><td>Sep 2026</td><td>Wonderful</td><td>$550M Series C at $5B</td><td>An "AI operating system" for large non-tech enterprises, such as banks, telecoms, insurers and airlines (<a href="https://www.wonderful.ai/blog-articles/wonderful-raises-550m-series-c?scLang=en" target="_blank" rel="noopener">Wonderful</a>)</td></tr>
+<tr><td>Sep 2026</td><td>Island</td><td>$400M Series F at $6.4B</td><td>A control plane that governs employee-built apps and agents (<a href="https://www.island.io/press/island-announces-400-million-series-f-bringing-valuation-to-6-4-billion" target="_blank" rel="noopener">Island</a>)</td></tr>
+<tr><td>Nov 2026</td><td>LangChain</td><td>$300M Series C at $3B</td><td>A platform to run and manage agents, used by more than 7,000 organizations (<a href="https://thenextweb.com/news/langchain-300m-series-c-3bn-valuation-capitalg-langsmith" target="_blank" rel="noopener">The Next Web</a>)</td></tr>
+</tbody>
+</table></div>
+<p>Three points follow from the list. First, the money goes to the layer that DataOS serves: governance, identity and the platforms that run company agents. It does not go only to the tools that build agents. Second, Wonderful sells explicitly to non-tech enterprises and warns that "without a shared operating system, AI risks recreating the sprawl of traditional SaaS". Third, the two largest rounds, Island and Wonderful, sell large top-down deals. The mid-size company that starts with one engineer is still open.</p>
+<p>Funding shows where investors expect buyers to spend. It does not measure demand on its own, so this page uses it next to the surveys and the public records.</p>
+
+<h2 id="loop"><span class="n">5</span>Why non-tech companies feel it most</h2>
+<p>A tech company can hire security engineers and review each app. A non-tech company cannot. It has many business builders and a small platform team, often fewer than ten engineers. It also holds regulated data: prices, customer records and HR data. So its only safe answer is to block what business teams build. The block starts a loop.</p>
+<div class="loopfig" role="img" aria-label="A loop of five steps. Many builders and few engineers lead to a block. The block leads to a queue. The queue leads to shadow apps. Shadow apps lead to sprawl and an incident. The incident leads back to a stricter block.">
+  <div class="lp"><b>Many builders, few engineers</b>Business teams build faster than anyone can review</div>
+  <div class="la" aria-hidden="true"></div>
+  <div class="lp"><b>The block</b>The platform team stops business-built apps from reaching company systems</div>
+  <div class="la" aria-hidden="true"></div>
+  <div class="lp"><b>The queue</b>Requests to approve apps wait for weeks, and nobody works through them</div>
+  <div class="la" aria-hidden="true"></div>
+  <div class="lp"><b>Shadow apps</b>Teams build in tools that the block does not reach</div>
+  <div class="la" aria-hidden="true"></div>
+  <div class="lp warn"><b>Sprawl and an incident</b>A leak, a broken app or an audit question</div>
+</div>
+<p class="loopback">The incident leads to a stricter block, and the loop starts again.</p>
+<p>The engineering leader is caught inside this loop. The paper calls it being "the department of no". The way out is not a stricter block. It is a path that makes business-built agents safe by default, so the platform team can approve them in days.</p>
+
+<h2 id="hurdles"><span class="n">6</span>What stands between an agent and production</h2>
+<p>Brad Nietfeldt lists 21 security hurdles for AI-built apps, grouped in five launch gates (<a href="https://brad.expert/blog/congratulations-you-vibe-coded-an-app-now-secure-it" target="_blank" rel="noopener">brad.expert, Nov 2026</a>). His list targets public apps, and it leaves out the main risks of agents. The table adds those risks and shows which hurdles a platform removes and which stay with each app. Each hurdle links to the standard reference that defines it.</p>
+<div class="tbl"><table class="hurd">
+<thead><tr><th>Gate</th><th>Hurdles</th><th>Who removes it</th></tr></thead>
+<tbody>
+<tr><td>Identity</td><td class="hl"><ul><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html" target="_blank" rel="noopener">Sign-in that can be bypassed</a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet.html" target="_blank" rel="noopener">Forged login tokens</a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Credential_Stuffing_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener">Stolen passwords</a></li><li>Account takeover</li></ul></td><td class="pl">The platform, through company sign-in and a permission test on every call</td></tr>
+<tr><td>Data</td><td class="hl"><ul><li><a href="https://supabase.com/docs/guides/storage/security/access-control" target="_blank" rel="noopener">Open storage</a></li><li><a href="https://supabase.com/docs/guides/database/postgres/row-level-security" target="_blank" rel="noopener">Database tables open to too many users</a></li></ul></td><td class="pl">The platform, through each person's own access on company systems</td></tr>
+<tr><td>Boundary</td><td class="hl"><ul><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html" target="_blank" rel="noopener">Leaked secrets and source code</a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Third_Party_Javascript_Management_Cheat_Sheet.html" target="_blank" rel="noopener">Risky third-party scripts</a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener">Requests that reach internal systems</a></li></ul></td><td class="pl">The platform, through managed secrets, clean hosting and network limits</td></tr>
+<tr><td>Operations</td><td class="hl"><ul><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html" target="_blank" rel="noopener">No logs or monitoring</a></li><li>No owner when the builder leaves</li></ul></td><td class="pl">The platform, through one audit log, monitoring and a list of agents with owners</td></tr>
+<tr><td>Agent risks</td><td class="hl"><ul><li><a href="https://genai.owasp.org/llmrisk/llm01-prompt-injection/" target="_blank" rel="noopener">Prompt injection</a></li><li><a href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/" target="_blank" rel="noopener">Too many tools or permissions</a></li><li>Agents on shared accounts</li></ul></td><td class="pl">Mostly the platform, through limits on tools and access per person. Prompt injection also needs care in each agent</td></tr>
+<tr><td>Abuse</td><td class="hl"><ul><li><a href="https://www.twilio.com/docs/glossary/what-is-sms-pumping-fraud" target="_blank" rel="noopener">Fraud on public forms and messages</a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/Clickjacking" target="_blank" rel="noopener">Clickjacking</a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html" target="_blank" rel="noopener">Open redirects</a></li></ul></td><td class="ap">Mostly the app. Less relevant behind company sign-in</td></tr>
+<tr><td>Business logic</td><td class="hl"><ul><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Business_Logic_Security_Cheat_Sheet.html" target="_blank" rel="noopener">Prices or discounts that the user controls</a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Business_Logic_Security_Cheat_Sheet.html" target="_blank" rel="noopener">Rules that run twice</a></li></ul></td><td class="ap">The app. No platform removes these</td></tr>
+</tbody>
+</table></div>
+<p>Most of the hurdles sit in the layers that a platform can own. That is the case for a platform. It takes these hurdles off every app at once, and the security review then covers only what each app does.</p>
+
+<h2 id="requirements"><span class="n">7</span>What the platform must provide</h2>
+<p>The evidence above sets the requirements. A platform that answers this need provides:</p>
+<ol class="plainlist">
+<li>Company sign-in and a permission test on every call, so no agent runs on a shared account.</li>
+<li>Access to company systems with each person's own permissions.</li>
+<li>One audit log across systems, with a list of agents, their owners and their users.</li>
+<li>Limits on what each agent can reach and do.</li>
+<li>One review of the platform, not one review per agent.</li>
+<li>All of this for agents built in any tool, not only in one vendor's tool.</li>
+<li>Correct business numbers, so agents use the same definitions as the reports.</li>
+</ol>
+<p>The <a href="dataos-value-proposition-v1.html" target="dataos-value">value proposition</a> shows what each person gets from these requirements. The <a href="dataos-for-engineering-leaders-v1.html#what-our-deals-show" target="dataos-full">paper</a> shows what our own deals say about the buyer.</p>
+
+<h2 id="strength"><span class="n">8</span>How strong the evidence is</h2>
+<p>The need is well supported, but the sources differ in quality.</p>
+<div class="tbl"><table>
+<thead><tr><th>Source type</th><th>Examples</th><th>How to use it</th></tr></thead>
+<tbody>
+<tr><td>Independent research and public records</td><td>IBM, Dataiku, MuleSoft, Menlo Ventures, the State Farm story, the breach reports, OWASP</td><td>Use as evidence</td></tr>
+<tr><td>Surveys and scans by vendors</td><td>Veracode, Retool, CSA with Aembit, the scans of vibe-coded apps</td><td>Use with the vendor named, as a signal</td></tr>
+<tr><td>Funding announcements</td><td>Wonderful, Island, LangChain, Zenity, Oasis, Onyx, Obsidian, Geordie AI</td><td>Shows where buyers spend, not the size of the need</td></tr>
+</tbody>
+</table></div>
+<p>Two gaps remain. Most sources cover enterprises in general, not non-tech companies in particular. And no source measures the full path from built to production. The design partners close both gaps. With each one, we measure how many agents the company built last year, how many reached production, and how long each review took.</p>
+
+<h2 id="open" class="appendix">Appendix A: Sources</h2>
+<ul class="plainlist src">
+<li><a href="https://zapier.com/blog/ai-coding-survey/" target="_blank" rel="noopener">Zapier: AI coding survey, May 2026</a></li>
+<li><a href="https://www.salesforce.com/news/stories/connectivity-report-announcement-2026/" target="_blank" rel="noopener">MuleSoft: connectivity report, February 2026</a></li>
+<li><a href="https://www.microsoft.com/en/customers/story/26947-state-farm-microsoft-power-platform" target="_blank" rel="noopener">Microsoft: State Farm customer story, August 2026</a></li>
+<li><a href="https://www.island.io/press/island-secures-vibe-coding-with-new-enterprise-vibe-publishing" target="_blank" rel="noopener">Island: Enterprise Vibe Publishing, citing Gartner</a></li>
+<li><a href="https://www.veracode.com/blog/2026-genai-code-security-report" target="_blank" rel="noopener">Veracode: 2026 GenAI code security report</a></li>
+<li><a href="https://www.engadget.com/cybersecurity/tea-app-suffers-breach-exposing-thousands-of-user-images-190731414.html" target="_blank" rel="noopener">Engadget: Tea app breach</a></li>
+<li><a href="https://thehackernews.com/2025/07/wiz-uncovers-critical-access-bypass.html" target="_blank" rel="noopener">The Hacker News: Base44 access bypass</a></li>
+<li><a href="https://supaexplorer.com/cybersecurity-insight-report-january-2026" target="_blank" rel="noopener">SupaExplorer: vibe coding security report, January 2026</a></li>
+<li><a href="https://www.hackerone.com/blog/owasp-top-10-llms-2025-how-genai-risks-are-evolving" target="_blank" rel="noopener">HackerOne: OWASP Top 10 for AI applications, 2025</a></li>
+<li><a href="https://www.dataiku.com/company/news/global-ai-confessions-report-cio-edition-2026" target="_blank" rel="noopener">Dataiku: Global AI Confessions report, CIO edition, 2026</a></li>
+<li><a href="https://cloudsecurityalliance.org/press-releases/2026/03/24/more-than-two-thirds-of-organizations-cannot-clearly-distinguish-ai-agent-from-human-actions" target="_blank" rel="noopener">CSA and Aembit: agent identity survey, March 2026</a></li>
+<li><a href="https://retool.com/blog/ai-governance-report-2026" target="_blank" rel="noopener">Retool: AI governance report, June 2026</a></li>
+<li><a href="https://newsroom.ibm.com/2026-06-08-new-ibm-study-finds-cios-and-ctos-face-growing-ai-control-gap-as-enterprise-deployment-scales" target="_blank" rel="noopener">IBM: CIO and CTO study, June 2026</a></li>
+<li><a href="https://www.island.io/press/island-announces-400-million-series-f-bringing-valuation-to-6-4-billion" target="_blank" rel="noopener">Island: $400M Series F</a></li>
+<li><a href="https://www.wonderful.ai/blog-articles/wonderful-raises-550m-series-c?scLang=en" target="_blank" rel="noopener">Wonderful: $550M Series C, September 2026</a></li>
+<li><a href="https://www.newswire.com/news/oasis-security-raises-120m-series-b-to-secure-the-rise-of-enterprise-22748198" target="_blank" rel="noopener">Oasis Security: $120M Series B, March 2026</a></li>
+<li><a href="https://fortune.com/2026/05/28/geordie-security-governance-ai-agents/" target="_blank" rel="noopener">Fortune: Geordie AI raises $30M, May 2026</a></li>
+<li><a href="https://zenity.io/press-release/zenity-raises-125-million-to-secure-the-era-of-1-billion-ai-agents" target="_blank" rel="noopener">Zenity: $125M Series C, August 2026</a></li>
+<li><a href="https://www.obsidiansecurity.com/news/unlocking-ai-potential-securely" target="_blank" rel="noopener">Obsidian Security: $85M Series D, August 2026</a></li>
+<li><a href="https://thenextweb.com/news/langchain-300m-series-c-3bn-valuation-capitalg-langsmith" target="_blank" rel="noopener">The Next Web: LangChain raises $300M, November 2026</a></li>
+<li><a href="https://gravity.fast/blog/ai-agent-funding-tracker-q3-2026/" target="_blank" rel="noopener">Gravity: agent funding tracker, Q3 2026</a></li>
+<li><a href="https://learn.microsoft.com/en-us/microsoft-copilot-studio/security-and-governance" target="_blank" rel="noopener">Microsoft: Copilot Studio security and governance</a></li>
+<li><a href="https://menlovc.com/perspective/2026-the-state-of-enterprise-ai/" target="_blank" rel="noopener">Menlo Ventures: the state of enterprise AI, November 2026</a></li>
+<li><a href="https://brad.expert/blog/congratulations-you-vibe-coded-an-app-now-secure-it" target="_blank" rel="noopener">Brad Nietfeldt: Congratulations, you vibe coded an app, November 2026</a></li>
+</ul>
+
+<h3 style="margin-top:28px">Security references</h3>
+<p class="srcnote">These references define the hurdles in section 6. They describe the risks and do not measure them.</p>
+<ul class="plainlist src">
+<li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html" target="_blank" rel="noopener">OWASP: Authentication cheat sheet</a></li>
+<li><a href="https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet.html" target="_blank" rel="noopener">OWASP: JSON Web Token cheat sheet</a></li>
+<li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Credential_Stuffing_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener">OWASP: Credential stuffing prevention cheat sheet</a></li>
+<li><a href="https://supabase.com/docs/guides/storage/security/access-control" target="_blank" rel="noopener">Supabase: Storage access control</a></li>
+<li><a href="https://supabase.com/docs/guides/database/postgres/row-level-security" target="_blank" rel="noopener">Supabase: Row-level security</a></li>
+<li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html" target="_blank" rel="noopener">OWASP: Secrets management cheat sheet</a></li>
+<li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Third_Party_Javascript_Management_Cheat_Sheet.html" target="_blank" rel="noopener">OWASP: Third-party JavaScript management cheat sheet</a></li>
+<li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener">OWASP: Server-side request forgery prevention cheat sheet</a></li>
+<li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html" target="_blank" rel="noopener">OWASP: Logging cheat sheet</a></li>
+<li><a href="https://genai.owasp.org/llm-top-10/" target="_blank" rel="noopener">OWASP: Top 10 for LLM and generative AI applications</a></li>
+<li><a href="https://genai.owasp.org/llmrisk/llm01-prompt-injection/" target="_blank" rel="noopener">OWASP: LLM01 prompt injection</a></li>
+<li><a href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/" target="_blank" rel="noopener">OWASP: LLM06 excessive agency</a></li>
+<li><a href="https://www.twilio.com/docs/glossary/what-is-sms-pumping-fraud" target="_blank" rel="noopener">Twilio: SMS pumping fraud</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/Clickjacking" target="_blank" rel="noopener">MDN: Clickjacking</a></li>
+<li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html" target="_blank" rel="noopener">OWASP: Unvalidated redirects and forwards cheat sheet</a></li>
+<li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Business_Logic_Security_Cheat_Sheet.html" target="_blank" rel="noopener">OWASP: Business logic security cheat sheet</a></li>
+</ul>
+
+<footer>The need · CTO's Desk · 18 November 2026</footer>
+</main>
+
+<script>
+(function(){
+  var all=[].slice.call(document.querySelectorAll('.toc a'));
+  var links=[].slice.call(document.querySelector('.toc').querySelectorAll('a'));
+  var secs=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1));});
+  var cur=document.getElementById('tocCurrent'), side=document.querySelector('.ftoc'), ovEl=document.getElementById('overview');
+  function parentHref(a){ var o=a.closest('ol.sub'); return o ? o.parentElement.querySelector(':scope > a').getAttribute('href') : null; }
+  function label(a){ var k=a.querySelector('.k'); var t=a.textContent.replace(k?k.textContent:'','').trim(); return (k&&k.textContent?k.textContent+' · ':'')+t; }
+  function onScroll(){
+    var y=window.scrollY+140, idx=0;
+    secs.forEach(function(s,i){ if(s && s.getBoundingClientRect().top+window.scrollY<=y) idx=i; });
+    var act=links[idx], h=act.getAttribute('href'), ph=parentHref(act);
+    all.forEach(function(a){ var x=a.getAttribute('href'); a.classList.toggle('active',x===h); a.classList.toggle('parent-active',x===ph); });
+    if(cur){ if(ph){ var p=links.filter(function(a){return a.getAttribute('href')===ph;})[0]; var k=p.querySelector('.k'); cur.textContent=(k?k.textContent+' · ':'')+act.textContent.trim(); } else cur.textContent=label(act); }
+    if(side && ovEl){ var ov=ovEl.getBoundingClientRect(); side.classList.toggle('away', ov.top<innerHeight*0.85 && ov.bottom>80); }
+  }
+  window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+  var bar=document.getElementById('mbar'), btn=bar.querySelector('.toc-toggle');
+  function set(o){ bar.classList.toggle('open',o); btn.setAttribute('aria-expanded',o?'true':'false'); }
+  btn.addEventListener('click',function(){ set(!bar.classList.contains('open')); });
+  bar.querySelector('.mtoc').addEventListener('click',function(e){ if(e.target.closest('a')) set(false); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && bar.classList.contains('open')){ set(false); btn.focus(); }});
+})();
+</script>
+</body>
+</html>
