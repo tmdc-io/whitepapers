@@ -111,9 +111,14 @@ th[scope="row"] a{font-weight:600}
 .gapfig.money .gaprow{grid-template-columns:150px minmax(0,1fr) 48px}
 .gapfig.money .gapval{font-size:15px}
 .rounds td:first-child,.rounds th:first-child{white-space:nowrap;min-width:84px}
-.rounds td:nth-child(3){white-space:nowrap}
 .hurd td.hl ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
 .hurd td.hl li{line-height:1.45}
+.rounds .mini{display:flex;flex-direction:column;align-items:flex-start;gap:5px;white-space:nowrap}
+.rounds .mb{display:inline-block;height:10px;border-radius:0 3px 3px 0;background:var(--accent);flex:none}
+.rounds .mini b{font-variant-numeric:tabular-nums}
+.rounds .rt{color:var(--muted)}
+.rounds .mini > span:last-child{font-size:12.5px;line-height:1.3}
+.rounds td:nth-child(4){color:var(--muted)}
 .hurd td.pl{color:var(--ok)}
 .hurd td.ap{color:var(--muted)}
 .stage .plainlist{margin-top:8px}
@@ -299,31 +304,19 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 
 <h2 id="money"><span class="n">4</span>Where the money goes</h2>
 <p>Investors back the layer between what people build with AI and the company's systems. In 2026, eight companies in this layer raised more than $1.7B together. The table lists them by date.</p>
-<div class="figure">
-  <p class="ftitle">Large rounds in 2026 went to governance, identity and platforms for company agents</p>
-  <p class="sub">Size of each round, in millions of US dollars. Bars are to scale</p>
-  <div class="gapfig money" role="img" aria-label="Bar chart of eight 2026 funding rounds. Wonderful 550, Island 400, LangChain 300, Zenity 125, Oasis 120, Onyx 113, Obsidian 85, Geordie AI 30.">
-    <div class="gaprow"><span class="gaplbl">Wonderful</span><span class="gapbar big" style="width:100%"></span><span class="gapval">550</span></div>
-    <div class="gaprow"><span class="gaplbl">Island</span><span class="gapbar big" style="width:72.7%"></span><span class="gapval">400</span></div>
-    <div class="gaprow"><span class="gaplbl">LangChain</span><span class="gapbar big" style="width:54.5%"></span><span class="gapval">300</span></div>
-    <div class="gaprow"><span class="gaplbl">Zenity</span><span class="gapbar big" style="width:22.7%"></span><span class="gapval">125</span></div>
-    <div class="gaprow"><span class="gaplbl">Oasis Security</span><span class="gapbar big" style="width:21.8%"></span><span class="gapval">120</span></div>
-    <div class="gaprow"><span class="gaplbl">Onyx Security</span><span class="gapbar big" style="width:20.5%"></span><span class="gapval">113</span></div>
-    <div class="gaprow"><span class="gaplbl">Obsidian Security</span><span class="gapbar big" style="width:15.5%"></span><span class="gapval">85</span></div>
-    <div class="gaprow"><span class="gaplbl">Geordie AI</span><span class="gapbar big" style="width:5.5%"></span><span class="gapval">30</span></div>
-  </div>
-</div>
+<p class="ftitle">Large rounds in 2026 went to governance, identity and platforms for company agents</p>
+<p class="sub">Each company links to its announcement. Bars are to scale</p>
 <div class="tbl"><table class="rounds">
 <thead><tr><th>Date</th><th>Company</th><th>Round</th><th>What it builds</th></tr></thead>
 <tbody>
-<tr><td>Mar 2026</td><td>Oasis Security</td><td>$120M Series B</td><td>Access control for AI agents and other machine identities (<a href="https://www.newswire.com/news/oasis-security-raises-120m-series-b-to-secure-the-rise-of-enterprise-22748198" target="_blank" rel="noopener">Newswire</a>)</td></tr>
-<tr><td>May 2026</td><td>Geordie AI</td><td>$30M Series A</td><td>Security and governance for AI agents (<a href="https://fortune.com/2026/05/28/geordie-security-governance-ai-agents/" target="_blank" rel="noopener">Fortune</a>)</td></tr>
-<tr><td>Jul 2026</td><td>Onyx Security</td><td>$113M Series B</td><td>Security for AI agents, as reported by a funding tracker (<a href="https://gravity.fast/blog/ai-agent-funding-tracker-q3-2026/" target="_blank" rel="noopener">Gravity</a>)</td></tr>
-<tr><td>Aug 2026</td><td>Zenity</td><td>$125M Series C</td><td>Security and governance for agents built in Microsoft Copilot, Claude and in-house (<a href="https://zenity.io/press-release/zenity-raises-125-million-to-secure-the-era-of-1-billion-ai-agents" target="_blank" rel="noopener">Zenity</a>)</td></tr>
-<tr><td>Aug 2026</td><td>Obsidian Security</td><td>$85M Series D</td><td>Security for machine identities and AI agents (<a href="https://www.obsidiansecurity.com/news/unlocking-ai-potential-securely" target="_blank" rel="noopener">Obsidian</a>)</td></tr>
-<tr><td>Sep 2026</td><td>Wonderful</td><td>$550M Series C at $5B</td><td>An "AI operating system" for large non-tech enterprises, such as banks, telecoms, insurers and airlines (<a href="https://www.wonderful.ai/blog-articles/wonderful-raises-550m-series-c?scLang=en" target="_blank" rel="noopener">Wonderful</a>)</td></tr>
-<tr><td>Sep 2026</td><td>Island</td><td>$400M Series F at $6.4B</td><td>A control plane that governs employee-built apps and agents (<a href="https://www.island.io/press/island-announces-400-million-series-f-bringing-valuation-to-6-4-billion" target="_blank" rel="noopener">Island</a>)</td></tr>
-<tr><td>Nov 2026</td><td>LangChain</td><td>$300M Series C at $3B</td><td>A platform to run and manage agents, used by more than 7,000 organizations (<a href="https://thenextweb.com/news/langchain-300m-series-c-3bn-valuation-capitalg-langsmith" target="_blank" rel="noopener">The Next Web</a>)</td></tr>
+<tr><td>Mar 2026</td><td><a href="https://www.newswire.com/news/oasis-security-raises-120m-series-b-to-secure-the-rise-of-enterprise-22748198" target="_blank" rel="noopener">Oasis Security</a></td><td><div class="mini"><span class="mb" style="width:17px"></span><span><b>$120M</b> <span class="rt">Series B</span></span></div></td><td>Access control for AI agents and other machine identities</td></tr>
+<tr><td>May 2026</td><td><a href="https://fortune.com/2026/05/28/geordie-security-governance-ai-agents/" target="_blank" rel="noopener">Geordie AI</a></td><td><div class="mini"><span class="mb" style="width:4px"></span><span><b>$30M</b> <span class="rt">Series A</span></span></div></td><td>Security and governance for AI agents</td></tr>
+<tr><td>Jul 2026</td><td><a href="https://gravity.fast/blog/ai-agent-funding-tracker-q3-2026/" target="_blank" rel="noopener">Onyx Security</a></td><td><div class="mini"><span class="mb" style="width:16px"></span><span><b>$113M</b> <span class="rt">Series B</span></span></div></td><td>Security for AI agents, as reported by a funding tracker</td></tr>
+<tr><td>Aug 2026</td><td><a href="https://zenity.io/press-release/zenity-raises-125-million-to-secure-the-era-of-1-billion-ai-agents" target="_blank" rel="noopener">Zenity</a></td><td><div class="mini"><span class="mb" style="width:18px"></span><span><b>$125M</b> <span class="rt">Series C</span></span></div></td><td>Security and governance for agents built in Microsoft Copilot, Claude and in-house</td></tr>
+<tr><td>Aug 2026</td><td><a href="https://www.obsidiansecurity.com/news/unlocking-ai-potential-securely" target="_blank" rel="noopener">Obsidian Security</a></td><td><div class="mini"><span class="mb" style="width:12px"></span><span><b>$85M</b> <span class="rt">Series D</span></span></div></td><td>Security for machine identities and AI agents</td></tr>
+<tr><td>Sep 2026</td><td><a href="https://www.wonderful.ai/blog-articles/wonderful-raises-550m-series-c?scLang=en" target="_blank" rel="noopener">Wonderful</a></td><td><div class="mini"><span class="mb" style="width:80px"></span><span><b>$550M</b> <span class="rt">Series C at $5B</span></span></div></td><td>An "AI operating system" for large non-tech enterprises, such as banks, telecoms, insurers and airlines</td></tr>
+<tr><td>Sep 2026</td><td><a href="https://www.island.io/press/island-announces-400-million-series-f-bringing-valuation-to-6-4-billion" target="_blank" rel="noopener">Island</a></td><td><div class="mini"><span class="mb" style="width:58px"></span><span><b>$400M</b> <span class="rt">Series F at $6.4B</span></span></div></td><td>A control plane that governs employee-built apps and agents</td></tr>
+<tr><td>Nov 2026</td><td><a href="https://thenextweb.com/news/langchain-300m-series-c-3bn-valuation-capitalg-langsmith" target="_blank" rel="noopener">LangChain</a></td><td><div class="mini"><span class="mb" style="width:44px"></span><span><b>$300M</b> <span class="rt">Series C at $3B</span></span></div></td><td>A platform to run and manage agents, used by more than 7,000 organizations</td></tr>
 </tbody>
 </table></div>
 <p>Three points follow from the list. First, the money goes to the layer that DataOS serves: governance, identity and the platforms that run company agents. It does not go only to the tools that build agents. Second, Wonderful sells explicitly to non-tech enterprises and warns that "without a shared operating system, AI risks recreating the sprawl of traditional SaaS". Third, the two largest rounds, Island and Wonderful, sell large top-down deals. The mid-size company that starts with one engineer is still open.</p>
