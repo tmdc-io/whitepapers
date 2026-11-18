@@ -166,8 +166,8 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <div class="callout">
   <span class="label">The journey in four lines</span>
   <ul>
-    <li>Try: one engineer deploys an agent on DataOS for free, on sample data.</li>
-    <li>Share: the engineer connects real company systems and shares the agent. This step crosses the wall, the line between a personal test and real company use. It is also the first payment.</li>
+    <li>Try: one engineer builds an agent on DataOS for free, on real company data, for herself only.</li>
+    <li>Share: the engineer shares the agent with colleagues. This step crosses the wall, the line between an agent for yourself and an agent for colleagues. It is also the first payment.</li>
     <li>Spread: more teams and non-engineers build. Our sellers see it in product use and start to work the account.</li>
     <li>Standardize: the engineering leader signs a company plan. Revenue then grows with the number of builders.</li>
   </ul>
@@ -180,8 +180,8 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <tr><th scope="row">Agent</th><td>An AI program that does a task for a person, for example a draft quote from company data.</td></tr>
 <tr><th scope="row">Builder</th><td>A person who creates or changes an agent on DataOS in a given month. Customers pay for builders.</td></tr>
 <tr><th scope="row">Viewer</th><td>A person who only uses agents. Viewers are free.</td></tr>
-<tr><th scope="row">Free tier</th><td>One engineer builds and runs agents for themselves, on sample data.</td></tr>
-<tr><th scope="row">Team plan</th><td>The first payment. Agents connect to real company systems and can be shared. Paid by card, per builder, without a sales call.</td></tr>
+<tr><th scope="row">Free tier</th><td>One engineer builds and runs agents on real company data, for themselves only, with a limit on agents and workloads.</td></tr>
+<tr><th scope="row">Team plan</th><td>The first payment. Agents can be shared with colleagues, who sign in with their work accounts. Paid by card, per builder, without a sales call.</td></tr>
 <tr><th scope="row">Company plan</th><td>A company-wide contract signed by the engineering leader. It adds the controls that a security team asks for.</td></tr>
 <tr><th scope="row">Audit log</th><td>The record of who used which agent, and what data the agent read or changed for them.</td></tr>
 <tr><th scope="row">Data product</th><td>Company data packaged with its definitions, owner and quality checks, so that people and agents use the same numbers.</td></tr>
@@ -203,8 +203,8 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
       <div class="hd s4"><small>Steps 9–12</small>Standardize</div>
 
       <div class="lane">The company does</div>
-      <div class="c s1" data-l="The company does">One engineer deploys an agent and tests it on sample data</div>
-      <div class="c s2" data-l="The company does">The engineer connects SAP and Salesforce and shares the agent with a sales team</div>
+      <div class="c s1" data-l="The company does">One engineer connects real systems and builds an agent for herself</div>
+      <div class="c s2" data-l="The company does">The engineer shares the agent with a sales team</div>
       <div class="c s3" data-l="The company does">A second team and a plant manager build their own agents. Security sends new agents to DataOS</div>
       <div class="c s4" data-l="The company does">The CIO and CISO review DataOS once and make it the standard</div>
 
@@ -234,7 +234,8 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 
 <h2 id="company"><span class="n">2</span>The company</h2>
 <p>Norrvik Industries (made up) makes industrial pumps and valves. It has 4,000 staff, nine plants in North America, Europe and Asia, and sells through a direct sales team and distributors. It already pays for Microsoft 365 Copilot. Staff built many Copilot agents and small AI-built apps, and nobody has a full list of them.</p>
-<p>The platform team has six engineers. They run the cloud, the integrations and the data warehouse. Each week they get requests to "host this thing someone built". Most of those requests wait for weeks in security review.</p>
+<p>The platform team has six engineers. They run the cloud, the integrations and the data warehouse. Business teams built agents and apps before. Some caused compliance problems, for example price data that reached the wrong region. Since then, the platform team blocks any app that needs company systems from production. Requests to approve new apps sit in a queue that nobody has time to work through. The block does not reach Copilot agents and small apps inside tools that the company already owns, so those keep spreading.</p>
+<p>This pattern is common. At State Farm, staff created more than 3,000 AI agent identities in Microsoft Power Platform. In the same environment, 41 builds passed risk assessment and run in production (<a href="https://www.microsoft.com/en/customers/story/26947-state-farm-microsoft-power-platform" target="dataos-ext">Microsoft, August 2026</a>).</p>
 <p>The data that agents need sits in the usual places for a manufacturer:</p>
 <ul>
   <li>Orders, prices, inventory and production plans in SAP.</li>
@@ -266,8 +267,8 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <div class="shd"><b id="st-try">Try</b><span>One engineer, no payment, no approval</span></div>
 
 <div class="step"><div class="num">1</div><div>
-<h3>An agent that works for one person</h3>
-<p>Priya builds a quote agent on her laptop with an agent framework. A customer sends a request for quote. The agent then finds similar past quotes in SharePoint, reads list prices and lead times from SAP, and drafts a quote. It works only because it runs with Priya's own logins. DataOS is not involved yet.</p>
+<h3>The platform team builds the first agent itself</h3>
+<p>Sales keeps asking for help with quotes, and the platform team blocks the apps that business teams build. So Priya builds the agent herself. She builds a quote agent on her laptop with an agent framework. A customer sends a request for quote. The agent then finds similar past quotes in SharePoint, reads list prices and lead times from SAP, and drafts a quote. It works only because it runs with Priya's own logins. DataOS is not involved yet.</p>
 </div></div>
 
 <div class="step"><div class="num">2</div><div>
@@ -282,8 +283,8 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 </div></div>
 
 <div class="step"><div class="num">3</div><div>
-<h3>Deploy on the free tier, on sample data</h3>
-<p>Priya signs up alone and deploys her agent's code to DataOS. The free tier does not connect to real company systems. She tests the agent on sample sales data from a DataOS template. The agent runs, and the audit log records each action. DataOS also offers templates, which are working agents that anyone can start from and change. One of them is a quote agent. Priya does not need one because she has her own code.</p>
+<h3>Build on the free tier, with real data</h3>
+<p>Priya signs up alone and deploys her agent to DataOS. She connects SharePoint and SAP with her own login, so the agent works on real quotes and prices. Only she can use it. The free tier limits the number of agents and workloads, and does not offer company sign-in for colleagues. The audit log records each action. DataOS also offers templates, which are working agents that anyone can start from and change. One of them is a quote agent. Priya does not need one because she has her own code.</p>
 <div class="meta">
   <div class="plan"><b>Plan</b>Free tier. No payment, nobody approves anything.</div>
   <div class="us"><b>Our team</b>No person acts. The product, the templates and the docs do the work.</div>
@@ -297,8 +298,8 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <div class="shd"><b id="st-share">Share</b><span>The wall: real systems and other users</span></div>
 
 <div class="step"><div class="num">4</div><div>
-<h3>Connect real systems and share (first payment)</h3>
-<p>To use real data and to share the agent, Priya needs the team plan. She opens one for the platform team and pays by card. It is the only way to meet Tom's deadline. She connects SharePoint, SAP and Salesforce.</p>
+<h3>Share the agent (first payment)</h3>
+<p>To share the agent with Tom's team, Priya needs the team plan. She opens one for the platform team and pays by card. It is the only way to meet Tom's deadline. She adds Salesforce for the team.</p>
 <p>Each person on Tom's team signs in with their work Microsoft account. The agent then works as that person:</p>
 <ul>
 <li>It reaches each system with that person's own permissions. A sales rep who cannot see European margins in SAP cannot get them through the agent.</li>
@@ -346,14 +347,14 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 </div></div>
 
 <div class="step"><div class="num">8</div><div>
-<h3>The sprawl reaches the CIO</h3>
-<p>Sprawl is what happens after a company gives everyone tools to build agents. The company then has many agents in many tools, and nobody can list them, trust them, maintain them or say what they cost. Three events land on Rosa's desk:</p>
+<h3>The sprawl comes back</h3>
+<p>Sprawl is what happens after a company gives everyone tools to build agents. The company then has many agents in many tools, and nobody can list them, trust them, maintain them or say what they cost. It happened before, and it led to the block on business-built apps. This time, three events land on Rosa's desk:</p>
 <ul>
 <li>The platform team gets a page at 2 a.m. An app that 200 people use breaks. A planner who left the company built it in another tool, and the platform team never approved it.</li>
 <li>A large automotive customer sends a security questionnaire. It asks Norrvik to list every AI tool that touches the customer's data, and to show who accessed what. Rosa cannot answer for the Copilot agents.</li>
 <li>The bills arrive. The company pays for Copilot and for AI tools on team credit cards. Nobody can say which agents people use, or which ones are worth the cost.</li>
 </ul>
-<p>The one part of the company's AI that Rosa can account for is the dozen agents on DataOS. The usage report from step 7 shows who built each agent, who uses it and what data it reached.</p>
+<p>This time, part of the company's AI is visible. For the dozen agents on DataOS, Rosa sees who built each agent and who uses it. She also sees, in one place, which records each agent read for each person. The usage report from step 7 shows it.</p>
 <div class="meta">
   <div class="plan"><b>Plan</b>Team plan.</div>
   <div class="us"><b>Our team</b>Leo meets Rosa with the platform lead. The conversation starts from her problems and from the report, not from a demo. This is the hand-off from product use to a company deal.</div>
@@ -396,7 +397,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 
 <div class="step"><div class="num">11</div><div>
 <h3>Open DataOS to the whole company</h3>
-<p>With the company plan in place, Rosa opens DataOS to everyone at once instead of team by team. Each function gets templates and a build week. The platform team now curates templates and approves agents that touch customer or price data. It no longer hosts or reviews each agent by hand.</p>
+<p>With the company plan in place, Rosa opens DataOS to everyone at once instead of team by team. Each function gets templates and a build week. The platform team changes its role. It no longer builds every agent or reviews each one by hand. It runs the platform, curates templates, approves agents that touch customer or price data, and builds together with business teams.</p>
 <div class="meta">
   <div class="plan"><b>Plan</b>Company plan. Builders grow each month. Viewers stay free.</div>
   <div class="us"><b>Our team</b>Customer success tracks builders and active agents, and plans the renewal from that use.</div>
@@ -435,7 +436,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <tr><td>Blamed for something they never approved</td><td>Every agent on DataOS passed one platform review. Agents that touch customer or price data are approved before go-live.</td></tr>
 <tr><td>Paged for apps they did not build</td><td>Shared agents run on one platform with monitoring. The inventory flags agents whose builder left the company.</td></tr>
 <tr><td>Agents see more data than they need</td><td>Every agent on DataOS works with the permissions of the person who uses it.</td></tr>
-<tr><td>Seen as the team that only blocks</td><td>Sharing an agent takes days, not weeks in review.</td></tr>
+<tr><td>Seen as the team that only blocks</td><td>The block on business-built apps ends. Sharing an agent takes days, and the platform team builds with business teams instead of stopping them.</td></tr>
 <tr><td>No view of the cost</td><td>The inventory shows which agents people use. Builders are the only paid unit.</td></tr>
 </tbody>
 </table></div>
@@ -445,7 +446,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <thead><tr><th>Steps</th><th>Who acts</th><th>Plan</th><th>What grows</th></tr></thead>
 <tbody>
 <tr><td>1–2</td><td>One engineer</td><td>None</td><td>An agent on a laptop and a request from colleagues</td></tr>
-<tr><td>3</td><td>One engineer</td><td>Free tier</td><td>One agent on DataOS, on sample data</td></tr>
+<tr><td>3</td><td>One engineer</td><td>Free tier</td><td>One agent on DataOS, on real data, for one user</td></tr>
 <tr><td>4–5</td><td>Engineer, for a sales team</td><td>Team plan</td><td>First payment: one builder, 14 viewers</td></tr>
 <tr><td>6–8</td><td>Second team, then non-engineers</td><td>Team plan</td><td>Three or more builders, about a dozen agents</td></tr>
 <tr><td>9–10</td><td>CIO, CISO, data team</td><td>Company plan</td><td>Company standard, inventory, data products</td></tr>
@@ -461,6 +462,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <li>How often a company blocks card payments for software, and so stops step 4.</li>
 <li>How the agent inventory reads agents built in Copilot Studio and other tools. The paper sets the goal of one place to govern agents built anywhere, but not the method.</li>
 <li>Who owns templates when there are many: the platform team, each function, or both.</li>
+<li>Whether a company's security team lets a free hosted service connect to company systems, even for one user. If not, the free tier starts on sample data for that company.</li>
 </ul>
 
 <footer>How one company adopts DataOS · CTO's Desk · 18 November 2026 · Based on a story by the product team</footer>
