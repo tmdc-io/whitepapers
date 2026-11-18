@@ -4,26 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Index</title>
+<title>DataOS for Engineering Leaders</title>
+<base target="dataos-full">
 <style>
 :root{color-scheme:light dark}
-body{margin:0;padding:40px 16px;font:15px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;background:Canvas;color:CanvasText}
+body{margin:0;padding:56px 16px;font:15px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;background:Canvas;color:CanvasText}
 main{max-width:560px;margin:0 auto}
-h1{font-size:15px;font-weight:600;margin:0 0 16px}
-ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
-a{color:LinkText}
+h1{font-size:24px;font-weight:700;letter-spacing:-.01em;margin:0 0 10px}
+.sub{margin:0 0 32px;color:GrayText;max-width:52ch}
+ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:18px;counter-reset:n}
+ol li{display:grid;grid-template-columns:28px minmax(0,1fr);counter-increment:n}
+ol li::before{content:counter(n);font-size:13px;color:GrayText;padding-top:2px}
+a{color:LinkText;font-weight:500}
 small{display:block;color:GrayText;font-size:13px}
+hr{border:0;border-top:1px solid color-mix(in srgb,CanvasText 18%,transparent);margin:32px 0 24px}
+.proto{padding-left:28px}
 </style>
 </head>
 <body>
 <main>
-<h1>CTO's Desk · DataOS</h1>
-<ul>
-  <li><a href="dataos-for-engineering-leaders-v1.html">DataOS for Engineering Leaders</a><small>Full alignment paper</small></li>
-  <li><a href="dataos-for-engineering-leaders-landing-v1.html">DataOS One-Pager</a><small>Summary for the meeting</small></li>
-  <li><a href="dataos-land-and-expand-v1.html">How One Company Adopts DataOS</a><small>Example journey for sales</small></li>
-  <li><a href="dataos-website-landing-prototype-v1.html">DataOS Landing Page Prototype</a><small>Pre-launch website draft</small></li>
-</ul>
+<h1>DataOS for Engineering Leaders</h1>
+<p class="sub">AI is changing how every company builds and runs software. This is a fresh take on that shift, and on how DataOS wins it with what others cannot copy fast: governed reach into private systems, neutral to every model and cloud, and already in production.</p>
+<ol>
+  <li><div><a href="dataos-for-engineering-leaders-landing-v1.html">Introduction</a><small>The case on one page, for the meeting</small></div></li>
+  <li><div><a href="dataos-for-engineering-leaders-v1.html">Full alignment paper</a><small>The full case, with sources</small></div></li>
+  <li><div><a href="dataos-land-and-expand-v1.html">Example adoption</a><small>How one company adopts DataOS, step by step</small></div></li>
+  <li><div><a href="dataos-go-to-market-arc-v1.html">How we go out there</a><small>Discovery, launch and campaigns</small></div></li>
+</ol>
+<hr>
+<div class="proto"><a href="dataos-website-landing-prototype-v1.html">Prototype website</a><small>Pre-launch DataOS landing page</small></div>
 </main>
 </body>
 </html>
