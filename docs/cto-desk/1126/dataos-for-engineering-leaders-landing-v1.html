@@ -90,11 +90,15 @@ a{color:var(--accent)}
   .panel{grid-template-columns:minmax(0,1fr)}
 }
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+.home{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-decoration:none;margin:0 0 12px}
+.home:hover,.home:focus-visible{color:var(--ink)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
+    <a class="home" href="index.html">&larr; Home</a>
     <div class="eyebrow">CTO's Desk · 17 November 2026</div>
     <h1>DataOS for Engineering Leaders</h1>
     <p class="thesis">DataOS becomes the platform where the <b>engineering leader of a non-tech company</b> lets the whole company <b>build, run and govern AI agents</b> on its own systems. We sell it as its own brand through product-led growth.</p>
@@ -118,7 +122,7 @@ a{color:var(--accent)}
       <li>Two-thirds of CIOs and CTOs are accountable for AI that they do not fully control.</li>
       <li>In our own deals, the technical owner sets the terms. When that person was not part of the deal, it stalled.</li>
     </ul>
-    <a class="go" id="plink" target="_blank" rel="noopener" href="dataos-for-engineering-leaders-v1.html#hypothesis">Read section 1 →</a>
+    <a class="go" id="plink" href="dataos-for-engineering-leaders-v1.html#hypothesis">Read section 1 →</a>
     <p class="src" id="psrc">Sources: Dataiku, IBM (2026), Modern deal records.</p>
   </div>
   <p class="hint">Select a step to see its evidence.</p>
@@ -156,7 +160,7 @@ a{color:var(--accent)}
   </div>
 
   <div class="foot">
-    <a href="dataos-for-engineering-leaders-v1.html" target="_blank" rel="noopener">DataOS for Engineering Leaders →</a>
+    <a href="dataos-for-engineering-leaders-v1.html">DataOS for Engineering Leaders →</a>
   </div>
 </div>
 

@@ -162,16 +162,24 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
   .meta{grid-template-columns:minmax(0,1fr)}
   .step{grid-template-columns:minmax(0,1fr);gap:8px}
 }
+
+.home{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-decoration:none;margin:0 0 12px}
+.home:hover,.home:focus-visible{color:var(--ink)}
+
+.tochome{display:inline-flex!important;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);text-decoration:none;margin:0 0 14px}
+.tochome:hover{color:var(--ink)}
+.mtoc .tochome{margin:4px 0 10px}
 </style>
 </head>
 <body>
 <aside class="ftoc toc" aria-label="Contents">
+  <a class="tochome" href="index.html">&larr; Home</a>
   <p>Contents</p>
   <ol><li><a href="#terms"><span class="k"></span>Terms used below</a></li><li><a href="#position"><span class="k">1</span>The entry product behind the value</a></li><li><a href="#overview"><span class="k">2</span>The personas at a glance</a></li><li><a href="#personas"><span class="k">3</span>The five personas</a><ol class="sub"><li><a href="#p1">The engineer</a></li><li><a href="#p2">The engineering leader</a></li><li><a href="#p3">The CISO</a></li><li><a href="#p4">The data leader</a></li><li><a href="#p5">The business colleague</a></li></ol></li><li><a href="#competitors"><span class="k">4</span>What competitors offer each persona</a></li><li><a href="#test"><span class="k">5</span>How we test the value</a></li><li><a href="#open"><span class="k">A</span>Appendix: assumptions</a></li></ol>
 </aside>
 <div class="mbar" id="mbar">
   <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="mtoc"><span class="burger" aria-hidden="true"><span></span><span></span><span></span></span><span class="toc-toggle-label">Contents</span><span class="toc-current" id="tocCurrent"></span></button>
-  <nav class="mtoc toc" id="mtoc" aria-label="Contents"><ol><li><a href="#terms"><span class="k"></span>Terms used below</a></li><li><a href="#position"><span class="k">1</span>The entry product behind the value</a></li><li><a href="#overview"><span class="k">2</span>The personas at a glance</a></li><li><a href="#personas"><span class="k">3</span>The five personas</a><ol class="sub"><li><a href="#p1">The engineer</a></li><li><a href="#p2">The engineering leader</a></li><li><a href="#p3">The CISO</a></li><li><a href="#p4">The data leader</a></li><li><a href="#p5">The business colleague</a></li></ol></li><li><a href="#competitors"><span class="k">4</span>What competitors offer each persona</a></li><li><a href="#test"><span class="k">5</span>How we test the value</a></li><li><a href="#open"><span class="k">A</span>Appendix: assumptions</a></li></ol></nav>
+  <nav class="mtoc toc" id="mtoc" aria-label="Contents"><a class="tochome" href="index.html">&larr; Home</a><ol><li><a href="#terms"><span class="k"></span>Terms used below</a></li><li><a href="#position"><span class="k">1</span>The entry product behind the value</a></li><li><a href="#overview"><span class="k">2</span>The personas at a glance</a></li><li><a href="#personas"><span class="k">3</span>The five personas</a><ol class="sub"><li><a href="#p1">The engineer</a></li><li><a href="#p2">The engineering leader</a></li><li><a href="#p3">The CISO</a></li><li><a href="#p4">The data leader</a></li><li><a href="#p5">The business colleague</a></li></ol></li><li><a href="#competitors"><span class="k">4</span>What competitors offer each persona</a></li><li><a href="#test"><span class="k">5</span>How we test the value</a></li><li><a href="#open"><span class="k">A</span>Appendix: assumptions</a></li></ol></nav>
 </div>
 <main>
 
@@ -182,7 +190,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 </header>
 
 <p class="lead">This draft names the people who decide whether DataOS spreads in a company. For each one, it says what they are measured on, what hurts, what DataOS gives them, and what proof they need.</p>
-<p>It uses the people from <a href="dataos-land-and-expand-v1.html" target="_blank" rel="noopener">How one company adopts DataOS</a>, and one of the entry products from <a href="dataos-for-engineering-leaders-v1.html#the-entry-products" target="_blank" rel="noopener">"DataOS for Engineering Leaders", section 5</a>.</p>
+<p>It uses the people from <a href="dataos-land-and-expand-v1.html">How one company adopts DataOS</a>, and one of the entry products from <a href="dataos-for-engineering-leaders-v1.html#the-entry-products">"DataOS for Engineering Leaders", section 5</a>.</p>
 
 <div class="callout">
   <span class="label">The value in five lines</span>
@@ -210,7 +218,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 </table></div>
 
 <h2 id="position"><span class="n">1</span>The entry product behind the value</h2>
-<p><a href="dataos-for-engineering-leaders-v1.html#the-entry-products" target="_blank" rel="noopener">Section 5 of the paper</a> lists five candidates for the first entry product. This page assumes one of them: governance of agents built anywhere, delivered as a gateway. Research decides the final choice. If another candidate wins, the value for the engineer changes, and the value for the other personas stays.</p>
+<p><a href="dataos-for-engineering-leaders-v1.html#the-entry-products">Section 5 of the paper</a> lists five candidates for the first entry product. This page assumes one of them: governance of agents built anywhere, delivered as a gateway. Research decides the final choice. If another candidate wins, the value for the engineer changes, and the value for the other personas stays.</p>
 <p>With this entry product, DataOS starts governed and becomes meaningful. On the first day, it is the gateway between any agent and the company's systems. Each call runs with the user's own permissions, and each call goes into one audit log. This needs no data products.</p>
 <p>Over time, DataOS sees which data the agents use, and where two agents calculate the same number in different ways. It then proposes data products from that use, and the data team approves them. Business meaning grows where it matters. The longer a company runs agents through DataOS, the more of its business meaning lives there.</p>
 <p>Running agents on DataOS remains available, but it is the second step. The value below does not depend on it.</p>
@@ -387,8 +395,8 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 
 <script>
 (function(){
-  var all=[].slice.call(document.querySelectorAll('.toc a'));
-  var links=[].slice.call(document.querySelector('.toc').querySelectorAll('a'));
+  var all=[].slice.call(document.querySelectorAll('.toc a[href^="#"]'));
+  var links=[].slice.call(document.querySelector('.toc').querySelectorAll('a[href^="#"]'));
   var secs=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1));});
   var cur=document.getElementById('tocCurrent'), side=document.querySelector('.ftoc'), ovEl=document.getElementById('overview');
   function parentHref(a){ var o=a.closest('ol.sub'); return o ? o.parentElement.querySelector(':scope > a').getAttribute('href') : null; }

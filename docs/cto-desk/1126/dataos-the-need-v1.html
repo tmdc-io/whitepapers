@@ -198,16 +198,24 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
   .meta{grid-template-columns:minmax(0,1fr)}
   .step{grid-template-columns:minmax(0,1fr);gap:8px}
 }
+
+.home{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-decoration:none;margin:0 0 12px}
+.home:hover,.home:focus-visible{color:var(--ink)}
+
+.tochome{display:inline-flex!important;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);text-decoration:none;margin:0 0 14px}
+.tochome:hover{color:var(--ink)}
+.mtoc .tochome{margin:4px 0 10px}
 </style>
 </head>
 <body>
 <aside class="ftoc toc" aria-label="Contents">
+  <a class="tochome" href="index.html">&larr; Home</a>
   <p>Contents</p>
   <ol><li><a href="#terms"><span class="k"></span>Terms used below</a></li><li><a href="#moved"><span class="k">1</span>The bottleneck moved</a></li><li><a href="#chain"><span class="k">2</span>The evidence chain</a><ol class="sub"><li><a href="#l1">Building is cheap</a></li><li><a href="#l2">Unsafe by default</a></li><li><a href="#l3">Cannot govern it</a></li><li><a href="#l4">Money is moving</a></li></ol></li><li><a href="#gap"><span class="k">3</span>The gap into production</a></li><li><a href="#money"><span class="k">4</span>Where the money goes</a></li><li><a href="#loop"><span class="k">5</span>Why non-tech companies feel it most</a></li><li><a href="#hurdles"><span class="k">6</span>What stands between an agent and production</a></li><li><a href="#requirements"><span class="k">7</span>What the platform must provide</a></li><li><a href="#strength"><span class="k">8</span>How strong the evidence is</a></li><li><a href="#open"><span class="k">A</span>Appendix: sources</a></li></ol>
 </aside>
 <div class="mbar" id="mbar">
   <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="mtoc"><span class="burger" aria-hidden="true"><span></span><span></span><span></span></span><span class="toc-toggle-label">Contents</span><span class="toc-current" id="tocCurrent"></span></button>
-  <nav class="mtoc toc" id="mtoc" aria-label="Contents"><ol><li><a href="#terms"><span class="k"></span>Terms used below</a></li><li><a href="#moved"><span class="k">1</span>The bottleneck moved</a></li><li><a href="#chain"><span class="k">2</span>The evidence chain</a><ol class="sub"><li><a href="#l1">Building is cheap</a></li><li><a href="#l2">Unsafe by default</a></li><li><a href="#l3">Cannot govern it</a></li><li><a href="#l4">Money is moving</a></li></ol></li><li><a href="#gap"><span class="k">3</span>The gap into production</a></li><li><a href="#money"><span class="k">4</span>Where the money goes</a></li><li><a href="#loop"><span class="k">5</span>Why non-tech companies feel it most</a></li><li><a href="#hurdles"><span class="k">6</span>What stands between an agent and production</a></li><li><a href="#requirements"><span class="k">7</span>What the platform must provide</a></li><li><a href="#strength"><span class="k">8</span>How strong the evidence is</a></li><li><a href="#open"><span class="k">A</span>Appendix: sources</a></li></ol></nav>
+  <nav class="mtoc toc" id="mtoc" aria-label="Contents"><a class="tochome" href="index.html">&larr; Home</a><ol><li><a href="#terms"><span class="k"></span>Terms used below</a></li><li><a href="#moved"><span class="k">1</span>The bottleneck moved</a></li><li><a href="#chain"><span class="k">2</span>The evidence chain</a><ol class="sub"><li><a href="#l1">Building is cheap</a></li><li><a href="#l2">Unsafe by default</a></li><li><a href="#l3">Cannot govern it</a></li><li><a href="#l4">Money is moving</a></li></ol></li><li><a href="#gap"><span class="k">3</span>The gap into production</a></li><li><a href="#money"><span class="k">4</span>Where the money goes</a></li><li><a href="#loop"><span class="k">5</span>Why non-tech companies feel it most</a></li><li><a href="#hurdles"><span class="k">6</span>What stands between an agent and production</a></li><li><a href="#requirements"><span class="k">7</span>What the platform must provide</a></li><li><a href="#strength"><span class="k">8</span>How strong the evidence is</a></li><li><a href="#open"><span class="k">A</span>Appendix: sources</a></li></ol></nav>
 </div>
 <main>
 
@@ -218,7 +226,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 </header>
 
 <p class="lead">Business teams can now build agents in hours. Getting one safely into production still takes weeks, and most never make it. Non-tech companies need a platform that makes the safe path the fast path.</p>
-<p>This page sets out the evidence for that need. It expands <a href="dataos-for-engineering-leaders-v1.html#hypothesis" target="_blank" rel="noopener">section 1 of "DataOS for Engineering Leaders"</a>. Sources are inline and in appendix A. Section 8 says which sources are independent and which come from vendors.</p>
+<p>This page sets out the evidence for that need. It expands <a href="dataos-for-engineering-leaders-v1.html#hypothesis">section 1 of "DataOS for Engineering Leaders"</a>. Sources are inline and in appendix A. Section 8 says which sources are independent and which come from vendors.</p>
 
 <div class="callout">
   <span class="label">The need in five lines</span>
@@ -365,7 +373,7 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 <li>All of this for agents built in any tool, not only in one vendor's tool.</li>
 <li>Correct business numbers, so agents use the same definitions as the reports.</li>
 </ol>
-<p>The <a href="dataos-value-proposition-v1.html" target="_blank" rel="noopener">value proposition</a> shows what each person gets from these requirements. The <a href="dataos-for-engineering-leaders-v1.html#what-our-deals-show" target="_blank" rel="noopener">paper</a> shows what our own deals say about the buyer.</p>
+<p>The <a href="dataos-value-proposition-v1.html">value proposition</a> shows what each person gets from these requirements. The <a href="dataos-for-engineering-leaders-v1.html#what-our-deals-show">paper</a> shows what our own deals say about the buyer.</p>
 
 <h2 id="strength"><span class="n">8</span>How strong the evidence is</h2>
 <p>The need is well supported, but the sources differ in quality.</p>
@@ -433,8 +441,8 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 
 <script>
 (function(){
-  var all=[].slice.call(document.querySelectorAll('.toc a'));
-  var links=[].slice.call(document.querySelector('.toc').querySelectorAll('a'));
+  var all=[].slice.call(document.querySelectorAll('.toc a[href^="#"]'));
+  var links=[].slice.call(document.querySelector('.toc').querySelectorAll('a[href^="#"]'));
   var secs=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1));});
   var cur=document.getElementById('tocCurrent'), side=document.querySelector('.ftoc'), ovEl=document.getElementById('overview');
   function parentHref(a){ var o=a.closest('ol.sub'); return o ? o.parentElement.querySelector(':scope > a').getAttribute('href') : null; }

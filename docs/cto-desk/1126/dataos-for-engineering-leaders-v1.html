@@ -260,6 +260,12 @@ footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);color:v
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
 @media (prefers-reduced-motion: reduce){.burger span{transition:none}}
 @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+
+.home{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-decoration:none;margin:0 0 12px}
+.home:hover,.home:focus-visible{color:var(--ink)}
+
+.tochome{display:inline-flex!important;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);text-decoration:none;margin:0 0 14px}
+.tochome:hover{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -271,6 +277,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     <span class="toc-current" id="tocCurrent"></span>
   </button>
 <nav class="toc" id="toc" aria-label="Contents">
+  <a class="tochome" href="index.html">&larr; Home</a>
   <p>Contents</p>
   <ol>
     <li><a href="#hypothesis"><span class="k">1</span>Engineering leaders need an AI platform</a></li>
@@ -374,7 +381,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 <h3 id="the-clearest-example">The clearest example</h3>
 <p>Gensler is the clearest example of this buyer. Its technology head bought DataOS to remove friction in data work for the rest of the firm. The AI version of that job is the same job. <a href="#appendix-b">Appendix B</a> tells the story and what it teaches.</p>
 <p>Many companies fit this profile. They sell something other than software. They already rent platforms, for example a cloud account, an identity provider or a code platform. Their people started to build with AI. 65% of IT decision-makers now have a dedicated AI budget, up from 49% in 2025 (<a href="https://foundryco.com/research/research-ai-priorities/">Foundry AI Priorities, 2026</a>).</p>
-<p><a href="dataos-the-need-v1.html" target="_blank" rel="noopener">The need</a> sets out the full evidence: the gap into production, why non-tech companies block what business teams build, and the hurdles between an agent and production.</p>
+<p><a href="dataos-the-need-v1.html">The need</a> sets out the full evidence: the gap into production, why non-tech companies block what business teams build, and the hurdles between an agent and production.</p>
 
 </section>
 
@@ -617,7 +624,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   <li>DataOS is neutral across clouds and models. A company with more than one cloud or data platform does not have to pick one vendor for all its agents.</li>
   <li>Agents give correct answers. DataOS Data Products add business meaning when a company needs it.</li>
 </ul>
-<p>The <a href="dataos-value-proposition-v1.html" target="_blank" rel="noopener">DataOS value proposition</a> sets out the value for each person who decides, from the engineer to the CISO.</p>
+<p>The <a href="dataos-value-proposition-v1.html">DataOS value proposition</a> sets out the value for each person who decides, from the engineer to the CISO.</p>
 
 <h3 id="the-entry-products">The entry products</h3>
 <p>Every company in <a href="#parallels">section 4</a> had a concrete free thing that developers wanted first, for example Next.js or Terraform. DataOS needs the same, and it can have more than one. There are five candidates. They are hosting for AI apps and agents with private connections, governance for agents, orchestration and the agent runtime, agent identity, and security.</p>
@@ -711,7 +718,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 </table></div>
 <p>The team is measured on companies that open the wall and expand to more teams. It sits inside the DataOS pod, and its quota is separate from Modern sales.</p>
 
-<p><a href="dataos-land-and-expand-v1.html" target="_blank" rel="noopener">How one company adopts DataOS</a> follows one example company from the first engineer to a company plan, with the signal and the seller action at each step.</p>
+<p><a href="dataos-land-and-expand-v1.html">How one company adopts DataOS</a> follows one example company from the first engineer to a company plan, with the signal and the seller action at each step.</p>
 
 <h3 id="how-we-grow-them">How we grow them</h3>
 <p>A company starts with one team and one agent. Growth comes from more teams, more agents and more systems on the same platform. The data layer comes later. The table shows each step, what starts it and who helps.</p>
@@ -911,7 +918,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 (function(){
   var sb=document.getElementById('sidebar'), btn=sb&&sb.querySelector('.toc-toggle'), cur=document.getElementById('tocCurrent');
   if(!btn) return;
-  var links=[].slice.call(sb.querySelectorAll('nav.toc a'));
+  var links=[].slice.call(sb.querySelectorAll('nav.toc a[href^="#"]'));
   var secs=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1));});
   function set(open){ sb.classList.toggle('open',open); btn.setAttribute('aria-expanded',open?'true':'false'); }
   btn.addEventListener('click',function(){ set(!sb.classList.contains('open')); });
