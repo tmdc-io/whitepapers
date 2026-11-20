@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agent2Agent (A2A), end to end</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FFFFFF; --ink:#171A20; --ink-soft:#4A4F5A;
+  --accent:#23407C; --accent-tint:#EFF3FA; --accent-line:#C4D0E8;
+  --amber:#B7791F; --amber-tint:#FDF6E3; --amber-ink:#8A5A13;
+  --green:#5B8C5A; --green-tint:#F2F8F2; --green-ink:#3A5F39;
+  --line:#E3E4E0; --engine-tint:#F2F3F5; --code-bg:#F6F6F3; --svg-bg:#FFFFFF; --sub:#FAFAF8;
+  --toc-w:248px;
+  --f-display:'Instrument Sans','Inter',system-ui,sans-serif; --f-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif; --f-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#14161B; --ink:#E7E9EE; --ink-soft:#A3A9B5;
+    --accent:#8FB0EE; --accent-tint:#1B2539; --accent-line:#34466B;
+    --amber:#E0A54A; --amber-tint:#2A2215; --amber-ink:#EBC07F;
+    --green:#7FB37E; --green-tint:#18241A; --green-ink:#A6D3A5;
+    --line:#2C3038; --engine-tint:#1D2027; --code-bg:#1A1C22; --svg-bg:#171A20; --sub:#181B21;
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#14161B; --ink:#E7E9EE; --ink-soft:#A3A9B5;
+  --accent:#8FB0EE; --accent-tint:#1B2539; --accent-line:#34466B;
+  --amber:#E0A54A; --amber-tint:#2A2215; --amber-ink:#EBC07F;
+  --green:#7FB37E; --green-tint:#18241A; --green-ink:#A6D3A5;
+  --line:#2C3038; --engine-tint:#1D2027; --code-bg:#1A1C22; --svg-bg:#171A20; --sub:#181B21;
+}
+:root { box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+*, *::before, *::after { box-sizing:inherit; margin:0; padding:0; }
+html { scroll-behavior:smooth; scroll-padding-top:calc(24px + env(safe-area-inset-top,0px)); background:var(--paper); }
+body { background:var(--paper); color:var(--ink); font-family:var(--f-body); font-size:16px; line-height:1.6; }
+
+
+
+.eyebrow { font-family:var(--f-mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; }
+h1 { font-size:clamp(26px,4.5vw,38px); font-weight:700; line-height:1.15; letter-spacing:-.02em; margin-bottom:14px; }
+.subtitle { font-family:var(--f-mono); font-size:14px; color:var(--ink-soft); margin:-6px 0 14px; }
+.standfirst { font-size:18px; color:var(--ink-soft); margin-bottom:8px; }
+h2 { font-size:22px; font-weight:700; color:var(--accent); margin:44px 0 4px; }
+h3 { font-size:17px; font-weight:700; margin:26px 0 6px; }
+.meaning h3 { font-size:18px; padding-top:18px; border-top:1px solid var(--line); margin-top:0; }
+.kicker { font-family:var(--f-mono); font-size:12px; color:var(--ink-soft); margin-bottom:14px; }
+p { margin-bottom:10px; }
+ul.plain, ol.plain { margin:6px 0 12px 20px; }
+ul.plain li, ol.plain li { margin-bottom:6px; }
+
+.tbl { overflow-x:auto; margin:14px 0; border:1px solid var(--line); border-radius:8px; }
+table { width:100%; border-collapse:collapse; font-size:14.5px; background:var(--svg-bg); }
+th { font-family:var(--f-mono); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; text-align:left; padding:9px 13px; border-bottom:1.5px solid var(--ink); }
+td { padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+tr:last-child td { border-bottom:none; }
+td:first-child { font-weight:600; }
+code { font-family:var(--f-mono); font-size:.88em; background:var(--engine-tint); padding:0 4px; border-radius:3px; }
+
+figure.diag { margin:18px 0; }
+.diag-scroll { overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--svg-bg); }
+figure.diag svg { width:100%; min-width:600px; height:auto; display:block; }
+figure.diag figcaption { font-size:13px; color:var(--ink-soft); margin-top:6px; }
+figure.diag text { font-family:'IBM Plex Sans',system-ui,sans-serif; fill:var(--ink); }
+figure.diag text.mono { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; }
+figure.diag .t-s { fill:var(--ink-soft); }
+figure.diag .t-a { fill:var(--accent); }
+figure.diag .t-am { fill:var(--amber-ink); }
+figure.diag .t-g { fill:var(--green-ink); }
+.bx-n { fill:var(--engine-tint); stroke:var(--line); }
+.bx-a { fill:var(--accent-tint); stroke:var(--accent); stroke-width:1.5; }
+.bx-w { fill:var(--svg-bg); stroke:var(--accent-line); }
+.bx-am { fill:var(--amber-tint); stroke:var(--amber); }
+.bx-g { fill:var(--green-tint); stroke:var(--green); }
+.bx-s { fill:var(--sub); stroke:var(--line); }
+.ln { stroke:var(--ink-soft); stroke-width:1.5; fill:none; }
+.ln-am { stroke:var(--amber); stroke-width:1.5; fill:none; stroke-dasharray:5 5; }
+.dash-am { fill:none; stroke:var(--amber); stroke-width:1.8; stroke-dasharray:9 7; }
+.grid { stroke:var(--line); stroke-width:1; stroke-dasharray:4 5; }
+.axis { stroke:var(--ink-soft); stroke-width:1.2; }
+.arrowhead { fill:var(--ink-soft); stroke:none; }
+
+/* map dots */
+.dot { cursor:pointer; outline:none; }
+.dot .ring { stroke:transparent; stroke-width:3; fill:none; }
+.dot .solid { fill:var(--accent); }
+.dot .hollow { fill:var(--paper); stroke:var(--amber); stroke-width:2.2; }
+.dot .num { font-family:var(--f-mono); font-size:10px; font-weight:600; text-anchor:middle; }
+.dot .solid + .num { fill:var(--paper); }
+.dot .hollow + .num { fill:var(--amber-ink); }
+.dot:hover .ring, .dot:focus-visible .ring, .dot.sel .ring { stroke:var(--accent); }
+.dot text.lab { font-size:12.5px; }
+.panel { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; padding:12px 14px; margin-top:10px; background:var(--accent-tint); min-height:92px; }
+.panel .lbl { display:block; margin-bottom:4px; }
+.panel p { margin-bottom:6px; font-size:14.5px; }
+.panel p:last-child { margin-bottom:0; }
+.legend { display:flex; flex-wrap:wrap; gap:18px; font-size:13px; color:var(--ink-soft); margin-top:8px; }
+.legend span::before { content:""; display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:6px; vertical-align:-1px; }
+.legend .l-solid::before { background:var(--accent); }
+.legend .l-hollow::before { border:2px solid var(--amber); background:var(--paper); }
+
+.meaning { margin:30px 0 34px; }
+.lbl { font-family:var(--f-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); }
+h4.albl { font-family:var(--f-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:600; margin:14px 0 4px; }
+.anatomy h4.albl:first-child { margin-top:2px; }
+.anatomy p { margin-bottom:6px; }
+.verdict { display:inline-block; font-family:var(--f-mono); font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; padding:1px 7px; border-radius:4px; margin-right:6px; }
+.v-sig { background:var(--green-tint); color:var(--green-ink); border:1px solid var(--green); }
+.v-mix { background:var(--accent-tint); color:var(--accent); border:1px solid var(--accent-line); }
+.v-mkt { background:var(--amber-tint); color:var(--amber-ink); border:1px solid var(--amber); }
+.seam { font-size:14.5px; color:var(--ink-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:10px 2px; margin:22px 0; }
+.ask { border-left:3px solid var(--amber); background:var(--amber-tint); padding:9px 13px; margin:10px 0 4px; font-size:14.5px; border-radius:0 6px 6px 0; }
+.ask .lbl { color:var(--amber-ink); margin-right:6px; }
+.hook { border-left:3px solid var(--accent); background:var(--accent-tint); padding:12px 14px; margin-top:14px; font-size:15px; border-radius:0 6px 6px 0; }
+.hook p:last-child { margin-bottom:0; }
+
+a { color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-line); }
+a:hover { border-bottom-color:var(--accent); }
+a:focus-visible, .dot:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.ref { font-size:13.5px; color:var(--ink-soft); line-height:1.9; }
+.ref li { margin-left:18px; }
+strong { font-weight:600; }
+.updated { font-family:var(--f-mono); font-size:12px; color:var(--ink-soft); margin-top:40px; border-top:1px solid var(--line); padding-top:12px; }
+
+.hint { font-style:italic; font-size:14.5px; color:var(--ink-soft); margin:18px 0 -8px; display:flex; align-items:center; gap:8px; }
+.hint-mark { width:12px; height:12px; border-radius:50%; border:2px solid var(--accent); flex:none; }
+.glance { font-family:var(--f-mono); font-size:12px; color:var(--ink-soft); margin:0 0 12px; }
+.glance span { color:var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:.08em; font-size:11px; margin-right:5px; }
+.glance { display:flex; flex-wrap:wrap; column-gap:18px; row-gap:2px; }
+.glance i { font-style:normal; }
+.tag { font-family:var(--f-mono); font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--amber-ink); background:var(--amber-tint); border:1px solid var(--amber); border-radius:4px; padding:1px 6px; vertical-align:3px; margin-left:6px; }
+.meaning p { max-width:72ch; }
+figure.spot { margin:14px 0 18px; }
+figure.spot .diag-scroll { background:var(--sub); }
+figure.spot svg { min-width:560px; }
+figure.spot figcaption { font-size:12.5px; }
+.ln-a { stroke:var(--accent); stroke-width:2.5; fill:none; }
+.band-am { fill:var(--amber-tint); }
+.faded { opacity:.45; }
+.seam + .seam { margin-top:-22px; border-top:none; }
+@media (max-width:520px) { body { font-size:15px; } }
+@media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+.ln-d { stroke:var(--ink-soft); stroke-width:1.5; fill:none; stroke-dasharray:4 4; }
+.life line { stroke:var(--line); stroke-width:1.2; stroke-dasharray:3 4; }
+pre { font-family:var(--f-mono); font-size:12.5px; line-height:1.55; background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; overflow-x:auto; margin:12px 0 16px; }
+pre code { background:none; padding:0; font-size:inherit; }
+.desk { font-family:var(--f-display); font-weight:600; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+.deskfoot { margin-top:28px; padding-top:14px; border-top:1px solid var(--line); color:var(--ink-soft); font-size:13px; }
+th.nw, td.nw { white-space:nowrap; }
+
+/* Layout, type and contents: CTO's Desk style */
+main { max-width:860px; margin:0 auto; padding:48px 0 96px; }
+body { padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); line-height:1.62; }
+h1 { font-family:var(--f-display); font-weight:700; font-size:clamp(30px,4.4vw,44px); line-height:1.1; letter-spacing:-.015em; text-wrap:balance; }
+h2 { font-family:var(--f-display); font-weight:700; font-size:clamp(22px,2.6vw,28px); line-height:1.2; letter-spacing:-.01em; margin:64px 0 6px; text-wrap:balance; }
+h3, .meaning h3 { font-family:var(--f-display); font-weight:600; }
+th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spacing:0; text-transform:none; color:var(--ink-soft); }
+.ftoc { position:fixed; top:48px; left:calc((100vw - 860px)/2 - 236px); width:204px; max-height:calc(100vh - 96px); overflow-y:auto; font-size:13px; z-index:5; scrollbar-width:thin; }
+.ftoc p { font-family:var(--f-display); font-weight:600; letter-spacing:.06em; text-transform:uppercase; font-size:12px; color:var(--ink-soft); margin:0 0 10px; }
+.toc ol { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+.toc a { color:var(--ink-soft); text-decoration:none; border-bottom:none; display:flex; gap:8px; line-height:1.4; }
+.toc a .k { font-family:var(--f-mono); font-size:12px; color:var(--accent); min-width:16px; padding-top:1px; flex:none; }
+.toc a:hover, .toc a:focus-visible { color:var(--ink); }
+.toc a.active, .toc a.parent-active { color:var(--ink); font-weight:600; }
+.toc ol.sub { gap:0; margin:6px 0 4px 6px; border-left:1px solid var(--line); }
+.toc ol.sub a { display:block; font-size:12.5px; line-height:1.35; padding:3px 0 3px 12px; margin-left:-1px; border-left:2px solid transparent; }
+.toc ol.sub a.active { border-left-color:var(--accent); color:var(--ink); font-weight:500; }
+.mbar { display:none; }
+@media (max-width:1319px){
+  .ftoc { display:none; }
+  html { scroll-padding-top:calc(56px + env(safe-area-inset-top,0px)); }
+  .mbar { display:block; position:sticky; top:env(safe-area-inset-top,0px); z-index:20; background:var(--paper); border-bottom:1px solid var(--line); margin:0 calc(-1 * max(16px,env(safe-area-inset-right,0px))) 0 calc(-1 * max(16px,env(safe-area-inset-left,0px))); padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px)); }
+  .mbar > * { max-width:860px; margin-inline:auto; }
+  .toc-toggle { display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; color:var(--ink); font:inherit; font-size:14px; padding:12px 0; cursor:pointer; text-align:left; min-height:44px; }
+  .toc-toggle-label { font-family:var(--f-mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
+  .toc-current { margin-left:auto; font-size:13px; color:var(--accent); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%; }
+  .burger { position:relative; width:20px; height:14px; flex:none; }
+  .burger span { position:absolute; left:0; width:20px; height:2px; background:var(--ink); border-radius:1px; transition:transform .2s ease, opacity .2s ease; }
+  .burger span:nth-child(1){top:0} .burger span:nth-child(2){top:6px} .burger span:nth-child(3){top:12px}
+  .mbar.open .burger span:nth-child(1) { transform:translateY(6px) rotate(45deg); }
+  .mbar.open .burger span:nth-child(2) { opacity:0; }
+  .mbar.open .burger span:nth-child(3) { transform:translateY(-6px) rotate(-45deg); }
+  .mtoc { display:none; padding:0 0 14px; max-height:calc(70vh - env(safe-area-inset-top,0px)); overflow-y:auto; }
+  .mbar.open .mtoc { display:block; }
+  .mtoc.toc ol { gap:10px; }
+  .mtoc.toc ol.sub { gap:2px; }
+  .mtoc.toc a { font-size:14.5px; }
+  .mtoc.toc ol.sub a { font-size:14px; padding:5px 0 5px 12px; }
+  main { padding-top:28px; }
+}
+@media (max-width:520px) { body { font-size:15px; } }
+@media (prefers-reduced-motion:reduce) { .burger span { transition:none; } }
+.desk a, .desk a:visited { color:inherit; text-decoration:none; }
+.desk a:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+<aside class="ftoc toc" aria-label="Contents">
+  <p>Contents</p>
+  <ol><li><a href="#s1"><span class="k">1</span>Why A2A exists</a></li><li><a href="#s2"><span class="k">2</span>When you don't need it</a></li><li><a href="#s3"><span class="k">3</span>The moving parts</a></li><li><a href="#s4"><span class="k">4</span>What the spec defines</a><ol class="sub"><li><a href="#m41">How the spec is built</a></li><li><a href="#m42">Agent Cards and discovery</a></li><li><a href="#m43">The task lifecycle</a></li><li><a href="#m44">Messages, parts, artifacts</a></li><li><a href="#m45">Streaming, polling, push</a></li><li><a href="#m46">Security and identity</a></li><li><a href="#m47">Extensions and tenancy</a></li><li><a href="#m48">Errors and versions</a></li></ol></li><li><a href="#s5"><span class="k">5</span>One delegation, end to end</a></li><li><a href="#s6"><span class="k">6</span>The three bindings</a></li><li><a href="#s7"><span class="k">7</span>Versions and migration</a></li><li><a href="#s8"><span class="k">8</span>How it evolved</a></li><li><a href="#s9"><span class="k">9</span>Adoption, read carefully</a></li><li><a href="#s10"><span class="k">10</span>SDKs and tools</a></li><li><a href="#s11"><span class="k">11</span>A2A and MCP</a></li><li><a href="#s12"><span class="k">12</span>Payments and commerce</a></li><li><a href="#s13"><span class="k">13</span>Designing a good agent</a></li><li><a href="#s14"><span class="k">14</span>Security in practice</a></li><li><a href="#s15"><span class="k">15</span>Operations</a></li><li><a href="#s16"><span class="k">16</span>Examples</a></li><li><a href="#s17"><span class="k">17</span>What's next</a></li><li><a href="#s18"><span class="k">18</span>Checklists</a></li><li><a href="#s19"><span class="k">19</span>Glossary</a></li><li><a href="#sources"><span class="k"></span>Sources</a></li></ol>
+</aside>
+<div class="mbar" id="mbar">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="mtoc"><span class="burger" aria-hidden="true"><span></span><span></span><span></span></span><span class="toc-toggle-label">Contents</span><span class="toc-current" id="tocCurrent"></span></button>
+  <nav class="mtoc toc" id="mtoc" aria-label="Contents"><ol><li><a href="#s1"><span class="k">1</span>Why A2A exists</a></li><li><a href="#s2"><span class="k">2</span>When you don't need it</a></li><li><a href="#s3"><span class="k">3</span>The moving parts</a></li><li><a href="#s4"><span class="k">4</span>What the spec defines</a><ol class="sub"><li><a href="#m41">How the spec is built</a></li><li><a href="#m42">Agent Cards and discovery</a></li><li><a href="#m43">The task lifecycle</a></li><li><a href="#m44">Messages, parts, artifacts</a></li><li><a href="#m45">Streaming, polling, push</a></li><li><a href="#m46">Security and identity</a></li><li><a href="#m47">Extensions and tenancy</a></li><li><a href="#m48">Errors and versions</a></li></ol></li><li><a href="#s5"><span class="k">5</span>One delegation, end to end</a></li><li><a href="#s6"><span class="k">6</span>The three bindings</a></li><li><a href="#s7"><span class="k">7</span>Versions and migration</a></li><li><a href="#s8"><span class="k">8</span>How it evolved</a></li><li><a href="#s9"><span class="k">9</span>Adoption, read carefully</a></li><li><a href="#s10"><span class="k">10</span>SDKs and tools</a></li><li><a href="#s11"><span class="k">11</span>A2A and MCP</a></li><li><a href="#s12"><span class="k">12</span>Payments and commerce</a></li><li><a href="#s13"><span class="k">13</span>Designing a good agent</a></li><li><a href="#s14"><span class="k">14</span>Security in practice</a></li><li><a href="#s15"><span class="k">15</span>Operations</a></li><li><a href="#s16"><span class="k">16</span>Examples</a></li><li><a href="#s17"><span class="k">17</span>What's next</a></li><li><a href="#s18"><span class="k">18</span>Checklists</a></li><li><a href="#s19"><span class="k">19</span>Glossary</a></li><li><a href="#sources"><span class="k"></span>Sources</a></li></ol></nav>
+</div>
+<main>
+<div class="desk"><a href="index.html">CTO's Desk · Agent protocols</a></div>
+<div class="eyebrow">Field guide · November 2026 · Animesh</div>
+<h1>Agent2Agent (A2A), end to end</h1>
+<p class="subtitle">spec, task lifecycle, bindings, evolution, adoption, SDKs, security and examples, as of A2A v1.0.1</p>
+<p class="standfirst">A2A is the open standard for one AI agent to hand work to another agent it can't see inside, often one run by a different team or company. By the end of this page you'll know when you need it and when you don't, how agents find each other, how a task moves from submitted to completed, what travels over the wire, how A2A relates to MCP, how far adoption really goes, and where the security risks sit.</p>
+
+<div class="seam"><strong>A note on bias:</strong> the author's company builds data products that agents reach through open protocols. This page names none of those products and argues for no vendor, including his own.</div>
+<div class="seam"><strong>Who this is for:</strong> engineers building multi-agent systems who want the protocol from first principles. Builders should read <a href="#s3">sections 3</a> to <a href="#s6">6</a>, then <a href="#s13">13</a> and <a href="#s16">16</a>. Readers weighing A2A as a platform bet can start with <a href="#s2">sections 2</a>, <a href="#s9">9</a>, <a href="#s11">11</a> and <a href="#s14">14</a>. Unfamiliar terms are defined in <a href="#s19">the glossary</a>, and <a href="#s18">section 18</a> condenses the page into checklists. It assumes you know what JSON, HTTP and an LLM agent are.</div>
+
+<h2 id="s1">1 · Why A2A exists</h2>
+<div class="kicker">delegation across a boundary you can't see past</div>
+<p>An agent that books freight for your company may need a quote from a supplier's agent. The supplier won't give you its prompts, its tools or its database. It will only accept a request and send back a result. Before A2A, every such pairing needed its own integration: a bespoke API, a bespoke message format, a bespoke way to report progress. A2A, the Agent2Agent protocol, standardises that exchange so any compliant agent can delegate to any other.</p>
+<p>Google <a href="https://developers.googleblog.com/en/a2a-a-new-era-of-agent-interoperability/">announced A2A on 9 April 2025</a> with more than 50 technology partners, and <a href="https://developers.googleblog.com/en/google-cloud-donates-a2a-to-linux-foundation/">donated it to the Linux Foundation</a> that June. Since August 2026 it has been a project of the Agentic AI Foundation, the same home as MCP (<a href="#s8">section 8</a>). The first diagram shows the problem A2A solves and how it sits next to MCP.</p>
+
+<figure class="diag" id="fig-context">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two companies each run an agent connected to its own tools through MCP; A2A is the line between the two agents across the company boundary">
+  <defs>
+    <marker id="ax1" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker>
+  </defs>
+  <text x="40" y="34" font-size="12" class="mono t-s" letter-spacing="1.4">COMPANY A · YOU</text>
+  <text x="406" y="34" font-size="12" class="mono t-s" letter-spacing="1.4">COMPANY B · A SUPPLIER</text>
+  <rect x="24" y="46" width="306" height="232" rx="10" class="bx-s"/>
+  <rect x="390" y="46" width="306" height="232" rx="10" class="bx-s"/>
+  <g text-anchor="middle">
+    <rect x="60" y="80" width="230" height="54" rx="7" class="bx-a"/>
+    <text x="175" y="103" font-size="13.5" font-weight="600" class="t-a">Freight agent</text>
+    <text x="175" y="121" font-size="12" class="t-s">your code, your model</text>
+    <rect x="426" y="80" width="230" height="54" rx="7" class="bx-n"/>
+    <text x="541" y="103" font-size="13.5" font-weight="600">Quoting agent</text>
+    <text x="541" y="121" font-size="12" class="t-s">their code, opaque to you</text>
+    <rect x="60" y="208" width="105" height="44" rx="7" class="bx-n"/><text x="112" y="235" font-size="13" font-weight="600">TMS tools</text>
+    <rect x="185" y="208" width="105" height="44" rx="7" class="bx-n"/><text x="237" y="235" font-size="13" font-weight="600">Docs</text>
+    <rect x="426" y="208" width="105" height="44" rx="7" class="bx-n"/><text x="478" y="235" font-size="13" font-weight="600">Inventory</text>
+    <rect x="551" y="208" width="105" height="44" rx="7" class="bx-n"/><text x="603" y="235" font-size="13" font-weight="600">Pricing</text>
+    <text x="175" y="176" font-size="11.5" class="mono t-s">MCP</text>
+    <text x="541" y="176" font-size="11.5" class="mono t-s">MCP</text>
+    <rect x="320" y="94" width="80" height="26" rx="5" class="bx-a"/>
+    <text x="360" y="112" font-size="12.5" font-weight="600" class="mono t-a">A2A</text>
+  </g>
+  <line class="ln" x1="112" y1="134" x2="112" y2="205" marker-end="url(#ax1)"/>
+  <line class="ln" x1="237" y1="134" x2="237" y2="205" marker-end="url(#ax1)"/>
+  <line class="ln" x1="478" y1="134" x2="478" y2="205" marker-end="url(#ax1)"/>
+  <line class="ln" x1="603" y1="134" x2="603" y2="205" marker-end="url(#ax1)"/>
+  <line class="ln" x1="290" y1="107" x2="317" y2="107" marker-end="url(#ax1)"/>
+  <line class="ln" x1="400" y1="107" x2="423" y2="107" marker-end="url(#ax1)"/>
+</svg>
+</div>
+<figcaption>MCP runs down from each agent to its own tools; A2A runs across the boundary between agents, and nothing below the line on the other side is visible to you.</figcaption>
+</figure>
+
+<p>The A2A project describes this split itself: <a href="https://a2a-protocol.org/latest/topics/a2a-and-mcp/">MCP is vertical and A2A is horizontal</a>. MCP deepens one agent by giving it tools. A2A connects agents across a team, department or company boundary. The defining property is <strong>opacity</strong>. The remote agent's prompts, tools, memory and reasoning stay private; you see only what it chooses to advertise and what it sends back. Everything else in this guide follows from that choice.</p>
+
+<h2 id="s2">2 · When you don't need it</h2>
+<div class="kicker">most multi-agent systems never cross a boundary</div>
+<p>A2A solves a real problem, but a narrower one than the volume of announcements suggests. Many multi-agent systems are a planner and a few specialist agents in one codebase, sharing one framework. A framework like LangGraph or CrewAI already passes state between them in-process, with no network hop, no serialisation and no authentication to manage. Adding A2A there buys distance you don't need. The decision flow below is the author's rule of thumb, not something the specification prescribes.</p>
+
+<figure class="diag" id="fig-decision">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three questions decide whether to use A2A: whether the agents share one codebase, whether the other side is a stateless tool-like call, and whether another team or company runs it">
+  <defs>
+    <marker id="ax2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker>
+  </defs>
+  <text x="24" y="34" font-size="12" class="mono t-s" letter-spacing="1.4">ASK IN ORDER · AUTHOR'S JUDGMENT</text>
+  <g font-size="13.5" text-anchor="middle">
+    <rect x="24" y="52" width="150" height="66" rx="7" class="bx-n"/>
+    <text x="99" y="80" font-weight="600">One codebase,</text>
+    <text x="99" y="98" font-weight="600">one framework?</text>
+    <rect x="204" y="52" width="150" height="66" rx="7" class="bx-n"/>
+    <text x="279" y="80" font-weight="600">Stateless,</text>
+    <text x="279" y="98" font-weight="600">tool-like call?</text>
+    <rect x="384" y="52" width="150" height="66" rx="7" class="bx-n"/>
+    <text x="459" y="80" font-weight="600">Run by another</text>
+    <text x="459" y="98" font-weight="600">team or company?</text>
+    <rect x="564" y="52" width="132" height="66" rx="7" class="bx-a"/>
+    <text x="630" y="90" font-weight="600" class="t-a">Use A2A</text>
+    <rect x="24" y="200" width="150" height="58" rx="7" class="bx-w"/>
+    <text x="99" y="224" font-weight="600">Orchestrate inside</text>
+    <text x="99" y="242" font-weight="600">the framework</text>
+    <rect x="204" y="200" width="150" height="58" rx="7" class="bx-w"/>
+    <text x="279" y="224" font-weight="600">Expose it as</text>
+    <text x="279" y="242" font-weight="600">an MCP tool</text>
+    <rect x="384" y="200" width="150" height="58" rx="7" class="bx-w"/>
+    <text x="459" y="224" font-weight="600">Either; start with</text>
+    <text x="459" y="242" font-weight="600">the simpler one</text>
+  </g>
+  <g font-size="11.5">
+    <text x="189" y="77" text-anchor="middle" class="mono t-s">no</text>
+    <text x="369" y="77" text-anchor="middle" class="mono t-s">no</text>
+    <text x="549" y="77" text-anchor="middle" class="mono t-s">yes</text>
+    <text x="107" y="164" class="mono t-s">yes</text>
+    <text x="287" y="164" class="mono t-s">yes</text>
+    <text x="467" y="164" class="mono t-s">no</text>
+  </g>
+  <line class="ln" x1="174" y1="85" x2="201" y2="85" marker-end="url(#ax2)"/>
+  <line class="ln" x1="354" y1="85" x2="381" y2="85" marker-end="url(#ax2)"/>
+  <line class="ln" x1="534" y1="85" x2="561" y2="85" marker-end="url(#ax2)"/>
+  <line class="ln" x1="99" y1="118" x2="99" y2="197" marker-end="url(#ax2)"/>
+  <line class="ln" x1="279" y1="118" x2="279" y2="197" marker-end="url(#ax2)"/>
+  <line class="ln" x1="459" y1="118" x2="459" y2="197" marker-end="url(#ax2)"/>
+</svg>
+</div>
+<figcaption>A2A earns its cost at the third question: when the other agent belongs to someone else and should stay a black box.</figcaption>
+</figure>
+
+<p>The middle question matters most. If the remote side behaves like a function (send inputs, get an answer, no follow-up), an MCP tool is simpler, and the A2A project itself says skills of that kind <a href="https://a2a-protocol.org/latest/topics/a2a-and-mcp/">can be exposed as MCP-compatible tools</a>. A2A's advantage is the conversation: a task that runs for hours, asks clarifying questions, needs fresh credentials midway, and returns several artifacts. If you need none of that, you don't need A2A.</p>
+<p>The honest complication is that MCP's July 2026 revision narrowed the gap. It added <a href="https://modelcontextprotocol.io/specification/2026-07-28/changelog.md">long-running tasks and a way for servers to ask for input mid-call</a>, so "wrap the other agent as an MCP tool" now covers more cases than it did a year ago. <a href="#s11">Section 11</a> compares the two in detail.</p>
+
+<h2 id="s3">3 · The moving parts</h2>
+<div class="kicker">two agents, a card, and four nouns</div>
+<p>A2A has two roles. The <strong>client agent</strong> acts for a person or a system and starts the exchange. The <strong>remote agent</strong>, also called the A2A server, does the work. Before talking, the client reads the remote agent's <strong>Agent Card</strong>: a JSON document describing who it is, what skills it offers, where to reach it and how to authenticate. Everything then travels as four kinds of object: a <strong>Task</strong> (a unit of work with a lifecycle), <strong>Messages</strong> (turns in the conversation), <strong>Parts</strong> (pieces of content inside a message) and <strong>Artifacts</strong> (the outputs a task produces). The component diagram shows how they fit.</p>
+
+<figure class="diag" id="fig-arch">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The client agent fetches the remote agent's Agent Card, sends it a message, and receives task updates and artifacts; the remote agent's model, tools and memory stay hidden">
+  <defs>
+    <marker id="ax3" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker>
+  </defs>
+  <rect x="24" y="46" width="226" height="284" rx="10" class="bx-a"/>
+  <text x="40" y="68" font-size="12" class="mono t-a" font-weight="600" letter-spacing="1.2">CLIENT AGENT · YOU</text>
+  <rect x="470" y="46" width="226" height="284" rx="10" class="bx-s"/>
+  <text x="486" y="68" font-size="12" class="mono t-s" font-weight="600" letter-spacing="1.2">REMOTE AGENT · OPAQUE</text>
+  <g text-anchor="middle">
+    <rect x="44" y="84" width="186" height="50" rx="6" class="bx-w"/>
+    <text x="137" y="105" font-size="13.5" font-weight="600">Planner</text>
+    <text x="137" y="122" font-size="12" class="t-s">your model and logic</text>
+    <rect x="44" y="170" width="186" height="50" rx="6" class="bx-w"/>
+    <text x="137" y="191" font-size="13.5" font-weight="600">A2A client</text>
+    <text x="137" y="208" font-size="12" class="t-s">SDK or your own code</text>
+    <rect x="290" y="70" width="140" height="80" rx="7" class="bx-w"/>
+    <text x="360" y="96" font-size="13.5" font-weight="600">Agent Card</text>
+    <text x="360" y="115" font-size="12" class="t-s">skills, endpoints,</text>
+    <text x="360" y="131" font-size="12" class="t-s">auth, signature</text>
+    <g class="faded">
+      <rect x="490" y="84" width="186" height="66" rx="6" class="bx-n"/>
+      <text x="583" y="111" font-size="13.5" font-weight="600">Model, tools, memory</text>
+      <text x="583" y="130" font-size="12" class="t-s">hidden from the client</text>
+    </g>
+    <rect x="490" y="170" width="186" height="50" rx="6" class="bx-w"/>
+    <text x="583" y="191" font-size="13.5" font-weight="600">A2A server</text>
+    <text x="583" y="208" font-size="12" class="t-s">the only visible surface</text>
+    <text x="360" y="252" font-size="11" class="mono t-s" letter-spacing="1">WHAT TRAVELS</text>
+    <rect x="290" y="262" width="66" height="26" rx="5" class="bx-w"/><text x="323" y="279" font-size="12.5">Task</text>
+    <rect x="364" y="262" width="66" height="26" rx="5" class="bx-w"/><text x="397" y="279" font-size="12.5">Message</text>
+    <rect x="290" y="296" width="66" height="26" rx="5" class="bx-w"/><text x="323" y="313" font-size="12.5">Part</text>
+    <rect x="364" y="296" width="66" height="26" rx="5" class="bx-w"/><text x="397" y="313" font-size="12.5">Artifact</text>
+  </g>
+  <line class="ln" x1="137" y1="134" x2="137" y2="167" marker-end="url(#ax3)"/>
+  <line class="ln" x1="583" y1="170" x2="583" y2="153" marker-end="url(#ax3)"/>
+  <path class="ln" d="M230,180 C262,180 262,112 287,112" marker-end="url(#ax3)"/>
+  <text x="360" y="188" font-size="11.5" text-anchor="middle" class="mono">send message</text>
+  <line class="ln" x1="230" y1="196" x2="487" y2="196" marker-end="url(#ax3)"/>
+  <line class="ln-d" x1="490" y1="212" x2="233" y2="212" marker-end="url(#ax3)"/>
+  <text x="360" y="230" font-size="11.5" text-anchor="middle" class="mono t-s">task updates, artifacts</text>
+</svg>
+</div>
+<figcaption>The client sees the card and the server's responses, nothing else; that boundary is what lets companies delegate to each other without exposing their internals.</figcaption>
+</figure>
+
+<p>Two design choices shape how agents behave in practice. First, a remote agent can answer with either a <strong>Message</strong> or a <strong>Task</strong>. The <a href="https://a2a-protocol.org/latest/topics/life-of-a-task/">project's guide to the task lifecycle</a> describes messages for quick, stateless replies and tasks for work that needs tracking. Some agents only ever return messages, some always create tasks, and many do both, using messages to agree the scope of work and a task once there's something to execute.</p>
+<p>Second, a <code>contextId</code> groups related tasks and messages into one conversation. The client reuses it to continue a thread, and can run several tasks in parallel inside one context: book a flight, then a hotel and an activity that both depend on it. The remote agent typically uses the context id to manage its own model's conversation state, which the client never sees.</p>
+
+<h2 id="s4">4 · What the specification defines</h2>
+<div class="kicker">one data model, three bindings, eight subsections</div>
+
+<h3 id="m41">4.1 How the spec is built</h3>
+<p>Version 1.0, released on <a href="https://github.com/a2aproject/A2A/releases">12 March 2026</a>, reorganised the specification around a single source of truth. The <a href="https://a2a-protocol.org/latest/whats-new-v1/">v1.0 notes</a> make the protocol buffer file, <code>a2a.proto</code>, the normative definition of every object and operation. Three <strong>bindings</strong> then map that model onto wire formats: JSON-RPC 2.0, gRPC and plain HTTP with JSON. All three run over HTTPS and are specified to behave the same way, so an agent can offer whichever its clients prefer (<a href="#s6">section 6</a>). The current release is v1.0.1, a <a href="https://github.com/a2aproject/A2A/releases">26 May 2026 patch</a> that changed no wire behaviour.</p>
+<p>The operations are few. A client can send a message and wait (<code>SendMessage</code>), send one and stream the updates (<code>SendStreamingMessage</code>), fetch, list or cancel tasks (<code>GetTask</code>, <code>ListTasks</code>, <code>CancelTask</code>), reattach to a task's stream after a dropped connection (<code>SubscribeToTask</code>), manage push-notification webhooks, and fetch a fuller Agent Card after authenticating (<code>GetExtendedAgentCard</code>).</p>
+
+<h3 id="m42">4.2 Agent Cards and discovery</h3>
+<p>An Agent Card is a remote agent's public description. The <a href="https://a2a-protocol.org/latest/topics/agent-discovery/">discovery guide</a> lists what it holds: identity and provider, the endpoints where the service can be reached, supported features such as streaming and push notifications, the authentication schemes it accepts, and a list of <strong>skills</strong>, each with a description, example prompts and the media types it takes and returns. Since v1.0, endpoints live in a <code>supportedInterfaces</code> list where each entry names its URL, its binding and its protocol version, so one agent can serve old and new clients side by side.</p>
+<p>Clients find cards in one of three ways. A public agent publishes its card at <code>https://{domain}/.well-known/agent-card.json</code>. A company can run a <strong>registry</strong> that collects cards and lets clients search by skill; the specification doesn't yet define a standard registry API. Or a client is simply configured with the card's location. Cards can be signed: v1.0 specifies JSON Web Signatures over a canonical form of the card, so a client can check that a card really came from the agent's owner. Anything sensitive belongs in the <strong>extended card</strong>, served only after authentication.</p>
+
+<h3 id="m43">4.3 The task lifecycle</h3>
+<p>Every task moves through a fixed set of states. The diagram groups them the way the protocol treats them: two states before and during work, two interrupted states where the client must act, and four terminal states.</p>
+
+<figure class="diag" id="fig-states">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A task moves from submitted to working; from working it can pause in input required or auth required and resume, or end in completed, failed, canceled or rejected, after which it never restarts">
+  <defs>
+    <marker id="ax4" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker>
+  </defs>
+  <text x="478" y="30" font-size="11" class="mono t-s" letter-spacing="1">TERMINAL · NEVER RESTARTS</text>
+  <g text-anchor="middle" font-size="13.5" font-weight="600">
+    <rect x="24" y="138" width="130" height="44" rx="7" class="bx-n"/><text x="89" y="165">Submitted</text>
+    <rect x="214" y="138" width="130" height="44" rx="7" class="bx-a"/><text x="279" y="165" class="t-a">Working</text>
+    <rect x="214" y="36" width="130" height="54" rx="7" class="bx-w"/><text x="279" y="58">Input required</text><text x="279" y="77" font-size="11.5" font-weight="400" class="t-s">client must act</text>
+    <rect x="214" y="230" width="130" height="54" rx="7" class="bx-w"/><text x="279" y="252">Auth required</text><text x="279" y="271" font-size="11.5" font-weight="400" class="t-s">client must act</text>
+    <rect x="480" y="44" width="150" height="44" rx="7" class="bx-g"/><text x="555" y="71" class="t-g">Completed</text>
+    <rect x="480" y="110" width="150" height="44" rx="7" class="bx-n"/><text x="555" y="137">Failed</text>
+    <rect x="480" y="176" width="150" height="44" rx="7" class="bx-n"/><text x="555" y="203">Canceled</text>
+    <rect x="480" y="242" width="150" height="44" rx="7" class="bx-n"/><text x="555" y="269">Rejected</text>
+  </g>
+  <line class="ln" x1="154" y1="160" x2="211" y2="160" marker-end="url(#ax4)"/>
+  <line class="ln" x1="262" y1="138" x2="262" y2="93" marker-end="url(#ax4)"/>
+  <line class="ln" x1="296" y1="90" x2="296" y2="135" marker-end="url(#ax4)"/>
+  <line class="ln" x1="262" y1="182" x2="262" y2="227" marker-end="url(#ax4)"/>
+  <line class="ln" x1="296" y1="230" x2="296" y2="185" marker-end="url(#ax4)"/>
+  <path class="ln" d="M344,160 C410,160 420,66 477,66" marker-end="url(#ax4)"/>
+  <path class="ln" d="M344,160 C410,160 430,132 477,132" marker-end="url(#ax4)"/>
+  <path class="ln" d="M344,160 C410,160 430,198 477,198" marker-end="url(#ax4)"/>
+  <path class="ln" d="M344,160 C410,160 420,264 477,264" marker-end="url(#ax4)"/>
+</svg>
+</div>
+<figcaption>The interrupted states pause a task without ending it; the terminal states end it for good, so any follow-up becomes a new task in the same context.</figcaption>
+</figure>
+
+<p>Three rules follow. <strong>Interrupted is not finished.</strong> In <code>INPUT_REQUIRED</code> the agent is waiting for an answer from the client, perhaps a question for a person; in <code>AUTH_REQUIRED</code> it needs fresh credentials. The client replies with a message carrying the same task id, and work resumes. <strong>Terminal is final.</strong> The lifecycle guide says a finished task <a href="https://a2a-protocol.org/latest/topics/life-of-a-task/">can't restart</a>; a refinement such as "make it red" becomes a new task in the same context, pointing back with <code>referenceTaskIds</code>. That makes every artifact traceable to exactly one unit of work. <strong>Rejection is a valid answer.</strong> An agent can decline work it won't do, which matters when the client is a stranger.</p>
+<p>In v1.0 the states are written in upper case with a prefix, such as <code>TASK_STATE_INPUT_REQUIRED</code>, replacing the lowercase names of earlier versions. Code written against v0.3 has to change these strings.</p>
+
+<h3 id="m44">4.4 Messages, parts and artifacts</h3>
+<p>A message has a role (<code>ROLE_USER</code> for the client, <code>ROLE_AGENT</code> for the remote agent) and a list of parts. In v1.0 there's a single <code>Part</code> type whose content is exactly one of four fields: <code>text</code>, <code>raw</code> (inline bytes, base64 in JSON), <code>url</code> (a file reference) or <code>data</code> (structured JSON), each with a <code>mediaType</code> and an optional filename. An artifact is a task's output: a name, an id and its own list of parts. The lifecycle guide recommends that agents keep an artifact's name stable across refinements and give each version a new id, so clients can track versions on their side.</p>
+
+<h3 id="m45">4.5 Streaming, polling and push</h3>
+<p>A2A offers three ways to follow a task. A client can call <code>SendMessage</code> and either wait for the result or ask for an immediate return and poll with <code>GetTask</code>. It can use <code>SendStreamingMessage</code> and receive a Server-Sent Events stream of status and artifact updates; the <a href="https://a2a-protocol.org/latest/topics/streaming-and-async/">streaming guide</a> says the server closes the stream when the task ends or is interrupted, and a dropped connection can be resumed with <code>SubscribeToTask</code>. Or, for tasks that run for hours or days, it can register a <strong>push notification</strong> webhook and get called back on significant changes, then fetch the full task.</p>
+<p>Push notifications reverse the usual direction of trust, so the spec is explicit about both sides. The server should not post to any URL a client supplies, since a malicious client could aim it at internal systems; allow-lists and ownership checks are the suggested defences. The webhook, in turn, must verify that a notification really came from the agent, for example with signed tokens checked against the agent's published keys, and reject stale or replayed ones.</p>
+
+<h3 id="m46">4.6 Security and identity</h3>
+<p>A2A deliberately reuses existing standards rather than inventing its own security. An Agent Card declares which schemes it accepts: API keys, HTTP authentication, OAuth 2.0, OpenID Connect or mutual TLS. Version 1.0 also modernised the OAuth options, according to the <a href="https://a2a-protocol.org/latest/whats-new-v1/">v1.0 notes</a>: it removed the implicit and password flows, added the device-code flow for command-line and headless clients, and added a flag to require PKCE. Clients authenticate with those standard schemes over HTTPS, and the discovery guide strongly recommends dynamic credentials over static secrets embedded in a card. <a href="#s14">Section 14</a> covers what this does and doesn't protect against.</p>
+
+<h3 id="m47">4.7 Extensions and multi-tenancy</h3>
+<p>Extensions let a community add capabilities without changing the core. An Agent Card lists the extensions an agent supports and marks some as required, so a client knows in advance whether it can work with that agent. Payments (<a href="#s12">section 12</a>) arrived this way. Version 1.0 also added native <strong>multi-tenancy</strong>: a <code>tenant</code> field on every request lets one endpoint host many agents, with a default tenant declared on each interface in the card.</p>
+
+<h3 id="m48">4.8 Errors and versions on the wire</h3>
+<p>Errors in v1.0 follow Google's <code>google.rpc.Status</code> model on every binding, with an <code>ErrorInfo</code> object naming the reason, such as <code>TASK_NOT_FOUND</code>, under the domain <code>a2a-protocol.org</code>. Clients send an <code>A2A-Version</code> header on each request, and a server that doesn't support that version rejects it. Combined with per-interface versions in the card, this is how old and new agents coexist (<a href="#s7">section 7</a>).</p>
+
+<h2 id="s5">5 · One delegation, end to end</h2>
+<div class="kicker">a quote request that needs a person's answer</div>
+<p>The sequence follows a freight agent asking a supplier's quoting agent for a price. Midway, the supplier needs a detail only a person can give. Read it top to bottom; the shaded bands mark discovery and the task itself.</p>
+
+<figure class="diag" id="fig-sequence">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The client fetches the Agent Card, starts a streaming task, receives an input required update when the remote agent needs a delivery site, asks the person, resumes the same task, and receives the quote artifact before the task completes">
+  <defs>
+    <marker id="ax5" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker>
+  </defs>
+  <rect x="24" y="90" width="672" height="64" rx="9" class="bx-s"/>
+  <text x="578" y="106" font-size="11" class="mono t-s" letter-spacing="1">DISCOVERY</text>
+  <rect x="24" y="164" width="672" height="292" rx="9" class="bx-s"/>
+  <text x="578" y="180" font-size="11" class="mono t-s" letter-spacing="1">TASK t-81</text>
+  <g font-size="13.5" font-weight="600" text-anchor="middle">
+    <rect x="30" y="30" width="120" height="36" rx="7" class="bx-n"/><text x="90" y="53">Person</text>
+    <rect x="215" y="30" width="150" height="36" rx="7" class="bx-a"/><text x="290" y="53" class="t-a">Freight agent</text>
+    <rect x="485" y="30" width="150" height="36" rx="7" class="bx-n"/><text x="560" y="53">Quoting agent</text>
+  </g>
+  <g class="life">
+    <line x1="90" y1="66" x2="90" y2="460"/><line x1="290" y1="66" x2="290" y2="460"/><line x1="560" y1="66" x2="560" y2="460"/>
+  </g>
+  <g font-size="11.5" class="mono" text-anchor="middle">
+    <text x="425" y="116">GET agent-card.json</text>
+    <text x="425" y="140" class="t-s">signed Agent Card</text>
+    <text x="425" y="198">SendStreamingMessage</text>
+    <text x="425" y="226" class="t-s">statusUpdate: WORKING</text>
+    <text x="425" y="254" class="t-am">INPUT_REQUIRED, stream ends</text>
+    <text x="190" y="282">Pune or Delhi?</text>
+    <text x="190" y="310" class="t-s">Pune</text>
+    <text x="425" y="338">SendStreamingMessage + taskId</text>
+    <text x="425" y="366" class="t-s">statusUpdate: WORKING</text>
+    <text x="425" y="394" class="t-s">artifactUpdate: quote.pdf</text>
+    <text x="425" y="422" class="t-g">COMPLETED, stream ends</text>
+  </g>
+  <line class="ln" x1="290" y1="124" x2="557" y2="124" marker-end="url(#ax5)"/>
+  <line class="ln-d" x1="560" y1="148" x2="293" y2="148" marker-end="url(#ax5)"/>
+  <line class="ln" x1="290" y1="206" x2="557" y2="206" marker-end="url(#ax5)"/>
+  <line class="ln-d" x1="560" y1="234" x2="293" y2="234" marker-end="url(#ax5)"/>
+  <line class="ln-d" x1="560" y1="262" x2="293" y2="262" marker-end="url(#ax5)"/>
+  <line class="ln" x1="290" y1="290" x2="93" y2="290" marker-end="url(#ax5)"/>
+  <line class="ln-d" x1="90" y1="318" x2="287" y2="318" marker-end="url(#ax5)"/>
+  <line class="ln" x1="290" y1="346" x2="557" y2="346" marker-end="url(#ax5)"/>
+  <line class="ln-d" x1="560" y1="374" x2="293" y2="374" marker-end="url(#ax5)"/>
+  <line class="ln-d" x1="560" y1="402" x2="293" y2="402" marker-end="url(#ax5)"/>
+  <line class="ln-d" x1="560" y1="430" x2="293" y2="430" marker-end="url(#ax5)"/>
+</svg>
+</div>
+<figcaption>The interruption doesn't end the task: the stream closes, the client gathers the answer, and a new request with the same task id picks up where the work stopped.</figcaption>
+</figure>
+
+<p>Three things in the picture are worth pausing on. Discovery happens once and can be cached; the discovery guide recommends ordinary HTTP caching headers on the card. The remote agent decides on its own that it needs input, and says so through the task state rather than a special request type. And the person never talks to the quoting agent: the freight agent relays the question, so the supplier never learns who the person is unless the client chooses to say.</p>
+<p>Here is the opening request over the JSON-RPC binding:</p>
+<pre><code>POST /a2a HTTP/1.1
+Content-Type: application/json
+A2A-Version: 1.0
+Authorization: Bearer ...
+
+{
+  "jsonrpc": "2.0",
+  "id": "req-1",
+  "method": "SendStreamingMessage",
+  "params": {
+    "message": {
+      "messageId": "msg-1",
+      "role": "ROLE_USER",
+      "parts": [
+        {
+          "text": "Quote 40 pallets of SKU-2291 from Chennai, delivery within 14 days.",
+          "mediaType": "text/plain"
+        }
+      ]
+    }
+  }
+}</code></pre>
+<p>The server opens a stream and, after some work, sends this event. The question for the person rides inside the status as an agent message:</p>
+<pre><code>{
+  "jsonrpc": "2.0",
+  "id": "req-1",
+  "result": {
+    "statusUpdate": {
+      "taskId": "t-81",
+      "contextId": "ctx-7",
+      "status": {
+        "state": "TASK_STATE_INPUT_REQUIRED",
+        "message": {
+          "messageId": "msg-a3",
+          "role": "ROLE_AGENT",
+          "parts": [
+            {
+              "text": "Deliver to which site: Pune or Delhi?",
+              "mediaType": "text/plain"
+            }
+          ]
+        },
+        "timestamp": "2026-11-20T09:14:03.120Z"
+      }
+    }
+  }
+}</code></pre>
+<p>The stream then closes. The client asks the person, and resumes the same task by sending a new message that carries both ids:</p>
+<pre><code>{
+  "jsonrpc": "2.0",
+  "id": "req-2",
+  "method": "SendStreamingMessage",
+  "params": {
+    "message": {
+      "messageId": "msg-2",
+      "role": "ROLE_USER",
+      "taskId": "t-81",
+      "contextId": "ctx-7",
+      "parts": [
+        {
+          "text": "Pune",
+          "mediaType": "text/plain"
+        }
+      ]
+    }
+  }
+}</code></pre>
+<p>On the new stream, the quote arrives as an artifact update, followed by the completed status:</p>
+<pre><code>{
+  "jsonrpc": "2.0",
+  "id": "req-2",
+  "result": {
+    "artifactUpdate": {
+      "taskId": "t-81",
+      "contextId": "ctx-7",
+      "artifact": {
+        "artifactId": "art-q1",
+        "name": "quote.pdf",
+        "parts": [
+          {
+            "url": "https://quotes.supplier.example/q/881.pdf",
+            "filename": "quote.pdf",
+            "mediaType": "application/pdf"
+          }
+        ]
+      },
+      "index": 0
+    }
+  }
+}</code></pre>
+<p>Field names follow the v1.0 JSON conventions in the <a href="https://a2a-protocol.org/latest/whats-new-v1/">v1.0 notes</a>: events are told apart by their wrapper (<code>statusUpdate</code> or <code>artifactUpdate</code>) rather than a type field, and the end of the stream signals that the task has stopped.</p>
+
+<h2 id="s6">6 · The three bindings</h2>
+<div class="kicker">same model, three ways to carry it</div>
+<p>Every A2A operation exists in all three bindings, and v1.0 specifies them to be equivalent. Pick by your clients and your infrastructure, not by features.</p>
+<div class="tbl"><table>
+<tr><th>Binding</th><th>What it looks like</th><th>Streaming</th><th>Good fit</th></tr>
+<tr><td>JSON-RPC 2.0</td><td>One endpoint; method names such as <code>SendMessage</code> in the body</td><td>Server-Sent Events</td><td>The default in most samples; easy to debug</td></tr>
+<tr><td>gRPC</td><td>Protocol buffer services generated from <code>a2a.proto</code></td><td>gRPC server streaming</td><td>Service-to-service traffic inside one company, high volume</td></tr>
+<tr><td>HTTP+JSON</td><td>Resource paths such as <code>POST /message:send</code> and <code>GET /tasks/{id}</code></td><td>Server-Sent Events</td><td>Teams used to REST tooling, gateways and caches</td></tr>
+</table></div>
+<p>An agent can offer several bindings at once by listing them in <code>supportedInterfaces</code>, in order of preference. Version 1.0 dropped the <code>/v1</code> prefix from HTTP paths, leaving versioning to the interface entry and the <code>A2A-Version</code> header, and v1.0.1 recommends the media type <code>application/a2a+json</code> for the HTTP binding.</p>
+
+<h2 id="s7">7 · Versions and migration</h2>
+<div class="kicker">v0.3 to v1.0 was a real migration</div>
+<p>The jump to v1.0 broke a lot. The <a href="https://github.com/a2aproject/A2A/releases">v1.0.0 release notes</a> list 16 breaking changes. The ones most code hits are the unified <code>Part</code> type, the new upper-case state and role names, stream events identified by wrapper rather than a <code>kind</code> field, the Agent Card's move to <code>supportedInterfaces</code>, cursor-based pagination for task lists, and the switch of errors to <code>google.rpc.Status</code>. The <a href="https://a2a-protocol.org/latest/whats-new-v1/">migration notes</a> rate the Part change as the most disruptive.</p>
+<p>The same release also built in a way to avoid repeating the pain. Because each interface in a card declares its own protocol version, an agent can expose a v0.3 interface and a v1.0 interface at the same time, and a client picks the newest one it understands. The project suggests three phases: read both formats, emit v1.0 while still accepting v0.3, then drop v0.3 once clients have moved. The roadmap's next version, v1.1, is planned as an evolution within the v1 line rather than another break (<a href="#s17">section 17</a>).</p>
+
+<h2 id="s8">8 · How it evolved</h2>
+<div class="kicker">nineteen months from announcement to the Agentic AI Foundation</div>
+<p>The timeline puts specification releases above the line and the events that shaped them below. Positions show order, not exact spacing in time.</p>
+
+<figure class="diag" id="fig-timeline">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Timeline from Google's April 2025 announcement through v0.3, v1.0 and v1.0.1, with the Linux Foundation donation, IBM's ACP merging in, the AP2 payments protocol, 150 supporting organisations and the move to the Agentic AI Foundation below the line">
+  <line class="axis" x1="24" y1="140" x2="696" y2="140"/>
+  <g text-anchor="middle">
+    <rect x="24" y="40" width="116" height="72" rx="7" class="bx-w"/>
+    <text x="82" y="60" font-size="12" class="mono" font-weight="600">Apr 2025</text>
+    <text x="82" y="79" font-size="13" font-weight="600">Announced</text>
+    <text x="82" y="96" font-size="12" class="t-s">50+ partners</text>
+    <rect x="142" y="40" width="116" height="72" rx="7" class="bx-w"/>
+    <text x="200" y="60" font-size="12" class="mono" font-weight="600">Jul 2025</text>
+    <text x="200" y="79" font-size="13" font-weight="600">v0.3</text>
+    <text x="200" y="96" font-size="12" class="t-s">signed cards</text>
+    <rect x="336" y="40" width="116" height="72" rx="7" class="bx-a"/>
+    <text x="394" y="60" font-size="12" class="mono t-a" font-weight="600">Mar 2026</text>
+    <text x="394" y="79" font-size="13" font-weight="600">v1.0</text>
+    <text x="394" y="96" font-size="12" class="t-s">first stable spec</text>
+    <rect x="462" y="40" width="116" height="72" rx="7" class="bx-w"/>
+    <text x="520" y="60" font-size="12" class="mono" font-weight="600">May 2026</text>
+    <text x="520" y="79" font-size="13" font-weight="600">v1.0.1</text>
+    <text x="520" y="96" font-size="12" class="t-s">patch release</text>
+    <rect x="588" y="40" width="108" height="72" rx="7" class="dash-am"/>
+    <text x="642" y="60" font-size="12" class="mono t-am" font-weight="600">Next</text>
+    <text x="642" y="79" font-size="13" font-weight="600">v1.1</text>
+    <text x="642" y="96" font-size="12" class="t-s">in progress</text>
+  </g>
+  <g>
+    <line class="ln" x1="82" y1="112" x2="54" y2="135"/><circle cx="54" cy="140" r="5" class="bx-a"/>
+    <line class="ln" x1="200" y1="112" x2="190" y2="135"/><circle cx="190" cy="140" r="5" class="bx-a"/>
+    <line class="ln" x1="394" y1="112" x2="394" y2="135"/><circle cx="394" cy="140" r="5" class="bx-a"/>
+    <line class="ln" x1="520" y1="112" x2="530" y2="135"/><circle cx="530" cy="140" r="5" class="bx-a"/>
+    <line class="ln" x1="642" y1="112" x2="666" y2="135"/><circle cx="666" cy="140" r="5" class="bx-w"/>
+    <circle cx="122" cy="140" r="4" class="bx-w"/><line class="ln" x1="122" y1="144" x2="122" y2="168"/>
+    <circle cx="258" cy="140" r="4" class="bx-w"/><line class="ln" x1="258" y1="144" x2="245" y2="168"/>
+    <circle cx="326" cy="140" r="4" class="bx-w"/><line class="ln" x1="326" y1="144" x2="365" y2="168"/>
+    <circle cx="462" cy="140" r="4" class="bx-w"/><line class="ln" x1="462" y1="144" x2="485" y2="168"/>
+    <circle cx="598" cy="140" r="4" class="bx-w"/><line class="ln" x1="598" y1="144" x2="620" y2="168"/>
+  </g>
+  <g text-anchor="middle">
+    <rect x="64" y="170" width="116" height="54" rx="7" class="bx-n"/>
+    <text x="122" y="190" font-size="11.5" class="mono">Jun 2025</text>
+    <text x="122" y="209" font-size="12" font-weight="600">Linux Foundation</text>
+    <rect x="187" y="170" width="116" height="54" rx="7" class="bx-n"/>
+    <text x="245" y="190" font-size="11.5" class="mono">Aug 2025</text>
+    <text x="245" y="209" font-size="12" font-weight="600">IBM's ACP merges</text>
+    <rect x="307" y="170" width="116" height="54" rx="7" class="bx-n"/>
+    <text x="365" y="190" font-size="11.5" class="mono">Sep 2025</text>
+    <text x="365" y="209" font-size="12" font-weight="600">AP2 payments</text>
+    <rect x="427" y="170" width="116" height="54" rx="7" class="bx-n"/>
+    <text x="485" y="190" font-size="11.5" class="mono">Apr 2026</text>
+    <text x="485" y="209" font-size="12" font-weight="600">150+ backers</text>
+    <rect x="562" y="170" width="116" height="54" rx="7" class="bx-n"/>
+    <text x="620" y="190" font-size="11.5" class="mono">Aug 2026</text>
+    <text x="620" y="209" font-size="12" font-weight="600">Joins AAIF</text>
+  </g>
+</svg>
+</div>
+<figcaption>A2A spent its first year consolidating, absorbing a rival and moving to neutral governance, before its first stable release.</figcaption>
+</figure>
+
+<div class="tbl"><table>
+<tr><th class="nw">When</th><th>What happened</th><th>Why it mattered</th></tr>
+<tr><td class="nw">9 Apr 2025</td><td>Google <a href="https://developers.googleblog.com/en/a2a-a-new-era-of-agent-interoperability/">announced A2A</a> with more than 50 partners and promised a production-ready version later that year</td><td>Enterprise software vendors signed on from day one</td></tr>
+<tr><td class="nw">23 Jun 2025</td><td>Google donated the spec, SDKs and tooling to the <a href="https://developers.googleblog.com/en/google-cloud-donates-a2a-to-linux-foundation/">Linux Foundation</a>; AWS, Cisco, Google, Microsoft, Salesforce, SAP and ServiceNow formed the project</td><td>The protocol stopped being one vendor's</td></tr>
+<tr><td class="nw">30 Jul 2025</td><td><a href="https://github.com/a2aproject/A2A/releases">v0.3</a> moved the card to <code>agent-card.json</code> and added card signatures and mutual TLS</td><td>The identity features enterprises asked for</td></tr>
+<tr><td class="nw">29 Aug 2025</td><td>IBM's Agent Communication Protocol <a href="https://lfaidata.foundation/?p=7689">merged into A2A</a></td><td>The main rival chose consolidation</td></tr>
+<tr><td class="nw">16 Sep 2025</td><td>Google launched <a href="https://cloud.google.com/blog/products/ai-machine-learning/announcing-agents-to-payments-ap2-protocol/?hl=en">AP2</a>, a payments protocol usable as an A2A extension</td><td>A2A grew a commerce layer</td></tr>
+<tr><td class="nw">12 Mar 2026</td><td><a href="https://github.com/a2aproject/A2A/releases">v1.0</a>, the first stable specification</td><td>A stable base, at the cost of a migration</td></tr>
+<tr><td class="nw">9 Apr 2026</td><td>The Linux Foundation reported <a href="https://www.linuxfoundation.org/press/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year">more than 150 supporting organisations</a></td><td>Breadth of support, not proof of use (<a href="#s9">section 9</a>)</td></tr>
+<tr><td class="nw">Aug 2026</td><td>A2A was <a href="https://a2a-protocol.org/latest/blog/2026/08/27/a-new-chapter-for-a2a-joining-the-agentic-ai-foundation/">accepted as a Growth Stage project</a> of the Agentic AI Foundation, alongside MCP</td><td>Both protocols now share one governance home</td></tr>
+</table></div>
+
+<h2 id="s9">9 · Adoption, read carefully</h2>
+<div class="kicker">broad support; thinner evidence of use</div>
+<p>A2A's adoption story is real but needs sorting by evidence type, because "supports A2A" covers everything from a logo on a slide to agents in production. The table separates the claims by what they actually show.</p>
+<div class="tbl"><table>
+<tr><th>Claim</th><th>Source</th><th>What it shows</th></tr>
+<tr><td>More than 150 organisations support A2A</td><td><a href="https://www.linuxfoundation.org/press/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year">Linux Foundation</a>, April 2026</td><td>Breadth of endorsement; not a count of deployments</td></tr>
+<tr><td>Native support in Azure AI Foundry, Copilot Studio and Amazon Bedrock AgentCore Runtime</td><td>Same release; repeated by the project in August 2026</td><td>Concrete product integrations you can check</td></tr>
+<tr><td>Framework support in LangGraph, CrewAI, Pydantic AI, AG2 and IBM BeeAI</td><td><a href="https://a2a-protocol.org/latest/blog/2026/08/27/a-new-chapter-for-a2a-joining-the-agentic-ai-foundation/">A2A project</a>, August 2026</td><td>Builders can adopt it without writing a client</td></tr>
+<tr><td>ServiceNow, Salesforce, Atlassian and SAP use A2A to connect workflows</td><td>Same post, citing the foundation proposal</td><td>Vendor-to-vendor integration, as described by the project</td></tr>
+<tr><td>Runs in production across supply chains, financial services and mobile platforms</td><td>Same post</td><td>A claim without named deployments or volumes</td></tr>
+</table></div>
+<p>Two things are missing that MCP has. There's no public usage figure comparable to MCP's SDK download counts, and no named, quantified production deployment in the sources reviewed for this page. That doesn't mean A2A isn't used; cross-company agent traffic is exactly the kind companies don't publicise. It does mean the adoption claims are claims, and they come from the project and its backers.</p>
+<p>The fair reading: A2A has won the standards contest for agent-to-agent delegation (its main rival merged in, and the large clouds and enterprise suites all ship it), while the volume of real cross-organisation agent traffic is still unknown.</p>
+
+<h2 id="s10">10 · SDKs and tools</h2>
+<div class="kicker">six official SDKs, plus a debugger and a test kit</div>
+<p>The project hosts official SDKs in six languages, according to its <a href="https://a2a-protocol.org/latest/roadmap/">roadmap</a>. Each can build both clients and servers.</p>
+<div class="tbl"><table>
+<tr><th>Language</th><th class="nw">Repository</th><th>Notes</th></tr>
+<tr><td>Python</td><td class="nw"><a href="https://github.com/a2aproject/a2a-python">a2a-python</a></td><td>Used by the official quickstart tutorial</td></tr>
+<tr><td>Go</td><td class="nw"><a href="https://github.com/a2aproject/a2a-go">a2a-go</a></td><td>Official</td></tr>
+<tr><td>Java</td><td class="nw"><a href="https://github.com/a2aproject/a2a-java">a2a-java</a></td><td>Official</td></tr>
+<tr><td>JavaScript</td><td class="nw"><a href="https://github.com/a2aproject/a2a-js">a2a-js</a></td><td>Official</td></tr>
+<tr><td>.NET</td><td class="nw"><a href="https://github.com/a2aproject/a2a-dotnet">a2a-dotnet</a></td><td>Official</td></tr>
+<tr><td>Rust</td><td class="nw"><a href="https://github.com/a2aproject/a2a-rs">a2a-rs</a></td><td>Official; community crates also exist</td></tr>
+</table></div>
+<p>Three tools round out the kit. The <strong>A2A Inspector</strong> is a debugger for poking at an agent's card and tasks. The <strong>Technology Compatibility Kit</strong> (TCK) tests whether an implementation follows the spec. And the <strong>A2A CLI</strong>, introduced in October 2026, lets you discover, message and manage agents from a terminal, and is meant to bring A2A into coding tools. All three are listed on the <a href="https://a2a-protocol.org/latest/roadmap/">roadmap page</a>. Most agent frameworks also act as A2A clients and servers themselves (<a href="#s9">section 9</a>), so many teams never touch an SDK directly.</p>
+
+<h2 id="s11">11 · A2A and MCP</h2>
+<div class="kicker">different jobs, converging features</div>
+<p>The two protocols are designed to stack. A person or app talks to a client agent; that agent delegates across organisations with A2A; each remote agent uses MCP to reach its own tools. The layer diagram shows the arrangement, including where payment extensions ride.</p>
+
+<figure class="diag" id="fig-layers">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 440" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A layered view: a person or app uses a client agent, which delegates to remote agents through A2A, with discovery, tasks and extensions such as payments in the A2A layer; each remote agent reaches its own tools through MCP">
+  <defs>
+    <marker id="ax7" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker>
+  </defs>
+  <g text-anchor="middle" font-size="13.5" font-weight="600">
+    <rect x="235" y="30" width="250" height="40" rx="7" class="bx-n"/><text x="360" y="55">Person or application</text>
+    <rect x="235" y="94" width="250" height="40" rx="7" class="bx-n"/><text x="360" y="119">Client agent</text>
+  </g>
+  <line class="ln" x1="360" y1="70" x2="360" y2="91" marker-end="url(#ax7)"/>
+  <line class="ln" x1="360" y1="134" x2="360" y2="155" marker-end="url(#ax7)"/>
+  <rect x="24" y="158" width="672" height="104" rx="9" class="bx-a"/>
+  <text x="42" y="181" font-size="12" class="mono t-a" font-weight="600" letter-spacing="1.2">A2A · AGENT TO AGENT · ACROSS BOUNDARIES</text>
+  <g text-anchor="middle" font-size="13.5">
+    <rect x="42" y="196" width="200" height="48" rx="6" class="bx-w"/>
+    <text x="142" y="216" font-weight="600">Discovery</text><text x="142" y="234" font-size="12" class="t-s">Agent Cards, skills</text>
+    <rect x="260" y="196" width="200" height="48" rx="6" class="bx-w"/>
+    <text x="360" y="216" font-weight="600">Tasks</text><text x="360" y="234" font-size="12" class="t-s">messages, artifacts, states</text>
+    <rect x="478" y="196" width="200" height="48" rx="6" class="bx-w"/>
+    <text x="578" y="216" font-weight="600">Extensions</text><text x="578" y="234" font-size="12" class="t-s">payments: AP2, x402</text>
+  </g>
+  <g text-anchor="middle" font-size="13.5" font-weight="600">
+    <rect x="42" y="286" width="200" height="44" rx="7" class="bx-n"/><text x="142" y="313">Supplier agent</text>
+    <rect x="260" y="286" width="200" height="44" rx="7" class="bx-n"/><text x="360" y="313">Billing agent</text>
+    <rect x="478" y="286" width="200" height="44" rx="7" class="bx-n"/><text x="578" y="313">Logistics agent</text>
+  </g>
+  <line class="ln" x1="142" y1="262" x2="142" y2="283" marker-end="url(#ax7)"/>
+  <line class="ln" x1="360" y1="262" x2="360" y2="283" marker-end="url(#ax7)"/>
+  <line class="ln" x1="578" y1="262" x2="578" y2="283" marker-end="url(#ax7)"/>
+  <rect x="24" y="350" width="672" height="72" rx="9" class="bx-s"/>
+  <text x="42" y="372" font-size="12" class="mono t-s" font-weight="600" letter-spacing="1.2">MCP</text>
+  <g text-anchor="middle" font-size="12.5">
+    <rect x="42" y="380" width="200" height="30" rx="5" class="bx-n"/><text x="142" y="400">inventory, pricing</text>
+    <rect x="260" y="380" width="200" height="30" rx="5" class="bx-n"/><text x="360" y="400">invoices, ledger</text>
+    <rect x="478" y="380" width="200" height="30" rx="5" class="bx-n"/><text x="578" y="400">carriers, tracking</text>
+  </g>
+  <line class="ln" x1="142" y1="330" x2="142" y2="377" marker-end="url(#ax7)"/>
+  <line class="ln" x1="360" y1="330" x2="360" y2="377" marker-end="url(#ax7)"/>
+  <line class="ln" x1="578" y1="330" x2="578" y2="377" marker-end="url(#ax7)"/>
+</svg>
+</div>
+<figcaption>A2A is the band between organisations; MCP sits beneath each agent and is never visible across that band.</figcaption>
+</figure>
+
+<p>That's the clean picture. The messier truth is that the two protocols have grown similar features, because both had to handle long-running, interactive work. The table maps the concepts side by side, using MCP's 2026-07-28 revision.</p>
+<div class="tbl"><table>
+<tr><th>Concern</th><th>A2A v1.0</th><th>MCP 2026-07-28</th></tr>
+<tr><td>Discovery</td><td>Agent Card at a well-known URL; skills described in prose</td><td><code>server/discover</code> and <code>tools/list</code>; tools described with input schemas</td></tr>
+<tr><td>Unit of work</td><td>A task with a lifecycle; finished tasks never restart</td><td>A tool call; long jobs use the Tasks extension</td></tr>
+<tr><td>Asking for more</td><td><code>INPUT_REQUIRED</code> and <code>AUTH_REQUIRED</code> task states</td><td>An <code>input_required</code> result, then a retry with answers</td></tr>
+<tr><td>Following progress</td><td>Server-Sent Events, resubscription, push webhooks</td><td>Progress on the response stream; polling with <code>tasks/get</code>; <code>subscriptions/listen</code></td></tr>
+<tr><td>What the caller sees</td><td>Only the card and the outputs; internals stay opaque</td><td>Every tool's name, description and schema</td></tr>
+<tr><td>Transports</td><td>JSON-RPC, gRPC or HTTP+JSON, all over HTTPS</td><td>stdio locally, Streamable HTTP remotely</td></tr>
+<tr><td>Governance</td><td>Agentic AI Foundation, since August 2026</td><td>Agentic AI Foundation, since December 2025</td></tr>
+</table></div>
+<p>So when should you choose which? In the author's view, the deciding question is control, not features. MCP assumes the caller is in charge: it sees every tool and decides each call. A2A assumes a peer: you state a goal, and the other agent decides how to meet it. If you want to drive the work, expose tools. If you want to hand off the work and get a result, delegate a task. The A2A project draws a similar line when it says A2A is about agents <a href="https://a2a-protocol.org/latest/topics/a2a-and-mcp/">partnering on tasks</a> while MCP is about agents using capabilities.</p>
+
+<h2 id="s12">12 · Payments and commerce</h2>
+<div class="kicker">the layer MCP doesn't have</div>
+<p>Once agents can delegate across companies, the next question is whether one agent can spend money on a person's behalf at another. Google's answer is the <a href="https://cloud.google.com/blog/products/ai-machine-learning/announcing-agents-to-payments-ap2-protocol/?hl=en">Agent Payments Protocol (AP2)</a>, launched on 16 September 2025 and usable as an extension of A2A or MCP. Its core idea is the <strong>mandate</strong>: a cryptographically signed, tamper-evident record of what the person actually authorised. An intent mandate captures the request ("buy these tickets if the price drops below this"), and a cart mandate captures the final purchase. The chain of mandates links intent to payment, so a merchant or bank can check the agent had permission.</p>
+<p>Two related pieces sit around it. The A2A x402 extension, built with Coinbase, the Ethereum Foundation, MetaMask and others, carries crypto payments over the same mechanism. And according to the <a href="https://www.linuxfoundation.org/press/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year">Linux Foundation's April 2026 update</a>, AP2 had more than 60 supporting organisations in payments and financial services, and Google's Universal Commerce Protocol is compatible with it through a mandates extension.</p>
+<p>Mandates prove what the person signed. They don't prove the agent understood the person correctly. A <a href="https://arxiv.org/html/2601.22569v1">January 2026 red-team study of AP2</a> showed prompt injection steering which products an agent ranked and chose. Signed consent is only as good as the reasoning that led up to it.</p>
+
+<h2 id="s13">13 · Designing a good A2A agent</h2>
+<div class="kicker">what the spec leaves to you</div>
+<p>The specification defines the envelope. These six practices come from the project's own guides plus the author's judgment, and they decide whether other agents can use yours well.</p>
+<p><strong>Write skills for a reader that's a model.</strong> A client agent picks your agent by reading the skills on your card. Give each skill a concrete description, real example prompts, and accurate input and output media types. Vague skills get the wrong work, or none.</p>
+<p><strong>Decide between messages and tasks deliberately.</strong> Use messages for quick answers and to agree scope; create a task once there's committed work to track. The <a href="https://a2a-protocol.org/latest/topics/life-of-a-task/">lifecycle guide</a> describes message-only, task-only and hybrid agents; pick one and be consistent, because clients build their logic around it.</p>
+<p><strong>Use the interrupted states instead of guessing.</strong> When a request is ambiguous, return <code>INPUT_REQUIRED</code> with a precise question. When you need consent or credentials, return <code>AUTH_REQUIRED</code>. A wrong guess executed confidently costs more than one round trip.</p>
+<p><strong>Keep artifacts traceable.</strong> Reuse an artifact's name across refinements and give each version a new id, as the lifecycle guide recommends. Since finished tasks never restart, every artifact maps to exactly one task.</p>
+<p><strong>Make long work resumable.</strong> Support streaming and <code>SubscribeToTask</code> so dropped connections don't lose work, and offer push notifications for anything that runs longer than a client can sensibly stay connected.</p>
+<p><strong>Keep the card honest and cacheable.</strong> Serve it with caching headers, sign it, put anything sensitive in the extended card, and update it when skills change. A card that promises more than the agent does turns into failed tasks on someone else's side.</p>
+
+<h2 id="s14">14 · Security in practice</h2>
+<div class="kicker">trusting a stranger's agent</div>
+<p>MCP's main risk is a tool description written by someone else. A2A raises the stakes, because the other side is a full agent with its own goals, run by someone you may never have met. Research so far points at three entry points, shown below with the defences a client can apply.</p>
+
+<figure class="diag" id="fig-trust">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three things a remote agent or client can send carry risk: Agent Card text, messages and artifacts, and push webhook URLs; each has a matching defence before it reaches your agent's context or network">
+  <defs>
+    <marker id="ax8" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker>
+  </defs>
+  <text x="24" y="34" font-size="12" class="mono t-am" font-weight="600" letter-spacing="1.2">WHAT CROSSES THE BOUNDARY</text>
+  <text x="282" y="34" font-size="12" class="mono t-s" font-weight="600" letter-spacing="1.2">DEFENCES</text>
+  <rect x="14" y="46" width="244" height="220" rx="10" class="dash-am"/>
+  <rect x="282" y="46" width="200" height="220" rx="10" class="bx-s"/>
+  <g font-size="13.5">
+    <rect x="28" y="62" width="216" height="50" rx="7" class="bx-n"/>
+    <text x="42" y="82" font-weight="600">Agent Card text</text>
+    <text x="42" y="100" font-size="12" class="t-s">poisoning, impersonation</text>
+    <rect x="28" y="128" width="216" height="50" rx="7" class="bx-n"/>
+    <text x="42" y="148" font-weight="600">Messages, artifacts</text>
+    <text x="42" y="166" font-size="12" class="t-s">cross-agent injection</text>
+    <rect x="28" y="194" width="216" height="50" rx="7" class="bx-n"/>
+    <text x="42" y="214" font-weight="600">Push webhook URLs</text>
+    <text x="42" y="232" font-size="12" class="t-s">request forgery, replay</text>
+    <rect x="296" y="62" width="172" height="50" rx="7" class="bx-w"/>
+    <text x="310" y="82" font-weight="600">Verify and pin</text>
+    <text x="310" y="100" font-size="12" class="t-s">signed cards, allow-list</text>
+    <rect x="296" y="128" width="172" height="50" rx="7" class="bx-w"/>
+    <text x="310" y="148" font-weight="600">Treat as data</text>
+    <text x="310" y="166" font-size="12" class="t-s">never as instructions</text>
+    <rect x="296" y="194" width="172" height="50" rx="7" class="bx-w"/>
+    <text x="310" y="214" font-weight="600">Check both ends</text>
+    <text x="310" y="232" font-size="12" class="t-s">host lists, signed calls</text>
+  </g>
+  <rect x="508" y="96" width="188" height="120" rx="9" class="bx-a"/>
+  <g text-anchor="middle" font-size="13.5">
+    <text x="602" y="140" font-weight="600" class="t-a">Your agent</text>
+    <text x="602" y="162" font-size="12" class="t-s">its context, its tools,</text>
+    <text x="602" y="178" font-size="12" class="t-s">its network</text>
+  </g>
+  <line class="ln" x1="244" y1="87" x2="293" y2="87" marker-end="url(#ax8)"/>
+  <line class="ln" x1="244" y1="153" x2="293" y2="153" marker-end="url(#ax8)"/>
+  <line class="ln" x1="244" y1="219" x2="293" y2="219" marker-end="url(#ax8)"/>
+  <path class="ln" d="M468,87 C490,87 488,152 505,154"/>
+  <path class="ln" d="M468,153 L505,156"/>
+  <path class="ln" d="M468,219 C490,219 488,160 505,158" marker-end="url(#ax8)"/>
+</svg>
+</div>
+<figcaption>Signing proves who sent a card, not that its contents are safe: every path still needs a defence that treats the other side's text as untrusted.</figcaption>
+</figure>
+
+<p><strong>Card poisoning is the A2A version of tool poisoning.</strong> A client agent typically puts the cards of candidate agents into its model's context to choose one. A <a href="https://keysight.com/blogs/en/tech/nwvs/2026/03/12/agent-card-poisoning">March 2026 demonstration by Keysight</a> (vendor) hid instructions in a card's text and got a host agent to send a user's booking details, including payment card data, to an attacker's endpoint. A valid signature doesn't help here: it proves who wrote the card, not that the text is safe.</p>
+<p><strong>The protocol itself has gaps.</strong> A <a href="https://arxiv.org/pdf/2609.10871">September 2026 study, A2ABreak</a>, reported eleven protocol-level vulnerabilities exploitable by agents that follow the specification exactly, with no implementation bugs required. An earlier <a href="https://arxiv.org/html/2504.16902v1">threat-modelling paper</a> catalogued spoofing, task replay, privilege escalation and prompt injection in A2A deployments. Research has run ahead of incidents: this review found no publicly reported real-world A2A breach, which may reflect limited cross-company deployment as much as safety.</p>
+<p><strong>Defences sit mostly with the client.</strong> Allow-list the agents you delegate to instead of discovering strangers at runtime; verify card signatures and pin the card you approved; keep cards and remote outputs out of the instruction part of your model's context; give each delegation the narrowest credentials that work; and require a person's confirmation before any task that spends money or shares personal data. On the server side, follow the push-notification rules in <a href="#m45">4.5</a>, and remember that a client can be hostile too.</p>
+
+<h2 id="s15">15 · Operations</h2>
+<div class="kicker">discovery, gateways, tenants and tracing</div>
+<p><strong>Discovery at company scale needs a registry.</strong> Well-known URLs work for public agents, and direct configuration works for a handful of partners. Beyond that, companies put cards in a registry that can return different cards to different callers. The specification doesn't yet standardise a registry API, so today each registry is product-specific; the Linux Foundation's <a href="https://www.linuxfoundation.org/press/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year">April 2026 update</a> lists consolidating registry efforts as a roadmap goal.</p>
+<p><strong>Treat agent endpoints like any partner API.</strong> The same gateway jobs that apply to MCP apply here: central authentication, per-identity allow-lists of which agents may call which, rate limits, and one audit log. A2A's use of plain HTTPS, standard OAuth and, for the HTTP binding, resource paths makes this ordinary gateway work.</p>
+<p><strong>Use tenants for hosting many agents.</strong> The v1.0 <code>tenant</code> field lets a platform host many customers' agents behind one endpoint, with each card naming its default tenant. Every request must still be checked against the caller's own access; the specification requires servers to return only tasks visible to the caller.</p>
+<p><strong>Trace across agents.</strong> A delegated task may pass through several agents, each calling its own tools. Carry a trace identifier through every hop and log task ids alongside it, so one request can be followed end to end. The <code>contextId</code> groups work inside one agent pair; it isn't a cross-agent trace on its own.</p>
+
+<h2 id="s16">16 · Examples</h2>
+<div class="kicker">a card, a Python agent, a raw call</div>
+<p><strong>An Agent Card.</strong> A minimal v1.0 card for the quoting agent. Security schemes and signatures are left out for brevity; see the <a href="https://a2a-protocol.org/latest/specification/">specification</a> for their exact shape.</p>
+<pre><code>{
+  "name": "Quoting agent",
+  "description": "Prices palletised freight shipments between Indian cities.",
+  "version": "2.3.0",
+  "provider": {
+    "organization": "Supplier Co",
+    "url": "https://supplier.example"
+  },
+  "supportedInterfaces": [
+    {
+      "url": "https://agents.supplier.example/a2a",
+      "protocolBinding": "JSONRPC",
+      "protocolVersion": "1.0"
+    },
+    {
+      "url": "https://agents.supplier.example/a2a/rest",
+      "protocolBinding": "HTTP+JSON",
+      "protocolVersion": "1.0"
+    }
+  ],
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": true,
+    "extendedAgentCard": true
+  },
+  "defaultInputModes": [
+    "text/plain"
+  ],
+  "defaultOutputModes": [
+    "text/plain",
+    "application/pdf"
+  ],
+  "skills": [
+    {
+      "id": "quote_shipment",
+      "name": "Quote a shipment",
+      "description": "Prices a palletised shipment between two Indian cities within a delivery window. Asks for the delivery site if it is missing.",
+      "tags": [
+        "freight",
+        "quote"
+      ],
+      "examples": [
+        "Quote 40 pallets from Chennai to Pune in 14 days"
+      ],
+      "inputModes": [
+        "text/plain"
+      ],
+      "outputModes": [
+        "application/pdf"
+      ]
+    }
+  ]
+}</code></pre>
+<p><strong>A Python agent.</strong> The official Python SDK separates the card from an <strong>agent executor</strong> that does the work. This executor is adapted from the <a href="https://a2a-protocol.org/latest/tutorials/python/4-agent-executor/">quickstart tutorial</a>; imports and the server wiring are in the tutorial's <code>helloworld</code> sample.</p>
+<pre><code>class QuoteExecutor(AgentExecutor):
+    async def execute(self, context: RequestContext,
+                      event_queue: EventQueue) -> None:
+        # 1. Reuse the task, or create one for a new request
+        task = context.current_task
+        if task is None:
+            task = new_task_from_user_message(context.message)
+            await event_queue.enqueue_event(task)
+
+        updater = TaskUpdater(event_queue=event_queue,
+                              task_id=task.id,
+                              context_id=task.context_id)
+        await updater.update_status(
+            state=TaskState.TASK_STATE_WORKING,
+            message=new_text_message("Pricing the shipment..."))
+
+        # 2. Do the work: your model, your MCP tools
+        quote = await price_shipment(get_message_text(context.message))
+
+        # 3. Return the result as an artifact, then finish
+        await updater.add_artifact(
+            parts=[new_text_part(text=quote, media_type="text/plain")])
+        await updater.update_status(
+            state=TaskState.TASK_STATE_COMPLETED,
+            message=new_text_message("Quote ready."))
+
+    async def cancel(self, context, event_queue) -> None:
+        ...</code></pre>
+<p>The pattern is the same in every SDK. The executor reads the incoming message, reports state changes through an event queue, and attaches artifacts; the SDK turns those events into the right messages for whichever binding the client used. To ask a question instead of guessing, the executor would set <code>TASK_STATE_INPUT_REQUIRED</code> with the question as its message and return.</p>
+<p><strong>A raw call with curl.</strong> Fetching a card and sending a message over the HTTP+JSON binding needs no SDK:</p>
+<pre><code># 1. Fetch the Agent Card
+curl -s https://agents.supplier.example/.well-known/agent-card.json
+
+# 2. Send a message and wait for the task to settle
+curl -s -X POST https://agents.supplier.example/a2a/rest/message:send \
+  -H "Content-Type: application/a2a+json" \
+  -H "A2A-Version: 1.0" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+  "message": {
+    "messageId": "msg-9",
+    "role": "ROLE_USER",
+    "parts": [
+      {
+        "text": "Quote 12 pallets from Chennai to Delhi in 10 days.",
+        "mediaType": "text/plain"
+      }
+    ]
+  }
+}'</code></pre>
+
+<h2 id="s17">17 · What's next</h2>
+<div class="kicker">the September 2026 roadmap, and open questions</div>
+<p>The project's <a href="https://a2a-protocol.org/latest/roadmap/">roadmap</a>, last updated on 15 September 2026, lists four near-term efforts.</p>
+<div class="tbl"><table>
+<tr><th>Effort</th><th>What's planned</th><th>Why it matters to you</th></tr>
+<tr><td>v1.1</td><td>Tighter task timelines, standard event filtering, rules for messages that arrive while an agent is working</td><td>Fewer ambiguous behaviours between implementations</td></tr>
+<tr><td>Bidirectional streaming</td><td>Two-way streams for live artifact updates and continuous conversation during a task</td><td>Agents could collaborate in real time instead of turn by turn</td></tr>
+<tr><td>A2A CLI</td><td>A command-line client meant to bring A2A into coding tools</td><td>Developers can test and script agents without writing a client</td></tr>
+<tr><td>Elicitation and multi-turn work</td><td>Structured human-in-the-loop interactions and multi-round negotiation patterns</td><td>A standard way to ask people questions, beyond free-text input requests</td></tr>
+</table></div>
+<p>Further out, the roadmap mentions governance through extensions, validation with the Inspector and TCK, SDKs in all six languages, and collecting community best practices. Four questions remain open.</p>
+<p><strong>Will real cross-company traffic materialise?</strong> The standard is settled; usage evidence isn't (<a href="#s9">section 9</a>). The first published, quantified deployment between two unrelated companies will say more than another list of backers.</p>
+<p><strong>Will a registry standard emerge?</strong> Without one, discovery beyond known partners stays product-specific, and so does trust.</p>
+<p><strong>How will A2A and MCP divide the work?</strong> Both now handle long-running, interactive tasks. Sharing a foundation may push them to align concepts, or to keep their lines sharp; the roadmap doesn't say.</p>
+<p><strong>Can trust keep up?</strong> Signed cards establish who an agent is. The research in <a href="#s14">section 14</a> shows that knowing who wrote something isn't the same as knowing it's safe to act on.</p>
+
+<h2 id="s18">18 · Checklists</h2>
+<div class="kicker">the page, condensed into things to do</div>
+<h3>If you're building an A2A agent</h3>
+<ol class="plain">
+<li>Describe each skill concretely, with real examples and accurate media types (<a href="#s13">section 13</a>).</li>
+<li>Choose a message, task or hybrid style and stick to it.</li>
+<li>Ask with <code>INPUT_REQUIRED</code> or <code>AUTH_REQUIRED</code> rather than guessing.</li>
+<li>Support streaming, resubscription and push for anything long-running.</li>
+<li>Sign your card, cache it, and keep sensitive detail in the extended card.</li>
+<li>Validate every webhook URL a client gives you before calling it (<a href="#m45">4.5</a>).</li>
+<li>Return only tasks the caller may see, and check tenants on every request.</li>
+<li>Test with the Inspector and the TCK before publishing.</li>
+</ol>
+<h3>If you're delegating to A2A agents</h3>
+<ol class="plain">
+<li>First ask whether you need A2A at all (<a href="#s2">section 2</a>).</li>
+<li>Allow-list the agents you call; verify and pin their cards.</li>
+<li>Keep cards and remote outputs out of your model's instructions (<a href="#s14">section 14</a>).</li>
+<li>Give each delegation the narrowest credentials that work.</li>
+<li>Require a person's approval before tasks that spend money or share personal data.</li>
+<li>Handle every terminal state, including <code>REJECTED</code>, and never assume a task restarts.</li>
+<li>Send the <code>A2A-Version</code> header and pick interfaces by version (<a href="#s7">section 7</a>).</li>
+<li>Trace each delegation end to end across agents.</li>
+</ol>
+
+<h2 id="s19">19 · Glossary</h2>
+<div class="kicker">plain meanings, in the order you'll meet them</div>
+<div class="tbl"><table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td>Client agent</td><td>The agent that starts an exchange, acting for a person or system</td></tr>
+<tr><td>Remote agent</td><td>The agent that does the work; also called the A2A server</td></tr>
+<tr><td>Agent Card</td><td>A JSON document describing an agent's identity, skills, endpoints and authentication</td></tr>
+<tr><td>Extended card</td><td>A fuller card served only to authenticated clients</td></tr>
+<tr><td>Skill</td><td>One capability listed on a card, with a description and examples</td></tr>
+<tr><td>Task</td><td>A unit of work with a lifecycle and outputs</td></tr>
+<tr><td>Context</td><td>A conversation that groups related tasks and messages, named by <code>contextId</code></td></tr>
+<tr><td>Message</td><td>One turn in the conversation, from the client or the agent</td></tr>
+<tr><td>Part</td><td>A piece of content in a message or artifact: text, bytes, a file link or JSON data</td></tr>
+<tr><td>Artifact</td><td>An output a task produces, such as a document or dataset</td></tr>
+<tr><td>Interrupted state</td><td>Input required or auth required: the task waits for the client</td></tr>
+<tr><td>Terminal state</td><td>Completed, failed, canceled or rejected: the task is over for good</td></tr>
+<tr><td>Binding</td><td>A wire format for the protocol: JSON-RPC, gRPC or HTTP+JSON</td></tr>
+<tr><td>SSE</td><td>Server-Sent Events: an HTTP response that streams many updates</td></tr>
+<tr><td>Push notification</td><td>A call from the agent to a client's webhook when a task changes</td></tr>
+<tr><td>A2A-Version</td><td>The header that tells a server which protocol version the client speaks</td></tr>
+<tr><td>Tenant</td><td>A customer or agent scope when many agents share one endpoint</td></tr>
+<tr><td>Extension</td><td>An optional add-on to the protocol, declared on the card</td></tr>
+<tr><td>JWS</td><td>JSON Web Signature, the standard used to sign Agent Cards</td></tr>
+<tr><td>AP2</td><td>Agent Payments Protocol, for agent-led purchases</td></tr>
+<tr><td>Mandate</td><td>A signed record of what a person authorised an agent to buy</td></tr>
+<tr><td>x402</td><td>An A2A extension for crypto payments</td></tr>
+<tr><td>Card poisoning</td><td>Hidden instructions in a card's text that steer the reading agent</td></tr>
+<tr><td>TCK</td><td>Technology Compatibility Kit: tests for spec compliance</td></tr>
+<tr><td>AAIF</td><td>Agentic AI Foundation, the Linux Foundation fund that hosts A2A and MCP</td></tr>
+</table></div>
+
+<h2 id="sources">Sources</h2>
+<div class="kicker">primary where possible; vendor sources marked</div>
+<ul class="ref">
+  <li>Specification and docs: <a href="https://a2a-protocol.org/latest/specification/">A2A specification</a> · <a href="https://a2a-protocol.org/latest/whats-new-v1/">What's new in v1.0</a> · <a href="https://github.com/a2aproject/A2A/releases">release notes</a> · <a href="https://a2a-protocol.org/latest/topics/life-of-a-task/">Life of a task</a> · <a href="https://a2a-protocol.org/latest/topics/agent-discovery/">Agent discovery</a> · <a href="https://a2a-protocol.org/latest/topics/streaming-and-async/">Streaming and async</a> · <a href="https://a2a-protocol.org/latest/topics/a2a-and-mcp/">A2A and MCP</a> · <a href="https://a2a-protocol.org/latest/roadmap/">Roadmap</a></li>
+  <li>Project announcements: <a href="https://a2a-protocol.org/latest/blog/2026/08/27/a-new-chapter-for-a2a-joining-the-agentic-ai-foundation/">A2A joins the Agentic AI Foundation</a> · <a href="https://a2a-protocol.org/latest/blog/2026/10/01/introducing-a2a-cli/">Introducing the A2A CLI</a> · <a href="https://www.linuxfoundation.org/press/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year">Linux Foundation one-year update</a> · <a href="https://lfaidata.foundation/?p=7689">ACP joins forces with A2A</a></li>
+  <li>Google: <a href="https://developers.googleblog.com/en/a2a-a-new-era-of-agent-interoperability/">Announcing A2A</a> · <a href="https://developers.googleblog.com/en/google-cloud-donates-a2a-to-linux-foundation/">Donating A2A to the Linux Foundation</a> · <a href="https://cloud.google.com/blog/products/ai-machine-learning/announcing-agents-to-payments-ap2-protocol/?hl=en">Announcing AP2</a> (vendor)</li>
+  <li>Tutorials and SDKs: <a href="https://a2a-protocol.org/latest/tutorials/python/3-agent-skills-and-card/">Python quickstart: skills and card</a> · <a href="https://a2a-protocol.org/latest/tutorials/python/4-agent-executor/">Python quickstart: agent executor</a> · <a href="https://github.com/a2aproject/a2a-python">a2a-python</a> · <a href="https://github.com/a2aproject/a2a-go">a2a-go</a> · <a href="https://github.com/a2aproject/a2a-java">a2a-java</a> · <a href="https://github.com/a2aproject/a2a-js">a2a-js</a> · <a href="https://github.com/a2aproject/a2a-dotnet">a2a-dotnet</a> · <a href="https://github.com/a2aproject/a2a-rs">a2a-rs</a></li>
+  <li>Security research: <a href="https://arxiv.org/pdf/2609.10871">A2ABreak</a> · <a href="https://arxiv.org/html/2504.16902v1">Building a secure agentic AI application with A2A</a> · <a href="https://arxiv.org/html/2601.22569v1">Red-teaming AP2 via prompt injection</a> · <a href="https://keysight.com/blogs/en/tech/nwvs/2026/03/12/agent-card-poisoning">Keysight, Agent Card poisoning</a> (vendor)</li>
+  <li>MCP comparison: <a href="https://modelcontextprotocol.io/specification/2026-07-28/changelog.md">MCP 2026-07-28 changelog</a></li>
+</ul>
+
+<p class="updated">Last updated 20 November 2026. Adoption claims, the roadmap and SDK status will age first; check the A2A release notes and roadmap for anything after v1.0.1.</p>
+<footer class="deskfoot"><a href="index.html">← All agent protocol guides</a><br>Agent2Agent (A2A), end to end · CTO's Desk · 20 November 2026</footer>
+</main>
+
+
+<script>
+(function(){
+  var all=[].slice.call(document.querySelectorAll('.toc a[href^="#"]'));
+  var links=[].slice.call(document.querySelector('.toc').querySelectorAll('a[href^="#"]'));
+  var secs=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1));});
+  var cur=document.getElementById('tocCurrent');
+  function parentHref(a){ var o=a.closest('ol.sub'); return o ? o.parentElement.querySelector(':scope > a').getAttribute('href') : null; }
+  function label(a){ var k=a.querySelector('.k'); var t=a.textContent.replace(k?k.textContent:'','').trim(); return (k&&k.textContent?k.textContent+' · ':'')+t; }
+  function onScroll(){
+    var y=window.scrollY+140, idx=0;
+    secs.forEach(function(s,i){ if(s && s.getBoundingClientRect().top+window.scrollY<=y) idx=i; });
+    var act=links[idx], h=act.getAttribute('href'), ph=parentHref(act);
+    all.forEach(function(a){ var x=a.getAttribute('href'); a.classList.toggle('active',x===h); a.classList.toggle('parent-active',x===ph); });
+    if(cur){ if(ph){ var p=links.filter(function(a){return a.getAttribute('href')===ph;})[0]; var k=p.querySelector('.k'); cur.textContent=(k?k.textContent+' · ':'')+act.textContent.trim(); } else cur.textContent=label(act); }
+    var side=document.querySelector('.ftoc'); if(side){ var on=side.querySelector('a.active'); if(on && on.scrollIntoView && side.scrollHeight>side.clientHeight){ var r=on.getBoundingClientRect(), sr=side.getBoundingClientRect(); if(r.top<sr.top||r.bottom>sr.bottom) side.scrollTop+= r.top-sr.top-sr.height/2; } }
+  }
+  window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+  var bar=document.getElementById('mbar'), btn=bar.querySelector('.toc-toggle');
+  function set(o){ bar.classList.toggle('open',o); btn.setAttribute('aria-expanded',o?'true':'false'); }
+  btn.addEventListener('click',function(){ set(!bar.classList.contains('open')); });
+  bar.querySelector('.mtoc').addEventListener('click',function(e){ if(e.target.closest('a')) set(false); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && bar.classList.contains('open')){ set(false); btn.focus(); }});
+})();
+</script>
+</body>
+</html>
