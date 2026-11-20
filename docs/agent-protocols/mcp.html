@@ -194,22 +194,90 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 }
 @media (max-width:520px) { body { font-size:15px; } }
 @media (prefers-reduced-motion:reduce) { .burger span { transition:none; } }
-.desk a, .desk a:visited { color:inherit; text-decoration:none; }
-.desk a:hover { text-decoration:underline; }
+.tochome{display:inline-flex!important;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);text-decoration:none;margin:0 0 14px}
+.tochome:hover{color:var(--ink)}
+.mtoc .tochome{margin:4px 0 10px}
+
+/* ===== Page style matched to the CTO's Desk reference page. Diagrams keep their own palette. ===== */
+:root{ --bg:#fbfbfa; --surface:#ffffff; --ink:#16202b; --muted:#5b6571; --line:#d9dee4; --band:#f1f3f5; --accent:#1f5fd1; --accent-soft:#e7eefb; --accent-ink:#163f8c; --warn:#9a5500; --warn-soft:#fbf1e3; --ok:#1e7a4c; --ok-soft:#e5f4ec; --paper:var(--bg); --ink-soft:var(--muted); --accent-tint:var(--accent-soft); --accent-line:#bccdf0; --amber:var(--warn); --amber-tint:var(--warn-soft); --amber-ink:var(--warn); --green:var(--ok); --green-tint:var(--ok-soft); --green-ink:var(--ok); --engine-tint:var(--band); --code-bg:var(--band); --svg-bg:var(--surface); --sub:var(--band); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#11161c; --surface:#171e26; --ink:#e7ebef; --muted:#9aa4ae; --line:#2c3640; --band:#1d252e; --accent:#7aa7ff; --accent-soft:#1b2a44; --accent-ink:#b9cffd; --warn:#f0b366; --warn-soft:#33270f; --ok:#6fd3a0; --ok-soft:#14301f; --accent-line:#2f4670; color-scheme:dark; } }
+:root[data-theme="dark"]{ --bg:#11161c; --surface:#171e26; --ink:#e7ebef; --muted:#9aa4ae; --line:#2c3640; --band:#1d252e; --accent:#7aa7ff; --accent-soft:#1b2a44; --accent-ink:#b9cffd; --warn:#f0b366; --warn-soft:#33270f; --ok:#6fd3a0; --ok-soft:#14301f; --accent-line:#2f4670; color-scheme:dark; }
+figure.diag{ --paper:#FFFFFF; --ink:#171A20; --ink-soft:#4A4F5A; --accent:#23407C; --accent-tint:#EFF3FA; --accent-line:#C4D0E8; --amber:#B7791F; --amber-tint:#FDF6E3; --amber-ink:#8A5A13; --green:#5B8C5A; --green-tint:#F2F8F2; --green-ink:#3A5F39; --line:#E3E4E0; --engine-tint:#F2F3F5; --code-bg:#F6F6F3; --svg-bg:#FFFFFF; --sub:#FAFAF8; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) figure.diag{ --paper:#14161B; --ink:#E7E9EE; --ink-soft:#A3A9B5; --accent:#8FB0EE; --accent-tint:#1B2539; --accent-line:#34466B; --amber:#E0A54A; --amber-tint:#2A2215; --amber-ink:#EBC07F; --green:#7FB37E; --green-tint:#18241A; --green-ink:#A6D3A5; --line:#2C3038; --engine-tint:#1D2027; --code-bg:#1A1C22; --svg-bg:#171A20; --sub:#181B21; } }
+:root[data-theme="dark"] figure.diag{ --paper:#14161B; --ink:#E7E9EE; --ink-soft:#A3A9B5; --accent:#8FB0EE; --accent-tint:#1B2539; --accent-line:#34466B; --amber:#E0A54A; --amber-tint:#2A2215; --amber-ink:#EBC07F; --green:#7FB37E; --green-tint:#18241A; --green-ink:#A6D3A5; --line:#2C3038; --engine-tint:#1D2027; --code-bg:#1A1C22; --svg-bg:#171A20; --sub:#181B21; }
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.62;-webkit-text-size-adjust:100%;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:860px;margin:0 auto;padding:48px 0 96px}
+a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;border-bottom:0}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.desk{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0}
+.eyebrow{font-family:var(--f-body);font-size:14px;letter-spacing:0;text-transform:none;color:var(--muted);margin:2px 0 0;order:3}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,4.4vw,44px);line-height:1.1;letter-spacing:-.015em;margin:8px 0 10px;text-wrap:balance;color:var(--ink)}
+.subtitle{font-family:var(--f-body);font-size:16px;color:var(--muted);margin:0 0 20px}
+.standfirst{font-size:19px;line-height:1.55;color:var(--ink);margin:0 0 14px}
+h2{font-family:var(--f-display);font-weight:700;font-size:clamp(22px,2.6vw,28px);line-height:1.2;letter-spacing:-.01em;margin:64px 0 12px;text-wrap:balance;color:var(--ink);scroll-margin-top:24px}
+h2 .n{font-family:var(--f-mono);font-size:14px;font-weight:500;color:var(--accent);margin-right:10px;vertical-align:3px}
+h3{font-family:var(--f-display);font-weight:600;font-size:20px;line-height:1.3;margin:28px 0 6px;color:var(--ink)}
+.kicker{font-family:var(--f-body);font-size:14px;font-style:italic;color:var(--muted);margin:-6px 0 16px}
+p{margin:0 0 14px}
+strong{font-weight:600}
+.seam{font-size:15px;color:var(--ink);background:var(--band);border:0;border-radius:10px;padding:12px 16px;margin:12px 0}
+.seam strong{font-family:var(--f-display)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:16px 0}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:transparent}
+th,td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+th{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:0;text-transform:none;color:var(--muted);background:var(--band)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:500}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--band);padding:1px 5px;border-radius:4px}
+pre{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+pre code{background:none;padding:0}
+figure.diag figcaption{font-size:13.5px;color:var(--muted);margin-top:8px}
+ul.plain li, ol.plain li{margin-bottom:6px}
+.ref{font-size:14.5px;color:var(--ink);line-height:1.7}
+.ref li{margin-bottom:6px}
+.updated{font-family:var(--f-body);font-size:13.5px;color:var(--muted);margin-top:48px;border-top:1px solid var(--line);padding-top:14px}
+.deskfoot,footer{margin-top:24px;padding-top:0;border-top:0;color:var(--muted);font-size:13px}
+/* contents, same as the reference */
+.ftoc{position:fixed;top:48px;left:calc((100vw - 860px)/2 - 236px);width:204px;max-height:calc(100vh - 96px);overflow-y:auto;font-size:13px;transition:opacity .25s ease;z-index:5;scrollbar-width:thin;background:none;border:0;padding:0}
+.ftoc p{font-family:var(--f-display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:12px;color:var(--muted);margin:0 0 10px}
+.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.toc a{color:var(--muted);text-decoration:none;border:0;display:flex;gap:8px;line-height:1.4}
+.toc a .k{font-family:var(--f-mono);font-size:12px;color:var(--accent);min-width:14px;padding-top:1px;flex:none}
+.toc a:hover,.toc a:focus-visible{color:var(--ink)}
+.toc a.active,.toc a.parent-active{color:var(--ink);font-weight:600}
+.toc ol.sub{gap:0;margin:6px 0 4px 6px;border-left:1px solid var(--line)}
+.toc ol.sub a{display:block;font-size:12.5px;line-height:1.35;padding:3px 0 3px 12px;margin-left:-1px;border-left:2px solid transparent}
+.toc ol.sub a.active{border-left-color:var(--accent);color:var(--ink);font-weight:500}
+.tochome{display:inline-flex!important;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)!important;text-decoration:none;margin:0 0 14px}
+.tochome:hover{color:var(--ink)!important}
+@media (max-width:1319px){
+  .ftoc{display:none}
+  .mbar{background:var(--bg);border-bottom:1px solid var(--line)}
+  .toc-toggle-label{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .toc-current{font-size:13px;color:var(--accent);font-weight:600}
+  .mtoc.toc ol{gap:10px}
+  .mtoc.toc a{font-size:14.5px}
+  .mtoc.toc ol.sub a{font-size:14px;padding:5px 0 5px 12px}
+  .mtoc .tochome{margin:4px 0 10px}
+  main{padding-top:28px}
+}
 </style>
 </head>
 <body>
 <aside class="ftoc toc" aria-label="Contents">
+  <a class="tochome" href="index.html">&larr; Home</a>
   <p>Contents</p>
   <ol><li><a href="#s1"><span class="k">1</span>Why MCP exists</a></li><li><a href="#s-when"><span class="k">2</span>When you don't need it</a></li><li><a href="#s2"><span class="k">3</span>The moving parts</a><ol class="sub"><li><a href="#m-provider">When the provider is the client</a></li></ol></li><li><a href="#s3"><span class="k">4</span>What the spec defines</a><ol class="sub"><li><a href="#m31">Base protocol</a></li><li><a href="#m32">Server features</a></li><li><a href="#m-results">Results and errors</a></li><li><a href="#m33">Client features</a></li><li><a href="#m34">Utilities</a></li><li><a href="#m35">Authorization</a></li><li><a href="#m36">Extensions</a></li></ol></li><li><a href="#s4"><span class="k">5</span>One request, end to end</a></li><li><a href="#s5"><span class="k">6</span>Transports</a></li><li><a href="#s-compat"><span class="k">7</span>Old and new versions together</a></li><li><a href="#s6"><span class="k">8</span>How it evolved</a></li><li><a href="#s7"><span class="k">9</span>Adoption</a></li><li><a href="#s-hosts"><span class="k">10</span>What hosts support</a></li><li><a href="#s8"><span class="k">11</span>SDKs by language</a></li><li><a href="#s-design"><span class="k">12</span>Designing a good server</a></li><li><a href="#s-deploy"><span class="k">13</span>Packaging, hosting, gateways</a></li><li><a href="#s-data"><span class="k">14</span>MCP for data access</a></li><li><a href="#s9"><span class="k">15</span>Examples</a></li><li><a href="#s10"><span class="k">16</span>Security in practice</a><ol class="sub"><li><a href="#m-incidents">Incidents so far</a></li></ol></li><li><a href="#s-other"><span class="k">17</span>Context cost and tracing</a></li><li><a href="#s11"><span class="k">18</span>What's next</a></li><li><a href="#s-check"><span class="k">19</span>Checklists</a></li><li><a href="#s-gloss"><span class="k">20</span>Glossary</a></li><li><a href="#sources"><span class="k"></span>Sources</a></li></ol>
 </aside>
 <div class="mbar" id="mbar">
   <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="mtoc"><span class="burger" aria-hidden="true"><span></span><span></span><span></span></span><span class="toc-toggle-label">Contents</span><span class="toc-current" id="tocCurrent"></span></button>
-  <nav class="mtoc toc" id="mtoc" aria-label="Contents"><ol><li><a href="#s1"><span class="k">1</span>Why MCP exists</a></li><li><a href="#s-when"><span class="k">2</span>When you don't need it</a></li><li><a href="#s2"><span class="k">3</span>The moving parts</a><ol class="sub"><li><a href="#m-provider">When the provider is the client</a></li></ol></li><li><a href="#s3"><span class="k">4</span>What the spec defines</a><ol class="sub"><li><a href="#m31">Base protocol</a></li><li><a href="#m32">Server features</a></li><li><a href="#m-results">Results and errors</a></li><li><a href="#m33">Client features</a></li><li><a href="#m34">Utilities</a></li><li><a href="#m35">Authorization</a></li><li><a href="#m36">Extensions</a></li></ol></li><li><a href="#s4"><span class="k">5</span>One request, end to end</a></li><li><a href="#s5"><span class="k">6</span>Transports</a></li><li><a href="#s-compat"><span class="k">7</span>Old and new versions together</a></li><li><a href="#s6"><span class="k">8</span>How it evolved</a></li><li><a href="#s7"><span class="k">9</span>Adoption</a></li><li><a href="#s-hosts"><span class="k">10</span>What hosts support</a></li><li><a href="#s8"><span class="k">11</span>SDKs by language</a></li><li><a href="#s-design"><span class="k">12</span>Designing a good server</a></li><li><a href="#s-deploy"><span class="k">13</span>Packaging, hosting, gateways</a></li><li><a href="#s-data"><span class="k">14</span>MCP for data access</a></li><li><a href="#s9"><span class="k">15</span>Examples</a></li><li><a href="#s10"><span class="k">16</span>Security in practice</a><ol class="sub"><li><a href="#m-incidents">Incidents so far</a></li></ol></li><li><a href="#s-other"><span class="k">17</span>Context cost and tracing</a></li><li><a href="#s11"><span class="k">18</span>What's next</a></li><li><a href="#s-check"><span class="k">19</span>Checklists</a></li><li><a href="#s-gloss"><span class="k">20</span>Glossary</a></li><li><a href="#sources"><span class="k"></span>Sources</a></li></ol></nav>
+  <nav class="mtoc toc" id="mtoc" aria-label="Contents"><a class="tochome" href="index.html">&larr; Home</a><ol><li><a href="#s1"><span class="k">1</span>Why MCP exists</a></li><li><a href="#s-when"><span class="k">2</span>When you don't need it</a></li><li><a href="#s2"><span class="k">3</span>The moving parts</a><ol class="sub"><li><a href="#m-provider">When the provider is the client</a></li></ol></li><li><a href="#s3"><span class="k">4</span>What the spec defines</a><ol class="sub"><li><a href="#m31">Base protocol</a></li><li><a href="#m32">Server features</a></li><li><a href="#m-results">Results and errors</a></li><li><a href="#m33">Client features</a></li><li><a href="#m34">Utilities</a></li><li><a href="#m35">Authorization</a></li><li><a href="#m36">Extensions</a></li></ol></li><li><a href="#s4"><span class="k">5</span>One request, end to end</a></li><li><a href="#s5"><span class="k">6</span>Transports</a></li><li><a href="#s-compat"><span class="k">7</span>Old and new versions together</a></li><li><a href="#s6"><span class="k">8</span>How it evolved</a></li><li><a href="#s7"><span class="k">9</span>Adoption</a></li><li><a href="#s-hosts"><span class="k">10</span>What hosts support</a></li><li><a href="#s8"><span class="k">11</span>SDKs by language</a></li><li><a href="#s-design"><span class="k">12</span>Designing a good server</a></li><li><a href="#s-deploy"><span class="k">13</span>Packaging, hosting, gateways</a></li><li><a href="#s-data"><span class="k">14</span>MCP for data access</a></li><li><a href="#s9"><span class="k">15</span>Examples</a></li><li><a href="#s10"><span class="k">16</span>Security in practice</a><ol class="sub"><li><a href="#m-incidents">Incidents so far</a></li></ol></li><li><a href="#s-other"><span class="k">17</span>Context cost and tracing</a></li><li><a href="#s11"><span class="k">18</span>What's next</a></li><li><a href="#s-check"><span class="k">19</span>Checklists</a></li><li><a href="#s-gloss"><span class="k">20</span>Glossary</a></li><li><a href="#sources"><span class="k"></span>Sources</a></li></ol></nav>
 </div>
 
 <main>
-<div class="desk"><a href="index.html">CTO's Desk · Agent protocols</a></div>
+<div class="desk">CTO's Desk</div>
 <div class="eyebrow">Field guide · November 2026 · Animesh</div>
 <h1>The Model Context Protocol, end to end</h1>
 <p class="subtitle">spec, transports, evolution, adoption, SDKs, security, operations and examples, as of the 2026-07-28 revision</p>
@@ -218,7 +286,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <div class="seam"><strong>A note on bias:</strong> the author's company builds data products that agents reach through MCP servers. This page names none of those products and argues for no vendor, including his own.</div>
 <div class="seam"><strong>Who this is for:</strong> engineers who are new to building agents and want the protocol from first principles. Builders should read <a href="#s2">sections 3</a> to <a href="#s5">6</a>, then <a href="#s-design">12</a> to <a href="#s9">15</a>. Readers weighing MCP as a platform bet can start with <a href="#s-when">sections 2</a>, <a href="#s7">9</a>, <a href="#s10">16</a> and <a href="#s11">18</a>. Unfamiliar terms are defined in <a href="#s-gloss">the glossary</a>, and <a href="#s-check">section 19</a> condenses the page into checklists. It assumes you know what JSON and HTTP are. It isn't a substitute for the specification, which is linked throughout.</div>
 
-<h2 id="s1">1 · Why MCP exists</h2>
+<h2 id="s1"><span class="n">1</span>Why MCP exists</h2>
 <div class="kicker">one shared interface instead of a connector per pair</div>
 <p>Before MCP, every AI application that wanted to read a GitHub issue or query a Postgres table needed its own connector for that system. Three apps and three systems meant nine integrations, each written, secured and maintained by someone. The Model Context Protocol, or MCP, replaces those pairs with one shared interface. A system exposes its tools and data once, as an MCP server. Any application that speaks MCP can then use them.</p>
 <p>Anthropic <a href="https://www.anthropic.com/news/model-context-protocol">introduced MCP in November 2024</a>. A year later it <a href="https://www.anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation">donated the protocol to the Linux Foundation</a>, so no single vendor now owns it (<a href="#s7">section 9</a>). The first diagram shows the arithmetic that made it spread.</p>
@@ -268,7 +336,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <p>The gap widens as the market grows. Ten apps and fifty systems would need five hundred custom integrations, or sixty MCP connections. The same arithmetic made the Language Server Protocol stick for code editors, and it's why vendors that compete on models still agree on this one interface.</p>
 <p><strong>What MCP doesn't do.</strong> It doesn't decide which context a model needs, choose which tool to call, or make a badly designed tool good. The model still sees tool names and descriptions as text, and the host application still runs the agent loop. MCP standardises the connection. Everything about judgment stays with you.</p>
 
-<h2 id="s-when">2 · When you don't need it</h2>
+<h2 id="s-when"><span class="n">2</span>When you don't need it</h2>
 <div class="kicker">the protocol has a cost, so check you need it</div>
 <p>MCP puts a process boundary, a wire protocol and often a login between your agent and its tools. That's worth it when several applications share the tools, or when someone else owns them. For a single agent calling its own Python functions, it's overhead. A plain function-calling loop, like the one in any model provider's tool-use guide, is simpler to build, faster to run and easier to debug. The decision flow below is the author's rule of thumb, not something the specification prescribes.</p>
 
@@ -320,7 +388,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <p>Two middle paths are worth knowing. First, you can start with plain functions and wrap them later: the SDKs turn a typed, documented function into an MCP tool with one decorator (<a href="#s9">section 15</a>), so the switch is cheap if the tools are already well designed. Second, using other people's MCP servers doesn't require writing any yourself. Most agent frameworks can act as MCP clients (<a href="#s8">section 11</a>), and if the servers are already on the internet, the model provider can be the client for you (<a href="#m-provider">3.1</a>).</p>
 <p>Two things MCP is the wrong tool for. It isn't a bulk data channel: tool results go into the model's context window, so moving a million rows through a tool call wastes money and gets truncated. Start an export job and return a handle instead. And it isn't the standard for agents talking to other agents; that's a different protocol, covered in <a href="#s-other">section 17</a>.</p>
 
-<h2 id="s2">3 · The moving parts</h2>
+<h2 id="s2"><span class="n">3</span>The moving parts</h2>
 <div class="kicker">hosts, clients and servers</div>
 <p>The specification names three roles. The <strong>host</strong> is the AI application a person uses: Claude Desktop, Cursor, ChatGPT, or an agent you wrote. Inside the host sit one or more <strong>clients</strong>, each holding a connection to exactly one server. A <strong>server</strong> is a program that exposes capabilities: tools to call, data to read, prompt templates to fill in. A server can run on your machine as a child process, or on the internet as a web service. The component diagram below reads left to right, from the person's app to the systems a server wraps.</p>
 
@@ -514,7 +582,7 @@ print(response.output_text)</code></pre>
 <p><strong>When it fits.</strong> Provider-side clients suit server-side agents that call public servers, such as a SaaS vendor's MCP endpoint, and prototypes where writing a client loop is overhead. Pinning a tool list (Anthropic) and per-call approval (OpenAI) also close two of the gaps in <a href="#s10">section 16</a>.</p>
 <p><strong>When it doesn't.</strong> A server holding private data usually lives behind a firewall, and Anthropic's connector can't reach it. You also lose resources, prompts and elicitation, and you hand an access token to a third party. OpenAI says it doesn't store the token, so you send it with every request; Anthropic's docs note its connector isn't covered by zero-data-retention agreements. For those cases, run the client yourself, as in the rest of this page. Anthropic's SDK includes helpers for that, and OpenAI's Agents SDK can act as a client itself.</p>
 
-<h2 id="s3">4 · What the specification defines</h2>
+<h2 id="s3"><span class="n">4</span>What the specification defines</h2>
 <div class="kicker">five layers, read from the bottom up</div>
 <p>The specification is a dated document. The current revision is <a href="https://modelcontextprotocol.io/specification/2026-07-28">2026-07-28</a>, and each revision has its own changelog. It covers a required base protocol, server and client features, a set of utilities, an authorization profile for HTTP, and a framework for optional extensions. The stack below maps them; the amber boxes are deprecated but still working.</p>
 
@@ -632,7 +700,7 @@ print(response.output_text)</code></pre>
 <p>Extensions are optional features with their own names and their own version histories, negotiated through an <code>extensions</code> field in each side's capabilities. Three matter today. <strong>Tasks</strong> (<code>io.modelcontextprotocol/tasks</code>) turns a slow call into start now, check later: the server returns a handle, and the client polls with <code>tasks/get</code>. AWS contributed it, and it moved out of the core protocol in July 2026. <strong>MCP Apps</strong> (<code>io.modelcontextprotocol/ui</code>) lets a tool ship an interactive HTML interface that the host renders in a sandboxed frame. <strong>Enterprise-managed authorization</strong> lets a company's identity provider decide centrally which servers each employee can reach.</p>
 <p>The framework is the part to remember. Before it, new ideas either went into the core, where everyone had to support them, or lived as incompatible forks. Now they can mature outside the core and only move in once they've proven themselves.</p>
 
-<h2 id="s4">5 · One request, end to end</h2>
+<h2 id="s4"><span class="n">5</span>One request, end to end</h2>
 <div class="kicker">what actually travels, in order</div>
 <p>The sequence below follows one task through a host on the 2026-07-28 revision. The model wants to delete rows, and the server wants the person's confirmation first. Read it top to bottom; the shaded bands mark the two phases.</p>
 
@@ -788,7 +856,7 @@ Mcp-Name: delete_rows
 
 <p><strong>State without sessions.</strong> Dropping protocol sessions doesn't make your application stateless. If a server needs to remember something across calls, such as an open export job, the maintainers' advice is to <a href="https://blog.modelcontextprotocol.io/posts/2026-07-28/">mint an explicit handle from a tool</a> and have the model pass it back as an argument. The model can see the handle, which turns out to work better than state hidden in the connection.</p>
 
-<h2 id="s5">6 · Transports</h2>
+<h2 id="s5"><span class="n">6</span>Transports</h2>
 <div class="kicker">stdio for local, Streamable HTTP for remote</div>
 <p>A transport is how the JSON-RPC messages move. There are two standard ones, plus a legacy third that's being retired.</p>
 <div class="tbl"><table>
@@ -839,7 +907,7 @@ Mcp-Name: delete_rows
 <p>The <a href="https://modelcontextprotocol.io/specification/2026-07-28/changelog.md">2026-07-28 changelog</a> lists what went to make that possible: the handshake, the session header, the separate GET stream for server messages, the <code>ping</code> method, and stream resumability. A broken response stream now loses the request in flight, and the client simply sends it again with a new id. Change notifications, such as a server announcing that its tool list changed, now flow over one opt-in <code>subscriptions/listen</code> stream.</p>
 <p>The trade is clear. Servers lose the ability to push requests to clients at will, and anyone who stored state in sessions has migration work. In return, MCP servers run on <a href="https://blog.modelcontextprotocol.io/posts/2026-07-28/">standard serverless and load-balanced infrastructure</a> with no shared storage, which is what cloud providers had been working around.</p>
 
-<h2 id="s-compat">7 · Old and new versions together</h2>
+<h2 id="s-compat"><span class="n">7</span>Old and new versions together</h2>
 <div class="kicker">how a client talks to a server it hasn't met</div>
 <p>The July 2026 revision split MCP into two eras. The <a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/versioning.md">versioning page</a> calls revisions up to 2025-11-25 <strong>legacy</strong> (they open with an <code>initialize</code> handshake) and 2026-07-28 onward <strong>modern</strong> (every request carries its own version). An implementation that speaks both is <strong>dual-era</strong>. For the next year or more, most production clients will be dual-era, because servers upgrade on their own schedules. The flow shows how such a client finds out which kind of server it's talking to.</p>
 
@@ -877,7 +945,7 @@ Mcp-Name: delete_rows
 <p>The mechanics differ slightly by transport. On stdio the client probes with <code>server/discover</code> and falls back on any error that isn't a recognised modern one. On HTTP it sends a normal modern request and inspects the body of a <code>400 Bad Request</code> before falling back, possibly all the way to the deprecated HTTP+SSE transport. The reverse direction is harder: a legacy client has no way to move forward, so a modern-only server simply can't serve it. That's why the guidance is for servers to stay dual-era for now.</p>
 <p>The SDKs make this a setting rather than code. The <a href="https://ts.sdk.modelcontextprotocol.io/v2/protocol-versions.md">TypeScript SDK's version negotiation</a> offers three modes: legacy only, auto (probe, then fall back), or pinned to one revision with no fallback. The same docs warn against auto mode for command-line tools that start a fresh process per call, because every invocation pays for the probe.</p>
 
-<h2 id="s6">8 · How it evolved</h2>
+<h2 id="s6"><span class="n">8</span>How it evolved</h2>
 <div class="kicker">five revisions in twenty months</div>
 <p>MCP versions are dates, not numbers. The timeline puts the five revisions above the line and the ecosystem events that shaped them below.</p>
 
@@ -948,7 +1016,7 @@ Mcp-Name: delete_rows
 </table></div>
 <p>The process has matured alongside the protocol. Proposed changes go through Specification Enhancement Proposals (SEPs), now managed as pull requests. The July 2026 revision also adopted a <a href="https://modelcontextprotocol.io/specification/2026-07-28/changelog.md">formal deprecation policy</a>: features move from active to deprecated to removed, with at least twelve months' notice. Roots, Sampling and Logging can't be removed before the first revision released on or after 28 July 2027.</p>
 
-<h2 id="s7">9 · Adoption</h2>
+<h2 id="s7"><span class="n">9</span>Adoption</h2>
 <div class="kicker">from one vendor's protocol to shared infrastructure</div>
 <p><strong>The turning point was a competitor.</strong> On 26 March 2025, OpenAI's chief executive Sam Altman said the company would <a href="https://techcrunch.com/2025/03/26/openai-adopts-rival-anthropics-standard-for-connecting-ai-models-to-data">add MCP support across its products</a>, starting with the Agents SDK and followed by the ChatGPT desktop app and the Responses API, as <a href="https://siliconangle.com/?p=691120">SiliconANGLE reported</a>. Once the two largest model vendors both spoke it, building a rival connector standard made little sense. The two companies later co-authored the MCP Apps extension.</p>
 <p><strong>Then it left Anthropic.</strong> On 9 December 2025, Anthropic <a href="https://www.anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation">donated MCP to the Agentic AI Foundation</a>, a fund under the Linux Foundation co-founded by Anthropic, Block and OpenAI, with support from Google, Microsoft, AWS, Cloudflare and Bloomberg. Block's goose and OpenAI's AGENTS.md joined as founding projects, and the <a href="https://blog.modelcontextprotocol.io/posts/2025-12-09-mcp-joins-agentic-ai-foundation/">MCP project's own post</a> says its governance model stayed the same. Anthropic added its <a href="https://www.anthropic.com/news/donating-agent-skills-to-the-agentic-ai-foundation">Agent Skills standard</a> to the same foundation in October 2026.</p>
@@ -957,7 +1025,7 @@ Mcp-Name: delete_rows
 <p><strong>The interface went visual.</strong> MCP Apps became <a href="https://blog.modelcontextprotocol.io/posts/2026-01-26-mcp-apps/?from=bd_signal">the first official extension</a> on 26 January 2026, built from the community MCP-UI project and OpenAI's Apps SDK. A tool can now return a dashboard or a form instead of text, rendered in Claude, goose and other hosts that support it.</p>
 <p><strong>Data platforms followed.</strong> Snowflake, Databricks and Google Cloud now run managed MCP servers over their own data, which <a href="#s-data">section 14</a> compares.</p>
 
-<h2 id="s-hosts">10 · What hosts actually support</h2>
+<h2 id="s-hosts"><span class="n">10</span>What hosts actually support</h2>
 <div class="kicker">the spec is a menu; each host orders differently</div>
 <p>A server can offer every feature in <a href="#s3">section 4</a>, but a feature only works if the host the person uses supports it. Support is uneven, and it differs between products from the same company. The table comes from an <a href="https://dev.to/serverdex/which-mcp-clients-support-which-features-i-read-the-docs-59kb">independent read of each client's own documentation in November 2026</a>; the project also keeps an <a href="https://modelcontextprotocol.io/clients.md">official clients page</a> with feature filters. Treat a dash as not documented, which isn't always the same as unsupported.</p>
 <div class="tbl"><table>
@@ -972,7 +1040,7 @@ Mcp-Name: delete_rows
 </table></div>
 <p>Three practical lessons. <strong>Tools are the only safe bet.</strong> If your server must work everywhere, put essential behaviour in tools and treat resources and prompts as extras. <strong>Test in the host your users have.</strong> A server that shines in an IDE may lose half its features in a chat app. <strong>Check transports too.</strong> The same read found that most hosts now speak both stdio and Streamable HTTP, but ChatGPT connects to remote servers only, so a stdio-only server can't reach its users.</p>
 
-<h2 id="s8">11 · SDKs by language</h2>
+<h2 id="s8"><span class="n">11</span>SDKs by language</h2>
 <div class="kicker">ten official SDKs in three tiers</div>
 <p>The project ranks its SDKs by <a href="https://modelcontextprotocol.io/docs/2026-07-28/sdk.md">feature completeness, protocol support and maintenance commitment</a>. Every official SDK can build both servers and clients, over local and remote transports. Each language links to its documentation site. The tiers are from the SDK page as of November 2026; at the July release, four SDKs spoke the new revision on day one and Rust followed in beta.</p>
 <div class="tbl"><table>
@@ -991,7 +1059,7 @@ Mcp-Name: delete_rows
 <p><strong>Python needs a version check.</strong> <a href="https://github.com/modelcontextprotocol/python-sdk/releases/tag/v2.0.0">Python SDK v2</a> made <code>pip install mcp</code> install the new major version, renamed the high-level class, and serves clients from both protocol eras from one server. Most tutorials online still import <code>mcp.server.fastmcp</code>, which now points you to a migration guide. If you're not ready to move, pin <code>mcp&lt;2</code>. The separate community framework, <a href="https://gofastmcp.com/development/v4-notes">FastMCP</a>, moved to version 4 on top of the new SDK.</p>
 <p><strong>Agent frameworks are clients too.</strong> You rarely write an MCP client by hand. The OpenAI Agents SDK has spoken MCP since March 2025, and Google and Databricks both document connecting LangGraph and Google's ADK to their managed servers (<a href="#s-data">section 14</a>). The usual path is: write servers with an official SDK, and consume them from whichever agent framework you already use.</p>
 
-<h2 id="s-design">12 · Designing a good server</h2>
+<h2 id="s-design"><span class="n">12</span>Designing a good server</h2>
 <div class="kicker">the protocol carries the call; the design decides whether it works</div>
 <p>In the author's experience, most MCP servers that disappoint are correct protocol implementations with poor tools. Anthropic's guide to <a href="https://www.anthropic.com/engineering/writing-tools-for-agents">writing tools for agents</a> makes the core point: design tools for a model that reads descriptions literally and pays for every token, not for a developer browsing API docs. Six rules cover most of it.</p>
 <p><strong>Start from tasks, not endpoints.</strong> Wrapping every REST endpoint as a tool gives the model dozens of small steps to chain, each a chance to go wrong. A tool shaped like the task (<code>describe_tables</code> returning columns, types and sample values together) beats four tools the model has to combine.</p>
@@ -1002,7 +1070,7 @@ Mcp-Name: delete_rows
 <p><strong>Label honestly, enforce elsewhere.</strong> Set annotations such as read-only and destructive accurately, since hosts use them to decide when to ask the person. But the specification tells clients to <a href="https://modelcontextprotocol.io/specification/2025-03-26/server/tools.md">treat annotations as untrusted</a> unless the server is trusted, so real limits belong in the server: read-only database roles, row caps, timeouts.</p>
 <p>Testing has three layers. The <strong>MCP Inspector</strong> is the project's interactive debugger; the Python SDK's <a href="https://py.sdk.modelcontextprotocol.io/run/index.md"><code>mcp dev server.py</code></a> launches it against your server the way a real host would. The <strong>conformance suite</strong> checks protocol behaviour. And <strong>task evaluations</strong>, real requests run by a real model against your tools with the transcripts read by a person, are the only way to learn whether the model actually uses the tools well. The Anthropic guide recommends exactly this loop, including using a model to read the transcripts and suggest improvements to the tools.</p>
 
-<h2 id="s-deploy">13 · Packaging, hosting and gateways</h2>
+<h2 id="s-deploy"><span class="n">13</span>Packaging, hosting and gateways</h2>
 <div class="kicker">getting a server to people, and keeping control of it</div>
 <p><strong>Local servers are packages.</strong> The simplest distribution is a command the host runs, such as <code>uvx my-server</code> for Python or <code>npx my-server</code> for Node, written into the host's configuration. That still needs a working runtime on the person's machine. <a href="https://github.com/modelcontextprotocol/mcpb">MCP Bundles</a> (<code>.mcpb</code>) solve that: a zip archive holding the server, its dependencies and a <code>manifest.json</code>. Anthropic built the format for Claude's desktop app as Desktop Extensions, then <a href="https://blog.modelcontextprotocol.io/posts/2025-11-20-adopting-mcpb/?from=bd_signal">moved it into the MCP project</a> in November 2025 so any host can support it. Anthropic's <a href="https://www.anthropic.com/engineering/desktop-extensions">launch post</a> lists the enterprise controls: pre-installed approved bundles, blocklists, and secrets kept in the operating system's keychain.</p>
 <p><strong>Remote servers are web services.</strong> Since the stateless revision, a remote server runs anywhere an ordinary HTTP service runs: containers, serverless functions, edge platforms. In Python it's one argument, <code>mcp.run(transport="streamable-http", port=8000)</code>, with options for plain JSON responses and per-request stateless handling, according to the <a href="https://py.sdk.modelcontextprotocol.io/v2/run/">Python SDK docs</a>. The cloud providers that commented on the July release (<a href="#s7">section 9</a>) all host MCP servers natively.</p>
@@ -1046,7 +1114,7 @@ Mcp-Name: delete_rows
 
 <p>Filtering tools per identity does double duty. It's a security control, and it's a context-cost control, because every tool an agent can see is a definition resent on every turn (<a href="#s-other">section 17</a>). Several gateways offer virtual servers: a curated subset of one upstream server's tools, behind its own URL and its own access rules.</p>
 
-<h2 id="s-data">14 · MCP for data access</h2>
+<h2 id="s-data"><span class="n">14</span>MCP for data access</h2>
 <div class="kicker">what the warehouse and lakehouse vendors shipped, and the questions it raises</div>
 <p>Data platforms adopted MCP fast, because analytics is where agents most need governed access to company data. The three largest cloud data platforms now run managed MCP servers themselves, so there's no server to deploy.</p>
 <div class="tbl"><table>
@@ -1061,7 +1129,7 @@ Mcp-Name: delete_rows
 <p><strong>What happens with slow queries?</strong> Warehouse queries can run for minutes. Databricks' SQL server makes the agent start a query and poll for the result, the same shape as the Tasks extension (<a href="#m36">4.7</a>). Holding a tool call open for minutes is fragile.</p>
 <p><strong>How much comes back?</strong> Row caps, truncation flags and aggregation hints (<a href="#s-design">section 12</a>) matter more for data servers than any other kind. Snowflake also caps nested tool invocations at a depth of ten, a reminder that agents can loop.</p>
 
-<h2 id="s9">15 · Examples</h2>
+<h2 id="s9"><span class="n">15</span>Examples</h2>
 <div class="kicker">a server, a host configuration, a raw request</div>
 <p><strong>A small server in Python.</strong> This exposes two read-only SQL tools using the v2 SDK. The docstring becomes the tool description and the type hints become the input schema, so writing a good docstring is writing the prompt the model will read.</p>
 <pre><code>from mcp.server import MCPServer
@@ -1121,7 +1189,7 @@ claude mcp add --transport http --scope user mytools https://mcp.example.com
 }'</code></pre>
 <p><strong>A long-running job.</strong> For an export that takes ten minutes, a server that supports the Tasks extension answers <code>tools/call</code> with a task handle instead of a result. The host tells the person the job has started, polls <code>tasks/get</code>, and hands the final result to the model when it's ready. The model never waits on an open connection.</p>
 
-<h2 id="s10">16 · Security in practice</h2>
+<h2 id="s10"><span class="n">16</span>Security in practice</h2>
 <div class="kicker">what goes wrong, and where the fixes live</div>
 <p><strong>Tool descriptions are prompts written by someone else.</strong> A server's tool descriptions go straight into your model's context before any call is made. Tool poisoning hides instructions there, such as telling the model to read the user's SSH key before any file operation. The <a href="https://arxiv.org/pdf/2508.14925v1">MCPTox benchmark</a> built 1,312 such cases on 353 real tools from 45 real servers and found attack success rates up to 72.8%; its authors note that more capable models were often more vulnerable, because they follow instructions better. A <a href="https://arxiv.org/html/2603.21642">2026 study of seven popular MCP clients</a> found uneven defences. Two related attacks are worth naming: a rug pull, where a server changes its descriptions after you approved it, and injection inside tool results. The diagram shows where each enters, and what a host can do about it.</p>
 
@@ -1186,13 +1254,13 @@ claude mcp add --transport http --scope user mytools https://mcp.example.com
 </table></div>
 <p>The first and last rows share a shape that Simon Willison calls the <a href="https://simonwillison.net/2025/Jul/06/supabase-mcp-lethal-trifecta/">lethal trifecta</a>: private data, exposure to untrusted content, and a way to send data out, all in one agent session. Remove any one leg and the attack fails. Invariant itself framed the GitHub case as an agent-design problem rather than a server bug to patch, which is why the fixes live in token scopes and session design. The middle rows are ordinary software bugs in new code: tenant checks, path validation, command injection. MCP servers need the same review as any service that holds credentials.</p>
 
-<h2 id="s-other">17 · Context cost and tracing</h2>
+<h2 id="s-other"><span class="n">17</span>Context cost and tracing</h2>
 <div class="kicker">the remaining things a builder runs into</div>
 <p><strong>Tool definitions cost context.</strong> Every connected server's tools are resent to the model on every turn. Anthropic reported <a href="https://www.anthropic.com/engineering/advanced-tool-use">tool definitions consuming 134,000 tokens</a> before optimisation in its own setup. Two fixes have emerged. Tool search loads only a search tool up front and pulls in definitions on demand, which Anthropic measured at about an 85% reduction. <a href="https://www.anthropic.com/engineering/code-execution-with-mcp">Code execution with MCP</a> presents servers as code libraries the model writes against, so large intermediate results stay in a sandbox instead of the context window; Cloudflare calls the same idea Code Mode. Both are vendor measurements on vendor setups.</p>
 <p><strong>Tracing works across servers.</strong> Since July 2026 the specification documents <a href="https://modelcontextprotocol.io/specification/2026-07-28/changelog.md">OpenTelemetry trace context in <code>_meta</code></a>, so one trace can follow a request from the agent through the host into each server. This is what you'll use to debug an agent that calls five servers in one task.</p>
 <p><strong>MCP and A2A solve different problems.</strong> MCP connects an agent to tools and data. Google's Agent2Agent protocol, also now under the Linux Foundation, lets agents hand tasks to other agents. <a href="https://philippdubach.com/posts/mcp-vs-a2a-in-2026-how-the-ai-protocol-war-ends/">One analysis</a> frames them as complements rather than rivals, which matches how most teams use them.</p>
 
-<h2 id="s11">18 · What's next</h2>
+<h2 id="s11"><span class="n">18</span>What's next</h2>
 <div class="kicker">the August 2026 roadmap, and the questions it leaves open</div>
 <p>The maintainers published an <a href="https://modelcontextprotocol.io/development/roadmap.md">updated roadmap on 22 August 2026</a> for the next revision. It names five priority areas, and proposals inside them get reviewed first. The roadmap itself says these are current thinking, not commitments. No date appears on it, but the Ruby SDK team's <a href="https://blog.modelcontextprotocol.io/posts/ruby-sdk-tier-1/">September post</a> says the next revision is currently scheduled for 15 December 2026.</p>
 <div class="tbl"><table>
@@ -1209,7 +1277,7 @@ claude mcp add --transport http --scope user mytools https://mcp.example.com
 <p><strong>Who owns tool security?</strong> The protocol has hardened authorization, but tool poisoning lives in plain-text descriptions the specification can't check. For now the defence sits in hosts and gateways, and research suggests most hosts are still uneven.</p>
 <p><strong>Will loading every tool stay the default?</strong> Tool search, code execution and the roadmap's progressive discovery all move away from sending the full tool catalogue on every turn. If they spread, the typical server may shift from many small tools toward fewer, code-friendly ones.</p>
 
-<h2 id="s-check">19 · Checklists</h2>
+<h2 id="s-check"><span class="n">19</span>Checklists</h2>
 <div class="kicker">the page, condensed into things to do</div>
 <h3>If you're building a server</h3>
 <ol class="plain">
@@ -1234,7 +1302,7 @@ claude mcp add --transport http --scope user mytools https://mcp.example.com
 <li>For many agents and servers, route traffic through a gateway with per-identity allow-lists and one audit log (<a href="#s-deploy">section 13</a>).</li>
 </ol>
 
-<h2 id="s-gloss">20 · Glossary</h2>
+<h2 id="s-gloss"><span class="n">20</span>Glossary</h2>
 <div class="kicker">plain meanings, in the order you'll meet them</div>
 <div class="tbl"><table>
 <tr><th>Term</th><th>Meaning</th></tr>
@@ -1290,7 +1358,7 @@ claude mcp add --transport http --scope user mytools https://mcp.example.com
 </ul>
 
 <p class="updated">Last updated 20 November 2026. The SDK tiers, host support table, adoption figures, incident list and roadmap will age first; check the specification's changelog for anything newer than 2026-07-28.</p>
-<footer class="deskfoot"><a href="index.html">← All agent protocol guides</a><br>The Model Context Protocol, end to end · CTO's Desk · 20 November 2026</footer>
+<footer class="deskfoot">The Model Context Protocol, end to end · CTO's Desk · 20 November 2026</footer>
 </main>
 
 <script>

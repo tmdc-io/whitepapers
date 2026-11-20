@@ -194,21 +194,89 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 }
 @media (max-width:520px) { body { font-size:15px; } }
 @media (prefers-reduced-motion:reduce) { .burger span { transition:none; } }
-.desk a, .desk a:visited { color:inherit; text-decoration:none; }
-.desk a:hover { text-decoration:underline; }
+.tochome{display:inline-flex!important;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);text-decoration:none;margin:0 0 14px}
+.tochome:hover{color:var(--ink)}
+.mtoc .tochome{margin:4px 0 10px}
+
+/* ===== Page style matched to the CTO's Desk reference page. Diagrams keep their own palette. ===== */
+:root{ --bg:#fbfbfa; --surface:#ffffff; --ink:#16202b; --muted:#5b6571; --line:#d9dee4; --band:#f1f3f5; --accent:#1f5fd1; --accent-soft:#e7eefb; --accent-ink:#163f8c; --warn:#9a5500; --warn-soft:#fbf1e3; --ok:#1e7a4c; --ok-soft:#e5f4ec; --paper:var(--bg); --ink-soft:var(--muted); --accent-tint:var(--accent-soft); --accent-line:#bccdf0; --amber:var(--warn); --amber-tint:var(--warn-soft); --amber-ink:var(--warn); --green:var(--ok); --green-tint:var(--ok-soft); --green-ink:var(--ok); --engine-tint:var(--band); --code-bg:var(--band); --svg-bg:var(--surface); --sub:var(--band); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#11161c; --surface:#171e26; --ink:#e7ebef; --muted:#9aa4ae; --line:#2c3640; --band:#1d252e; --accent:#7aa7ff; --accent-soft:#1b2a44; --accent-ink:#b9cffd; --warn:#f0b366; --warn-soft:#33270f; --ok:#6fd3a0; --ok-soft:#14301f; --accent-line:#2f4670; color-scheme:dark; } }
+:root[data-theme="dark"]{ --bg:#11161c; --surface:#171e26; --ink:#e7ebef; --muted:#9aa4ae; --line:#2c3640; --band:#1d252e; --accent:#7aa7ff; --accent-soft:#1b2a44; --accent-ink:#b9cffd; --warn:#f0b366; --warn-soft:#33270f; --ok:#6fd3a0; --ok-soft:#14301f; --accent-line:#2f4670; color-scheme:dark; }
+figure.diag{ --paper:#FFFFFF; --ink:#171A20; --ink-soft:#4A4F5A; --accent:#23407C; --accent-tint:#EFF3FA; --accent-line:#C4D0E8; --amber:#B7791F; --amber-tint:#FDF6E3; --amber-ink:#8A5A13; --green:#5B8C5A; --green-tint:#F2F8F2; --green-ink:#3A5F39; --line:#E3E4E0; --engine-tint:#F2F3F5; --code-bg:#F6F6F3; --svg-bg:#FFFFFF; --sub:#FAFAF8; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) figure.diag{ --paper:#14161B; --ink:#E7E9EE; --ink-soft:#A3A9B5; --accent:#8FB0EE; --accent-tint:#1B2539; --accent-line:#34466B; --amber:#E0A54A; --amber-tint:#2A2215; --amber-ink:#EBC07F; --green:#7FB37E; --green-tint:#18241A; --green-ink:#A6D3A5; --line:#2C3038; --engine-tint:#1D2027; --code-bg:#1A1C22; --svg-bg:#171A20; --sub:#181B21; } }
+:root[data-theme="dark"] figure.diag{ --paper:#14161B; --ink:#E7E9EE; --ink-soft:#A3A9B5; --accent:#8FB0EE; --accent-tint:#1B2539; --accent-line:#34466B; --amber:#E0A54A; --amber-tint:#2A2215; --amber-ink:#EBC07F; --green:#7FB37E; --green-tint:#18241A; --green-ink:#A6D3A5; --line:#2C3038; --engine-tint:#1D2027; --code-bg:#1A1C22; --svg-bg:#171A20; --sub:#181B21; }
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.62;-webkit-text-size-adjust:100%;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:860px;margin:0 auto;padding:48px 0 96px}
+a{color:var(--accent);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px;border-bottom:0}
+a:hover{text-decoration-thickness:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.desk{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0}
+.eyebrow{font-family:var(--f-body);font-size:14px;letter-spacing:0;text-transform:none;color:var(--muted);margin:2px 0 0;order:3}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,4.4vw,44px);line-height:1.1;letter-spacing:-.015em;margin:8px 0 10px;text-wrap:balance;color:var(--ink)}
+.subtitle{font-family:var(--f-body);font-size:16px;color:var(--muted);margin:0 0 20px}
+.standfirst{font-size:19px;line-height:1.55;color:var(--ink);margin:0 0 14px}
+h2{font-family:var(--f-display);font-weight:700;font-size:clamp(22px,2.6vw,28px);line-height:1.2;letter-spacing:-.01em;margin:64px 0 12px;text-wrap:balance;color:var(--ink);scroll-margin-top:24px}
+h2 .n{font-family:var(--f-mono);font-size:14px;font-weight:500;color:var(--accent);margin-right:10px;vertical-align:3px}
+h3{font-family:var(--f-display);font-weight:600;font-size:20px;line-height:1.3;margin:28px 0 6px;color:var(--ink)}
+.kicker{font-family:var(--f-body);font-size:14px;font-style:italic;color:var(--muted);margin:-6px 0 16px}
+p{margin:0 0 14px}
+strong{font-weight:600}
+.seam{font-size:15px;color:var(--ink);background:var(--band);border:0;border-radius:10px;padding:12px 16px;margin:12px 0}
+.seam strong{font-family:var(--f-display)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);margin:16px 0}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:transparent}
+th,td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+th{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:0;text-transform:none;color:var(--muted);background:var(--band)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:500}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--band);padding:1px 5px;border-radius:4px}
+pre{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+pre code{background:none;padding:0}
+figure.diag figcaption{font-size:13.5px;color:var(--muted);margin-top:8px}
+ul.plain li, ol.plain li{margin-bottom:6px}
+.ref{font-size:14.5px;color:var(--ink);line-height:1.7}
+.ref li{margin-bottom:6px}
+.updated{font-family:var(--f-body);font-size:13.5px;color:var(--muted);margin-top:48px;border-top:1px solid var(--line);padding-top:14px}
+.deskfoot,footer{margin-top:24px;padding-top:0;border-top:0;color:var(--muted);font-size:13px}
+/* contents, same as the reference */
+.ftoc{position:fixed;top:48px;left:calc((100vw - 860px)/2 - 236px);width:204px;max-height:calc(100vh - 96px);overflow-y:auto;font-size:13px;transition:opacity .25s ease;z-index:5;scrollbar-width:thin;background:none;border:0;padding:0}
+.ftoc p{font-family:var(--f-display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:12px;color:var(--muted);margin:0 0 10px}
+.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.toc a{color:var(--muted);text-decoration:none;border:0;display:flex;gap:8px;line-height:1.4}
+.toc a .k{font-family:var(--f-mono);font-size:12px;color:var(--accent);min-width:14px;padding-top:1px;flex:none}
+.toc a:hover,.toc a:focus-visible{color:var(--ink)}
+.toc a.active,.toc a.parent-active{color:var(--ink);font-weight:600}
+.toc ol.sub{gap:0;margin:6px 0 4px 6px;border-left:1px solid var(--line)}
+.toc ol.sub a{display:block;font-size:12.5px;line-height:1.35;padding:3px 0 3px 12px;margin-left:-1px;border-left:2px solid transparent}
+.toc ol.sub a.active{border-left-color:var(--accent);color:var(--ink);font-weight:500}
+.tochome{display:inline-flex!important;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)!important;text-decoration:none;margin:0 0 14px}
+.tochome:hover{color:var(--ink)!important}
+@media (max-width:1319px){
+  .ftoc{display:none}
+  .mbar{background:var(--bg);border-bottom:1px solid var(--line)}
+  .toc-toggle-label{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .toc-current{font-size:13px;color:var(--accent);font-weight:600}
+  .mtoc.toc ol{gap:10px}
+  .mtoc.toc a{font-size:14.5px}
+  .mtoc.toc ol.sub a{font-size:14px;padding:5px 0 5px 12px}
+  .mtoc .tochome{margin:4px 0 10px}
+  main{padding-top:28px}
+}
 </style>
 </head>
 <body>
 <aside class="ftoc toc" aria-label="Contents">
+  <a class="tochome" href="index.html">&larr; Home</a>
   <p>Contents</p>
   <ol><li><a href="#s1"><span class="k">1</span>Why ACP exists</a></li><li><a href="#s2"><span class="k">2</span>When you don't need it</a></li><li><a href="#s3"><span class="k">3</span>The moving parts</a></li><li><a href="#s4"><span class="k">4</span>What v1 defines</a><ol class="sub"><li><a href="#m41">Initialisation and auth</a></li><li><a href="#m42">Sessions</a></li><li><a href="#m43">The prompt turn</a></li><li><a href="#m44">Session updates</a></li><li><a href="#m45">Permission requests</a></li><li><a href="#m46">Files and terminals</a></li><li><a href="#m47">Modes, elicitation, extensions</a></li></ol></li><li><a href="#s5"><span class="k">5</span>One prompt turn, end to end</a></li><li><a href="#s6"><span class="k">6</span>Version 2: what's changing</a></li><li><a href="#s7"><span class="k">7</span>ACP, MCP and A2A</a></li><li><a href="#s8"><span class="k">8</span>Transports</a></li><li><a href="#s9"><span class="k">9</span>How it evolved</a></li><li><a href="#s10"><span class="k">10</span>Adoption, read carefully</a></li><li><a href="#s11"><span class="k">11</span>Registry and distribution</a></li><li><a href="#s12"><span class="k">12</span>SDKs</a></li><li><a href="#s13"><span class="k">13</span>Security in practice</a></li><li><a href="#s14"><span class="k">14</span>Designing a good integration</a></li><li><a href="#s15"><span class="k">15</span>Examples</a></li><li><a href="#s16"><span class="k">16</span>Governance and what's next</a></li><li><a href="#s17"><span class="k">17</span>Checklists</a></li><li><a href="#s18"><span class="k">18</span>Glossary</a></li><li><a href="#sources"><span class="k"></span>Sources</a></li></ol>
 </aside>
 <div class="mbar" id="mbar">
   <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="mtoc"><span class="burger" aria-hidden="true"><span></span><span></span><span></span></span><span class="toc-toggle-label">Contents</span><span class="toc-current" id="tocCurrent"></span></button>
-  <nav class="mtoc toc" id="mtoc" aria-label="Contents"><ol><li><a href="#s1"><span class="k">1</span>Why ACP exists</a></li><li><a href="#s2"><span class="k">2</span>When you don't need it</a></li><li><a href="#s3"><span class="k">3</span>The moving parts</a></li><li><a href="#s4"><span class="k">4</span>What v1 defines</a><ol class="sub"><li><a href="#m41">Initialisation and auth</a></li><li><a href="#m42">Sessions</a></li><li><a href="#m43">The prompt turn</a></li><li><a href="#m44">Session updates</a></li><li><a href="#m45">Permission requests</a></li><li><a href="#m46">Files and terminals</a></li><li><a href="#m47">Modes, elicitation, extensions</a></li></ol></li><li><a href="#s5"><span class="k">5</span>One prompt turn, end to end</a></li><li><a href="#s6"><span class="k">6</span>Version 2: what's changing</a></li><li><a href="#s7"><span class="k">7</span>ACP, MCP and A2A</a></li><li><a href="#s8"><span class="k">8</span>Transports</a></li><li><a href="#s9"><span class="k">9</span>How it evolved</a></li><li><a href="#s10"><span class="k">10</span>Adoption, read carefully</a></li><li><a href="#s11"><span class="k">11</span>Registry and distribution</a></li><li><a href="#s12"><span class="k">12</span>SDKs</a></li><li><a href="#s13"><span class="k">13</span>Security in practice</a></li><li><a href="#s14"><span class="k">14</span>Designing a good integration</a></li><li><a href="#s15"><span class="k">15</span>Examples</a></li><li><a href="#s16"><span class="k">16</span>Governance and what's next</a></li><li><a href="#s17"><span class="k">17</span>Checklists</a></li><li><a href="#s18"><span class="k">18</span>Glossary</a></li><li><a href="#sources"><span class="k"></span>Sources</a></li></ol></nav>
+  <nav class="mtoc toc" id="mtoc" aria-label="Contents"><a class="tochome" href="index.html">&larr; Home</a><ol><li><a href="#s1"><span class="k">1</span>Why ACP exists</a></li><li><a href="#s2"><span class="k">2</span>When you don't need it</a></li><li><a href="#s3"><span class="k">3</span>The moving parts</a></li><li><a href="#s4"><span class="k">4</span>What v1 defines</a><ol class="sub"><li><a href="#m41">Initialisation and auth</a></li><li><a href="#m42">Sessions</a></li><li><a href="#m43">The prompt turn</a></li><li><a href="#m44">Session updates</a></li><li><a href="#m45">Permission requests</a></li><li><a href="#m46">Files and terminals</a></li><li><a href="#m47">Modes, elicitation, extensions</a></li></ol></li><li><a href="#s5"><span class="k">5</span>One prompt turn, end to end</a></li><li><a href="#s6"><span class="k">6</span>Version 2: what's changing</a></li><li><a href="#s7"><span class="k">7</span>ACP, MCP and A2A</a></li><li><a href="#s8"><span class="k">8</span>Transports</a></li><li><a href="#s9"><span class="k">9</span>How it evolved</a></li><li><a href="#s10"><span class="k">10</span>Adoption, read carefully</a></li><li><a href="#s11"><span class="k">11</span>Registry and distribution</a></li><li><a href="#s12"><span class="k">12</span>SDKs</a></li><li><a href="#s13"><span class="k">13</span>Security in practice</a></li><li><a href="#s14"><span class="k">14</span>Designing a good integration</a></li><li><a href="#s15"><span class="k">15</span>Examples</a></li><li><a href="#s16"><span class="k">16</span>Governance and what's next</a></li><li><a href="#s17"><span class="k">17</span>Checklists</a></li><li><a href="#s18"><span class="k">18</span>Glossary</a></li><li><a href="#sources"><span class="k"></span>Sources</a></li></ol></nav>
 </div>
 <main>
-<div class="desk"><a href="index.html">CTO's Desk · Agent protocols</a></div>
+<div class="desk">CTO's Desk</div>
 <div class="eyebrow">Field guide · November 2026 · Animesh</div>
 <h1>Agent Client Protocol (ACP), end to end</h1>
 <p class="subtitle">v1 as it runs today, the v2 draft, adoption, the registry, SDKs, security and examples, as of November 2026</p>
@@ -218,7 +286,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <div class="seam"><strong>Which ACP:</strong> this page covers the Agent <em>Client</em> Protocol, started by Zed. It is unrelated to IBM's Agent Communication Protocol, which merged into A2A in 2025, and to the commerce protocols that share the acronym.</div>
 <div class="seam"><strong>Who this is for:</strong> engineers building coding or data agents, or tools that host them. Builders should read <a href="#s3">sections 3</a> to <a href="#s6">6</a>, then <a href="#s13">13</a> to <a href="#s15">15</a>. Readers weighing ACP as a distribution channel can start with <a href="#s2">sections 2</a>, <a href="#s10">10</a> and <a href="#s16">16</a>. Terms are defined in <a href="#s18">the glossary</a>, and <a href="#s17">section 17</a> condenses the page into checklists.</div>
 
-<h2 id="s1">1 · Why ACP exists</h2>
+<h2 id="s1"><span class="n">1</span>Why ACP exists</h2>
 <div class="kicker">editors times agents, again</div>
 <p>Every coding agent wants to live where developers already work, and every editor wants to offer the agents developers already use. Without a standard, each pairing needs its own plugin: the Claude integration for one IDE, the Codex integration for another, maintained separately and drifting apart. Zed hit this problem directly. On <a href="https://zed.dev/blog/bring-your-own-agent-to-zed">27 August 2025</a> it announced the Agent Client Protocol with Google's Gemini CLI as the first agent, and framed the goal in terms of the Language Server Protocol: switch agents without switching editors. The diagram shows the arithmetic.</p>
 
@@ -265,12 +333,12 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 
 <p>The appeal runs both ways. Zed's launch post pitches agent builders a ready-made interface inside an IDE, so they can build the agent <a href="https://zed.dev/blog/bring-your-own-agent-to-zed">instead of forking VS Code</a>. Editors get access to many agents without writing an integration for each. And because the editor renders the work, users get features that are hard to offer from a terminal: live edit visualisation, multi-file review and jumping between the agent's changes and the code.</p>
 
-<h2 id="s2">2 · When you don't need it</h2>
+<h2 id="s2"><span class="n">2</span>When you don't need it</h2>
 <div class="kicker">ACP solves one placement problem</div>
 <p>ACP is about where an agent's interface lives. If your agent runs in a terminal and your users are happy there, you don't need it. If you build for exactly one editor and plan to stay there, that editor's native extension API may give you more control. And if your agent runs unattended in CI or a cloud sandbox with no person watching, ACP's model of a person approving actions in an editor fits poorly.</p>
 <p>It earns its place in three cases. You build an agent and want it in several editors without several plugins. You build an editor or notebook and want many agents without integrating each one. Or you build an agent product with your own clients and want a clean boundary between the interface and the agent, which is how AWS used it for Kiro (<a href="#s10">section 10</a>).</p>
 
-<h2 id="s3">3 · The moving parts</h2>
+<h2 id="s3"><span class="n">3</span>The moving parts</h2>
 <div class="kicker">the editor hosts, the agent works, both call each other</div>
 <p>ACP has two roles. The <strong>client</strong> is usually an editor, though notebooks and other interfaces qualify. The <strong>agent</strong> is a program that uses a model to change code, and the <a href="https://agentclientprotocol.com/protocol/v1/overview.md">v1 overview</a> says agents typically run as subprocesses of the client. Messages are JSON-RPC 2.0 over the agent's standard input and output. The component diagram shows the arrangement, which differs from MCP in one important way.</p>
 
@@ -333,7 +401,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <p>Three things set ACP apart. <strong>Calls go both ways.</strong> In MCP the client calls and the server answers. In ACP both sides expose methods: the editor calls <code>session/prompt</code> on the agent, and the agent calls <code>fs/read_text_file</code> or <code>session/request_permission</code> on the editor. <strong>The editor owns the environment.</strong> The overview says clients manage the environment, handle user interactions and control access to resources; in v1 that includes serving file contents, unsaved edits included, and running terminals. <strong>The agent owns the intelligence.</strong> It calls its own model provider with its own credentials, and the editor never sees the model.</p>
 <p>The editor also hands the agent a list of MCP servers when each session starts. That's how one editor's configured tools (a database, an issue tracker) become available to whichever agent the person picks, which ties ACP closely to MCP (<a href="#s7">section 7</a>).</p>
 
-<h2 id="s4">4 · What v1 defines</h2>
+<h2 id="s4"><span class="n">4</span>What v1 defines</h2>
 <div class="kicker">the protocol editors and agents run today</div>
 <p>Everything in this section is the stable v1 protocol. The project ships features into v1 continuously through a request-for-discussion (RFD) process; the <a href="https://agentclientprotocol.com/announcements/acp-v2-draft.md">v2 draft announcement</a> counts more than fifteen RFDs delivered on v1 without a breaking change. <a href="#s6">Section 6</a> covers what v2 changes.</p>
 
@@ -360,7 +428,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <h3 id="m47">4.7 Modes, elicitation and extensibility</h3>
 <p>Agents can expose <strong>modes</strong> (for example ask versus code) and <strong>configuration options</strong> such as model choice, which the editor shows as controls. <strong>Elicitation</strong>, now stable in v1, lets an agent ask the person a structured question through a form or send them to a URL. For anything the protocol doesn't cover, both sides can attach custom data in <code>_meta</code> fields, call custom methods whose names start with <code>_</code>, and advertise custom capabilities at initialisation.</p>
 
-<h2 id="s5">5 · One prompt turn, end to end</h2>
+<h2 id="s5"><span class="n">5</span>One prompt turn, end to end</h2>
 <div class="kicker">a request that reads, edits and asks first</div>
 <p>The sequence follows one prompt in v1: the person asks the agent to turn on debug logging. The agent reads a config file through the editor, proposes an edit, asks permission, writes the file, and finishes. Read it top to bottom.</p>
 
@@ -504,7 +572,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
   }
 }</code></pre>
 
-<h2 id="s6">6 · Version 2: what's changing</h2>
+<h2 id="s6"><span class="n">6</span>Version 2: what's changing</h2>
 <div class="kicker">a draft that moves beyond the turn</div>
 <p>The project published the <a href="https://agentclientprotocol.com/announcements/acp-v2-draft.md">first draft of v2 on 20 July 2026</a>. It is still labelled draft, and the <a href="https://agentclientprotocol.com/protocol/v2/migration.md">migration guide</a> tells implementers to keep v1 working and add v2 behind version negotiation and feature flags until it stabilises. The announcement explains the motivation plainly: agents now work longer, run things in the background and receive input while busy, and a protocol built around one request per turn makes that awkward. The diagram compares the two lifecycles.</p>
 
@@ -551,7 +619,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <p>The removal of file and terminal APIs is the most consequential change. The guide's reasoning is that these methods were implemented inconsistently outside a few IDEs, and agents needed their own file and execution handling anyway for editors that didn't offer them. In v2, an editor that wants to share unsaved buffers or a sandboxed shell does it the same way as any other tool: by passing an MCP server into the session. That pulls ACP and MCP closer together. v2's content blocks are also realigned with <a href="https://agentclientprotocol.com/protocol/v2/migration.md">MCP's 2026-07-28 revision</a>.</p>
 <p><strong>Supporting both.</strong> Version is negotiated once per connection at <code>initialize</code>. The TypeScript and Rust SDKs include routers that send each connection to a v1 or a v2 implementation behind shared application logic. The project recommends exactly that: keep v1 peers working, because v1-only editors and agents will remain common for some time.</p>
 
-<h2 id="s7">7 · ACP, MCP and A2A</h2>
+<h2 id="s7"><span class="n">7</span>ACP, MCP and A2A</h2>
 <div class="kicker">three protocols, three boundaries</div>
 <p>The three open agent protocols each cover a different boundary, and a single coding session can use all three. The layer diagram shows where each sits.</p>
 
@@ -593,12 +661,12 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <p>The relationships are tighter than the picture suggests. The editor configures MCP servers once and passes them to whichever ACP agent the person chooses, so tools travel with the editor rather than with the agent. v2 goes further, replacing the editor's own file and terminal APIs with MCP servers and aligning content types with MCP. The SDKs also carry draft support for running MCP over the ACP connection itself, so an editor can offer tools without a separate server process; the <a href="https://github.com/agentclientprotocol/rust-sdk/releases/tag/v2.1.0">Rust SDK</a> exposes it behind an unstable flag.</p>
 <p>A2A sits further out. A coding agent that delegates a code review to another company's agent would use A2A for that hop, while the person still sees everything through ACP. Governance differs too: MCP and A2A sit in the Agentic AI Foundation, while ACP does not yet (<a href="#s16">section 16</a>).</p>
 
-<h2 id="s8">8 · Transports</h2>
+<h2 id="s8"><span class="n">8</span>Transports</h2>
 <div class="kicker">stdio today, remote in progress</div>
 <p>ACP v1 defines one transport. The <a href="https://agentclientprotocol.com/protocol/v1/transports.md">transport page</a> spells it out: the editor launches the agent as a subprocess; messages are single JSON-RPC objects, one per line, on the agent's standard input and output; the agent may log to standard error; and nothing that isn't a valid ACP message may appear on standard output. Implementations may also define custom transports, provided they keep the message format and lifecycle.</p>
 <p>Remote agents are the obvious next step: an agent running in a cloud sandbox while the person works in a local editor. A transport based on Streamable HTTP, with a WebSocket option, is being specified in its own RFD and is not part of core v1 or v2. The project has set up a Transports Working Group to stabilise it. Until then, remote setups rely on custom transports or on vendors' own bridges.</p>
 
-<h2 id="s9">9 · How it evolved</h2>
+<h2 id="s9"><span class="n">9</span>How it evolved</h2>
 <div class="kicker">fifteen months from one editor to an industry interface</div>
 <p>The timeline puts protocol milestones above the line and adoption events below. Positions show order, not exact spacing in time.</p>
 
@@ -664,7 +732,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <tr><td class="nw">Aug 2026</td><td>AWS <a href="https://thenewstack.io/kiro-agent-client-protocol/">rebuilt Kiro around ACP</a></td><td>A major vendor used ACP inside its own product as well as for third parties</td></tr>
 </table></div>
 
-<h2 id="s10">10 · Adoption, read carefully</h2>
+<h2 id="s10"><span class="n">10</span>Adoption, read carefully</h2>
 <div class="kicker">strong on the agent side; one big editor missing</div>
 <p>ACP's adoption is unusually checkable, because the registry is a public file and the editor integrations ship in products you can open. The table sorts the evidence.</p>
 <div class="tbl"><table>
@@ -680,12 +748,12 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <p>Two details in the registry data are worth noticing. Several big agents arrive through <strong>adapters</strong> rather than native support: the Claude entry is described as an ACP wrapper for Anthropic's Claude, with Anthropic, Zed and JetBrains as authors, and Codex arrives through an ACP adapter for OpenAI's coding assistant. Licences vary by entry, from Apache 2.0 to proprietary, which matters for anyone auditing what they install. And a data vendor's agent, Snowflake's Cortex Code, is listed alongside the coding tools. ACP fits any agent that works in files and terminals, which covers data work as well as software engineering.</p>
 <p>The VS Code gap is the adoption story's open question. Agents still need a separate VS Code extension to reach its users, so ACP hasn't yet removed the per-editor plugin for the largest audience.</p>
 
-<h2 id="s11">11 · The registry and distribution</h2>
+<h2 id="s11"><span class="n">11</span>The registry and distribution</h2>
 <div class="kicker">how an agent gets onto a developer's machine</div>
 <p>An ACP agent is a program the editor launches, so distribution means getting the right binary or package onto the machine and knowing how to start it. The registry, which Zed and JetBrains <a href="https://zed.dev/blog/acp-registry?from=bd_signal">launched together</a> in January 2026, solves this with a public JSON file. Each entry names the agent, its version, authors, licence and repository, and a <strong>distribution</strong> block: either an npm package run with <code>npx</code>, often with an argument like <code>--acp</code> to switch the tool into protocol mode, or prebuilt binaries per platform. Editors read the registry, install on request and update automatically.</p>
 <p>Agents not in the registry can still be added by hand in each editor's settings, pointing at a local command. That's the route for internal agents a company doesn't publish.</p>
 
-<h2 id="s12">12 · SDKs</h2>
+<h2 id="s12"><span class="n">12</span>SDKs</h2>
 <div class="kicker">five official libraries, a test kit, and community ports</div>
 <p>The project lists official libraries for five languages in its documentation index, and the Rust and TypeScript SDKs have reached 1.0.</p>
 <div class="tbl"><table>
@@ -698,7 +766,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 </table></div>
 <p>Community libraries cover Go, Dart, Emacs Lisp and React hooks, among others. The project also maintains a <strong>Test Compatibility Kit</strong> that checks an agent implementation against the protocol, which the <a href="https://agentclientprotocol.com/protocol/v1/overview.md">overview</a> recommends before shipping.</p>
 
-<h2 id="s13">13 · Security in practice</h2>
+<h2 id="s13"><span class="n">13</span>Security in practice</h2>
 <div class="kicker">a program on your machine, with your keys</div>
 <p>An ACP agent is not a remote service. It runs as a process on the developer's machine, with that person's files, credentials and network. The <a href="https://agentclientprotocol.com/protocol/v1/security.md">security page</a> is unusually frank about what follows: the agent runs with whatever permissions its process is given, and ACP itself does not sandbox it. It lists three things as out of scope entirely: a malicious agent binary, detecting prompt injection, and operating-system sandboxing. The diagram shows where untrusted input enters and which defences sit where.</p>
 
@@ -756,7 +824,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <p><strong>The agent's job is to treat inputs as data.</strong> The spec asks agents to treat files, embedded resources and tool results as data rather than instructions, to ask before sending data off the machine after reading untrusted content, and to ask before writing files that control execution or approval: version-control hooks, editor or agent settings, MCP configuration. That last item closes a classic escalation path, where an injected instruction quietly rewrites the agent's own permissions.</p>
 <p><strong>Your job is the outer wall.</strong> Install agents from sources you trust and pin versions rather than tracking the latest. Check each registry entry's licence and authors. Run agents in a container or OS sandbox when they work on untrusted repositories. Give the agent's model and tool credentials the narrowest scope that works, and keep secrets out of <code>_meta</code> fields, which the spec warns against. If a proxy sits between editor and agent, remember it can read and change every message.</p>
 
-<h2 id="s14">14 · Designing a good agent or editor integration</h2>
+<h2 id="s14"><span class="n">14</span>Designing a good agent or editor integration</h2>
 <div class="kicker">what separates a usable integration from a working one</div>
 <p>These practices come from the spec's guidance plus the author's judgment.</p>
 <p><strong>Report tool calls richly.</strong> Set the kind, the file locations and a clear title for every tool call, and attach diffs to edits. Editors build their whole interface from these fields; an agent that reports everything as <code>other</code> with no locations looks like a black box.</p>
@@ -766,7 +834,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <p><strong>Support both versions on purpose.</strong> Negotiate the version at <code>initialize</code> and route each connection to a v1 or v2 handler. Don't drop v1: the project expects v1-only peers to stay common.</p>
 <p><strong>Test against the kit.</strong> Run the Test Compatibility Kit, then try the agent in at least two different editors, since implementations differ in which optional capabilities they offer.</p>
 
-<h2 id="s15">15 · Examples</h2>
+<h2 id="s15"><span class="n">15</span>Examples</h2>
 <div class="kicker">adding an agent by hand, and the opening handshake</div>
 <p><strong>Adding a custom agent to an editor.</strong> Both Zed and JetBrains accept agents that aren't in the registry. The shape is nearly identical: a name and the command to launch. These snippets follow configurations published in <a href="https://dev.to/alextdev/agent-client-protocol-acp-a-new-standard-for-bringing-ai-coding-agents-into-your-ide-1k89">two</a> <a href="https://dev.to/dmaxdev/agent-client-protocol-acp-connect-any-ai-agent-to-any-editor-2p0m">community guides</a>; check your editor's documentation for the full set of fields.</p>
 <pre><code>// Zed: settings.json
@@ -833,7 +901,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
   }
 }</code></pre>
 
-<h2 id="s16">16 · Governance and what's next</h2>
+<h2 id="s16"><span class="n">16</span>Governance and what's next</h2>
 <div class="kicker">two companies today, a foundation later</div>
 <p>ACP's governance is the least settled of the three agent protocols. The project's <a href="https://agentclientprotocol.com/community/governance.md">governance page</a> describes an interim model: Zed and JetBrains govern the protocol jointly, with two lead maintainers, Ben Brandt of Zed and Sergey Ignatov of JetBrains, who can veto decisions, and a stated aim of moving to an independent foundation. MCP and A2A already sit in the Linux Foundation's Agentic AI Foundation. For a company betting on ACP, the practical meaning is simple: two vendors with their own editors decide the protocol's direction today.</p>
 <p>Changes arrive through RFDs, and many land in v1 without breaking anything. The <a href="https://agentclientprotocol.com/announcements/acp-v2-draft.md">v2 announcement</a> lists the themes still in motion. Four questions remain open.</p>
@@ -842,7 +910,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <p><strong>What will remote agents look like?</strong> The Streamable HTTP and WebSocket transport would let local editors drive agents in cloud sandboxes, which is also where safer isolation is easiest. It's still an RFD.</p>
 <p><strong>Will ACP join a foundation?</strong> The governance page says that's the goal. Joining MCP and A2A in the Agentic AI Foundation would complete a three-layer stack under one neutral home; staying with its two sponsors keeps decisions fast but concentrated.</p>
 
-<h2 id="s17">17 · Checklists</h2>
+<h2 id="s17"><span class="n">17</span>Checklists</h2>
 <div class="kicker">the page, condensed into things to do</div>
 <h3>If you're building an ACP agent</h3>
 <ol class="plain">
@@ -867,7 +935,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 <li>Track governance: today two vendors decide the protocol's direction (<a href="#s16">section 16</a>).</li>
 </ol>
 
-<h2 id="s18">18 · Glossary</h2>
+<h2 id="s18"><span class="n">18</span>Glossary</h2>
 <div class="kicker">plain meanings, in the order you'll meet them</div>
 <div class="tbl"><table>
 <tr><th>Term</th><th>Meaning</th></tr>
@@ -910,7 +978,7 @@ th { font-family:var(--f-display); font-weight:600; font-size:13px; letter-spaci
 </ul>
 
 <p class="updated">Last updated 20 November 2026. The v2 status, editor support (especially VS Code), registry contents and governance will age first; check agentclientprotocol.com for anything newer.</p>
-<footer class="deskfoot"><a href="index.html">← All agent protocol guides</a><br>Agent Client Protocol (ACP), end to end · CTO's Desk · 20 November 2026</footer>
+<footer class="deskfoot">Agent Client Protocol (ACP), end to end · CTO's Desk · 20 November 2026</footer>
 </main>
 
 
