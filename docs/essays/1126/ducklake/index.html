@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DuckLake in Production</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:#FFFFFF; --ink:#171A20; --ink-soft:#4A4F5A;
+  --accent:#23407C; --accent-tint:#EFF3FA; --accent-line:#C4D0E8;
+  --amber:#B7791F; --amber-tint:#FDF6E3; --amber-ink:#8A5A13;
+  --green:#5B8C5A; --green-tint:#F2F8F2; --green-ink:#3A5F39;
+  --line:#E3E4E0; --engine-tint:#F2F3F5; --code-bg:#F6F6F3; --svg-bg:#FFFFFF; --sub:#FAFAF8;
+  --toc-w:248px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#14161B; --ink:#E7E9EE; --ink-soft:#A3A9B5;
+    --accent:#8FB0EE; --accent-tint:#1B2539; --accent-line:#34466B;
+    --amber:#E0A54A; --amber-tint:#2A2215; --amber-ink:#EBC07F;
+    --green:#7FB37E; --green-tint:#18241A; --green-ink:#A6D3A5;
+    --line:#2C3038; --engine-tint:#1D2027; --code-bg:#1A1C22; --svg-bg:#171A20; --sub:#181B21;
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#14161B; --ink:#E7E9EE; --ink-soft:#A3A9B5;
+  --accent:#8FB0EE; --accent-tint:#1B2539; --accent-line:#34466B;
+  --amber:#E0A54A; --amber-tint:#2A2215; --amber-ink:#EBC07F;
+  --green:#7FB37E; --green-tint:#18241A; --green-ink:#A6D3A5;
+  --line:#2C3038; --engine-tint:#1D2027; --code-bg:#1A1C22; --svg-bg:#171A20; --sub:#181B21;
+}
+:root { box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+*, *::before, *::after { box-sizing:inherit; margin:0; padding:0; }
+html { scroll-behavior:smooth; scroll-padding-top:calc(24px + env(safe-area-inset-top,0px)); background:var(--paper); }
+body { background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif; font-size:16px; line-height:1.6; }
+
+.layout { display:grid; grid-template-columns:var(--toc-w) minmax(0,760px); gap:40px; max-width:1200px; margin:0 auto; padding:48px 24px 96px; }
+main { min-width:0; }
+
+.sidebar { position:relative; }
+.toc { position:sticky; top:calc(24px + env(safe-area-inset-top,0px)); font-size:13.5px; }
+.toc .toc-title { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:10px; }
+.toc a { display:block; color:var(--ink-soft); text-decoration:none; padding:4px 10px; border-left:2px solid var(--line); line-height:1.4; border-bottom:none; }
+.toc a:hover { color:var(--accent); }
+.toc a.active { color:var(--accent); border-left-color:var(--accent); font-weight:600; }
+.toc a.sub { padding-left:22px; font-size:12.5px; }
+
+.eyebrow { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; }
+h1 { font-size:clamp(26px,4.5vw,38px); font-weight:700; line-height:1.15; letter-spacing:-.02em; margin-bottom:14px; }
+.subtitle { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:14px; color:var(--ink-soft); margin:-6px 0 14px; }
+.standfirst { font-size:18px; color:var(--ink-soft); margin-bottom:8px; }
+h2 { font-size:22px; font-weight:700; color:var(--accent); margin:44px 0 4px; }
+h3 { font-size:17px; font-weight:700; margin:26px 0 6px; }
+.meaning h3 { font-size:18px; padding-top:18px; border-top:1px solid var(--line); margin-top:0; }
+.kicker { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:12px; color:var(--ink-soft); margin-bottom:14px; }
+p { margin-bottom:10px; }
+ul.plain, ol.plain { margin:6px 0 12px 20px; }
+ul.plain li, ol.plain li { margin-bottom:6px; }
+
+.tbl { overflow-x:auto; margin:14px 0; border:1px solid var(--line); border-radius:8px; }
+table { width:100%; border-collapse:collapse; font-size:14.5px; background:var(--svg-bg); }
+th { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; text-align:left; padding:9px 13px; border-bottom:1.5px solid var(--ink); }
+td { padding:9px 13px; border-bottom:1px solid var(--line); vertical-align:top; }
+tr:last-child td { border-bottom:none; }
+td:first-child { font-weight:600; }
+code { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:.88em; background:var(--engine-tint); padding:0 4px; border-radius:3px; }
+
+figure.diag { margin:18px 0; }
+.diag-scroll { overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--svg-bg); }
+figure.diag svg { width:100%; min-width:600px; height:auto; display:block; }
+figure.diag figcaption { font-size:13px; color:var(--ink-soft); margin-top:6px; }
+figure.diag text { font-family:'IBM Plex Sans',system-ui,sans-serif; fill:var(--ink); }
+figure.diag text.mono { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; }
+figure.diag .t-s { fill:var(--ink-soft); }
+figure.diag .t-a { fill:var(--accent); }
+figure.diag .t-am { fill:var(--amber-ink); }
+figure.diag .t-g { fill:var(--green-ink); }
+.bx-n { fill:var(--engine-tint); stroke:var(--line); }
+.bx-a { fill:var(--accent-tint); stroke:var(--accent); stroke-width:1.5; }
+.bx-w { fill:var(--svg-bg); stroke:var(--accent-line); }
+.bx-am { fill:var(--amber-tint); stroke:var(--amber); }
+.bx-g { fill:var(--green-tint); stroke:var(--green); }
+.bx-s { fill:var(--sub); stroke:var(--line); }
+.ln { stroke:var(--ink-soft); stroke-width:1.5; fill:none; }
+.ln-am { stroke:var(--amber); stroke-width:1.5; fill:none; stroke-dasharray:5 5; }
+.dash-am { fill:none; stroke:var(--amber); stroke-width:1.8; stroke-dasharray:9 7; }
+.grid { stroke:var(--line); stroke-width:1; stroke-dasharray:4 5; }
+.axis { stroke:var(--ink-soft); stroke-width:1.2; }
+.arrowhead { fill:var(--ink-soft); stroke:none; }
+
+/* map dots */
+.dot { cursor:pointer; outline:none; }
+.dot .ring { stroke:transparent; stroke-width:3; fill:none; }
+.dot .solid { fill:var(--accent); }
+.dot .hollow { fill:var(--paper); stroke:var(--amber); stroke-width:2.2; }
+.dot .num { font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10px; font-weight:600; text-anchor:middle; }
+.dot .solid + .num { fill:var(--paper); }
+.dot .hollow + .num { fill:var(--amber-ink); }
+.dot:hover .ring, .dot:focus-visible .ring, .dot.sel .ring { stroke:var(--accent); }
+.dot text.lab { font-size:12.5px; }
+.panel { border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; padding:12px 14px; margin-top:10px; background:var(--accent-tint); min-height:92px; }
+.panel .lbl { display:block; margin-bottom:4px; }
+.panel p { margin-bottom:6px; font-size:14.5px; }
+.panel p:last-child { margin-bottom:0; }
+.legend { display:flex; flex-wrap:wrap; gap:18px; font-size:13px; color:var(--ink-soft); margin-top:8px; }
+.legend span::before { content:""; display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:6px; vertical-align:-1px; }
+.legend .l-solid::before { background:var(--accent); }
+.legend .l-hollow::before { border:2px solid var(--amber); background:var(--paper); }
+
+.meaning { margin:30px 0 34px; }
+.lbl { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); }
+h4.albl { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:600; margin:14px 0 4px; }
+.anatomy h4.albl:first-child { margin-top:2px; }
+.anatomy p { margin-bottom:6px; }
+.verdict { display:inline-block; font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; padding:1px 7px; border-radius:4px; margin-right:6px; }
+.v-sig { background:var(--green-tint); color:var(--green-ink); border:1px solid var(--green); }
+.v-mix { background:var(--accent-tint); color:var(--accent); border:1px solid var(--accent-line); }
+.v-mkt { background:var(--amber-tint); color:var(--amber-ink); border:1px solid var(--amber); }
+.seam { font-size:14.5px; color:var(--ink-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:10px 2px; margin:22px 0; }
+.ask { border-left:3px solid var(--amber); background:var(--amber-tint); padding:9px 13px; margin:10px 0 4px; font-size:14.5px; border-radius:0 6px 6px 0; }
+.ask .lbl { color:var(--amber-ink); margin-right:6px; }
+.hook { border-left:3px solid var(--accent); background:var(--accent-tint); padding:12px 14px; margin-top:14px; font-size:15px; border-radius:0 6px 6px 0; }
+.hook p:last-child { margin-bottom:0; }
+
+a { color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent-line); }
+a:hover { border-bottom-color:var(--accent); }
+a:focus-visible, .dot:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.ref { font-size:13.5px; color:var(--ink-soft); line-height:1.9; }
+.ref li { margin-left:18px; }
+strong { font-weight:600; }
+.updated { font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:12px; color:var(--ink-soft); margin-top:40px; border-top:1px solid var(--line); padding-top:12px; }
+
+.hint { font-style:italic; font-size:14.5px; color:var(--ink-soft); margin:18px 0 -8px; display:flex; align-items:center; gap:8px; }
+.hint-mark { width:12px; height:12px; border-radius:50%; border:2px solid var(--accent); flex:none; }
+.glance { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:12px; color:var(--ink-soft); margin:0 0 12px; }
+.glance span { color:var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:.08em; font-size:11px; margin-right:5px; }
+.glance { display:flex; flex-wrap:wrap; column-gap:18px; row-gap:2px; }
+.glance i { font-style:normal; }
+.tag { font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--amber-ink); background:var(--amber-tint); border:1px solid var(--amber); border-radius:4px; padding:1px 6px; vertical-align:3px; margin-left:6px; }
+.meaning p { max-width:72ch; }
+figure.spot { margin:14px 0 18px; }
+figure.spot .diag-scroll { background:var(--sub); }
+figure.spot svg { min-width:560px; }
+figure.spot figcaption { font-size:12.5px; }
+.ln-a { stroke:var(--accent); stroke-width:2.5; fill:none; }
+.band-am { fill:var(--amber-tint); }
+.faded { opacity:.45; }
+.seam + .seam { margin-top:-22px; border-top:none; }
+@media (max-width:900px) {
+  .layout { display:block; padding:28px 18px 72px; }
+  .sidebar { margin-bottom:24px; }
+  .toc { position:static; border:1px solid var(--line); border-radius:8px; padding:12px 14px; }
+  h2 { margin-top:34px; }
+}
+@media (max-width:520px) { body { font-size:15px; } }
+@media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+.toc-toggle { display:none; }
+@media (max-width:900px) {
+  html { scroll-padding-top:calc(64px + env(safe-area-inset-top,0px)); }
+  .sidebar { position:sticky; top:env(safe-area-inset-top,0px); z-index:20; background:var(--paper); margin:-28px -18px 24px; padding:0 18px; border-bottom:1px solid var(--line); }
+  .toc-toggle { display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; color:var(--ink); font:inherit; font-size:14px; padding:12px 0; cursor:pointer; text-align:left; }
+  .toc-toggle:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .toc-toggle-label { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
+  .toc-current { margin-left:auto; font-size:13px; color:var(--accent); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:55%; }
+  .burger { position:relative; width:20px; height:14px; flex:none; }
+  .burger span { position:absolute; left:0; width:20px; height:2px; background:var(--ink); border-radius:1px; transition:transform .2s ease, opacity .2s ease; }
+  .burger span:nth-child(1) { top:0; } .burger span:nth-child(2) { top:6px; } .burger span:nth-child(3) { top:12px; }
+  .sidebar.open .burger span:nth-child(1) { transform:translateY(6px) rotate(45deg); }
+  .sidebar.open .burger span:nth-child(2) { opacity:0; }
+  .sidebar.open .burger span:nth-child(3) { transform:translateY(-6px) rotate(-45deg); }
+  .sidebar .toc { display:none; border:none; padding:0 0 14px; max-height:calc(70vh - env(safe-area-inset-top,0px)); overflow-y:auto; }
+  .sidebar .toc .toc-title { display:none; }
+  .sidebar.open .toc { display:block; }
+}
+@media (prefers-reduced-motion:reduce) { .burger span { transition:none; } }
+</style>
+<style>
+.cost td:not(:first-child), .cost th:not(:first-child) { text-align:right; white-space:nowrap; }
+.cost tr.total td { font-weight:700; border-top:1.5px solid var(--ink); }
+figure.diag g.mono text { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; }
+.note { font-size:13.5px; color:var(--ink-soft); }
+pre { font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace; font-size:13px; background:var(--code-bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; overflow-x:auto; margin:10px 0 14px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="toc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <nav class="toc" id="toc" aria-label="Contents">
+    <div class="toc-title">Contents</div>
+    <a href="#s1">1 · What DuckLake is</a>
+    <a href="#s2">2 · Why build it when Iceberg exists</a>
+    <a href="#s3">3 · Inside the catalog</a>
+    <a class="sub" href="#c1">3.1 The catalog tables</a>
+    <a class="sub" href="#c2">3.2 A read</a>
+    <a class="sub" href="#c3">3.3 A write</a>
+    <a class="sub" href="#c4">3.4 Delete, update, maintenance</a>
+    <a class="sub" href="#c5">3.5 Two writers at once</a>
+    <a href="#s4">4 · When the catalog is the bottleneck</a>
+    <a href="#s5">5 · Speed: DuckDB 2.0 and the catalog</a>
+    <a href="#s6">6 · Limits and sharp edges</a>
+    <a href="#s7">7 · DuckLake or Iceberg</a>
+    <a href="#s8">8 · Adoption, activity, future</a>
+    <a href="#s9">9 · The four projects</a>
+    <a class="sub" href="#m1">9.1 pg_ducklake</a>
+    <a class="sub" href="#m2">9.2 swanlake</a>
+    <a class="sub" href="#m3">9.3 quacklake</a>
+    <a class="sub" href="#m4">9.4 boilstream</a>
+    <a href="#s10">10 · Production architecture</a>
+    <a href="#s11">11 · What it costs</a>
+    <a href="#s12">12 · Rollout plan and runbook</a>
+    <a href="#s13">13 · Open questions</a>
+    <a href="#sources">Sources</a>
+  </nav>
+</aside>
+
+<main>
+<div class="eyebrow">Field guide · November 2026 · Animesh</div>
+<h1>DuckLake: what it is, when to pick it over Iceberg, and how to run it in production</h1>
+<p class="subtitle">Architecture, speed, limits, adoption, four community projects, and a priced plan for AWS and Cloudflare</p>
+<p class="standfirst">DuckLake is a lakehouse format that keeps all table metadata in an ordinary SQL database and all data in Parquet files. At the end of this page, you will know how it works, why its makers built it next to Apache Iceberg, where it is fast and where it is weak, how four community projects fit around it, and what a lean production setup costs on AWS and on Cloudflare.</p>
+
+<div class="seam"><strong>Who this is for:</strong> engineers and architects who know what Parquet and a data warehouse are, and who must decide whether to run DuckLake for real. Read <a href="#s1">sections 1</a> to <a href="#s4">4</a> to learn how DuckLake and its catalog work, <a href="#s5">sections 5</a> to <a href="#s8">8</a> for the decision, and <a href="#s9">sections 9</a> to <a href="#s12">12</a> for the build. The page does not teach SQL or DuckDB basics. Prices are list prices from November 2026 and are estimates, not quotes.</div>
+
+<h2 id="s1">1 · What DuckLake is</h2>
+<div class="kicker">two parts: a database for the facts, a bucket for the files</div>
+
+<p>A lakehouse format is a set of rules that turns a folder of Parquet files into tables with transactions, schema changes and time travel. Apache Iceberg and Delta Lake do this with metadata files (JSON and Avro) that sit next to the data in object storage. DuckLake does it with tables in a SQL database. That database is the catalog database: one place that stores every snapshot, every file path, every column statistic and every schema version.</p>
+
+<p>The <a href="https://ducklake.select/manifesto">DuckLake manifesto</a> by Mark Raasveldt and Hannes Mühleisen of DuckDB Labs states the idea plainly: metadata is small, structured and changes often, so a database is the right home for it. The catalog database can be PostgreSQL, SQLite, MySQL or a DuckDB file. The data stays as normal Parquet files on S3, R2, GCS, Azure or a local disk. Any engine that speaks the format first reads the catalog with SQL, then reads only the Parquet files that it needs.</p>
+
+<p>The diagram reads from top to bottom. Engines talk to the catalog database, and the catalog database points at files in storage.</p>
+
+<figure class="diag" id="fig-arch">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="All DuckLake metadata lives in one SQL database, and object storage holds only Parquet files.">
+  <text x="24" y="34" font-size="12" class="mono t-s" letter-spacing="1.5">ENGINES THAT READ AND WRITE</text>
+  <g font-size="14" font-weight="600" text-anchor="middle">
+    <rect x="24" y="46" width="212" height="44" rx="7" class="bx-n"/><text x="130" y="73">DuckDB 2.0</text>
+    <rect x="254" y="46" width="212" height="44" rx="7" class="bx-n"/><text x="360" y="73">Spark · Trino</text>
+    <rect x="484" y="46" width="212" height="44" rx="7" class="bx-n"/><text x="590" y="73">DataFusion · Pandas</text>
+  </g>
+  <g><line class="ln" x1="130" y1="90" x2="130" y2="116"/><line class="ln" x1="360" y1="90" x2="360" y2="116"/><line class="ln" x1="590" y1="90" x2="590" y2="116"/></g>
+
+  <rect x="24" y="118" width="672" height="106" rx="9" class="bx-a"/>
+  <text x="42" y="146" font-size="13" class="mono t-a" font-weight="600" letter-spacing="1.2">CATALOG DATABASE · POSTGRES, SQLITE OR DUCKDB</text>
+  <g font-size="13.5" text-anchor="middle">
+    <rect x="42" y="160" width="148" height="44" rx="6" class="bx-w"/><text x="116" y="187">Snapshots</text>
+    <rect x="204" y="160" width="148" height="44" rx="6" class="bx-w"/><text x="278" y="187">File lists</text>
+    <rect x="366" y="160" width="148" height="44" rx="6" class="bx-w"/><text x="440" y="187">Column statistics</text>
+    <rect x="528" y="160" width="150" height="44" rx="6" class="bx-w"/><text x="603" y="187">Small inlined rows</text>
+  </g>
+
+  <line class="dash-am" x1="24" y1="252" x2="696" y2="252" style="stroke-width:2.5"/>
+  <rect x="170" y="238" width="380" height="28" rx="5" class="bx-am"/>
+  <text x="360" y="257" font-size="12.5" class="mono t-am" font-weight="600" text-anchor="middle" letter-spacing="1.2">METADATA ABOVE · FILES BELOW</text>
+
+  <rect x="24" y="286" width="672" height="110" rx="9" class="bx-s"/>
+  <text x="42" y="314" font-size="13" class="mono t-s" font-weight="600" letter-spacing="1.2">OBJECT STORAGE · ONLY PARQUET FILES</text>
+  <g font-size="13" text-anchor="middle">
+    <rect x="42" y="330" width="200" height="46" rx="6" class="bx-n"/><text x="142" y="350">Data files</text><text x="142" y="367" font-size="11.5" class="t-s">plain Parquet</text>
+    <rect x="256" y="330" width="200" height="46" rx="6" class="bx-n"/><text x="356" y="350">Delete files</text><text x="356" y="367" font-size="11.5" class="t-s">Iceberg-compatible</text>
+    <rect x="470" y="330" width="208" height="46" rx="6" class="bx-n"/><text x="574" y="350">S3 · R2 · GCS · Azure</text><text x="574" y="367" font-size="11.5" class="t-s">or local disk</text>
+  </g>
+</svg>
+</div>
+<figcaption>Nothing in the bucket describes a table: all the facts about tables live in the catalog database.</figcaption>
+</figure>
+
+<p>Two results follow from this layout. First, a commit is one SQL transaction, so the catalog database gives DuckLake its atomicity and its conflict checks. Second, very small writes can skip the bucket. DuckLake calls this data inlining: if a write has fewer rows than a limit (10 by default in DuckLake 1.0), the rows go into a catalog table and not into a new Parquet file. A later flush moves them into Parquet in one batch.</p>
+
+<p>The <a href="https://duckdb.org/docs/current/core_extensions/ducklake.html">reference implementation</a> is the <code>ducklake</code> extension for DuckDB. One statement attaches a lake:</p>
+<pre>INSTALL ducklake;
+ATTACH 'ducklake:postgres:dbname=lake host=db.internal' AS lake
+  (DATA_PATH 's3://my-bucket/lake/');
+CREATE TABLE lake.events AS SELECT * FROM 'events/*.parquet';</pre>
+
+<h2 id="s2">2 · Why build it when Iceberg exists</h2>
+<div class="kicker">the small-write problem and the metadata maze</div>
+
+<p>Iceberg was created at Netflix in 2017 to fix Hive. Hive tracked tables as folders, and listing folders on S3 was slow and not transactional. Iceberg moved the facts into files: a <code>metadata.json</code> root, a manifest list, manifests, and then the data files. Each commit writes a new set of these files and then swaps one pointer in a catalog. The manifesto calls this a maze of JSON and Avro files, and it notes that Iceberg and Delta later added a database anyway (the REST catalog, Unity Catalog) to make the pointer swap safe.</p>
+
+<p>The DuckDB team asked a simple question. If a database is necessary in any case, why not put all the metadata in it? The manifesto points out that BigQuery stores its metadata in Spanner and Snowflake stores its metadata in FoundationDB. DuckLake applies the same design to an open format. The team announced it on <a href="https://duckdb.org/2025/05/27/ducklake.html">27 May 2025</a>.</p>
+
+<p>The difference is largest for small, frequent writes, for example a stream of sensor rows. The figure shows one small insert under each design.</p>
+
+<figure class="diag" id="fig-write">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="One small Iceberg insert writes about four objects and calls a catalog service, while DuckLake with inlining writes zero files and runs one SQL transaction.">
+  <defs><marker id="ahw" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <rect x="16" y="16" width="688" height="126" rx="10" class="bx-s"/>
+  <text x="32" y="40" font-size="12" class="mono t-s" font-weight="600" letter-spacing="1.2">ICEBERG · ONE SMALL INSERT</text>
+  <g font-size="13" text-anchor="middle">
+    <rect x="32" y="56" width="112" height="62" rx="7" class="bx-n"/><text x="88" y="84" font-weight="600">Writer</text><text x="88" y="102" font-size="11.5" class="t-s">10 rows</text>
+    <line class="ln" x1="144" y1="87" x2="166" y2="87" marker-end="url(#ahw)"/>
+    <rect x="170" y="56" width="356" height="62" rx="7" class="bx-am"/>
+    <text x="348" y="80" font-weight="600" class="t-am">About 4 new objects in the bucket</text>
+    <text x="348" y="100" font-size="11.5" class="t-s">data file, manifest, manifest list, metadata.json</text>
+    <line class="ln" x1="526" y1="87" x2="548" y2="87" marker-end="url(#ahw)"/>
+    <rect x="552" y="56" width="136" height="62" rx="7" class="bx-n"/><text x="620" y="84" font-weight="600">REST catalog</text><text x="620" y="102" font-size="11.5" class="t-s">pointer swap</text>
+  </g>
+  <rect x="16" y="158" width="688" height="126" rx="10" class="bx-s"/>
+  <text x="32" y="182" font-size="12" class="mono t-s" font-weight="600" letter-spacing="1.2">DUCKLAKE WITH INLINING · SAME INSERT</text>
+  <g font-size="13" text-anchor="middle">
+    <rect x="32" y="198" width="112" height="62" rx="7" class="bx-n"/><text x="88" y="226" font-weight="600">Writer</text><text x="88" y="244" font-size="11.5" class="t-s">10 rows</text>
+    <line class="ln" x1="144" y1="229" x2="166" y2="229" marker-end="url(#ahw)"/>
+    <rect x="170" y="198" width="356" height="62" rx="7" class="bx-a"/>
+    <text x="348" y="222" font-weight="600" class="t-a">One SQL transaction in the catalog</text>
+    <text x="348" y="242" font-size="11.5" class="t-s">rows and snapshot written together</text>
+    <line class="ln" x1="526" y1="229" x2="548" y2="229" marker-end="url(#ahw)"/>
+    <rect x="552" y="198" width="136" height="62" rx="7" class="bx-g"/><text x="620" y="226" font-weight="600" class="t-g">0 new files</text><text x="620" y="244" font-size="11.5" class="t-s">flush later, in bulk</text>
+  </g>
+</svg>
+</div>
+<figcaption>The Iceberg path pays object-storage round trips on every commit, and the DuckLake path pays one database round trip.</figcaption>
+</figure>
+
+<p>This is the source of the headline benchmark. In the <a href="https://ducklake.select/2026/04/02/data-inlining-in-ducklake/">data inlining post</a> of 2 April 2026, DuckDB Labs streamed sensor rows in batches of 10. Against Iceberg (pyiceberg with Apache Polaris), DuckLake with inlining inserted 105 times faster (1,148.77 s against 10.88 s) and ran the follow-up queries 923 times faster (83.06 s against 0.09 s). The queries were faster because Iceberg had produced thousands of tiny files to scan. Read these numbers with care. The vendor ran the test, it used one writer, and the Iceberg run was cut to 100 seconds because the full 50-minute run took too long. The test shows a real design advantage for small writes. It does not show that DuckLake is 900 times faster in general.</p>
+
+<p>For large batch loads, both formats write the same kind of Parquet files, and the gap is small. The main gains of DuckLake for big tables are simpler operations (one database to back up, no metadata files to clean) and fast planning, because a query plan needs one SQL query and not a walk through many small files.</p>
+
+<h2 id="s3">3 · Inside the catalog</h2>
+<div class="kicker">what the tables hold, and what happens on read, write, update and delete</div>
+
+<p>To understand where DuckLake is fast and where it can choke, you must see what the catalog database does on each operation. This section follows the <a href="https://ducklake.select/docs/stable/specification/queries">query steps in the DuckLake specification</a> one at a time. Names and steps come from the spec 1.1 documentation. Spec 1.0 is the same in shape, with small name changes in the inlined tables.</p>
+
+<section class="meaning" id="c1">
+<h3>3.1 The catalog tables</h3>
+<p>The catalog is about 29 ordinary SQL tables. You can open them with <code>psql</code> and read them like any other table. They fall into five groups. The figure shows the groups and the tables that matter most for performance.</p>
+
+<figure class="diag spot" id="fig-tables">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The DuckLake catalog has five groups of tables: snapshots, schema, files, statistics and inlined data.">
+  <text x="24" y="28" font-size="12" class="mono t-s" letter-spacing="1.2">CATALOG DATABASE · FIVE GROUPS OF TABLES</text>
+  <g font-size="12" class="mono">
+    <rect x="24" y="44" width="216" height="110" rx="9" class="bx-a"/>
+    <text x="38" y="66" font-size="12" class="t-a" font-weight="600" letter-spacing="1">SNAPSHOTS</text>
+    <text x="38" y="92">ducklake_snapshot</text>
+    <text x="38" y="112">ducklake_snapshot_changes</text>
+    <text x="38" y="138" font-size="11" class="t-s">one row per commit</text>
+
+    <rect x="252" y="44" width="216" height="110" rx="9" class="bx-n"/>
+    <text x="266" y="66" font-size="12" class="t-s" font-weight="600" letter-spacing="1">SCHEMA</text>
+    <text x="266" y="92">ducklake_schema</text>
+    <text x="266" y="112">ducklake_table</text>
+    <text x="266" y="132">ducklake_column</text>
+
+    <rect x="480" y="44" width="216" height="110" rx="9" class="bx-n"/>
+    <text x="494" y="66" font-size="12" class="t-s" font-weight="600" letter-spacing="1">FILES</text>
+    <text x="494" y="92">ducklake_data_file</text>
+    <text x="494" y="112">ducklake_delete_file</text>
+    <text x="494" y="132" font-size="11">files_scheduled_for_deletion</text>
+
+    <rect x="24" y="166" width="330" height="110" rx="9" class="bx-am"/>
+    <text x="38" y="188" font-size="12" class="t-am" font-weight="600" letter-spacing="1">STATISTICS · GROWS FASTEST</text>
+    <text x="38" y="214">ducklake_table_stats</text>
+    <text x="38" y="234">ducklake_table_column_stats</text>
+    <text x="38" y="254">ducklake_file_column_stats</text>
+    <text x="250" y="254" font-size="11" class="t-s">files × columns</text>
+
+    <rect x="366" y="166" width="330" height="110" rx="9" class="bx-n"/>
+    <text x="380" y="188" font-size="12" class="t-s" font-weight="600" letter-spacing="1">INLINED DATA</text>
+    <text x="380" y="214">ducklake_inlined_data_tables</text>
+    <text x="380" y="234">one row table per table and schema</text>
+    <text x="380" y="254" font-size="11" class="t-s">small writes wait here until flush</text>
+  </g>
+</svg>
+</div>
+<figcaption>Every row in schema, files and inlined data carries a begin snapshot and an end snapshot, so the catalog holds the full history.</figcaption>
+</figure>
+
+<p>Two ideas explain almost everything. First, snapshot ids are a single sequence for the whole catalog: 0, 1, 2 and so on. The <code>snapshot_id</code> column is the primary key of <code>ducklake_snapshot</code>. Second, most rows are versioned. A file row says "I am live from snapshot 12 until snapshot 30". If <code>end_snapshot</code> is NULL, the row is still live. Nothing is updated in place, except the table-wide statistics.</p>
+<p>The statistics group grows fastest. <code>ducklake_file_column_stats</code> has one row for every column of every data file, with the minimum value, the maximum value and the null count. A table with 40 columns and 100,000 files has 4 million statistics rows. These rows are what lets a reader skip files, and they are also what makes the catalog heavy.</p>
+</section>
+
+<section class="meaning" id="c2">
+<h3>3.2 A read</h3>
+<p>A read is a short conversation with the catalog, followed by a long one with object storage. The sequence diagram reads from top to bottom. Each arrow is one request.</p>
+
+<figure class="diag" id="fig-read">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A DuckLake read asks the catalog for the snapshot, schema and pruned file list, then reads only those Parquet files from storage.">
+  <defs><marker id="ahr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <g font-size="13.5" font-weight="600" text-anchor="middle">
+    <rect x="30" y="20" width="160" height="40" rx="7" class="bx-n"/><text x="110" y="45">DuckDB client</text>
+    <rect x="330" y="20" width="180" height="40" rx="7" class="bx-a"/><text x="420" y="45" class="t-a">Catalog database</text>
+    <rect x="560" y="20" width="150" height="40" rx="7" class="bx-n"/><text x="635" y="45">Object storage</text>
+  </g>
+  <line class="grid" x1="110" y1="60" x2="110" y2="410"/><line class="grid" x1="420" y1="60" x2="420" y2="410"/><line class="grid" x1="635" y1="60" x2="635" y2="410"/>
+  <g font-size="11.5" class="mono">
+    <text x="122" y="94">1 · SELECT max(snapshot_id)</text>
+    <line class="ln" x1="110" y1="102" x2="416" y2="102" marker-end="url(#ahr)"/>
+    <text x="408" y="124" text-anchor="end" class="t-s">snapshot S = 42</text>
+    <line class="ln" x1="420" y1="132" x2="114" y2="132" style="stroke-dasharray:4 4" marker-end="url(#ahr)"/>
+
+    <text x="122" y="164">2 · tables and columns live at S</text>
+    <line class="ln" x1="110" y1="172" x2="416" y2="172" marker-end="url(#ahr)"/>
+
+    <text x="122" y="204">3 · files live at S, pruned by stats</text>
+    <line class="ln" x1="110" y1="212" x2="416" y2="212" marker-end="url(#ahr)"/>
+    <text x="408" y="234" text-anchor="end" class="t-s">data and delete file paths</text>
+    <line class="ln" x1="420" y1="242" x2="114" y2="242" style="stroke-dasharray:4 4" marker-end="url(#ahr)"/>
+
+    <text x="122" y="274">4 · inlined rows live at S</text>
+    <line class="ln" x1="110" y1="282" x2="416" y2="282" marker-end="url(#ahr)"/>
+
+    <text x="122" y="314">5 · GET Parquet footers and row groups</text>
+    <line class="ln" x1="110" y1="322" x2="631" y2="322" marker-end="url(#ahr)"/>
+    <text x="122" y="346">6 · GET delete files</text>
+    <line class="ln" x1="110" y1="354" x2="631" y2="354" marker-end="url(#ahr)"/>
+  </g>
+  <rect x="30" y="370" width="260" height="40" rx="7" class="bx-w"/>
+  <text x="160" y="395" font-size="12.5" text-anchor="middle">7 · drop deleted rows, add inlined rows</text>
+</svg>
+</div>
+<figcaption>The catalog answers four small queries, and then object storage does the heavy work.</figcaption>
+</figure>
+
+<p>Step 3 is where the catalog earns its keep. The reader joins <code>ducklake_data_file</code> to <code>ducklake_file_column_stats</code> and keeps only files whose minimum and maximum can match the filter. For <code>WHERE day = '2026-11-01'</code>, a table with 100,000 files can shrink to 30 files in one indexed query. Iceberg does the same pruning by reading manifest files from object storage. Steps 1 to 4 happen for every query, including dashboards that refresh every minute. So read traffic lands on the same database that writers use.</p>
+<p>Time travel uses the same path with an older S. <code>SELECT * FROM lake.events AT (VERSION =&gt; 30)</code> runs steps 2 to 7 with S = 30. Old files stay readable until maintenance removes them.</p>
+</section>
+
+<section class="meaning" id="c3">
+<h3>3.3 A write</h3>
+<p>An insert writes the Parquet file first and then records it in one catalog transaction. If the insert is small enough for inlining, step 1 is skipped and the rows go into the inlined table inside the same transaction.</p>
+
+<figure class="diag" id="fig-write-seq">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="An insert uploads a Parquet file, then writes a snapshot, a file row and statistics in one catalog transaction.">
+  <defs><marker id="ahs" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <g font-size="13.5" font-weight="600" text-anchor="middle">
+    <rect x="30" y="20" width="160" height="40" rx="7" class="bx-n"/><text x="110" y="45">DuckDB client</text>
+    <rect x="330" y="20" width="180" height="40" rx="7" class="bx-a"/><text x="420" y="45" class="t-a">Catalog database</text>
+    <rect x="560" y="20" width="150" height="40" rx="7" class="bx-n"/><text x="635" y="45">Object storage</text>
+  </g>
+  <line class="grid" x1="110" y1="60" x2="110" y2="385"/><line class="grid" x1="420" y1="60" x2="420" y2="385"/><line class="grid" x1="635" y1="60" x2="635" y2="385"/>
+  <g font-size="11.5" class="mono">
+    <text x="122" y="92">1 · PUT new Parquet file (skip if inlined)</text>
+    <line class="ln" x1="110" y1="100" x2="631" y2="100" marker-end="url(#ahs)"/>
+
+    <rect x="432" y="122" width="190" height="200" rx="9" class="dash-am"/>
+    <text x="527" y="142" text-anchor="middle" class="t-am" font-size="11">ONE TRANSACTION</text>
+    <text x="527" y="160" text-anchor="middle" class="t-s" font-size="11">all or nothing</text>
+
+    <text x="122" y="136">2 · BEGIN · max(snapshot_id) = 42</text>
+    <line class="ln" x1="110" y1="144" x2="416" y2="144" marker-end="url(#ahs)"/>
+    <text x="122" y="168">3 · INSERT snapshot 43 + change log</text>
+    <line class="ln" x1="110" y1="176" x2="416" y2="176" marker-end="url(#ahs)"/>
+    <text x="122" y="200">4 · INSERT data_file, begin = 43</text>
+    <line class="ln" x1="110" y1="208" x2="416" y2="208" marker-end="url(#ahs)"/>
+    <text x="122" y="232">5 · INSERT file_column_stats rows</text>
+    <line class="ln" x1="110" y1="240" x2="416" y2="240" marker-end="url(#ahs)"/>
+    <text x="122" y="264">6 · UPDATE table and column stats</text>
+    <line class="ln" x1="110" y1="272" x2="416" y2="272" marker-end="url(#ahs)"/>
+    <text x="122" y="296">7 · COMMIT</text>
+    <line class="ln" x1="110" y1="304" x2="416" y2="304" marker-end="url(#ahs)"/>
+    <text x="408" y="340" text-anchor="end" class="t-s">ok, or snapshot 43 already taken</text>
+    <line class="ln" x1="420" y1="348" x2="114" y2="348" style="stroke-dasharray:4 4" marker-end="url(#ahs)"/>
+  </g>
+</svg>
+</div>
+<figcaption>The data upload happens outside the transaction, so a failed commit leaves an orphan file and never a broken table.</figcaption>
+</figure>
+
+<p>The commit itself is a handful of small inserts and updates. On a healthy PostgreSQL catalog it takes milliseconds. Two details matter later. Step 2 reads the latest snapshot id for the whole catalog, not for one table. Step 6 updates shared rows of table-wide statistics. If the commit fails, the Parquet file from step 1 is never recorded, and <code>ducklake_delete_orphaned_files</code> removes it later.</p>
+</section>
+
+<section class="meaning" id="c4">
+<h3>3.4 Delete, update and maintenance</h3>
+<p>DuckLake never edits a Parquet file. A delete writes a small delete file that lists row positions, and records it in <code>ducklake_delete_file</code> with a begin snapshot. An update is a delete of the old row plus an insert of the new row in one transaction. Each data file has at most one live delete file per snapshot, so a second delete on the same file writes a new delete file that replaces the first one. Small deletes are inlined in the catalog, just like small inserts.</p>
+<p>The timeline below follows one data file through its life. Each bar is a catalog row with a begin snapshot and an end snapshot.</p>
+
+<figure class="diag" id="fig-life">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 370" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Files are never edited: deletes and updates add new files, compaction replaces files, and only expiry and cleanup remove them from storage.">
+  <g font-size="11" class="mono t-s" text-anchor="middle">
+    <text x="240" y="30" class="t-a" font-weight="600">INSERT</text>
+    <text x="390" y="30" class="t-a" font-weight="600">DELETE</text>
+    <text x="490" y="30" class="t-a" font-weight="600">UPDATE</text>
+    <text x="590" y="30" class="t-a" font-weight="600">REWRITE</text>
+    <text x="690" y="30" class="t-am" font-weight="600">EXPIRE</text>
+    <text x="240" y="56">S1</text><text x="290" y="56">S2</text><text x="340" y="56">S3</text><text x="390" y="56">S4</text><text x="440" y="56">S5</text><text x="490" y="56">S6</text><text x="540" y="56">S7</text><text x="590" y="56">S8</text><text x="640" y="56">S9</text><text x="690" y="56">S10</text>
+  </g>
+  <g>
+    <line class="grid" x1="240" y1="64" x2="240" y2="300"/><line class="grid" x1="290" y1="64" x2="290" y2="300"/><line class="grid" x1="340" y1="64" x2="340" y2="300"/><line class="grid" x1="390" y1="64" x2="390" y2="300"/><line class="grid" x1="440" y1="64" x2="440" y2="300"/><line class="grid" x1="490" y1="64" x2="490" y2="300"/><line class="grid" x1="540" y1="64" x2="540" y2="300"/><line class="grid" x1="590" y1="64" x2="590" y2="300"/><line class="grid" x1="640" y1="64" x2="640" y2="300"/><line class="grid" x1="690" y1="64" x2="690" y2="300"/>
+  </g>
+  <g font-size="12.5">
+    <text x="24" y="94">Data file A</text>
+    <rect x="240" y="78" width="350" height="24" rx="5" class="bx-n"/>
+    <text x="24" y="138">Delete file D1, for A</text>
+    <rect x="390" y="122" width="100" height="24" rx="5" class="bx-w"/>
+    <text x="24" y="182">Delete file D2, for A</text>
+    <rect x="490" y="166" width="100" height="24" rx="5" class="bx-w"/>
+    <text x="24" y="226">Data file B, new rows</text>
+    <rect x="490" y="210" width="210" height="24" rx="5" class="bx-a"/>
+    <text x="24" y="270">Data file C, A rewritten</text>
+    <rect x="590" y="254" width="110" height="24" rx="5" class="bx-a"/>
+  </g>
+  <line class="ln-a" x1="440" y1="64" x2="440" y2="300"/>
+  <rect x="380" y="306" width="120" height="22" rx="5" class="bx-a"/>
+  <text x="440" y="321" font-size="11" text-anchor="middle" class="mono t-a">READ AT S5</text>
+  <text x="24" y="352" font-size="12" class="t-s">Read at S5 returns A minus the rows in D1. At S10, expiry ends S1 to S7, and cleanup deletes A, D1 and D2 from storage.</text>
+</svg>
+</div>
+<figcaption>Old files stay in storage and in the catalog until snapshot expiry and file cleanup run, which is what makes time travel work and what makes the catalog grow.</figcaption>
+</figure>
+
+<p>This design gives cheap deletes and full history, but every change adds rows and files. Maintenance turns the pile back into a small lake. The <a href="https://ducklake.select/docs/stable/duckdb/maintenance/checkpoint">CHECKPOINT</a> command runs six steps in order: flush inlined data to Parquet, expire old snapshots, merge small adjacent files, rewrite files that are mostly deleted (95% by default), delete files scheduled for deletion, and delete orphaned files. Expiry also removes catalog rows for dropped tables and deleted inlined rows that no remaining snapshot needs. If you skip maintenance, nothing breaks at once. The catalog just grows, and every operation in <a href="#s4">section 4</a> gets slower.</p>
+</section>
+
+<section class="meaning" id="c5">
+<h3>3.5 Two writers at once</h3>
+<p>DuckLake uses optimistic concurrency: writers do not lock anything up front, and they detect a clash at commit time. Because snapshot ids are one sequence with a primary key, two writers that both read 42 will both try to insert 43. The database lets one win. The figure shows what the loser does.</p>
+
+<figure class="diag" id="fig-conflict">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="When two writers take the same snapshot id, the loser reads what changed and retries if there is no logical conflict, without rewriting data files.">
+  <defs><marker id="ahk" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <g font-size="13.5" font-weight="600" text-anchor="middle">
+    <rect x="30" y="20" width="160" height="40" rx="7" class="bx-n"/><text x="110" y="45">Writer 1</text>
+    <rect x="270" y="20" width="180" height="40" rx="7" class="bx-a"/><text x="360" y="45" class="t-a">Catalog database</text>
+    <rect x="530" y="20" width="160" height="40" rx="7" class="bx-n"/><text x="610" y="45">Writer 2</text>
+  </g>
+  <line class="grid" x1="110" y1="60" x2="110" y2="290"/><line class="grid" x1="360" y1="60" x2="360" y2="290"/><line class="grid" x1="610" y1="60" x2="610" y2="290"/>
+  <g font-size="11.5" class="mono">
+    <text x="120" y="92">read max = 42</text>
+    <line class="ln" x1="110" y1="100" x2="356" y2="100" marker-end="url(#ahk)"/>
+    <text x="600" y="92" text-anchor="end">read max = 42</text>
+    <line class="ln" x1="610" y1="100" x2="364" y2="100" marker-end="url(#ahk)"/>
+
+    <text x="120" y="134">INSERT snapshot 43, COMMIT</text>
+    <line class="ln" x1="110" y1="142" x2="356" y2="142" marker-end="url(#ahk)"/>
+    <text x="350" y="166" text-anchor="end" class="t-g">committed</text>
+    <line class="ln" x1="360" y1="174" x2="114" y2="174" style="stroke-dasharray:4 4" marker-end="url(#ahk)"/>
+
+    <text x="600" y="198" text-anchor="end">INSERT snapshot 43</text>
+    <line class="ln" x1="610" y1="206" x2="364" y2="206" marker-end="url(#ahk)"/>
+    <text x="370" y="230" class="t-am">primary key clash</text>
+    <line class="ln-am" x1="360" y1="238" x2="606" y2="238" marker-end="url(#ahk)"/>
+    <text x="600" y="262" text-anchor="end">read snapshot_changes for 43</text>
+    <line class="ln" x1="610" y1="270" x2="364" y2="270" marker-end="url(#ahk)"/>
+  </g>
+  <g font-size="13" text-anchor="middle">
+    <rect x="200" y="300" width="240" height="96" rx="7" class="bx-g"/>
+    <text x="320" y="324" font-weight="600" class="t-g">No logical conflict</text>
+    <text x="320" y="346" font-size="12" class="t-s">retry as snapshot 44</text>
+    <text x="320" y="364" font-size="12" class="t-s">keep the Parquet files</text>
+    <text x="320" y="382" font-size="12" class="t-s">up to 10 retries, with backoff</text>
+    <rect x="456" y="300" width="240" height="96" rx="7" class="bx-am"/>
+    <text x="576" y="324" font-weight="600" class="t-am">Real conflict: abort</text>
+    <text x="576" y="346" font-size="12" class="t-s">both deleted from one file</text>
+    <text x="576" y="364" font-size="12" class="t-s">table dropped or altered</text>
+    <text x="576" y="382" font-size="12" class="t-s">same file compacted twice</text>
+  </g>
+</svg>
+</div>
+<figcaption>A clash on the snapshot id is normal and cheap to retry, but every writer in the catalog competes for the same next id.</figcaption>
+</figure>
+
+<p>The <a href="https://ducklake.select/docs/stable/duckdb/advanced_features/conflict_resolution">conflict rules</a> are fine-grained. Two inserts into the same table do not conflict. Deletes from different files of the same table do not conflict. Two deletes from the same data file do conflict, and so do changes to a table that another writer dropped or altered. The retry settings are <code>ducklake_max_retry_count</code> (default 10), <code>ducklake_retry_wait_ms</code> (default 100) and <code>ducklake_retry_backoff</code> (default 1.5).</p>
+<p>The important point is scope. The clash happens on one sequence for the whole catalog, so a writer on table <code>orders</code> and a writer on table <code>clicks</code> also race for the next id. Neither has to abort, but only one commits at a time.</p>
+</section>
+
+<h2 id="s4">4 · When the catalog becomes the bottleneck</h2>
+<div class="kicker">what PostHog hit, why it happens, and whether Iceberg has the same problem</div>
+
+<h3>The PostHog case</h3>
+<p>On 2 November 2026, PostHog published <a href="https://posthog.com/blog/moving-off-duckdb">why it is moving its warehouse product off DuckDB</a>. PostHog had rebuilt the product on DuckDB about five months earlier, with a DuckDB instance per customer and DuckLake catalogs on shared PostgreSQL instances. It put all of its own data in DuckLake as the first customer. When it decided to move, the lake held about 2 PB, about 1 trillion rows and 15.3 million snapshots.</p>
+<p>PostHog reports these catalog problems:</p>
+<ul class="plain">
+<li>A write to a single table could take more than three minutes, because each commit re-read statistics for the whole catalog.</li>
+<li>More than 99% of the statistics rows belonged to tables that no longer existed. Deleting them made writes 30 to 50 times faster, but the rows grew back.</li>
+<li>The number of connections that DuckLake opens to the catalog was a major problem on shared PostgreSQL, where each connection has a real cost.</li>
+<li>The catalog schema must stay portable across PostgreSQL, SQLite, MySQL and DuckDB, so engine-specific tuning was limited. To stay compatible, PostHog carried patches in a fork.</li>
+</ul>
+<p>It also reports problems outside the catalog: single-node DuckDB was hard to size for unpredictable customer queries, and serving many clients over the PostgreSQL wire protocol was hard to load-balance. PostHog moved to its own Trino build and a new table format of its own, HogLake. Its summary is that DuckLake was not designed for distributed scale from the start. PostHog builds a competing warehouse product, so read the post as one operator's experience at an extreme scale. The facts are still useful, because each problem maps to a part of <a href="#s3">section 3</a>.</p>
+
+<h3>The five pressure points</h3>
+<p>The table links each symptom to its cause in the catalog design and to the fix that is available today.</p>
+
+<div class="tbl"><table>
+<tr><th>Pressure point</th><th>What grows</th><th>Symptom</th><th>What helps</th></tr>
+<tr><td>One snapshot sequence</td><td>Commits per second across all tables</td><td>Writers queue and retry, commit latency rises</td><td>Batch small writes, split into several catalogs</td></tr>
+<tr><td>Commit work</td><td>Statistics and history rows that a commit touches</td><td>One write takes seconds, then minutes</td><td>Expire snapshots, clean dropped tables, add indexes</td></tr>
+<tr><td>Catalog size</td><td>Snapshots, files × columns stats, inlined tables</td><td>Slow planning, slow attach, large backups</td><td>CHECKPOINT on a schedule, larger files</td></tr>
+<tr><td>Connections</td><td>DuckDB processes × attached catalogs</td><td>Catalog runs out of connections before CPU</td><td>PgBouncer, fewer long-lived processes, one catalog server</td></tr>
+<tr><td>Shared read path</td><td>Dashboards and queries per minute</td><td>Reads slow down commits on the same database</td><td>Cache results, more CPU for the catalog</td></tr>
+</table></div>
+
+<p>The single sequence is the structural limit. Every successful commit in a catalog must take the next snapshot id. In practice, commits go through one at a time, so the catalog's commit rate is about one second divided by the length of one commit transaction. My rough estimate: at 20 ms per commit, a catalog does at most about 50 commits per second, shared by every table. At three minutes per commit, as PostHog saw, the catalog does one commit every three minutes. Inlining makes each commit cheaper, but it does not remove the queue.</p>
+<p>Commit work that grows with the catalog turns a queue into a stall. A commit in the spec touches a few rows, so in principle its cost does not depend on catalog size. PostHog's report shows that the implementation at that time did more: it re-read catalog-wide statistics. DuckLake 1.1 made several catalog paths much faster, for example 102 times faster inlined commits on PostgreSQL. I cannot tell from the post which DuckLake version PostHog measured, so do not assume either way. Measure commit time on your own catalog as it grows.</p>
+<p>Size grows with every change because history is kept until expiry. The worst item is <code>ducklake_file_column_stats</code>: files times columns. Many small files make it worse, which is why inlining, merging and a large target file size protect the catalog as well as the bucket. Dropped tables leave rows behind until snapshot expiry removes them, which matches PostHog's 99% stale statistics.</p>
+<p>Connections fail first in multi-tenant setups. Each DuckDB process that attaches a PostgreSQL catalog holds its own connections. A PostgreSQL connection uses several megabytes of memory and the default limit is 100. <a href="https://www.definite.app/blog/duckdb-quack-ducklake-catalog">Definite</a> hit this limit in production, and so did PostHog. A connection pooler, or a single catalog server that speaks Quack, turns many clients into few connections.</p>
+<p>Portability limits tuning. The spec targets four database engines, so the official schema avoids features of any one engine. You can add PostgreSQL indexes, but you cannot change table layouts and stay compatible. The <a href="https://ducklake.select/roadmap">roadmap</a> lists "PostgreSQL catalogs at scale with automatic or suggested index creation" and "PostgreSQL performance (fewer roundtrips, stored procedures)", which are the same problems that PostHog reported.</p>
+
+<h3 id="growth">How the catalog grows with data volume</h3>
+<p>The catalog does not grow with bytes or rows. It grows with four counts: data files, columns per file, snapshots and tables. Data volume reaches the catalog only through the file count, and the file count depends on file size. So two lakes of the same size can have catalogs that differ by a factor of a thousand.</p>
+<p>The largest catalog table is <code>ducklake_file_column_stats</code>, with one row per column per file. The figure shows its size at three lake sizes, at the default DuckLake target file size of 512 MB and 40 columns, and for a petabyte lake made of small files. The last bar is the estimate by <a href="https://www.pracdata.io/p/is-ducklake-a-step-backward">Alireza Sadeghi</a> (November 2025): 100 million files at 10 columns.</p>
+
+<figure class="diag spot" id="fig-growth">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="File statistics rows grow with file count, from about 80 thousand at 1 TB to about 1 billion for a petabyte of small files.">
+  <text x="24" y="26" font-size="11" class="mono t-am" font-weight="600" letter-spacing="1">AUTHOR'S ESTIMATE, NOT A MEASUREMENT · LOG SCALE</text>
+  <g class="mono" font-size="11" text-anchor="middle">
+    <text x="220" y="52" class="t-s">10K</text><text x="312" y="52" class="t-s">100K</text><text x="404" y="52" class="t-s">1M</text><text x="496" y="52" class="t-s">10M</text><text x="588" y="52" class="t-s">100M</text><text x="680" y="52" class="t-s">1B</text>
+  </g>
+  <g><line class="grid" x1="220" y1="60" x2="220" y2="210"/><line class="grid" x1="312" y1="60" x2="312" y2="210"/><line class="grid" x1="404" y1="60" x2="404" y2="210"/><line class="grid" x1="496" y1="60" x2="496" y2="210"/><line class="grid" x1="588" y1="60" x2="588" y2="210"/><line class="grid" x1="680" y1="60" x2="680" y2="210"/></g>
+  <g font-size="12.5">
+    <text x="24" y="84">1 TB, 512 MB files</text>
+    <rect x="220" y="70" width="84" height="22" rx="4" class="bx-a"/><text x="312" y="86" font-size="11.5" class="t-s">about 80K rows</text>
+    <text x="24" y="120">100 TB, 512 MB files</text>
+    <rect x="220" y="106" width="268" height="22" rx="4" class="bx-a"/><text x="496" y="122" font-size="11.5" class="t-s">about 8M</text>
+    <text x="24" y="156">1 PB, 512 MB files</text>
+    <rect x="220" y="142" width="360" height="22" rx="4" class="bx-a"/><text x="588" y="158" font-size="11.5" class="t-s">about 80M</text>
+    <text x="24" y="192">1 PB, small files</text>
+    <rect x="220" y="178" width="460" height="22" rx="4" class="bx-am"/><text x="672" y="194" font-size="11.5" class="t-am" text-anchor="end">about 1B</text>
+  </g>
+</svg>
+</div>
+<figcaption>File size matters more than lake size: a petabyte of large files has a smaller catalog than a petabyte of small files by more than ten times.</figcaption>
+</figure>
+
+<p>A catalog with 80,000 or 8 million statistics rows is small work for PostgreSQL. At 80 million rows, it needs good indexes and enough memory to keep them cached. At about 1 billion rows, Sadeghi argues that a full DuckLake will likely struggle without heavy tuning, a larger server, or a distributed SQL database underneath. He also works out what one large query costs: a scan over 1 million files with 20 columns reads 1 million file rows and up to 20 million statistics rows before pruning. These are his estimates. Nobody has published a measurement at that size.</p>
+
+<p>Snapshots grow with the commit rate, not the volume. Whether a commit carries 10 rows or 10 GB, it adds one snapshot row and one change log row. The table shows what a steady commit rate adds in one year if you never expire snapshots.</p>
+
+<div class="tbl"><table>
+<tr><th>Commit rate, one catalog</th><th>Snapshots per day</th><th>Snapshots per year</th></tr>
+<tr><td>Once a minute</td><td>1,440</td><td>about 526,000</td></tr>
+<tr><td>Every 10 seconds</td><td>8,640</td><td>about 3.2 million</td></tr>
+<tr><td>Every second</td><td>86,400</td><td>about 31.5 million</td></tr>
+</table></div>
+
+<p>PostHog's 15.3 million snapshots sit in this range. Expiring snapshots keeps the count flat, and it also removes the statistics of dropped tables, which were 99% of PostHog's statistics rows.</p>
+
+<p>Sadeghi gives useful history and context. Hive stored only folder locations in its metastore, so planning needed slow file listings on S3, where one list call returns at most 1,000 objects. Iceberg, Hudi and Delta fixed this by writing file lists and statistics into metadata files beside the data. He describes DuckLake as a small step back toward a central metastore, but with the full file list, per-file statistics and snapshots stored in it. He grants that a database is the better home for metadata, and that the design avoids Hive's listing problem and Iceberg's file clutter.</p>
+
+<p>He also points to a design detail in BigQuery. Jordan Tigani compared DuckLake's statistics tables to BigQuery's CMETA metadata system. Sadeghi notes that BigQuery keeps a separate metadata table for each user table, not one central table, which lets it scale out. DuckLake keeps one statistics table for the whole catalog. This is one more reason why splitting a large lake into several catalogs helps. He reports that Hannes Mühleisen showed a test with 100 million snapshots in a talk, but no details were published. His conclusion is that DuckLake has real potential, but mostly for small and medium self-hosted lakes, and he notes that far more organizations store less than 100 TB than store petabytes.</p>
+
+<p>In practice, three habits keep the catalog small at any data volume: large files (keep the 512 MB target, keep inlining on and run compaction), fewer and larger commits, and snapshot expiry on a schedule. With those, 1 TB and 100 TB look almost the same to the catalog.</p>
+
+<h3>Does Iceberg have the same problem?</h3>
+<p>Partly. Iceberg also has a commit point, also uses optimistic concurrency, and also grows metadata that maintenance must trim. The differences are in where the load lands and in the scope of the clash. The figure puts the two designs side by side.</p>
+
+<figure class="diag" id="fig-load">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Iceberg writers clash per table and planning reads object storage, while DuckLake writers share one sequence and all metadata work lands on one database.">
+  <defs><marker id="ahl" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <rect x="16" y="16" width="336" height="328" rx="10" class="bx-s"/>
+  <rect x="368" y="16" width="336" height="328" rx="10" class="bx-s"/>
+  <text x="32" y="40" font-size="12" class="mono t-s" font-weight="600" letter-spacing="1.2">ICEBERG</text>
+  <text x="384" y="40" font-size="12" class="mono t-s" font-weight="600" letter-spacing="1.2">DUCKLAKE</text>
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="32" y="56" width="96" height="36" rx="7" class="bx-n"/><text x="80" y="79">Writer, A</text>
+    <rect x="136" y="56" width="96" height="36" rx="7" class="bx-n"/><text x="184" y="79">Writer, B</text>
+    <rect x="240" y="56" width="96" height="36" rx="7" class="bx-n"/><text x="288" y="79">Writer, C</text>
+    <line class="ln" x1="80" y1="92" x2="80" y2="124" marker-end="url(#ahl)"/>
+    <line class="ln" x1="184" y1="92" x2="184" y2="124" marker-end="url(#ahl)"/>
+    <line class="ln" x1="288" y1="92" x2="288" y2="124" marker-end="url(#ahl)"/>
+    <rect x="32" y="128" width="96" height="44" rx="7" class="bx-a"/><text x="80" y="148" class="t-a" font-weight="600">Table A</text><text x="80" y="164" font-size="11" class="t-s">own pointer</text>
+    <rect x="136" y="128" width="96" height="44" rx="7" class="bx-a"/><text x="184" y="148" class="t-a" font-weight="600">Table B</text><text x="184" y="164" font-size="11" class="t-s">own pointer</text>
+    <rect x="240" y="128" width="96" height="44" rx="7" class="bx-a"/><text x="288" y="148" class="t-a" font-weight="600">Table C</text><text x="288" y="164" font-size="11" class="t-s">own pointer</text>
+    <text x="184" y="196" font-size="11" class="mono t-s">REST CATALOG · LIGHT WORK</text>
+    <rect x="32" y="212" width="304" height="58" rx="7" class="bx-n"/>
+    <text x="184" y="236" font-weight="600">Metadata files in object storage</text>
+    <text x="184" y="256" font-size="11.5" class="t-s">metadata.json and manifests, per table</text>
+    <text x="184" y="300" font-size="12" class="t-s">Clash scope: one table</text>
+    <text x="184" y="320" font-size="12" class="t-s">Planning load: object storage reads</text>
+
+    <rect x="384" y="56" width="96" height="36" rx="7" class="bx-n"/><text x="432" y="79">Writer, A</text>
+    <rect x="488" y="56" width="96" height="36" rx="7" class="bx-n"/><text x="536" y="79">Writer, B</text>
+    <rect x="592" y="56" width="96" height="36" rx="7" class="bx-n"/><text x="640" y="79">Writer, C</text>
+    <path class="ln" d="M432 92 C 432 112, 536 108, 536 124"/>
+    <line class="ln" x1="536" y1="92" x2="536" y2="124" marker-end="url(#ahl)"/>
+    <path class="ln" d="M640 92 C 640 112, 536 108, 536 124"/>
+    <rect x="384" y="128" width="304" height="142" rx="7" class="bx-a"/>
+    <text x="536" y="154" class="t-a" font-weight="600">One catalog database</text>
+    <text x="536" y="178" font-size="11.5" class="t-s">one snapshot sequence for all tables</text>
+    <text x="536" y="198" font-size="11.5" class="t-s">all file lists and statistics</text>
+    <text x="536" y="218" font-size="11.5" class="t-s">all reader and writer connections</text>
+    <rect x="430" y="232" width="212" height="26" rx="5" class="bx-am"/>
+    <text x="536" y="249" font-size="11" class="mono t-am" font-weight="600">FAST, BUT SHARED</text>
+    <text x="536" y="300" font-size="12" class="t-s">Clash scope: the whole catalog</text>
+    <text x="536" y="320" font-size="12" class="t-s">Planning load: one database</text>
+  </g>
+</svg>
+</div>
+<figcaption>Iceberg spreads metadata work across tables and object storage, and DuckLake concentrates it in one database that is fast until it is saturated.</figcaption>
+</figure>
+
+<p>Commit scope differs most. An Iceberg commit writes new metadata files and then swaps one pointer for one table in the catalog. Writers to different tables never race. Writers to the same table do race, and the loser re-reads the latest metadata, rewrites its manifest list and <code>metadata.json</code>, and tries again, by default up to 4 times (<code>commit.retry.num-retries</code> in the <a href="https://iceberg.apache.org/docs/latest/configuration/">Iceberg configuration</a>). So Iceberg has a hot-table problem, and DuckLake has a hot-catalog problem. Streaming jobs on Iceberg commit to one table often, which is why teams usually commit every minute or so and not every second.</p>
+<p>Metadata growth is the same kind of problem in a different place. Every Iceberg commit writes a new <code>metadata.json</code> that lists the snapshots, plus a manifest list and manifests. Without maintenance, planning reads more and more small files, and each commit rewrites a larger root file. Iceberg's <a href="https://iceberg.apache.org/docs/latest/maintenance/">maintenance guide</a> lists the same jobs that DuckLake needs: expire snapshots, remove old metadata files, compact data files and rewrite manifests. A neglected Iceberg table also gets slow. The difference is that a neglected Iceberg table slows down itself, while a neglected DuckLake catalog slows down every table in it.</p>
+<p>Connections differ by protocol. Iceberg clients talk to a REST catalog over HTTP, or to a cloud API such as AWS Glue. HTTP is stateless and easy to load-balance, so many clients do not hold many open sessions. Many REST catalogs still store their state in a relational database (Apache Polaris, for example, can use PostgreSQL), but the service in front of the database controls the number of connections. DuckLake clients open the catalog database directly. PostHog's complaints about the PostgreSQL wire protocol come from this. The REST API on the DuckLake roadmap, or a Quack catalog server, would put a service in front of the database in the same way.</p>
+<p>Planning cost moves in opposite directions. Iceberg planning reads manifests from object storage, so it costs network round trips per query but spreads across the storage service. DuckLake planning is one indexed SQL query, so it is fast but adds load to one server. At small and medium scale, the DuckLake way is faster and cheaper. At very large scale, the database becomes the part that you must scale up and protect.</p>
+
+<div class="tbl"><table>
+<tr><th>Question</th><th>Iceberg</th><th>DuckLake</th></tr>
+<tr><td>Where do commits clash?</td><td>Per table</td><td>Per catalog, one snapshot sequence</td></tr>
+<tr><td>Cost of a small commit</td><td>About 4 object writes plus a catalog call</td><td>One SQL transaction, zero files if inlined</td></tr>
+<tr><td>Retry on clash</td><td>Rewrite metadata files, default 4 retries</td><td>Re-insert catalog rows, default 10 retries</td></tr>
+<tr><td>Where planning load lands</td><td>Object storage, per table</td><td>The catalog database, for all tables</td></tr>
+<tr><td>What grows without maintenance</td><td>metadata.json, manifests, small files</td><td>Snapshot, file and statistics rows, inlined tables</td></tr>
+<tr><td>Client connection model</td><td>Stateless HTTP to a catalog service</td><td>Direct database connections, or Quack</td></tr>
+<tr><td>Main scaling limit</td><td>Commit rate on a hot table</td><td>Commit rate and size of one catalog database</td></tr>
+</table></div>
+
+<h3>Design rules that follow</h3>
+<p>Split catalogs along the lines where you never need a transaction across tables: one catalog per tenant, per domain or per environment. Each catalog then has its own snapshot sequence, its own statistics and its own connection budget. PostHog put all of its data in one lake, which put all of its commits in one queue.</p>
+<p>Write fewer, larger commits. Batch streaming rows for a few seconds, keep inlining on for the stragglers, and flush inlined data often. Aim for a commit rate per catalog that stays well below what your measured commit time allows.</p>
+<p>Run maintenance from the first day, and watch the catalog like a production database. Track the row counts of <code>ducklake_snapshot</code>, <code>ducklake_data_file</code> and <code>ducklake_file_column_stats</code>, the count of inlined tables, the connection count, and the commit time. Set an alert when commit time doubles. The queries are in <a href="#s12">section 12</a>.</p>
+<p>Put a pooler or a server in front of the catalog. PgBouncer in front of PostgreSQL, or one Quack catalog server, keeps the connection count flat as clients grow.</p>
+<p>Know when to leave. If you need hundreds of commits per second into one catalog, a single catalog over 10 million snapshots, or many engines from many vendors, you are in PostHog's position, and Iceberg (or a distributed engine on top of it) is the better tool.</p>
+
+<h2 id="s5">5 · Speed: DuckDB 2.0 and the catalog</h2>
+<div class="kicker">reads got faster on object storage, and the catalog got faster at scale</div>
+
+<h3>Version names</h3>
+<p>The version numbers are confusing, so here they are in one place. <a href="https://duckdb.org/2026/10/21/announcing-duckdb-200">DuckDB 2.0.0</a> shipped on 21 October 2026 as a long-term support (LTS) release, supported until at least October 2027. On the same day, the DuckLake <em>specification</em> moved to 1.1 and the DuckLake <em>extension</em> moved to 2.0 (see the <a href="https://ducklake.select/release_calendar">release calendar</a> and the <a href="https://ducklake.select/2026/10/21/ducklake-11/">DuckLake 1.1 post</a>). The 2.0 extension still reads and writes 1.0 catalogs. Migration to spec 1.1 is opt-in with <code>AUTOMATIC_MIGRATION true</code>. The DuckLake roadmap uses the name DuckLake 2.0 for a future specification with branching and roles, which is a different thing.</p>
+
+<h3>Reads: asynchronous I/O</h3>
+<p>Before 2.0, a DuckDB worker thread waited while it fetched each byte range from S3. DuckDB 2.0 adds <a href="https://duckdb.org/2026/07/31/asynchronous-io.html">asynchronous I/O</a>: a separate pool of I/O threads fetches row groups ahead of time, and workers stay busy. On TPC-H Q6 at scale factor 100 on S3 (EC2 r7i.16xlarge, same region), a 22 GB Parquet file scanned in 2.84 s against 8.23 s on DuckDB 1.5.5, about 3 times faster. With tuning it took 2.23 s and filled the 25 Gbit/s network link. Four concurrent queries finished in 15.6 s against 35.8 s. A large CSV scan dropped from 878 s to 45 s. The same post found that Parquet row groups of about 2 million rows gave the best scan time on S3. On a warm local disk, the change makes almost no difference.</p>
+
+<p>For DuckLake this matters directly, because DuckLake data is Parquet on object storage. The settings to know are <code>read_ahead_depth</code> (default unlimited, bounded by memory), <code>async_threads</code>, and the HTTP retry settings.</p>
+
+<h3>Writes: inlining and commit cost</h3>
+<p>Write speed in DuckLake depends mostly on commit cost, and commit cost depends on the catalog database. With inlining on, a small commit is one database transaction. In the DuckLake 1.1 release, commits of 100,000 inlined rows became 46 times faster on a DuckDB catalog and 102 times faster on a PostgreSQL catalog. Large writes are Parquet writes and scale with CPU and network. The default target file size in DuckLake is 512 MB, which suits S3.</p>
+
+<p>The <a href="https://duckdb.org/2026/05/12/quack-remote-protocol.html">Quack protocol</a> is also new. Quack is an HTTP protocol that lets one DuckDB process act as a server for other DuckDB clients. In the DuckDB benchmark, it moved 10 million rows in 0.89 s, against 2.90 s for Arrow Flight and 25.64 s for the PostgreSQL wire protocol. For small single-row transactions it reached 5,434 per second with 8 threads. It is beta in 1.5.3 and a polished release in 2.0. It binds to localhost by default and needs a TLS reverse proxy for remote use.</p>
+
+<h3>Catalog efficiency</h3>
+<p>The catalog is where DuckLake wins or loses at scale. DuckLake 1.1 fixed several slow paths. The table shows the measured changes from 1.0 to 1.1, on one laptop with PostgreSQL 17 on the same machine.</p>
+
+<div class="tbl"><table>
+<tr><th>Operation</th><th>Catalog</th><th>1.0</th><th>1.1</th><th>Change</th></tr>
+<tr><td>Attach and list 10,000 tables</td><td>DuckDB</td><td>3.7 s</td><td>0.52 s</td><td>7x</td></tr>
+<tr><td>Attach and list 10,000 tables</td><td>PostgreSQL</td><td>21.8 s</td><td>0.82 s</td><td>27x</td></tr>
+<tr><td>Commit 100,000 inlined rows</td><td>DuckDB</td><td>4.6 s</td><td>0.10 s</td><td>46x</td></tr>
+<tr><td>Commit 100,000 inlined rows</td><td>PostgreSQL</td><td>12.8 s</td><td>0.13 s</td><td>102x</td></tr>
+<tr><td>Create 5,000 tables in one transaction</td><td>PostgreSQL</td><td>117 s</td><td>1.5 s</td><td>80x</td></tr>
+</table></div>
+<p class="note">Source: <a href="https://ducklake.select/2026/10/21/ducklake-11/">DuckLake 1.1 release post</a>, Apple M5 Pro, median of 3 runs. Vendor measurement.</p>
+
+<p>The catalog choice changes what you get. A DuckDB file allows one writing process. SQLite allows one writer at a time, and DuckLake retries lock conflicts for you. PostgreSQL (version 12 or newer) is the recommended catalog for many users and remote clients. The <a href="https://ducklake.select/docs/stable/duckdb/usage/choosing_a_catalog_database">catalog guide</a> warns against MySQL because of known issues. A DuckDB catalog served over Quack is a newer option for a single server with many clients.</p>
+<p>The PostgreSQL catalog got the largest gains in 1.1, as the table shows. Version 1.1 also lets a PostgreSQL catalog inline VARIANT values, which only DuckDB catalogs supported before. It stores row group counts in the catalog, keeps exact minimum and maximum values for strings (1.0 kept only the first 256 bytes), and prunes files for more filters: OR across columns, IS NULL, and fields inside structs. Read the numbers with two limits in mind. DuckDB Labs measured them on one laptop with PostgreSQL on the same machine, so network round trips were close to zero. In production, each round trip to a remote catalog costs from half a millisecond to a few milliseconds, and one operation can need many of them. In a smoke test of the <a href="bench/catalog_growth/README.md">catalog growth benchmark</a>, one small inlined commit made about 20 round trips, so 2 ms of network delay turned a 5 ms commit into a 47 ms commit. And some PostgreSQL work is still open: the <a href="https://ducklake.select/roadmap">roadmap</a> lists PostgreSQL catalogs at scale with suggested indexes, and fewer round trips with stored procedures, as future work.</p>
+<p>pg_ducklake takes a different route for writes (see <a href="#m1">9.1</a>). Its native writer commits inside PostgreSQL itself, so a write needs no network round trips to the catalog. That helps only if the catalog runs inside the pg_ducklake extension. How catalog size affects these numbers is in <a href="#growth">section 4</a>.</p>
+
+<h2 id="s6">6 · Limits and sharp edges</h2>
+<div class="kicker">what to plan for before the first production table</div>
+
+<p>The engine ecosystem is narrow. DuckDB is the full implementation. Spark, Trino, DataFusion and Pandas clients exist, and the <a href="https://ducklake.select/2026/04/13/ducklake-10/">DuckLake 1.0 post</a> lists them, but they come from MotherDuck, Hotdata and individual developers. Snowflake, BigQuery, Athena, Databricks and Redshift do not read DuckLake natively. If a team outside yours queries the lake with one of those engines, Iceberg is the safer format.</p>
+
+<p>The catalog database is a single point of write coordination. If PostgreSQL is down, nobody can commit or plan queries. You must run it with backups, point-in-time recovery and high availability, just like any production database. <a href="https://www.definite.app/blog/duckdb-quack-ducklake-catalog">Definite reported</a> that its catalog failed on connection count, not on load: every query worker, ingest job and dashboard refresh held a catalog connection. Use a connection pooler such as PgBouncer from the first day. <a href="#s4">Section 4</a> explains how the catalog becomes a bottleneck and what PostHog saw at 2 PB.</p>
+
+<p>Type mapping on PostgreSQL loses detail. With a PostgreSQL catalog, inlined UBIGINT values become VARCHAR and nested types become strings. VARIANT inlining on PostgreSQL arrived only with spec 1.1. Inlined rows also pile up if nobody flushes them. Definite found one table with an 835,000-row gap between the snapshot and the Parquet files, spread across more than 3,000 inlined tables.</p>
+
+<p>Scale at petabytes is unproven. <a href="https://www.pracdata.io/p/is-ducklake-a-step-backward">Alireza Sadeghi estimated</a> that a 1 PB lake holds 50 to 100 million files, which means about 100 million rows in the file table and about 1 billion rows of column statistics. A PostgreSQL instance can hold that, but it needs tuning and indexes. The DuckLake roadmap lists "PostgreSQL catalogs at scale" as a goal, which confirms that the work is not done. <a href="#growth">Section 4</a> shows how the catalog grows with file size and commit rate.</p>
+
+<p>Some features are missing or young. There are no built-in roles or access control in the format today, so you control access with storage credentials and database grants. Puffin deletion vectors are experimental. Spatial file pruning is not implemented. Quack is new. Maintenance is your job: you must schedule the flush, merge, snapshot expiry and file cleanup jobs (see <a href="#s12">section 12</a>).</p>
+
+<p>Version drift between tools is real. The DuckDB 2.0 storage format cannot be read by older DuckDB versions, which matters if you use a DuckDB file as the catalog. If you migrate a catalog to spec 1.1, every client must run DuckLake 2.0. In November 2026, pg_ducklake pins DuckDB 1.5.6, swanlake uses DuckDB 1.5.x, and boilstream uses DuckDB 1.5.2, so all three still expect spec 1.0. pg_ducklake has an <a href="https://github.com/relytcloud/pg_ducklake/issues/300">open tracking issue</a> for DuckDB 2.0 and spec 1.1.</p>
+
+<h2 id="s7">7 · DuckLake or Iceberg</h2>
+<div class="kicker">the answer depends on who else reads the data</div>
+
+<p>The question to answer first is not size. It is how many different engines and teams read and write the tables. Iceberg is a standard that every large vendor supports. DuckLake is simpler and faster for the DuckDB world. The table puts the main factors side by side.</p>
+
+<div class="tbl"><table>
+<tr><th>Factor</th><th>Pick DuckLake</th><th>Pick Iceberg</th></tr>
+<tr><td>Engines</td><td>DuckDB is the main engine, plus some Spark or Trino</td><td>Snowflake, BigQuery, Athena, Databricks or Flink must read or write</td></tr>
+<tr><td>Write pattern</td><td>Many small writes, streams, CDC, frequent updates</td><td>Large batch loads, few commits per minute</td></tr>
+<tr><td>Data size</td><td>Up to tens of terabytes</td><td>Hundreds of terabytes to petabytes</td></tr>
+<tr><td>Team</td><td>One platform team owns the stack</td><td>Many teams and vendors share the tables</td></tr>
+<tr><td>Operations</td><td>You already run PostgreSQL well</td><td>You want a managed catalog (Glue, Polaris, Unity, R2 Data Catalog)</td></tr>
+<tr><td>Governance</td><td>Storage credentials and database grants are enough</td><td>You need fine-grained policies in a catalog service</td></tr>
+</table></div>
+
+<p><a href="https://www.definite.app/blog/duck-lake-vs-iceberg">Definite's rule of thumb</a>, after a year of DuckLake in production, gives size bands: DuckLake for up to 5 TB with one team, either format from 1 to 50 TB, and Iceberg above 50 TB with many engines. Definite sells a DuckDB-based product, so treat this as an operator's view, not a neutral study. The bands match the design: DuckLake is simplest when one database and one engine family run the show.</p>
+
+<p>The choice is less final than it looks. DuckLake writes Iceberg-compatible Parquet data and delete files. Since <a href="https://ducklake.select/2025/09/17/ducklake-03/">DuckLake 0.3</a>, <code>iceberg_to_ducklake()</code> copies an Iceberg table into DuckLake with only metadata changes, and a copy in the other direction also works. Fuller Iceberg and Delta interoperability is on the <a href="https://ducklake.select/roadmap">roadmap</a>. A team can start on DuckLake and move hot tables to Iceberg later if a new consumer needs them.</p>
+
+<h2 id="s8">8 · Adoption, activity, future</h2>
+<div class="kicker">fast release cadence, thin public case studies</div>
+
+<p>Development is active. Releases came in May 2025 (0.1), July 2025 (0.2), September 2025 (0.3), March 2026 (0.4), April 2026 (1.0) and October 2026 (spec 1.1, extension 2.0). DuckLake 1.0 merged 108 pull requests, and more than 200 bug fixes landed between 1.0 and 1.1. The non-profit DuckDB Foundation governs the project, under the MIT license and without venture funding. The <a href="https://duckdb.org/2026/08/17/duckdb-20-highlights">DuckDB 2.0 preview</a> announced a technical advisory board that covers DuckDB, DuckLake and Quack.</p>
+
+<p>Usage is growing fast, but evidence of production use is thin. The DuckLake extension had more than 1.5 million downloads in the week of 12 to 18 October 2026, and DuckDB Labs calls it the most downloaded lakehouse extension for DuckDB. <a href="https://motherduck.com/blog/announcing-ducklake-1-0-on-motherduck/">MotherDuck</a> (vendor) offers managed DuckLake with three options: fully managed, bring your own bucket, and bring your own compute. MotherDuck says that dozens of companies use DuckLake and that about one quarter of pull requests come from the community. Two companies have written about production use in detail. Definite still runs DuckLake. <a href="https://posthog.com/blog/moving-off-duckdb">PostHog</a> ran its warehouse product on DuckDB and DuckLake for about five months, reached about 2 PB, and in November 2026 announced a move to Trino and its own format, mainly because of catalog and scaling limits (see <a href="#s4">section 4</a>). Skeptics remain: The Register <a href="https://www.theregister.com/2026/04/16/duckdb_uses_rdbms_lakehouse/">quoted</a> Russell Spitzer of Snowflake, who said that it is too early to know if the concept will succeed. Snowflake sells an Iceberg-based platform, so it competes in this market.</p>
+
+<p>The specification is open. The full <a href="https://ducklake.select/docs/stable/specification/tables/overview">specification</a> is public: every catalog table, every column, and the SQL steps for reads, writes and commits. The reference implementation is on <a href="https://github.com/duckdb/ducklake">GitHub</a> under the MIT license. Anyone can implement it without permission or fees, and several teams outside DuckDB Labs did (see <a href="#s9">section 9</a>). There is no lock-in: the data is plain Parquet, and the catalog is ordinary SQL tables that you can read with <code>psql</code>.</p>
+<p>Governance is less open than Iceberg's. Apache Iceberg is an Apache Software Foundation project, where committers from many companies vote on changes in a public process. DuckLake's specification is written mainly by DuckDB Labs, and each new specification version ships on the same day as the DuckDB extension, so in practice the reference implementation sets the specification. The announced technical advisory board is a step toward wider control. PostHog's experience shows the current limit: it could not get changes accepted upstream fast enough and kept patches in a fork. If you need a voice in the format's direction, you have less of one than with Iceberg.</p>
+<p>The <a href="https://ducklake.select/roadmap">roadmap</a> (October 2026) lists these priorities for the next major specification: branching and clones, protected snapshots, a REST API, and roles with access control. If time permits: PostgreSQL catalogs at scale with suggested indexes, better MySQL support, Iceberg and Delta interoperability, pluggable catalogs, and Bloom filters for better pruning. The roadmap says that nothing is guaranteed. In my view, the REST API and roles are the two items that decide whether DuckLake reaches companies with strict governance needs.</p>
+
+<p>The tutorials that you shared show the range of today's use. The <a href="https://www.tobikodata.com/blog/ducklake-sqlmesh-tutorial-a-hands-on">Tobiko SQLMesh tutorial</a> (August 2025) builds a laptop lakehouse with a DuckDB-file catalog and keeps the SQLMesh state in a separate DuckDB file. Its remark that DuckLake tables do not support UPDATE does not match current releases, which support UPDATE, DELETE and MERGE. The <a href="https://szarnyasg.org/posts/ducklake-on-leafcloud/">Leafcloud post</a> (February 2026) by Gábor Szárnyas publishes a read-only lake on public object storage, with the catalog file and the data in the same bucket. That pattern is a good, cheap way to share open data. It is not a multi-writer setup.</p>
+
+<h2 id="s9">9 · The four projects</h2>
+<div class="kicker">each one fills a different hole around the core format</div>
+
+<p>The four repositories in this folder do not compete. Each one adds a piece that DuckLake does not ship: a writer inside PostgreSQL, a network query server, a serverless catalog, and a streaming ingest service. Each entry below gives the role, the facts and a verdict.</p>
+<p>These four projects are part of a wider set of DuckLake implementations. They come in three kinds, and only the second kind replaces the catalog itself. The table lists the ones found in this research. Smaller projects on GitHub may exist.</p>
+<div class="tbl"><table>
+<tr><th>Kind</th><th>Implementation</th><th>Where the catalog lives</th><th>Status</th></tr>
+<tr><td>Storage for the standard extension</td><td>DuckDB extension</td><td>DuckDB file, SQLite, PostgreSQL, MySQL</td><td>Stable, MySQL not recommended</td></tr>
+<tr><td>Storage for the standard extension</td><td>Quack catalog server</td><td>One DuckDB server, many clients</td><td>New in DuckDB 1.5.3 and 2.0</td></tr>
+<tr><td>Own catalog code</td><td>pg_ducklake</td><td>PostgreSQL, with a native writer</td><td>v1.0.3, active</td></tr>
+<tr><td>Own catalog code</td><td>quacklake</td><td>SQLite in Cloudflare Durable Objects, over Quack</td><td>Alpha, single writer</td></tr>
+<tr><td>Own catalog code</td><td>boilstream</td><td>Embedded, PostgreSQL wire, backed up to S3</td><td>Commercial, closed source</td></tr>
+<tr><td>Own catalog code</td><td>MotherDuck</td><td>Managed service</td><td>Paid service</td></tr>
+<tr><td>Client of a catalog</td><td>DataFusion (Hotdata), Spark (MotherDuck), Trino (two connectors), Pandas</td><td>Uses an existing catalog</td><td>Listed in the 1.0 release</td></tr>
+</table></div>
+<p>For a production catalog that is not plain PostgreSQL, the choice is thin today. pg_ducklake is the only mature option, and it is PostgreSQL underneath. quacklake and the Quack catalog server point to a serverless or single-server future, but both are young.</p>
+
+<section class="meaning" id="m1">
+<h3>9.1 pg_ducklake</h3>
+<p class="glance"><i><span>Role</span>catalog and writer inside Postgres</i><i><span>License</span>MIT</i><i><span>Version</span>v1.0.3, DuckDB 1.5.6</i></p>
+<p>pg_ducklake is a PostgreSQL extension from relytcloud. It adds <code>CREATE TABLE ... USING ducklake</code>, so DuckLake tables live inside a normal PostgreSQL database next to ordinary tables. PostgreSQL holds the catalog and the inlined rows in a <code>ducklake</code> schema. DuckDB, embedded in the extension, runs the analytical queries. Outside DuckDB clients attach the same catalog with <code>METADATA_SCHEMA 'ducklake'</code>.</p>
+<p>Its strongest part is a native writer (RFC-001) for <code>INSERT</code> and <code>COPY</code>. Many PostgreSQL sessions write concurrently into inline tables, and the metadata commits in one PostgreSQL transaction, with retries on conflict. A background worker flushes inlined data and expires snapshots every 60 seconds by default. Its feature list shows 58 supported and 11 missing features, for example views and <code>CREATE SCHEMA</code>. It supports PostgreSQL 14 to 18. It is the most active of the four projects, with 318 commits in 2026 and regular tags.</p>
+<p>The main limit is hosting. RDS, Aurora and Cloud SQL do not let you install arbitrary extensions, so you must run PostgreSQL yourself (on a VM or with a Kubernetes operator) or find a host that accepts the image <code>pgducklake/pgducklake</code>.</p>
+<p><span class="verdict v-sig">Solid</span>The best choice when an application already writes to PostgreSQL and you want those rows in the lake within seconds, without a separate pipeline.</p>
+<div class="ask"><span class="lbl">Ask</span>Can we self-manage PostgreSQL, or does our platform only allow RDS or Cloud SQL?</div>
+</section>
+
+<section class="meaning" id="m2">
+<h3>9.2 swanlake</h3>
+<p class="glance"><i><span>Role</span>query server</i><i><span>License</span>MIT</i><i><span>Version</span>v0.1.0, DuckDB 1.5.x</i></p>
+<p>swanlake is a Rust Arrow Flight SQL server with DuckDB inside. It gives a shared network endpoint for ADBC and JDBC clients, in front of a DuckLake with a PostgreSQL catalog and data on S3, R2 or a local disk. Each client session gets its own DuckDB connection, up to 100 sessions by default. A status page on port 4215 shows latency percentiles and slow queries. Several instances can run side by side, and they use a PostgreSQL advisory lock so that only one of them runs the daily CHECKPOINT.</p>
+<p>Its <a href="https://github.com/swanlake-io/swanlake/blob/main/BENCHMARK.md">benchmark</a> (TPC-H at scale factor 0.1, 4 clients) gives 10.4 queries per second with local files and 4.9 with S3, so data on S3 was about 2.1 times slower. These are small, single-run numbers. The project has one tag and recent commits are mostly dependency updates. Quack in DuckDB 2.0 now covers part of the same need, with a faster protocol in the DuckDB benchmark.</p>
+<p><span class="verdict v-mix">Useful, early</span>A good fit when clients need a standard Flight SQL or JDBC endpoint, for example BI tools or Go and Java services. Plan to own the code if you depend on it.</p>
+<div class="ask"><span class="lbl">Ask</span>Do our clients need Flight SQL or JDBC, or can they use DuckDB with Quack directly?</div>
+</section>
+
+<section class="meaning" id="m3">
+<h3>9.3 quacklake</h3>
+<p class="glance"><i><span>Role</span>serverless catalog on Cloudflare</i><i><span>License</span>MIT</i><i><span>Version</span>0.2.1, alpha</i></p>
+<p>quacklake, by the GitHub user tobilg, runs a DuckLake catalog on Cloudflare Workers and Durable Objects. Each catalog is one Durable Object with its own SQLite database. Clients speak the Quack protocol to the Worker and attach with <code>ATTACH 'ducklake:quack:host:443'</code>. Data files go to R2. It adds JWT and OIDC login (Cognito and Entra ID guides), catalog policies and short-lived R2 credentials of 30 to 120 seconds.</p>
+<p>The README says plainly that it is an alpha. It has 7 commits and one author. Clients need nightly builds of the <code>quack</code> and <code>ducklake</code> extensions. Transactions are emulated, and there is no conflict detection between sessions, so you must treat each catalog as single-writer. Row filters apply only to catalog access, not to the Parquet files.</p>
+<p><span class="verdict v-mkt">Prototype</span>A clear look at where Cloudflare-native DuckLake can go: no database to run, one catalog per tenant, and login built in. Do not put production data on it yet.</p>
+<div class="ask"><span class="lbl">Ask</span>Is a single writer per catalog acceptable for this use case?</div>
+</section>
+
+<section class="meaning" id="m4">
+<h3>9.4 boilstream</h3>
+<p class="glance"><i><span>Role</span>streaming ingest and serving</i><i><span>License</span>closed source, free tier</i><i><span>Version</span>0.10.64, DuckDB 1.5.2</i></p>
+<p>boilstream from BoilingData is a multi-tenant Rust server with an embedded, forked DuckDB. It accepts data over Kafka, Arrow Flight, Flight SQL, HTTP Arrow and the PostgreSQL wire protocol, and it writes into DuckLake on S3 with inlining. The vendor says that rows commit to the hot tier every second and that HTTPS Arrow ingest exceeds 2 GB/s. It also offers streaming views, materialized views and full-text search. A Helm chart runs it as a three-pod StatefulSet.</p>
+<p>The repository in this folder holds only docs, a Helm chart and examples. The binaries are closed source. The free tier is capped at 8 vCPU and 2 pods per cluster in cluster mode. Release churn is high: one version was withdrawn, and the changelog recommends 0.10.64 as the first safe release after 0.10.29.</p>
+<p><span class="verdict v-mix">Commercial</span>Worth a test if you need Kafka-compatible ingest into DuckLake without Flink or Spark. Weigh the closed source and the vendor dependency.</p>
+<div class="ask"><span class="lbl">Ask</span>What happens to our pipeline if the vendor changes the license terms?</div>
+</section>
+
+<h2 id="s10">10 · Production architecture</h2>
+<div class="kicker">one catalog, one bucket, small stateless compute</div>
+
+<p>A lean production DuckLake has four layers. The figure shows them from the users at the top to storage at the bottom. The same shape works on AWS, GCP, Azure and Cloudflare. Only the products change.</p>
+
+<figure class="diag" id="fig-prod">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A production DuckLake has users, stateless DuckDB compute, a backed-up catalog database and an object storage bucket in the same region.">
+  <text x="24" y="34" font-size="12" class="mono t-s" letter-spacing="1.5">USERS</text>
+  <g font-size="13.5" font-weight="600" text-anchor="middle">
+    <rect x="24" y="46" width="212" height="44" rx="7" class="bx-n"/><text x="130" y="73">BI tools · dashboards</text>
+    <rect x="254" y="46" width="212" height="44" rx="7" class="bx-n"/><text x="360" y="73">Analysts · notebooks</text>
+    <rect x="484" y="46" width="212" height="44" rx="7" class="bx-n"/><text x="590" y="73">Apps · agents</text>
+  </g>
+  <g><line class="ln" x1="130" y1="90" x2="130" y2="116"/><line class="ln" x1="360" y1="90" x2="360" y2="116"/><line class="ln" x1="590" y1="90" x2="590" y2="116"/></g>
+
+  <rect x="24" y="118" width="672" height="124" rx="9" class="bx-a"/>
+  <text x="42" y="146" font-size="13" class="mono t-a" font-weight="600" letter-spacing="1.2">STATELESS COMPUTE · DUCKDB 2.0</text>
+  <g font-size="13" text-anchor="middle">
+    <rect x="42" y="160" width="148" height="62" rx="6" class="bx-w"/><text x="116" y="186" font-weight="600">Query server</text><text x="116" y="205" font-size="11.5" class="t-s">Quack or swanlake</text>
+    <rect x="204" y="160" width="148" height="62" rx="6" class="bx-w"/><text x="278" y="186" font-weight="600">Ingest jobs</text><text x="278" y="205" font-size="11.5" class="t-s">batch, CDC, stream</text>
+    <rect x="366" y="160" width="148" height="62" rx="6" class="bx-w"/><text x="440" y="186" font-weight="600">Transforms</text><text x="440" y="205" font-size="11.5" class="t-s">SQLMesh or dbt</text>
+    <rect x="528" y="160" width="150" height="62" rx="6" class="bx-w"/><text x="603" y="186" font-weight="600">Maintenance</text><text x="603" y="205" font-size="11.5" class="t-s">flush, merge, expire</text>
+  </g>
+
+  <line class="dash-am" x1="24" y1="270" x2="696" y2="270" style="stroke-width:2.5"/>
+  <rect x="160" y="256" width="400" height="28" rx="5" class="bx-am"/>
+  <text x="360" y="275" font-size="12.5" class="mono t-am" font-weight="600" text-anchor="middle" letter-spacing="1.2">KEEP BOTH IN ONE REGION · BACK UP BOTH</text>
+
+  <rect x="24" y="304" width="672" height="146" rx="9" class="bx-s"/>
+  <text x="42" y="332" font-size="13" class="mono t-s" font-weight="600" letter-spacing="1.2">STATE · THE ONLY PARTS YOU MUST PROTECT</text>
+  <g font-size="13" text-anchor="middle">
+    <rect x="42" y="348" width="310" height="82" rx="6" class="bx-n"/>
+    <text x="197" y="374" font-weight="600">Catalog: PostgreSQL</text>
+    <text x="197" y="394" font-size="11.5" class="t-s">with PgBouncer, point-in-time recovery</text>
+    <text x="197" y="412" font-size="11.5" class="t-s">RDS, Cloud SQL, Neon, or pg_ducklake</text>
+    <rect x="368" y="348" width="310" height="82" rx="6" class="bx-n"/>
+    <text x="523" y="374" font-weight="600">Data: object storage</text>
+    <text x="523" y="394" font-size="11.5" class="t-s">Parquet files, bucket versioning on</text>
+    <text x="523" y="412" font-size="11.5" class="t-s">S3, GCS, Azure Blob, or R2</text>
+  </g>
+</svg>
+</div>
+<figcaption>Everything above the line is replaceable compute, so all of the risk sits in the catalog database and the bucket.</figcaption>
+</figure>
+
+<p>Three design rules come out of the figure. First, keep the compute stateless, so that you can scale it to zero and replace it at any time. Second, put the catalog database and the bucket in the same region as the compute, because every query starts with a catalog round trip and then reads Parquet. Third, scale DuckDB up before you scale it out. One DuckDB process on a large machine uses every core, and a few separate processes share the catalog for concurrency.</p>
+
+<h3>Option A: AWS (or GCP and Azure)</h3>
+<p>Use S3 for data and RDS PostgreSQL or Aurora PostgreSQL for the catalog, with RDS Proxy or PgBouncer in front. Run DuckDB on Graviton EC2 instances for long jobs, or on ECS Fargate or Lambda for short jobs. For a shared query endpoint, run DuckDB 2.0 with Quack behind an nginx or ALB TLS proxy, or run swanlake. If you need sub-second freshness from an application database, add pg_ducklake on a self-managed PostgreSQL. If you prefer not to run any of this, MotherDuck offers DuckLake with your own S3 bucket. On GCP, the same plan uses GCS, Cloud SQL and Cloud Run. On Azure, it uses Blob Storage, Azure Database for PostgreSQL and Container Apps.</p>
+
+<h3>Option B: Cloudflare</h3>
+<p>Use R2 for data. R2 has no egress fee, so analysts and BI tools anywhere read the lake without a transfer bill. Cloudflare does not offer managed PostgreSQL, so put the catalog in a managed PostgreSQL service in a region near your R2 bucket (for example Neon, Supabase or a small RDS instance). Set the R2 <a href="https://developers.cloudflare.com/r2/reference/data-location/">location hint</a> to match that region. Hyperdrive speeds up PostgreSQL calls from Workers, but DuckDB does not run inside a Worker. DuckDB runs in Cloudflare Containers, which are billed per second and sleep when idle. Use a Worker as the front door for auth and routing.</p>
+<p>Know the limits. A Cloudflare container is small (at most 4 vCPU and 12 GiB of memory in the largest standard instance at the time of writing), so heavy transforms and large joins belong on a larger VM. Containers suit spiky, interactive query load. When quacklake matures, it can replace the external PostgreSQL with a catalog per tenant in Durable Objects.</p>
+
+<h3>Option C: hybrid, R2 for storage and a cheap VM for compute</h3>
+<p>Because R2 charges nothing for egress, the compute can run anywhere. A common low-cost setup puts data in R2 and runs DuckDB plus the PostgreSQL catalog on one or two VMs at a low-cost provider or on EC2 near the R2 region. You pay R2 storage, the VM and nothing for data transfer out of R2. Network latency between the VM and R2 is higher than inside one cloud, and asynchronous I/O in DuckDB 2.0 hides much of it. Use an EU provider and an EU R2 jurisdiction if data residency matters, as the Leafcloud example shows.</p>
+
+<h2 id="s11">11 · What it costs</h2>
+<div class="kicker">storage is cheap, egress and always-on compute are not</div>
+
+<p>The model uses one realistic team-size workload: 1 TB of Parquet in storage, 1 million write requests and 10 million read requests a month, 300 GB a month read directly by clients outside the cloud, one query server with 2 vCPU and 8 GiB running all month, and one small PostgreSQL catalog. Ingest and transform jobs are extra and scale with your data volume.</p>
+
+<div class="tbl"><table class="cost">
+<tr><th>Item (per month)</th><th>AWS</th><th>Cloudflare</th><th>Hybrid</th></tr>
+<tr><td>Storage, 1 TB</td><td>$23.55</td><td>$15.21</td><td>$15.21</td></tr>
+<tr><td>Write requests, 1 M</td><td>$5.00</td><td>$0.00</td><td>$0.00</td></tr>
+<tr><td>Read requests, 10 M</td><td>$4.00</td><td>$0.00</td><td>$0.00</td></tr>
+<tr><td>Egress to clients, 300 GB</td><td>$18.00</td><td>$0.00</td><td>$0.00</td></tr>
+<tr><td>Catalog, small PostgreSQL</td><td>$26</td><td>about $25</td><td>$26</td></tr>
+<tr><td>Query server, 2 vCPU and 8 GiB, always on</td><td>$59.57</td><td>$157 + $5 plan</td><td>$59.57</td></tr>
+<tr class="total"><td>Total, always on</td><td>about $136</td><td>about $202</td><td>about $101</td></tr>
+<tr><td>Query server busy 6 hours a day</td><td>$14.89</td><td>$39</td><td>$14.89</td></tr>
+<tr class="total"><td>Total, scaled to zero when idle</td><td>about $91</td><td>about $84</td><td>about $56</td></tr>
+</table></div>
+
+<p class="note">How the numbers were made. AWS: us-east-1 on-demand list prices: S3 Standard $0.023 per GB, PUT $0.005 and GET $0.0004 per 1,000, egress $0.09 per GB after 100 GB free, RDS db.t4g.small $0.032 per hour plus 20 GB of storage, EC2 m7g.large $0.0816 per hour. Cloudflare: <a href="https://developers.cloudflare.com/r2/pricing/">R2</a> $0.015 per GB after 10 GB free, 1 M Class A and 10 M Class B operations free, no egress fee. <a href="https://developers.cloudflare.com/containers/pricing/">Containers</a> $0.000020 per vCPU-second and $0.0000025 per GiB-second, on the $5 Workers Paid plan. The Cloudflare catalog is an external managed PostgreSQL, estimated. The hybrid column is R2 plus EC2 and RDS. On AWS, scale-to-zero means Fargate or a stopped instance, and its price per hour is close to EC2. Prices change: confirm them in the AWS and Cloudflare calculators before you budget.</p>
+
+<p>Four lessons come from the table. Storage is the smallest line at this size, and R2 is about 35% cheaper than S3. Egress decides the winner when clients read Parquet directly from laptops or SaaS tools: at 300 GB a month the AWS bill is $18, and at 5 TB a month it is about $450, while R2 stays at zero. Always-on compute on Cloudflare Containers costs about 2.6 times more per vCPU than EC2, so Cloudflare wins only when the server sleeps most of the day. The hybrid setup is cheapest, at the cost of some network latency and two vendors to manage.</p>
+
+<p>Three settings protect the bill on any cloud. Keep inlining on, because it turns thousands of tiny PUT requests into a few large ones. Run compaction, because fewer and larger files mean fewer GET requests per query. Put the query server next to the data, and send results to users, not raw Parquet, when users are outside the cloud.</p>
+
+<h2 id="s12">12 · Rollout plan and runbook</h2>
+<div class="kicker">four phases, each with an exit test</div>
+
+<p>Phase 1 is a pilot of two weeks. Pick one real dataset with both batch and small writes. Run DuckDB 2.0 LTS with a PostgreSQL catalog and one bucket. Load it with SQLMesh or dbt. Measure query latency, commit latency and the request count on the bucket. The exit test: the pilot meets the latency target with a catalog on the smallest database tier.</p>
+
+<p>Phase 2 hardens the stack. Turn on point-in-time recovery for PostgreSQL and versioning on the bucket. Put PgBouncer in front of the catalog. Store bucket credentials in a secret manager and scope them per job, because DuckLake has no roles yet. Write down the version pins for DuckDB, the DuckLake extension and the catalog spec, and do not migrate to spec 1.1 until every client supports it. The exit test: you restore the catalog and the bucket to a point in time in a drill.</p>
+
+<p>Phase 3 adds maintenance and monitoring. Schedule the jobs below. Alert on catalog connections, catalog row counts, the count of inlined tables, file count per table, commit time and query latency. The exit test: one week with no manual action.</p>
+
+<pre>-- every 15 minutes: move inlined rows into Parquet
+CALL ducklake_flush_inlined_data('lake');
+-- hourly: merge small files into larger ones
+CALL ducklake_merge_adjacent_files('lake');
+-- daily: drop old snapshots, then delete files no snapshot uses
+CALL ducklake_expire_snapshots('lake', older_than =&gt; now() - INTERVAL '7 days');
+CALL ducklake_cleanup_old_files('lake', older_than =&gt; now() - INTERVAL '7 days');
+-- weekly: remove files that the catalog never recorded
+CALL ducklake_delete_orphaned_files('lake', older_than =&gt; now() - INTERVAL '7 days');
+-- or run all of the steps above in one command
+USE lake; CHECKPOINT;
+
+-- catalog health: run in PostgreSQL, alert when these jump
+SELECT count(*) FROM ducklake_snapshot;
+SELECT count(*) FROM ducklake_data_file WHERE end_snapshot IS NULL;
+SELECT count(*) FROM ducklake_file_column_stats;
+SELECT count(*) FROM ducklake_inlined_data_tables;
+SELECT count(*) FROM pg_stat_activity WHERE datname = 'lake';</pre>
+<p class="note">Function names come from the DuckLake 1.x maintenance docs. Make sure that the names and arguments match the extension version that you pin. Keep the snapshot retention at least as long as your longest time-travel need.</p>
+
+<p>Phase 4 opens the lake to users. Add the query server (Quack behind TLS, or swanlake for Flight SQL clients). Add pg_ducklake if an application must stream rows into the lake. Test boilstream if you need Kafka-style ingest. Review the setup against the <a href="#s7">decision table</a> every six months, and plan an Iceberg export for any table that a new outside engine must read.</p>
+
+<h2 id="s13">13 · Open questions</h2>
+<div class="kicker">what nobody has measured in public yet</div>
+
+<p>How large can a PostgreSQL catalog grow before commits slow down? PostHog reached 15.3 million snapshots and saw single-table writes take more than three minutes. Nobody has published the same test on DuckLake 1.1, which made several catalog paths much faster. The <a href="bench/catalog_growth/README.md">catalog growth benchmark</a> in this folder grows a PostgreSQL catalog to 10 million files and snapshots, and measures attach, query planning, commit time and parallel commits at each step, with optional network delay. A first smoke test on a laptop ran only up to 20,000 files. With 2 ms of added round-trip delay, one small inlined commit took about 47 ms, not 5 ms, so one commit made about 20 round trips to the catalog. Run the full benchmark before you size a production catalog.</p>
+
+<p>How does DuckLake perform with many concurrent writers on one table? The published benchmarks use one writer, and Quack tests stopped at 8 threads because of a DuckDB limit on concurrent inserts into one table.</p>
+
+<p>Will the large query engines add native DuckLake support? Until Snowflake, BigQuery, Athena or Databricks read DuckLake, it stays a format for the DuckDB world plus Spark and Trino clients.</p>
+
+<p>When will the REST API and roles ship? The roadmap names them as the top priorities for the next major specification, with no date. They decide whether companies with strict access rules can adopt DuckLake without extra tools.</p>
+
+<h2 id="sources">Sources</h2>
+<div class="kicker">primary where possible; vendor sources marked</div>
+<ul class="ref">
+  <li><a href="https://ducklake.select/manifesto">DuckLake manifesto</a>, <a href="https://duckdb.org/2025/05/27/ducklake.html">DuckLake announcement, May 2025</a> (DuckDB Labs, vendor)</li>
+  <li><a href="https://ducklake.select/2026/04/13/ducklake-10/">DuckLake 1.0 release</a>, <a href="https://ducklake.select/2026/10/21/ducklake-11/">DuckLake 1.1 release</a>, <a href="https://ducklake.select/release_calendar">release calendar</a>, <a href="https://ducklake.select/roadmap">roadmap</a> (DuckDB Foundation)</li>
+  <li><a href="https://ducklake.select/2026/04/02/data-inlining-in-ducklake/">Data inlining in DuckLake, benchmark against Iceberg</a> (DuckDB Labs, vendor)</li>
+  <li><a href="https://ducklake.select/docs/stable/duckdb/usage/choosing_a_catalog_database">Choosing a catalog database</a>, <a href="https://duckdb.org/docs/current/core_extensions/ducklake.html">DuckLake extension docs</a></li>
+  <li><a href="https://duckdb.org/2026/10/21/announcing-duckdb-200">DuckDB 2.0.0 announcement</a>, <a href="https://duckdb.org/2026/08/17/duckdb-20-highlights">DuckDB 2.0 preview</a>, <a href="https://duckdb.org/2026/07/31/asynchronous-io.html">asynchronous I/O</a>, <a href="https://duckdb.org/2026/05/12/quack-remote-protocol.html">Quack protocol</a></li>
+  <li><a href="https://ducklake.select/2025/09/17/ducklake-03/">DuckLake 0.3 with Iceberg interoperability</a></li>
+  <li><a href="https://motherduck.com/blog/announcing-ducklake-1-0-on-motherduck/">MotherDuck, DuckLake 1.0 on MotherDuck</a> (vendor)</li>
+  <li><a href="https://www.tobikodata.com/blog/ducklake-sqlmesh-tutorial-a-hands-on">Tobiko, DuckLake and SQLMesh tutorial</a> (vendor)</li>
+  <li><a href="https://szarnyasg.org/posts/ducklake-on-leafcloud/">Gábor Szárnyas, DuckLake on Leafcloud</a></li>
+  <li><a href="https://www.definite.app/blog/duck-lake-vs-iceberg">Definite, DuckLake vs Iceberg after a year in production</a>, <a href="https://www.definite.app/blog/duckdb-quack-ducklake-catalog">Definite, Quack as the DuckLake catalog</a> (vendor)</li>
+  <li><a href="https://posthog.com/blog/moving-off-duckdb">PostHog, Why we are moving our warehouse product off DuckDB</a> (vendor, competing product)</li>
+  <li><a href="https://ducklake.select/docs/stable/specification/queries">DuckLake specification, queries</a>, <a href="https://ducklake.select/docs/stable/duckdb/advanced_features/conflict_resolution">conflict resolution</a>, <a href="https://ducklake.select/docs/stable/duckdb/maintenance/checkpoint">CHECKPOINT</a></li>
+  <li><a href="https://iceberg.apache.org/docs/latest/configuration/">Apache Iceberg configuration</a>, <a href="https://iceberg.apache.org/docs/latest/maintenance/">Apache Iceberg maintenance</a></li>
+  <li><a href="https://www.pracdata.io/p/is-ducklake-a-step-backward">Alireza Sadeghi, Is DuckLake a step backward?</a> (Practical Data Engineering, 30 November 2025): catalog size estimates at 1 PB, Hive history, BigQuery CMETA comparison</li>
+  <li><a href="bench/catalog_growth/README.md">Catalog growth benchmark</a> (in this folder, smoke test of 20 November 2026)</li>
+  <li><a href="https://ducklake.select/docs/stable/specification/tables/overview">DuckLake specification, catalog tables</a>, <a href="https://github.com/duckdb/ducklake">DuckLake extension source (MIT)</a></li>
+  <li><a href="https://www.theregister.com/2026/04/16/duckdb_uses_rdbms_lakehouse/">The Register, DuckDB uses RDBMS to tackle the small-changes problem</a></li>
+  <li><a href="https://github.com/relytcloud/pg_ducklake">pg_ducklake</a>, <a href="https://github.com/relytcloud/pg_ducklake/issues/300">pg_ducklake DuckDB 2.0 tracking issue</a>, <a href="https://github.com/swanlake-io/swanlake">swanlake</a>, <a href="https://github.com/tobilg/quacklake">quacklake</a>, <a href="https://github.com/boilingdata/boilstream">boilstream</a> (vendor)</li>
+  <li><a href="https://developers.cloudflare.com/r2/pricing/">Cloudflare R2 pricing</a>, <a href="https://developers.cloudflare.com/containers/pricing/">Cloudflare Containers pricing</a>, <a href="https://developers.cloudflare.com/r2/reference/data-location/">R2 data location</a> (vendor)</li>
+  <li><a href="https://aws.amazon.com/s3/pricing/">Amazon S3 pricing</a>, <a href="https://aws.amazon.com/rds/postgresql/pricing/">Amazon RDS for PostgreSQL pricing</a>, <a href="https://aws.amazon.com/ec2/pricing/on-demand/">Amazon EC2 on-demand pricing</a> (vendor)</li>
+</ul>
+
+<p class="updated">Last updated 20 November 2026, with the catalog, growth and implementation sections added the same day. Prices, the DuckLake roadmap and the version support of the four projects will age first. Repository facts come from the local clones in this folder on that date.</p>
+</main>
+</div>
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var targets=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1));});
+  function onScroll(){
+    var idx=0;
+    for(var i=0;i<targets.length;i++){ if(targets[i] && targets[i].getBoundingClientRect().top<=90) idx=i; }
+    links.forEach(function(a,i){a.classList.toggle('active',i===idx);});
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+})();
+</script>
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'), btn=sb&&sb.querySelector('.toc-toggle'), cur=document.getElementById('tocCurrent');
+  if(!btn) return;
+  function set(open){ sb.classList.toggle('open',open); btn.setAttribute('aria-expanded',open?'true':'false'); }
+  btn.addEventListener('click',function(){ set(!sb.classList.contains('open')); });
+  sb.querySelectorAll('.toc a').forEach(function(a){ a.addEventListener('click',function(){ set(false); }); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && sb.classList.contains('open')){ set(false); btn.focus(); }});
+  function label(){ var a=sb.querySelector('.toc a.active'); if(cur) cur.textContent=a?a.textContent:''; }
+  window.addEventListener('scroll',label,{passive:true}); label();
+})();
+</script>
+</body>
+</html>
