@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RAG, GraphRAG and KAG: which retrieval method fits which work</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* CTO's Desk style, Nisaba v2.1.
+   Blue = the subject. Amber = a boundary, a claim or a caution. Green = a pass, or what exists now. */
+:root{
+  --paper:#fbfbfa; --svg-bg:#ffffff; --ink:#16202b; --ink-soft:#5b6571; --line:#d9dee4;
+  --engine-tint:#f1f3f5; --sub:#f6f7f8; --code-bg:#f1f3f5;
+  --accent:#1f5fd1; --accent-tint:#e7eefb; --accent-ink:#163f8c; --accent-line:#b9cdf3;
+  --amber:#9a5500; --amber-tint:#fbf1e3; --amber-ink:#8a4c00;
+  --green:#1e7a4c; --green-tint:#e5f4ec; --green-ink:#1e7a4c;
+  --f-display:"Instrument Sans","Inter",system-ui,sans-serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --toc-w:220px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#11161c; --svg-bg:#171e26; --ink:#e7ebef; --ink-soft:#9aa4ae; --line:#2c3640;
+    --engine-tint:#1d252e; --sub:#141a21; --code-bg:#1d252e;
+    --accent:#7aa7ff; --accent-tint:#1b2a44; --accent-ink:#b9cffd; --accent-line:#2f4a78;
+    --amber:#f0b366; --amber-tint:#33270f; --amber-ink:#f0b366;
+    --green:#6fd3a0; --green-tint:#14301f; --green-ink:#6fd3a0;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#11161c; --svg-bg:#171e26; --ink:#e7ebef; --ink-soft:#9aa4ae; --line:#2c3640;
+  --engine-tint:#1d252e; --sub:#141a21; --code-bg:#1d252e;
+  --accent:#7aa7ff; --accent-tint:#1b2a44; --accent-ink:#b9cffd; --accent-line:#2f4a78;
+  --amber:#f0b366; --amber-tint:#33270f; --amber-ink:#f0b366;
+  --green:#6fd3a0; --green-tint:#14301f; --green-ink:#6fd3a0;
+  color-scheme:dark;
+}
+:root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+*,*::before,*::after{ box-sizing:inherit; }
+[hidden]{ display:none!important; }
+html{ scroll-behavior:smooth; scroll-padding-top:calc(24px + env(safe-area-inset-top,0px)); background:var(--paper); }
+body{ margin:0; -webkit-text-size-adjust:100%; background:var(--paper); color:var(--ink); font-family:var(--f-body); font-size:16px; line-height:1.62; }
+a{ color:var(--accent); }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
+strong{ font-weight:600; }
+code{ font-family:var(--f-mono); font-size:.88em; background:var(--code-bg); padding:0 4px; border-radius:3px; }
+
+/* Layout: sidebar from 900px, one centered column of text */
+.layout{ display:grid; grid-template-columns:var(--toc-w) minmax(0,760px); gap:48px; justify-content:center; max-width:1120px; margin:0 auto; padding:48px max(24px,env(safe-area-inset-right,0px)) 96px max(24px,env(safe-area-inset-left,0px)); }
+main{ min-width:0; }
+
+/* Sidebar: Home link, Contents label, numbered list */
+.sidebar{ position:relative; }
+.toc{ position:sticky; top:calc(32px + env(safe-area-inset-top,0px)); max-height:calc(100vh - 64px); overflow-y:auto; font-size:13px; scrollbar-width:thin; }
+.tochome{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-soft); text-decoration:none; margin:0 0 16px; }
+.tochome:hover,.tochome:focus-visible{ color:var(--ink); }
+.toc-title{ font-family:var(--f-display); font-weight:600; letter-spacing:.06em; text-transform:uppercase; font-size:12px; color:var(--ink-soft); margin:0 0 10px; }
+.toc a.t{ display:flex; gap:8px; color:var(--ink-soft); text-decoration:none; line-height:1.4; padding:3px 0; }
+.toc a.t .k{ font-family:var(--f-mono); font-size:12px; color:var(--accent); min-width:14px; padding-top:1px; flex:none; }
+.toc a.t:hover{ color:var(--ink); }
+.toc a.t.active{ color:var(--ink); font-weight:600; }
+.toc a.t.sub{ display:block; font-size:12.5px; line-height:1.35; padding:3px 0 3px 12px; margin-left:6px; border-left:2px solid var(--line); }
+.toc a.t.sub.active{ border-left-color:var(--accent); font-weight:500; }
+
+/* Header */
+.eyebrow{ font-family:var(--f-display); font-weight:600; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); }
+h1{ font-family:var(--f-display); font-weight:700; font-size:clamp(30px,4.4vw,44px); line-height:1.1; letter-spacing:-.015em; margin:8px 0 10px; text-wrap:balance; }
+.byline{ font-size:14px; color:var(--ink-soft); margin:0 0 28px; }
+.lead{ font-size:19px; line-height:1.55; }
+.callout{ border:1px solid var(--accent); background:var(--accent-tint); border-radius:10px; padding:16px 20px; margin:20px 0; }
+.callout .label{ display:block; font-family:var(--f-display); font-weight:600; font-size:12px; letter-spacing:.07em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+.callout ul{ margin:0; padding-left:18px; display:flex; flex-direction:column; gap:6px; }
+.callout p:last-child{ margin-bottom:0; }
+.seam{ font-size:14.5px; color:var(--ink-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:10px 2px; margin:22px 0; }
+.seam + .seam{ margin-top:-22px; border-top:none; }
+
+/* Sections */
+h2{ font-family:var(--f-display); font-weight:700; font-size:clamp(22px,2.6vw,28px); line-height:1.2; letter-spacing:-.01em; margin:64px 0 12px; text-wrap:balance; }
+h2 .n{ font-family:var(--f-mono); font-size:14px; color:var(--accent); margin-right:10px; vertical-align:3px; }
+h3{ font-family:var(--f-display); font-weight:600; font-size:20px; line-height:1.3; margin:32px 0 8px; }
+h3 .n{ font-family:var(--f-mono); font-size:13px; color:var(--accent); margin-right:8px; vertical-align:2px; font-weight:500; }
+p{ margin:0 0 14px; }
+main > p, .meaning p{ max-width:72ch; }
+ul.plain, ol.plain{ padding-left:22px; margin:0 0 14px; display:flex; flex-direction:column; gap:6px; }
+.appendix{ margin-top:80px; padding-top:20px; border-top:2px solid var(--line); }
+
+/* Terms used below */
+.terms th[scope="row"]{ width:170px; white-space:normal; }
+@media (max-width:600px){ .terms th[scope="row"]{ width:110px; } }
+
+/* Tables */
+.tbl{ overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--svg-bg); margin:16px 0; }
+table{ border-collapse:collapse; width:100%; font-size:14.5px; }
+th,td{ text-align:left; vertical-align:top; padding:10px 14px; border-bottom:1px solid var(--line); }
+th{ font-family:var(--f-display); font-weight:600; font-size:13px; color:var(--ink-soft); background:var(--engine-tint); }
+th[scope="row"]{ font-size:14.5px; color:var(--ink); background:transparent; }
+tr:last-child td, tr:last-child th{ border-bottom:0; }
+
+/* Figures: a title that states the takeaway, a line on how to read it, the figure, a note */
+.ftitle{ font-family:var(--f-display); font-weight:600; font-size:16px; margin:0 0 4px; }
+.fsub{ font-size:13.5px; color:var(--ink-soft); margin:0 0 14px; }
+figure.diag, .figure{ margin:28px 0; }
+.diag-scroll{ overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--svg-bg); }
+figure.diag svg{ width:100%; min-width:600px; height:auto; display:block; }
+figure.diag figcaption, .figure figcaption{ font-size:13px; color:var(--ink-soft); margin-top:10px; }
+figure.diag text{ font-family:var(--f-body); fill:var(--ink); }
+figure.diag text.mono{ font-family:var(--f-mono); }
+figure.diag .t-s{ fill:var(--ink-soft); }
+figure.diag .t-a{ fill:var(--accent); }
+figure.diag .t-am{ fill:var(--amber-ink); }
+figure.diag .t-g{ fill:var(--green-ink); }
+.bx-n{ fill:var(--engine-tint); stroke:var(--line); }
+.bx-a{ fill:var(--accent-tint); stroke:var(--accent); stroke-width:1.5; }
+.bx-w{ fill:var(--svg-bg); stroke:var(--accent-line); }
+.bx-am{ fill:var(--amber-tint); stroke:var(--amber); }
+.bx-g{ fill:var(--green-tint); stroke:var(--green); }
+.bx-s{ fill:var(--sub); stroke:var(--line); }
+.ln{ stroke:var(--ink-soft); stroke-width:1.5; fill:none; }
+.ln-a{ stroke:var(--accent); stroke-width:2.5; fill:none; }
+.ln-am{ stroke:var(--amber); stroke-width:1.5; fill:none; stroke-dasharray:5 5; }
+.dash-am{ fill:none; stroke:var(--amber); stroke-width:1.8; stroke-dasharray:9 7; }
+.grid{ stroke:var(--line); stroke-width:1; stroke-dasharray:4 5; }
+.axis{ stroke:var(--ink-soft); stroke-width:1.2; }
+.arrowhead{ fill:var(--ink-soft); stroke:none; }
+.band-am{ fill:var(--amber-tint); }
+.faded{ opacity:.45; }
+figure.spot{ margin:14px 0 18px; }
+figure.spot .diag-scroll{ background:var(--sub); }
+figure.spot svg{ min-width:560px; }
+figure.spot figcaption{ font-size:12.5px; }
+
+/* HTML figure: journey grid (stages across, lanes down). Stacks into cards under 860px */
+.journey{ display:grid; grid-template-columns:140px repeat(var(--cols,4),minmax(0,1fr)); gap:8px; font-size:13.5px; line-height:1.4; }
+.journey .hd{ font-family:var(--f-display); font-weight:700; font-size:15px; padding:10px 12px; border-radius:10px; background:var(--accent-tint); color:var(--accent-ink); }
+.journey .hd small{ display:block; font-family:var(--f-mono); font-weight:400; font-size:12px; margin-bottom:2px; }
+.journey .hd.wall{ background:var(--amber-tint); color:var(--amber-ink); border:2px dashed var(--amber); }
+.journey .lane{ font-family:var(--f-display); font-weight:600; font-size:13px; color:var(--ink-soft); padding:10px 0; }
+.journey .c{ background:var(--svg-bg); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+.journey .c.us{ border-color:var(--accent); border-width:1.5px; }
+.journey .corner{ visibility:hidden; }
+
+/* HTML figure: numbered steps grouped in stages */
+.stage{ margin-top:32px; }
+.stage > .shd{ display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; border-bottom:2px solid var(--accent); padding-bottom:8px; margin-bottom:8px; }
+.stage > .shd b{ font-family:var(--f-display); font-size:20px; }
+.stage > .shd span{ font-size:14px; color:var(--ink-soft); }
+.stage.wallst > .shd{ border-bottom-color:var(--amber); }
+.step{ display:grid; grid-template-columns:44px minmax(0,1fr); gap:0 14px; padding:18px 0; border-bottom:1px solid var(--line); }
+.step .num{ font-family:var(--f-display); font-weight:700; font-size:15px; width:34px; height:34px; border-radius:50%; display:grid; place-items:center; background:var(--accent-tint); color:var(--accent-ink); }
+.step h3{ margin-top:4px; }
+.step p:last-child{ margin-bottom:0; }
+.meta{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:12px; }
+.meta div{ border-radius:10px; padding:10px 14px; font-size:14px; line-height:1.45; }
+.meta .plan{ background:var(--engine-tint); }
+.meta .us{ background:var(--accent-tint); color:var(--accent-ink); }
+.meta b{ display:block; font-family:var(--f-display); font-size:12px; letter-spacing:.06em; text-transform:uppercase; margin-bottom:3px; }
+.meta .plan b{ color:var(--ink-soft); }
+
+/* HTML figure: coverage matrix with full, part and none marks */
+.cov th,.cov td{ text-align:center; padding:10px 8px; }
+.cov thead th{ vertical-align:bottom; line-height:1.3; }
+.cov th[scope="row"],.cov thead th:first-child{ text-align:left; }
+.cov tr.us-row th,.cov tr.us-row td{ background:var(--accent-tint); }
+.mk{ display:inline-block; width:12px; height:12px; border-radius:50%; vertical-align:-1px; }
+.mk.full{ background:var(--green); }
+.mk.part{ background:linear-gradient(90deg,var(--amber) 50%,transparent 50%); border:1.5px solid var(--amber); }
+.mk.none{ border:1.5px solid var(--ink-soft); }
+
+/* Interactive two-axis map */
+.dot{ cursor:pointer; outline:none; }
+.dot .ring{ stroke:transparent; stroke-width:3; fill:none; }
+.dot .solid{ fill:var(--accent); }
+.dot .hollow{ fill:var(--svg-bg); stroke:var(--amber); stroke-width:2.2; }
+.dot .num{ font-family:var(--f-mono); font-size:10px; font-weight:600; text-anchor:middle; }
+.dot .solid + .num{ fill:var(--svg-bg); }
+.dot .hollow + .num{ fill:var(--amber-ink); }
+.dot:hover .ring,.dot:focus-visible .ring,.dot.sel .ring{ stroke:var(--accent); }
+.dot text.lab{ font-size:12.5px; }
+.panel{ border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:12px 14px; margin-top:10px; background:var(--accent-tint); min-height:92px; }
+.panel .lbl{ display:block; margin-bottom:4px; }
+.panel p{ margin-bottom:6px; font-size:14.5px; }
+.panel p:last-child{ margin-bottom:0; }
+.legend{ display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13.5px; color:var(--ink-soft); margin-top:8px; }
+.legend .l-solid::before,.legend .l-hollow::before{ content:""; display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:6px; vertical-align:-1px; }
+.legend .l-solid::before{ background:var(--accent); }
+.legend .l-hollow::before{ border:2px solid var(--amber); background:var(--svg-bg); }
+.hint{ font-style:italic; font-size:14.5px; color:var(--ink-soft); margin:18px 0 -8px; display:flex; align-items:center; gap:8px; }
+.hint-mark{ width:12px; height:12px; border-radius:50%; border:2px solid var(--accent); flex:none; }
+
+/* Catalogue entries */
+.meaning{ margin:32px 0 36px; }
+.meaning h3{ padding-top:20px; border-top:1px solid var(--line); margin-top:0; }
+.glance{ font-family:var(--f-mono); font-size:12px; color:var(--ink-soft); margin:0 0 12px; display:flex; flex-wrap:wrap; column-gap:18px; row-gap:2px; }
+.glance i{ font-style:normal; }
+.glance span{ color:var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:.08em; font-size:11px; margin-right:5px; }
+.lbl{ font-family:var(--f-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); }
+.verdict{ display:inline-block; font-family:var(--f-mono); font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; padding:1px 8px; border-radius:999px; margin-right:6px; vertical-align:1px; }
+.v-sig{ background:var(--green-tint); color:var(--green-ink); }
+.v-mix{ background:var(--accent-tint); color:var(--accent-ink); }
+.v-mkt{ background:var(--amber-tint); color:var(--amber-ink); }
+.tag{ display:inline-block; font-family:var(--f-mono); font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--amber-ink); background:var(--amber-tint); border-radius:999px; padding:1px 8px; vertical-align:3px; margin-left:6px; }
+.st{ display:inline-block; font-family:var(--f-mono); font-size:12px; font-weight:500; padding:1px 7px; border-radius:999px; white-space:nowrap; vertical-align:1px; }
+.st-now{ background:var(--green-tint); color:var(--green-ink); }
+.st-new{ background:var(--accent-tint); color:var(--accent-ink); }
+.ask{ border-left:3px solid var(--amber); background:var(--amber-tint); padding:9px 13px; margin:10px 0 4px; font-size:14.5px; border-radius:0 8px 8px 0; }
+.ask .lbl{ color:var(--amber-ink); margin-right:6px; }
+.hook{ border-left:3px solid var(--accent); background:var(--accent-tint); padding:12px 14px; margin-top:14px; font-size:15px; border-radius:0 8px 8px 0; }
+.hook p:last-child{ margin-bottom:0; }
+
+/* Sources and footer */
+.ref{ font-size:14.5px; padding-left:20px; display:flex; flex-direction:column; gap:6px; }
+.srcnote{ font-size:13.5px; color:var(--ink-soft); }
+footer{ margin-top:64px; padding-top:18px; border-top:1px solid var(--line); color:var(--ink-soft); font-size:13px; }
+footer p{ margin:0 0 4px; }
+.updated{ font-family:var(--f-mono); font-size:12px; }
+
+/* Under 900px: the sidebar becomes a sticky menu bar */
+.toc-toggle{ display:none; }
+@media (max-width:899px){
+  .layout{ display:block; padding:0 max(16px,env(safe-area-inset-right,0px)) 72px max(16px,env(safe-area-inset-left,0px)); }
+  html{ scroll-padding-top:calc(60px + env(safe-area-inset-top,0px)); }
+  .sidebar{ position:sticky; top:env(safe-area-inset-top,0px); z-index:20; background:var(--paper); border-bottom:1px solid var(--line); margin:0 calc(-1 * max(16px,env(safe-area-inset-right,0px))) 28px calc(-1 * max(16px,env(safe-area-inset-left,0px))); padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px)); }
+  .toc-toggle{ display:flex; align-items:center; gap:10px; width:100%; min-height:44px; background:none; border:none; color:var(--ink); font:inherit; font-size:14px; padding:12px 0; cursor:pointer; text-align:left; }
+  .toc-toggle-label{ font-family:var(--f-mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); }
+  .toc-current{ margin-left:auto; font-size:13px; color:var(--accent); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%; }
+  .burger{ position:relative; width:20px; height:14px; flex:none; }
+  .burger span{ position:absolute; left:0; width:20px; height:2px; background:var(--ink); border-radius:1px; transition:transform .2s ease,opacity .2s ease; }
+  .burger span:nth-child(1){ top:0; } .burger span:nth-child(2){ top:6px; } .burger span:nth-child(3){ top:12px; }
+  .sidebar.open .burger span:nth-child(1){ transform:translateY(6px) rotate(45deg); }
+  .sidebar.open .burger span:nth-child(2){ opacity:0; }
+  .sidebar.open .burger span:nth-child(3){ transform:translateY(-6px) rotate(-45deg); }
+  .sidebar .toc{ display:none; position:static; padding:0 0 14px; max-height:calc(70vh - env(safe-area-inset-top,0px)); }
+  .sidebar .toc-title{ display:none; }
+  .sidebar.open .toc{ display:block; }
+  .toc a.t{ font-size:14.5px; padding:5px 0; }
+  .toc a.t.sub{ font-size:14px; }
+  h2{ margin-top:48px; }
+}
+@media (max-width:860px){
+  .journey{ display:flex; flex-direction:column; }
+  .journey .lane,.journey .corner{ display:none; }
+  .journey .hd{ margin-top:10px; }
+  .journey .c::before{ content:attr(data-l); display:block; font-family:var(--f-display); font-weight:600; font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:2px; }
+  .journey .s1{ order:1; } .journey .s2{ order:2; } .journey .s3{ order:3; } .journey .s4{ order:4; } .journey .s5{ order:5; }
+  .meta{ grid-template-columns:minmax(0,1fr); }
+  .step{ grid-template-columns:minmax(0,1fr); gap:8px; }
+}
+@media (max-width:520px){ body{ font-size:15px; } .lead{ font-size:17.5px; } }
+@media (prefers-reduced-motion:reduce){ html{ scroll-behavior:auto; } .burger span{ transition:none; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="toc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <nav class="toc" id="toc" aria-label="Contents">
+    <div class="toc-title">Contents</div>
+    <a class="t" href="#terms"><span class="k"></span>Terms used below</a>
+    <a class="t" href="#s1"><span class="k">1</span>Four kinds of question</a>
+    <a class="t" href="#s2"><span class="k">2</span>Plain RAG</a>
+    <a class="t" href="#s3"><span class="k">3</span>GraphRAG</a>
+    <a class="t" href="#s4"><span class="k">4</span>KAG</a>
+    <a class="t" href="#s5"><span class="k">5</span>The wider family</a>
+    <a class="t sub" href="#m1">5.1 LazyGraphRAG</a>
+    <a class="t sub" href="#m2">5.2 LightRAG</a>
+    <a class="t sub" href="#m3">5.3 HippoRAG 2</a>
+    <a class="t sub" href="#m4">5.4 Iterative and agentic retrieval</a>
+    <a class="t sub" href="#m5">5.5 Long context</a>
+    <a class="t sub" href="#m6">5.6 Cache-augmented generation</a>
+    <a class="t sub" href="#m7">5.7 Routing and combining</a>
+    <a class="t" href="#s6"><span class="k">6</span>What the benchmarks say</a>
+    <a class="t" href="#s7"><span class="k">7</span>How graph systems fail</a>
+    <a class="t" href="#s8"><span class="k">8</span>What structure depends on</a>
+    <a class="t" href="#s9"><span class="k">9</span>Match the method to the design</a>
+    <a class="t" href="#assumptions"><span class="k">A</span>Assumptions and open questions</a>
+    <a class="t" href="#apx-b"><span class="k">B</span>Sources</a>
+  </nav>
+</aside>
+
+<main>
+<div class="eyebrow">CTO's Desk</div>
+<h1>RAG, GraphRAG and KAG: which retrieval method fits which work</h1>
+<p class="byline">Essay · 24 November 2026 · Animesh Kumar</p>
+<p class="lead">RAG, GraphRAG and KAG are three ways to give a language model the facts it needs before it answers. None of them is better in general. Each one fits some kinds of question and fails on others, at a very different cost. This page explains how each one works, what independent tests found, and how to match a method to what your design needs.</p>
+
+<div class="callout">
+  <span class="label">In short</span>
+  <ul>
+    <li>The shape of the question chooses the method: a lookup, a chain of links, a summary of everything, or a rule (<a href="#s1">section 1</a>).</li>
+    <li>Plain RAG is fast and cheap, and it is the right default for lookups. It misses links between documents and the view of the whole corpus (<a href="#s2">section 2</a>).</li>
+    <li>GraphRAG and KAG build structure before the question. GraphRAG fits summaries and multi-hop questions. KAG fits rule-bound work in a stable domain. Both cost much more (<a href="#s3">sections 3</a> and <a href="#s4">4</a>).</li>
+    <li>In independent tests, no method wins every question type, and LLM judges inflate many published wins (<a href="#s6">section 6</a>).</li>
+    <li>Start with plain RAG and a set of test questions. Add structure only for the question types that fail, and budget for the entity work that structure needs (<a href="#s9">section 9</a>).</li>
+  </ul>
+</div>
+
+<div class="seam"><strong>A note on bias:</strong> I work on DataOS at The Modern Data Company, which sells a semantic and knowledge layer. <a href="#s8">Section 8</a> touches that market. Its strongest evidence comes from vendors in the same market, and the page marks each one (vendor).</div>
+<div class="seam"><strong>Who this is for:</strong> engineers, data leaders and product managers who must choose a retrieval design or judge a proposal for one. Product and data leaders can read <a href="#s1">section 1</a>, the fit cards at the end of sections <a href="#s2">2</a> to <a href="#s4">4</a>, and <a href="#s9">section 9</a>. Engineers will find most use in sections <a href="#s3">3</a> to <a href="#s7">7</a>. The page is not a tutorial and does not compare vendor products.</div>
+
+<h2 id="terms">Terms used below</h2>
+<div class="tbl"><table class="terms">
+  <tr><th scope="row">LLM</th><td>A large language model, such as GPT-4o or Llama.</td></tr>
+  <tr><th scope="row">Chunk</th><td>A short piece of a document, often 100 to 1,200 tokens.</td></tr>
+  <tr><th scope="row">Token</th><td>A unit of text that a model reads, about three quarters of a word.</td></tr>
+  <tr><th scope="row">Embedding</th><td>A list of numbers that places a text by its meaning.</td></tr>
+  <tr><th scope="row">Vector search</th><td>A search for the chunks whose embeddings are nearest to the question.</td></tr>
+  <tr><th scope="row">Top-k</th><td>The k best matches that a search returns.</td></tr>
+  <tr><th scope="row">Reranker</th><td>A second model that sorts the matches again, more carefully.</td></tr>
+  <tr><th scope="row">Entity</th><td>A named thing: a supplier, a person, a contract, a country.</td></tr>
+  <tr><th scope="row">Relation</th><td>A typed link between two entities, such as "owned by".</td></tr>
+  <tr><th scope="row">Knowledge graph</th><td>A set of entities joined by relations.</td></tr>
+  <tr><th scope="row">Community</th><td>A group of entities that link to each other more than to the rest.</td></tr>
+  <tr><th scope="row">Schema</th><td>The allowed types of entity and relation, written in advance.</td></tr>
+  <tr><th scope="row">Logical form</th><td>A question rewritten as a short program of steps.</td></tr>
+  <tr><th scope="row">Multi-hop question</th><td>A question that needs two or more linked facts.</td></tr>
+  <tr><th scope="row">Global question</th><td>A question about a whole collection, such as its main themes.</td></tr>
+  <tr><th scope="row">LLM judge</th><td>An LLM that compares two answers and picks the better one.</td></tr>
+  <tr><th scope="row">F1 and EM</th><td>Answer scores from 0 to 100. EM counts exact matches. F1 gives part credit for overlapping words.</td></tr>
+</table></div>
+
+<h2 id="s1"><span class="n">1</span>Four kinds of question, four design needs</h2>
+<p>I use one invented example on the whole page. A company keeps its supplier documents in one place: contracts, audit reports, emails and complaint tickets. Four people ask four questions about the same documents. The questions look alike, but each one needs something different from the system.</p>
+
+<p>The table lists the four questions, their shape, and what each one needs from the design. I invented the example.</p>
+<div class="tbl"><table>
+    <thead><tr><th>Question</th><th>Shape</th><th>What the design needs</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">A. What payment term is in our contract with Acme Logistics?</th><td>Lookup: one fact in one place</td><td>Speed, low cost, the exact passage</td></tr>
+      <tr><th scope="row">B. Which suppliers share a parent company with a supplier that failed an audit?</th><td>Multi-hop: facts in different documents, joined by a link</td><td>Links between entities across documents</td></tr>
+      <tr><th scope="row">C. What are the main themes in supplier complaints this year?</th><td>Global: a view of the whole collection</td><td>A summary of everything, not the top few chunks</td></tr>
+      <tr><th scope="row">D. How many German suppliers break our 60-day payment policy?</th><td>Rule and count: a definition, a filter, a number</td><td>Exact types, a written rule, and arithmetic</td></tr>
+    </tbody>
+  </table></div>
+<p>Most real systems receive all four shapes, in different shares. The share decides the design.</p>
+
+<p>The rest of the page answers these four questions with each method. Plain RAG answers question A well. GraphRAG helps with C and B. KAG targets D. Long-context models and agents offer other routes, at other costs.</p>
+<p>The point is not which method wins. The point is which method fits the share of A, B, C and D that your users ask.</p>
+<p>Three other design needs matter as much as the question shape. The first is cost per question and the time to build the index. The second is how often the documents change. The third is the cost of a wrong answer. A support bot and a compliance tool can receive the same questions and still need different designs.</p>
+
+<h2 id="s2"><span class="n">2</span>Plain RAG: fast and cheap, blind to links and to the whole corpus</h2>
+<p>Retrieval-augmented generation, or RAG, joins a search step to a language model. The original paper paired a text generator with a dense index of Wikipedia, and it set new records on three open-domain question tasks (<a href="https://arxiv.org/abs/2005.11401">Lewis and colleagues</a>, May 2020). Today, "RAG" usually means a simpler pipeline built around an off-the-shelf LLM.</p>
+
+<h3 id="s2-1"><span class="n">2.1</span>How it works</h3>
+<p>The work happens in two phases. Before any question, the system splits documents into chunks, turns each chunk into an embedding, and stores it in a vector index. At question time, it turns the question into an embedding, finds the nearest chunks, and puts them into the prompt with the question (<a href="https://arxiv.org/html/2312.10997">Gao and colleagues</a>, Dec 2023). The figure below shows both phases.</p>
+
+<figure class="diag" id="fig-rag">
+  <p class="ftitle">Plain RAG does all its thinking at question time, on a few chunks</p>
+  <p class="fsub">The top row runs once, before any question. The bottom row runs for every question. Blue marks the search. Amber marks where it fails.</p>
+  <div class="diag-scroll">
+<svg viewBox="0 0 720 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Plain RAG: documents are chunked and embedded once. Each question retrieves the nearest chunks and sends them to the model. It fails when the right chunk is not in the top k.">
+  <defs><marker id="ah1" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <text x="24" y="30" font-size="12" class="mono t-s" letter-spacing="1.4" font-weight="600">INDEX TIME · ONCE, BEFORE ANY QUESTION</text>
+  <rect x="14" y="40" width="692" height="104" rx="10" class="bx-s"/>
+  <g font-size="13.5" text-anchor="middle">
+    <rect x="30" y="64" width="150" height="56" rx="7" class="bx-n"/>
+    <text x="105" y="88" font-weight="600">Documents</text>
+    <text x="105" y="106" font-size="12" class="t-s">contracts, audits, tickets</text>
+    <rect x="200" y="64" width="150" height="56" rx="7" class="bx-n"/>
+    <text x="275" y="88" font-weight="600">Chunks</text>
+    <text x="275" y="106" font-size="12" class="t-s">100 to 512 tokens each</text>
+    <rect x="370" y="64" width="150" height="56" rx="7" class="bx-n"/>
+    <text x="445" y="88" font-weight="600">Embeddings</text>
+    <text x="445" y="106" font-size="12" class="t-s">one per chunk</text>
+    <rect x="540" y="64" width="150" height="56" rx="7" class="bx-a"/>
+    <text x="615" y="88" font-weight="600" class="t-a">Vector index</text>
+    <text x="615" y="106" font-size="12" class="t-s">plus a keyword index</text>
+  </g>
+  <line class="ln" x1="180" y1="92" x2="196" y2="92" marker-end="url(#ah1)"/>
+  <line class="ln" x1="350" y1="92" x2="366" y2="92" marker-end="url(#ah1)"/>
+  <line class="ln" x1="520" y1="92" x2="536" y2="92" marker-end="url(#ah1)"/>
+
+  <text x="24" y="184" font-size="12" class="mono t-s" letter-spacing="1.4" font-weight="600">QUERY TIME · EVERY QUESTION</text>
+  <rect x="14" y="194" width="692" height="104" rx="10" class="bx-s"/>
+  <g font-size="13.5" text-anchor="middle">
+    <rect x="28" y="218" width="118" height="56" rx="7" class="bx-n"/>
+    <text x="87" y="242" font-weight="600">Question</text>
+    <text x="87" y="260" font-size="12" class="t-s">from a user</text>
+    <rect x="164" y="218" width="118" height="56" rx="7" class="bx-a"/>
+    <text x="223" y="242" font-weight="600" class="t-a">Top-k search</text>
+    <text x="223" y="260" font-size="12" class="t-s">nearest chunks</text>
+    <rect x="300" y="218" width="118" height="56" rx="7" class="bx-n"/>
+    <text x="359" y="242" font-weight="600">Rerank</text>
+    <text x="359" y="260" font-size="12" class="t-s">optional</text>
+    <rect x="436" y="218" width="118" height="56" rx="7" class="bx-n"/>
+    <text x="495" y="242" font-weight="600">Prompt</text>
+    <text x="495" y="260" font-size="12" class="t-s">question and chunks</text>
+    <rect x="572" y="218" width="118" height="56" rx="7" class="bx-n"/>
+    <text x="631" y="242" font-weight="600">Answer</text>
+    <text x="631" y="260" font-size="12" class="t-s">from the LLM</text>
+  </g>
+  <line class="ln" x1="146" y1="246" x2="160" y2="246" marker-end="url(#ah1)"/>
+  <line class="ln" x1="282" y1="246" x2="296" y2="246" marker-end="url(#ah1)"/>
+  <line class="ln" x1="418" y1="246" x2="432" y2="246" marker-end="url(#ah1)"/>
+  <line class="ln" x1="554" y1="246" x2="568" y2="246" marker-end="url(#ah1)"/>
+  <path class="ln-a" d="M615,120 C615,170 223,165 223,214" marker-end="url(#ah1)"/>
+  <text x="24" y="324" font-size="12" class="mono t-am" font-weight="600" letter-spacing="1.2">WHERE IT FAILS · 2.2</text>
+  <text x="24" y="342" font-size="12.5" class="t-s">The right chunk is not in the top k, the facts sit in different chunks, or the answer needs every chunk.</text>
+</svg>
+  </div>
+  <figcaption>Nothing in the index knows that two chunks are about the same supplier. Only the question-time search connects them, and only by similar wording.</figcaption>
+</figure>
+
+<p>Two settings shape the results. Chunk size is a trade: chunks of 100 to 512 tokens are common, larger chunks add noise and cost, and smaller chunks lose context (<a href="https://arxiv.org/html/2312.10997">Gao and colleagues</a>, Dec 2023). A reranker and a keyword index next to the vector index recover many misses at low cost. The survey calls these additions advanced RAG.</p>
+
+<h3 id="s2-2"><span class="n">2.2</span>Where it fails</h3>
+<p>The first failure is placement. Models use facts at the start and end of a long prompt better than facts in the middle. With 20 documents, GPT-3.5-Turbo scored 75.8% when the answer came first and 53.8% when it sat in the middle (<a href="https://arxiv.org/html/2307.03172">Liu and colleagues</a>, Jul 2023). The middle score was lower than the 56.1% that the model scored with no documents at all.</p>
+<p>The second failure is the multi-hop question. One news benchmark has questions that need two to four pieces of evidence. On it, GPT-4 reached 0.56 accuracy with retrieved chunks and 0.89 with the true evidence (<a href="https://arxiv.org/html/2401.15391">Tang and Yang</a>, Jan 2024). The model could reason. The search did not bring it the facts.</p>
+<p>The third failure is the global question. Top-k search returns a few chunks, so it cannot see a theme that runs through thousands. Microsoft Research reported that baseline RAG struggles to connect the dots across a large collection (<a href="https://www.microsoft.com/en-us/research/blog/graphrag-unlocking-llm-discovery-on-narrative-private-data/">Microsoft Research</a>, Feb 2024). An independent study listed the same weak spots: multi-step reasoning, general queries, long queries and implicit queries (<a href="https://arxiv.org/html/2407.16833">Li and colleagues</a>, Jul 2024).</p>
+
+<h3 id="s2-3"><span class="n">2.3</span>The four questions</h3>
+<p>Plain RAG answers question A well, because one contract chunk holds the payment term. It usually misses question B, because the audit report and the ownership record do not share words with the question. For question C, it summarizes the handful of complaints that match the wording, not the whole year. For question D, it finds some German contracts but cannot apply the rule to all of them or count them.</p>
+<div class="tbl"><table>
+  <tr><th scope="row">Good for</th><td>Lookups, documents that change often, a fast start, a low budget</td></tr>
+  <tr><th scope="row">Poor for</th><td>Multi-hop links, whole-corpus summaries, rules and counts</td></tr>
+  <tr><th scope="row">Cost</th><td>The lowest: no LLM calls to build the index, and a few hundred to a few thousand prompt tokens per question</td></tr>
+  <tr><th scope="row">Typical failure</th><td>The right chunk is not retrieved, or it is lost in the middle of a long prompt</td></tr>
+</table></div>
+
+<h2 id="s3"><span class="n">3</span>GraphRAG: build a map of the corpus first</h2>
+<p>GraphRAG is a family of methods that build a knowledge graph from the documents and search the graph as well as the text. The best-known member is Microsoft's GraphRAG, an open-source project described in a 2024 paper (<a href="https://arxiv.org/html/2404.16130v2">Edge and colleagues</a>, Apr 2024). This section uses it as the example. <a href="#s5">Section 5</a> covers lighter members of the family.</p>
+
+<h3 id="s3-1"><span class="n">3.1</span>How GraphRAG builds the index</h3>
+<p>The indexing pipeline has four steps, and two of them call an LLM. First, the system splits the text into chunks. In the paper they had 600 tokens with a 100-token overlap. Second, an LLM reads every chunk and extracts entities, relations and claims (<a href="https://microsoft.github.io/graphrag/">GraphRAG docs</a>, Nov 2026). Third, an algorithm called hierarchical Leiden groups the graph into nested communities. Fourth, an LLM writes a summary of each community, from the smallest groups up to the root (<a href="https://arxiv.org/html/2404.16130v2">Edge and colleagues</a>, Apr 2024).</p>
+
+<figure class="diag" id="fig-graphrag">
+  <p class="ftitle">GraphRAG spends LLM calls before the question, so that some questions become cheaper and better</p>
+  <p class="fsub">The top row builds the index. Amber boxes call an LLM on every chunk or community, which is where the cost sits. The bottom row shows three ways to search the result.</p>
+  <div class="diag-scroll">
+<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GraphRAG indexing: chunks, LLM extraction, entity graph, communities, LLM summaries. Local search reads the entity graph, global search reads the summaries, and DRIFT uses both.">
+  <defs><marker id="ah2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <text x="24" y="30" font-size="12" class="mono t-s" letter-spacing="1.4" font-weight="600">INDEX TIME · ONCE, BEFORE ANY QUESTION</text>
+  <rect x="14" y="40" width="692" height="118" rx="10" class="bx-s"/>
+  <g font-size="13.5" text-anchor="middle">
+    <rect x="26" y="62" width="124" height="70" rx="7" class="bx-n"/>
+    <text x="88" y="92" font-weight="600">Chunks</text>
+    <text x="88" y="110" font-size="12" class="t-s">600 tokens each</text>
+    <rect x="164" y="62" width="124" height="70" rx="7" class="bx-am"/>
+    <text x="226" y="86" font-weight="600">Extract</text>
+    <text x="226" y="104" font-size="12" class="t-am">LLM, every chunk</text>
+    <text x="226" y="120" font-size="11" class="t-s">entities, relations</text>
+    <rect x="302" y="62" width="124" height="70" rx="7" class="bx-a"/>
+    <text x="364" y="92" font-weight="600" class="t-a">Entity graph</text>
+    <text x="364" y="110" font-size="12" class="t-s">nodes and links</text>
+    <rect x="440" y="62" width="124" height="70" rx="7" class="bx-n"/>
+    <text x="502" y="92" font-weight="600">Communities</text>
+    <text x="502" y="110" font-size="12" class="t-s">Leiden, in levels</text>
+    <rect x="578" y="62" width="124" height="70" rx="7" class="bx-am"/>
+    <text x="640" y="86" font-weight="600">Summaries</text>
+    <text x="640" y="104" font-size="12" class="t-am">LLM, every group</text>
+    <text x="640" y="120" font-size="11" class="t-s">from small to root</text>
+  </g>
+  <line class="ln" x1="150" y1="97" x2="160" y2="97" marker-end="url(#ah2)"/>
+  <line class="ln" x1="288" y1="97" x2="298" y2="97" marker-end="url(#ah2)"/>
+  <line class="ln" x1="426" y1="97" x2="436" y2="97" marker-end="url(#ah2)"/>
+  <line class="ln" x1="564" y1="97" x2="574" y2="97" marker-end="url(#ah2)"/>
+
+  <text x="24" y="196" font-size="12" class="mono t-s" letter-spacing="1.4" font-weight="600">QUERY TIME · THREE SEARCH MODES · 3.2</text>
+  <rect x="14" y="206" width="692" height="112" rx="10" class="bx-s"/>
+  <g font-size="13.5" text-anchor="middle">
+    <rect x="30" y="226" width="206" height="74" rx="7" class="bx-w"/>
+    <text x="133" y="252" font-weight="600">Local search</text>
+    <text x="133" y="270" font-size="12" class="t-s">an entity, its neighbors, its text</text>
+    <text x="133" y="288" font-size="12" class="t-a">fits question B</text>
+    <rect x="257" y="226" width="206" height="74" rx="7" class="bx-w"/>
+    <text x="360" y="252" font-weight="600">Global search</text>
+    <text x="360" y="270" font-size="12" class="t-s">map and reduce over summaries</text>
+    <text x="360" y="288" font-size="12" class="t-a">fits question C</text>
+    <rect x="484" y="226" width="206" height="74" rx="7" class="bx-w"/>
+    <text x="587" y="252" font-weight="600">DRIFT search</text>
+    <text x="587" y="270" font-size="12" class="t-s">summaries first, then local</text>
+    <text x="587" y="288" font-size="12" class="t-a">follow-up questions</text>
+  </g>
+  <path class="ln" d="M364,132 C364,180 133,175 133,222" marker-end="url(#ah2)"/>
+  <path class="ln" d="M380,132 C390,180 560,175 575,222"/>
+  <path class="ln" d="M640,132 C640,180 360,175 360,222" marker-end="url(#ah2)"/>
+  <path class="ln" d="M650,132 C650,180 600,180 600,222" marker-end="url(#ah2)"/>
+  <text x="24" y="344" font-size="12" class="mono t-am" font-weight="600" letter-spacing="1.2">WHAT THE AMBER STEPS COST · 3.4</text>
+  <text x="24" y="364" font-size="12.5" class="t-s">One test: 115 million input tokens and 277 minutes to index, against 12 minutes for plain embeddings.</text>
+</svg>
+  </div>
+  <figcaption>The amber steps decide the build cost and the quality of the graph. An entity that the extraction misses is missing from every search mode.</figcaption>
+</figure>
+
+<p>The paper matched entities by their exact name, and it turned repeated mentions into heavier links (<a href="https://arxiv.org/html/2404.16130v2">Edge and colleagues</a>, Apr 2024). This detail matters in production. "Acme Logistics", "Acme" and "ACME Logistics GmbH" can become three entities. <a href="#s7">Section 7</a> returns to this.</p>
+
+<h3 id="s3-2"><span class="n">3.2</span>Three ways to search the graph</h3>
+<p>Local search starts from the entities in the question and reads their neighbors, their relations and the source text. Global search uses the community summaries in a map-reduce pattern. Each summary gives a partial answer with an importance score, and a final step combines the best points (<a href="https://microsoft.github.io/graphrag/query/global_search/">GraphRAG docs</a>, Nov 2026). The docs note that lower community levels give more thorough answers but cost more time and LLM calls.</p>
+<p>DRIFT search mixes the two. It matches the question against community reports, drafts an answer, writes follow-up questions, and runs those through local search. On 50 local questions over more than 5,000 news articles, an LLM judge preferred DRIFT to local search on comprehensiveness 78% of the time (<a href="https://www.microsoft.com/en-us/research/blog/introducing-drift-search-combining-global-and-local-search-methods-to-improve-quality-and-efficiency/">Microsoft Research</a>, Oct 2024).</p>
+
+<h3 id="s3-3"><span class="n">3.3</span>What it improves</h3>
+<p>The GraphRAG paper tested 125 sensemaking questions on each of two corpora, of about 1 and 1.7 million tokens. The graph-based answers beat vector RAG on comprehensiveness 72-79% of the time and on diversity 62-81% of the time (<a href="https://arxiv.org/html/2404.16130v2">Edge and colleagues</a>, Apr 2024). The root-level summaries also answered with 9x-43x fewer tokens than a map-reduce over all the source text.</p>
+<p>Read those numbers with care. An LLM generated the questions and an LLM judged the answers. An independent study found that a GPT-4o judge tended to favor the answer it saw first. In one order it preferred GraphRAG local search 97% of the time, and in the other order it preferred RAG 88% of the time (<a href="https://arxiv.org/html/2502.11371">Han and colleagues</a>, Feb 2025). <a href="#s6">Section 6</a> shows how much this bias changes published results.</p>
+
+<h3 id="s3-4"><span class="n">3.4</span>What it costs</h3>
+<p>Indexing is the large cost. On one multi-hop corpus of 11,656 passages, GraphRAG used 115.5 million input tokens, 36.1 million output tokens and 277 minutes. A dense embedding model indexed the same corpus in 12.1 minutes with no LLM tokens (<a href="https://arxiv.org/html/2502.14802v2">Gutiérrez and colleagues</a>, Feb 2025). Microsoft estimated graph building with GPT-4o-mini at about $0.34 per 30,000 words, and it advised users to start with a small sample (<a href="https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/graphrag-costs-explained-what-you-need-to-know/4207978">Microsoft Tech Community</a>, Aug 2024).</p>
+<p>Global search also costs a lot per question. One benchmark reported an average of about 331,375 prompt tokens for global search on its novel corpus, against about 879 for plain RAG. The same paper also gives lower figures for global search, up to about 40,000 tokens (<a href="https://arxiv.org/html/2506.05690">Xiang and colleagues</a>, Jun 2025). Another measured 521 seconds and about 354,000 tokens per global query, against 9.1 seconds and 1,680 tokens for plain RAG (<a href="https://arxiv.org/html/2503.04338v2">Zhou and colleagues</a>, Mar 2025). Local search is much cheaper than global search.</p>
+
+<h3 id="s3-5"><span class="n">3.5</span>The four questions</h3>
+<p>Global search fits question C. It reads summaries of every complaint cluster, including the ones whose words do not match the question. Local search helps question B, if the extraction linked each supplier to its parent company. For question A, GraphRAG adds cost and little else. For question D, it has no notion of a payment rule.</p>
+<p>GraphRAG also carries a risk: on questions with no answer in the corpus, global search scored 19.27, against 96.01 for plain RAG (<a href="https://arxiv.org/html/2502.11371">Han and colleagues</a>, Feb 2025). It tends to answer anyway.</p>
+<div class="tbl"><table>
+  <tr><th scope="row">Good for</th><td>Global and thematic questions, multi-hop questions, exploring an unfamiliar corpus</td></tr>
+  <tr><th scope="row">Poor for</th><td>Single facts, questions with no answer, documents that change daily, rules and counts</td></tr>
+  <tr><th scope="row">Cost</th><td>The highest build cost in this group, and high query cost for global search</td></tr>
+  <tr><th scope="row">Typical failure</th><td>Entities missing from the extracted graph, duplicate entities, confident answers to questions with no answer</td></tr>
+</table></div>
+
+<h2 id="s4"><span class="n">4</span>KAG: add a schema and logic</h2>
+<p>KAG, short for knowledge-augmented generation, is Ant Group's framework on its OpenSPG engine (<a href="https://arxiv.org/html/2409.13731v3">Liang and colleagues</a>, Sep 2024). The general idea has other names and other builds. I use Ant Group's KAG as the example because it is open source and documented. Where GraphRAG lets an LLM decide what the entities are, KAG starts from a schema and plans each answer as a set of logical steps.</p>
+
+<h3 id="s4-1"><span class="n">4.1</span>A mutual index between the graph and the text</h3>
+<p>KAG links each graph node back to the text chunks that support it, and stores the graph and the vectors side by side (<a href="https://arxiv.org/html/2409.13731v3">Liang and colleagues</a>, Sep 2024). A search can start in the graph and read the text, or start in the text and follow the graph. This keeps the original wording in reach. That matters because graph-only methods that drop the text chunks often do poorly (<a href="https://arxiv.org/html/2503.04338v2">Zhou and colleagues</a>, Mar 2025).</p>
+
+<h3 id="s4-2"><span class="n">4.2</span>A schema and concept alignment</h3>
+<p>KAG checks extracted facts against a schema of types and a graph of concepts. It uses relations such as synonym, isA, isPartOf, contains, belongTo and causes (<a href="https://arxiv.org/html/2409.13731v3">Liang and colleagues</a>, Sep 2024). In the example, "Acme Logistics GmbH" becomes one Supplier entity, linked to the concept Logistics and to the country Germany. The schema can also hold rules, such as the 60-day payment policy.</p>
+
+<h3 id="s4-3"><span class="n">4.3</span>A solver that plans the answer</h3>
+<p>The KAG solver turns a question into a logical form: a plan made of operators named Retrieval, Sort, Math, Deduce and Output (<a href="https://arxiv.org/html/2409.13731v3">Liang and colleagues</a>, Sep 2024). A later model, KAG-Thinker, is a 7B model fine-tuned on about 71,000 samples to plan the steps and decide when to retrieve (<a href="https://arxiv.org/html/2506.17728v3">Ant Group</a>, Jun 2025). The figure shows a plan for question D.</p>
+
+<figure class="diag" id="fig-kag">
+  <p class="ftitle">KAG answers question D as a short program, not as a single search</p>
+  <p class="fsub">Read the top row from left to right. Each step names its operator. Lines show which store each step reads. The plan is an illustration, not output from a real run.</p>
+  <div class="diag-scroll">
+<svg viewBox="0 0 720 370" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KAG plan for question D: find German suppliers, read payment terms, apply the 60-day rule, count, answer with evidence. Steps read a knowledge graph with a schema and the linked text chunks.">
+  <defs><marker id="ah3" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <text x="24" y="30" font-size="12" class="mono t-s" letter-spacing="1.2" font-weight="600">QUESTION D · HOW MANY GERMAN SUPPLIERS BREAK THE 60-DAY POLICY?</text>
+  <g font-size="11" class="mono t-a" text-anchor="middle" font-weight="600" letter-spacing="1">
+    <text x="86" y="62">RETRIEVAL</text><text x="224" y="62">RETRIEVAL</text><text x="362" y="62">DEDUCE</text><text x="500" y="62">MATH</text><text x="638" y="62">OUTPUT</text>
+  </g>
+  <g font-size="13.5" text-anchor="middle">
+    <rect x="24" y="72" width="124" height="70" rx="7" class="bx-a"/>
+    <text x="86" y="100" font-weight="600">Find suppliers</text>
+    <text x="86" y="118" font-size="12" class="t-s">country is Germany</text>
+    <rect x="162" y="72" width="124" height="70" rx="7" class="bx-a"/>
+    <text x="224" y="100" font-weight="600">Read terms</text>
+    <text x="224" y="118" font-size="12" class="t-s">from each contract</text>
+    <rect x="300" y="72" width="124" height="70" rx="7" class="bx-a"/>
+    <text x="362" y="100" font-weight="600">Apply the rule</text>
+    <text x="362" y="118" font-size="12" class="t-s">term over 60 days</text>
+    <rect x="438" y="72" width="124" height="70" rx="7" class="bx-a"/>
+    <text x="500" y="100" font-weight="600">Count</text>
+    <text x="500" y="118" font-size="12" class="t-s">suppliers that fail</text>
+    <rect x="576" y="72" width="124" height="70" rx="7" class="bx-g"/>
+    <text x="638" y="100" font-weight="600">Answer</text>
+    <text x="638" y="118" font-size="12" class="t-s">number and sources</text>
+  </g>
+  <line class="ln" x1="148" y1="107" x2="158" y2="107" marker-end="url(#ah3)"/>
+  <line class="ln" x1="286" y1="107" x2="296" y2="107" marker-end="url(#ah3)"/>
+  <line class="ln" x1="424" y1="107" x2="434" y2="107" marker-end="url(#ah3)"/>
+  <line class="ln" x1="562" y1="107" x2="572" y2="107" marker-end="url(#ah3)"/>
+
+  <rect x="24" y="220" width="300" height="84" rx="9" class="bx-w"/>
+  <text x="40" y="244" font-size="12" class="mono t-a" font-weight="600" letter-spacing="1.2">KNOWLEDGE GRAPH AND SCHEMA</text>
+  <text x="40" y="266" font-size="12.5">Types: Supplier, Contract, Country</text>
+  <text x="40" y="286" font-size="12.5">Rule: payment term at most 60 days</text>
+  <rect x="396" y="220" width="300" height="84" rx="9" class="bx-n"/>
+  <text x="412" y="244" font-size="12" class="mono t-s" font-weight="600" letter-spacing="1.2">TEXT CHUNKS</text>
+  <text x="412" y="266" font-size="12.5">Contracts, audits, emails</text>
+  <text x="412" y="286" font-size="12.5" class="t-s">the original wording</text>
+  <line class="ln-a" x1="324" y1="262" x2="392" y2="262" marker-end="url(#ah3)"/>
+  <text x="360" y="252" font-size="11" class="mono t-a" text-anchor="middle">MUTUAL</text>
+  <text x="360" y="282" font-size="11" class="mono t-a" text-anchor="middle">INDEX</text>
+  <path class="ln" d="M86,142 C86,180 120,190 120,216" marker-end="url(#ah3)"/>
+  <path class="ln" d="M224,142 C224,180 200,190 200,216" marker-end="url(#ah3)"/>
+  <path class="ln" d="M232,142 C250,190 520,180 530,216" marker-end="url(#ah3)"/>
+  <path class="ln" d="M362,142 C362,180 290,190 290,216" marker-end="url(#ah3)"/>
+  <text x="24" y="336" font-size="12" class="mono t-am" font-weight="600" letter-spacing="1.2">THE CONDITION · 4.5</text>
+  <text x="24" y="356" font-size="12.5" class="t-s">The schema must match the data. If it does not, facts drop out and the count is wrong without an error.</text>
+</svg>
+  </div>
+  <figcaption>The rule and the arithmetic are explicit steps, so a reviewer can check them. They are only as good as the schema they read.</figcaption>
+</figure>
+
+<p>Plain RAG and GraphRAG leave the arithmetic and the rule to the LLM, inside one prompt. KAG makes them separate steps with their own inputs. A reviewer can read the plan and see which contracts it counted. That is the main reason to pay for this design.</p>
+
+<h3 id="s4-4"><span class="n">4.4</span>What the results show, and who measured them</h3>
+<p>The KAG paper compared KAG with a baseline that combined IRCoT and HippoRAG. F1 rose from 63.7 to 76.2 on HotpotQA and from 57.1 to 76.2 on 2Wiki (<a href="https://arxiv.org/html/2409.13731v3">Liang and colleagues</a>, Sep 2024). On MuSiQue, KAG reported EM 36.7 and F1 48.7 against 26.2 and 36.5. The abstract reports these gains as 19.6% and 33.5%, but the table arithmetic assigns the two figures to the opposite datasets. I cite the table.</p>
+<p>The paper also reports professional use. In an e-government question test with 492 samples, KAG reached 91.6 precision and 71.8 recall, against 66.5 and 52.6 for naive RAG (<a href="https://arxiv.org/html/2409.13731v3">Liang and colleagues</a>, Sep 2024). These are strong numbers for question D-style work, where the answer follows rules.</p>
+<p>All of these numbers come from Ant Group. I found no independent benchmark that includes KAG as a compared system. A benchmark by Xiao and colleagues, for example, tested nine graph methods and left KAG out (<a href="https://arxiv.org/html/2506.02404v3">Xiao and colleagues</a>, Jun 2025). On KAG's own 2025 leaderboard, version 0.7 almost tied PIKE-RAG on MuSiQue exact match, 0.385 against 0.383 (<a href="https://openspg.github.io/v2/blog/recent_posts/release_notes/0.7">OpenSPG</a>, Apr 2025).</p>
+
+<h3 id="s4-5"><span class="n">4.5</span>What it costs</h3>
+<p>The KAG paper says that schema-constrained knowledge construction is accurate but has a high cost in manual work (<a href="https://arxiv.org/html/2409.13731v3">Liang and colleagues</a>, Sep 2024). An independent test of OpenSPG, the engine under KAG, found that aligning database columns to the schema was not trivial. Mismatches caused runtime errors or silent omissions, and loading 40 KB of data took about 15 minutes on an 8 GB machine (<a href="https://ceur-ws.org/Vol-4085/paper11.pdf">Yaman and colleagues</a>, Nov 2025). The authors still found value in it, but called the tooling immature.</p>
+<p>The build cost is falling. KAG version 0.7 added a lightweight build mode with a small accuracy drop. It cut construction cost per 100,000 characters from 4.63 to 0.479 yuan, about 90% lower (<a href="https://openspg.github.io/v2/blog/recent_posts/release_notes/0.7">OpenSPG</a>, Apr 2025). That number is self-reported.</p>
+
+<h3 id="s4-6"><span class="n">4.6</span>The four questions</h3>
+<p>KAG fits question D, if the schema has suppliers, contracts, countries and the payment rule. It helps question B, because the schema makes "parent company" a typed relation instead of a guess. It is too heavy for question A. For question C, it offers no clear advantage over GraphRAG's summaries.</p>
+<div class="tbl"><table>
+  <tr><th scope="row">Good for</th><td>Rule-bound professional work in a stable domain: compliance, policy, finance, medicine</td></tr>
+  <tr><th scope="row">Poor for</th><td>Open or fast-changing corpora, a quick start, teams with no one to own the schema</td></tr>
+  <tr><th scope="row">Cost</th><td>Schema design and upkeep, many LLM calls to build and to solve, immature tooling</td></tr>
+  <tr><th scope="row">Typical failure</th><td>The schema does not match the data, and facts drop out silently</td></tr>
+</table></div>
+
+<h2 id="s5"><span class="n">5</span>The wider family</h2>
+<p>Many methods sit between plain RAG and KAG, and some sit outside the line. The map below places eleven of them on two axes. The first axis is how much structure the system builds before the question. The second is the cost of each question.</p>
+<p>Neither axis is a score. A method in the bottom left is not better than one in the top right. It fits different work.</p>
+
+<p class="hint"><span class="hint-mark" aria-hidden="true"></span><span id="hintText">Select a dot to see a short summary.</span></p>
+<figure class="diag" id="fig-map">
+  <p class="ftitle">Methods spread across structure and cost, and none sits in every corner</p>
+  <p class="fsub">Left to right: how much structure is built before the question. Bottom to top: cost per question. Positions are the author's judgment from the cited numbers, not a measurement.</p>
+  <div class="diag-scroll">
+<svg id="map" viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Map of eleven retrieval methods by structure built before the question and cost per question">
+  <line class="grid" x1="300" y1="40" x2="300" y2="400"/>
+  <line class="grid" x1="500" y1="40" x2="500" y2="400"/>
+  <line class="grid" x1="100" y1="160" x2="700" y2="160"/>
+  <line class="grid" x1="100" y1="285" x2="700" y2="285"/>
+  <line class="axis" x1="100" y1="400" x2="700" y2="400"/>
+  <line class="axis" x1="100" y1="40" x2="100" y2="400"/>
+  <text x="696" y="30" font-size="10.5" class="mono t-s" text-anchor="end" letter-spacing="1">AUTHOR'S JUDGMENT, NOT A MEASUREMENT</text>
+  <g font-size="12" class="t-s">
+    <text x="16" y="96">High cost</text><text x="16" y="111">per question</text>
+    <text x="16" y="218">Medium</text>
+    <text x="16" y="343">Low cost</text><text x="16" y="358">per question</text>
+  </g>
+  <g font-size="11.5" text-anchor="middle">
+    <text x="200" y="420" class="mono t-s" letter-spacing="1">TEXT ONLY</text>
+    <text x="400" y="420" class="mono t-s" letter-spacing="1">GRAPH BY AN LLM</text>
+    <text x="600" y="420" class="mono t-s" letter-spacing="1">SCHEMA BY PEOPLE</text>
+  </g>
+  <text x="400" y="452" font-size="12" text-anchor="middle" class="mono t-a" font-weight="600" letter-spacing="1.2">STRUCTURE BUILT BEFORE THE QUESTION →</text>
+
+  <g class="dot" data-k="1" tabindex="0" role="button" aria-label="Plain RAG"><circle class="ring" cx="140" cy="370" r="13"/><circle class="solid" cx="140" cy="370" r="9"/><text class="num" x="140" y="373.5">1</text><text class="lab" x="156" y="374">Plain RAG</text></g>
+  <g class="dot" data-k="2" tabindex="0" role="button" aria-label="Cache-augmented generation"><circle class="ring" cx="150" cy="300" r="13"/><circle class="solid" cx="150" cy="300" r="9"/><text class="num" x="150" y="303.5">2</text><text class="lab" x="166" y="304">Cache-augmented</text></g>
+  <g class="dot" data-k="3" tabindex="0" role="button" aria-label="Iterative and agentic retrieval"><circle class="ring" cx="170" cy="200" r="13"/><circle class="hollow" cx="170" cy="200" r="9"/><text class="num" x="170" y="203.5">3</text><text class="lab" x="186" y="204">Iterative, agentic</text></g>
+  <g class="dot" data-k="4" tabindex="0" role="button" aria-label="Long context"><circle class="ring" cx="140" cy="80" r="13"/><circle class="solid" cx="140" cy="80" r="9"/><text class="num" x="140" y="83.5">4</text><text class="lab" x="156" y="84">Long context</text></g>
+  <g class="dot" data-k="5" tabindex="0" role="button" aria-label="HippoRAG 2"><circle class="ring" cx="350" cy="360" r="13"/><circle class="solid" cx="350" cy="360" r="9"/><text class="num" x="350" y="363.5">5</text><text class="lab" x="366" y="364">HippoRAG 2</text></g>
+  <g class="dot" data-k="6" tabindex="0" role="button" aria-label="LazyGraphRAG"><circle class="ring" cx="320" cy="250" r="13"/><circle class="solid" cx="320" cy="250" r="9"/><text class="num" x="320" y="253.5">6</text><text class="lab" x="336" y="254">LazyGraphRAG</text></g>
+  <g class="dot" data-k="7" tabindex="0" role="button" aria-label="GraphRAG local search"><circle class="ring" cx="430" cy="300" r="13"/><circle class="solid" cx="430" cy="300" r="9"/><text class="num" x="430" y="303.5">7</text><text class="lab" x="446" y="304">GraphRAG local</text></g>
+  <g class="dot" data-k="8" tabindex="0" role="button" aria-label="DRIFT search"><circle class="ring" cx="440" cy="205" r="13"/><circle class="solid" cx="440" cy="205" r="9"/><text class="num" x="440" y="208.5">8</text><text class="lab" x="456" y="209">DRIFT</text></g>
+  <g class="dot" data-k="9" tabindex="0" role="button" aria-label="LightRAG"><circle class="ring" cx="360" cy="140" r="13"/><circle class="solid" cx="360" cy="140" r="9"/><text class="num" x="360" y="143.5">9</text><text class="lab" x="376" y="144">LightRAG</text></g>
+  <g class="dot" data-k="10" tabindex="0" role="button" aria-label="GraphRAG global search"><circle class="ring" cx="460" cy="70" r="13"/><circle class="solid" cx="460" cy="70" r="10"/><text class="num" x="460" y="73.5" font-size="9">10</text><text class="lab" x="444" y="74" text-anchor="end">GraphRAG global</text></g>
+  <g class="dot" data-k="11" tabindex="0" role="button" aria-label="KAG"><circle class="ring" cx="610" cy="180" r="13"/><circle class="solid" cx="610" cy="180" r="10"/><text class="num" x="610" y="183.5" font-size="9">11</text><text class="lab" x="626" y="184">KAG</text></g>
+</svg>
+  </div>
+  <div class="legend"><span class="l-solid">A method with a fixed pipeline</span><span class="l-hollow">A pattern: an LLM decides the steps at run time</span></div>
+  <div class="panel" id="panel" aria-live="polite">
+    <span class="lbl">No dot selected</span>
+    <p>Each dot shows a short summary here, with a link to its section.</p>
+  </div>
+  <figcaption>The top right holds the most expensive per-question methods. Cheap and structured, the bottom right, is where curated knowledge can help, and few methods sit there yet.</figcaption>
+</figure>
+
+<p>Two patterns stand out. First, the structure axis and the cost axis are separate. HippoRAG 2 builds a graph and still answers cheaply, while long context builds nothing and costs the most per question. Second, the right-hand column is thin. Only KAG builds structure from a schema that people write, and its evidence is all self-reported.</p>
+
+<section class="meaning" id="m1">
+  <h3><span class="n">5.1</span>LazyGraphRAG</h3>
+  <p class="glance"><i><span>Builds</span>a concept graph with no LLM</i><i><span>Query cost</span>tunable</i><i><span>From</span>Microsoft Research, 2024</i></p>
+  <p>LazyGraphRAG replaces the LLM extraction step with plain language-processing tools. It finds noun phrases and their co-occurrences, and it builds communities from graph statistics. All LLM work moves to question time (<a href="https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost/">Microsoft Research</a>, Nov 2024).</p>
+  <p>Microsoft says that LazyGraphRAG indexes at 0.1% of the cost of full GraphRAG, the same as vector RAG. It also reports quality comparable to GraphRAG global search on global questions at more than 700x lower query cost (<a href="https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost/">Microsoft Research</a>, Nov 2024). The test used one news dataset, 100 synthetic questions and an LLM judge. I found no independent test.</p>
+  <p>People confuse it with a cheaper version of the same graph. It is a different graph: concepts and co-occurrences, not typed entities and relations. It cannot answer question B by following a "parent company" link, because no such link exists.</p>
+  <p><span class="verdict v-mix">Fits exploration on a budget</span>It fits global questions over a large corpus when the build budget is small. The quality claims need an independent test.</p>
+  <div class="ask"><span class="lbl">Ask</span>Do our questions need typed relations, or only themes and co-occurrence?</div>
+</section>
+
+<section class="meaning" id="m2">
+  <h3><span class="n">5.2</span>LightRAG</h3>
+  <p class="glance"><i><span>Builds</span>an entity graph with an LLM</i><i><span>Query cost</span>disputed</i><i><span>From</span>HKU, 2024</i></p>
+  <p>LightRAG searches with two levels of keywords. Low-level keywords match entities, and high-level keywords match relations. It adds new documents to the graph without a rebuild (<a href="https://arxiv.org/html/2410.05779v3">Guo and colleagues</a>, Oct 2024). Incremental updates are a real need, so this design choice matters.</p>
+  <p>The LightRAG paper claims retrieval with fewer than 100 tokens and one API call. An independent benchmark reported an average of about 100,832 prompt tokens, although the same paper also gives a figure near 10,000 (<a href="https://arxiv.org/html/2506.05690">Xiang and colleagues</a>, Jun 2025). The paper's own overall win rates against GraphRAG were only about 50-55%, judged by GPT-4o-mini. In an independent rerun on question-answer benchmarks, LightRAG scored 6.6 average F1, against 57.0 for a dense retriever (<a href="https://arxiv.org/html/2502.14802v2">Gutiérrez and colleagues</a>, Feb 2025). Those authors compete with LightRAG, so their result needs a third test, but the gap is very large.</p>
+  <p>When a study removed position and length bias from the LLM judge, LightRAG's win rate over naive RAG fell from 66.70% to 39.06% (<a href="https://arxiv.org/html/2506.06331v1">Zeng and colleagues</a>, May 2025).</p>
+  <p><span class="verdict v-mkt">Claims ahead of evidence</span>The incremental update is useful. The cost and quality claims did not survive independent tests.</p>
+  <div class="ask"><span class="lbl">Ask</span>Did anyone outside the authors measure the tokens per question?</div>
+</section>
+
+<section class="meaning" id="m3">
+  <h3><span class="n">5.3</span>HippoRAG 2</h3>
+  <p class="glance"><i><span>Builds</span>an entity graph with an LLM</i><i><span>Query cost</span>low</i><i><span>From</span>Ohio State, 2024 and 2025</i></p>
+  <p>HippoRAG takes its design from a theory of how the brain indexes memories. It builds a knowledge graph with an LLM, then ranks passages with Personalized PageRank, a graph walk that starts from the entities in the question (<a href="https://arxiv.org/abs/2405.14831">Gutiérrez and colleagues</a>, May 2024). The first version claimed up to 20% gains on multi-hop questions, and it matched an iterative method while it cost 10-30x less.</p>
+  <p>HippoRAG 2 averaged 59.8 F1 across seven benchmarks, against 57.0 for a strong dense retriever and 49.6 for GraphRAG (<a href="https://arxiv.org/html/2502.14802v2">Gutiérrez and colleagues</a>, Feb 2025). Its index used 9.2 million input tokens on the corpus where GraphRAG used 115.5 million, and it answered in 1.2 seconds. The authors also say that earlier graph methods fall well below standard RAG on simple factual questions.</p>
+  <p>The gain over a good dense retriever is small: 2.8 F1 points. A team that already has strong embeddings may not see a large change.</p>
+  <p><span class="verdict v-sig">Fits multi-hop at low cost</span>It is the cheapest graph method here at question time, and it does not give up simple lookups. The results come from its own authors.</p>
+  <div class="ask"><span class="lbl">Ask</span>How much better is it than our current dense retriever on our own questions?</div>
+</section>
+
+<section class="meaning" id="m4">
+  <h3><span class="n">5.4</span>Iterative and agentic retrieval</h3>
+  <p class="glance"><i><span>Builds</span>nothing extra</i><i><span>Query cost</span>several LLM calls</i><i><span>From</span>IRCoT, 2022, and many agent designs</i></p>
+  <p>Iterative retrieval lets the model search, reason one step, and search again with what it learned. IRCoT alternates retrieval with chain-of-thought steps. With GPT-3, it improved retrieval by up to 21 points and answers by up to 15 points on four multi-hop benchmarks (<a href="https://arxiv.org/abs/2212.10509">Trivedi and colleagues</a>, Dec 2022). Agentic RAG extends the idea: an agent chooses tools, writes queries and decides when it has enough.</p>
+  <p>For question B, an agent can search for audit failures, read the supplier names, then search for each parent company. It needs no graph, but it needs several LLM calls per question. I found no independent cost or latency numbers for agentic RAG.</p>
+  <p>People often confuse it with GraphRAG, because both handle multi-hop questions. The difference is when the system finds the links. GraphRAG finds them once, at index time. An agent finds them again for every question.</p>
+  <p><span class="verdict v-mix">Fits rare multi-hop questions</span>It fits when multi-hop questions are rare or varied, so a graph is not worth building. Cost and delay grow with every step.</p>
+  <div class="ask"><span class="lbl">Ask</span>How many searches does a typical question take, and who caps them?</div>
+</section>
+
+<section class="meaning" id="m5">
+  <h3><span class="n">5.5</span>Long context and Self-Route</h3>
+  <p class="glance"><i><span>Builds</span>nothing</i><i><span>Query cost</span>the highest per question</i><i><span>From</span>models with very large windows</i></p>
+  <p>A long-context model reads the whole document set in one prompt, so it needs no retrieval. With enough budget, long context beat RAG on average: GPT-4o scored 48.67 against 32.60 (<a href="https://arxiv.org/html/2407.16833">Li and colleagues</a>, Jul 2024). The same study proposed Self-Route. The model first tries RAG and falls back to long context only when the chunks are not enough. Self-Route matched long-context accuracy with GPT-4o and used about 61% of the tokens.</p>
+  <p>Other results point the other way. Order-preserving RAG with 48K tokens beat a full 117K-token long context on one benchmark, 47.25 F1 against 34.26 (<a href="https://arxiv.org/html/2409.01666">Yu and colleagues</a>, Sep 2024). The vendor Databricks ran over 2,000 experiments. Most models did worse beyond a certain length, for example after 32K tokens for Llama-3.1-405b (<a href="https://www.databricks.com/blog/long-context-rag-performance-llms">Databricks</a>, Aug 2024). On SQL-like tasks, Gemini 1.5 Pro with long context scored 0.38, against 0.65 for a dedicated pipeline (<a href="https://arxiv.org/html/2406.13121">Lee and colleagues</a>, Jun 2024).</p>
+  <p>Long context fits a small, stable corpus and a modest volume of questions. It does not remove the need for rules and counts, which is question D.</p>
+  <p><span class="verdict v-mix">Fits small corpora</span>It is the simplest design when everything fits in the window. The numbers age fast with each model release.</p>
+  <div class="ask"><span class="lbl">Ask</span>Does the whole corpus fit, and what does each question cost at that size?</div>
+</section>
+
+<section class="meaning" id="m6">
+  <h3><span class="n">5.6</span>Cache-augmented generation</h3>
+  <p class="glance"><i><span>Builds</span>a cached prompt</i><i><span>Query cost</span>low after the first load</i><i><span>From</span>Chan and colleagues, 2024</i></p>
+  <p>Cache-augmented generation, or CAG, loads all documents into the context once and keeps the model's internal state in a cache. Each question reuses that state, so there is no retrieval step. On HotPotQA, CAG beat the best RAG setup on the small and medium sets, but lost on the large set of 85,000 tokens (<a href="https://arxiv.org/html/2412.15605">Chan and colleagues</a>, Dec 2024).</p>
+  <p>The limit is plain: all documents must fit in the context. The authors say that this is impractical for much larger datasets.</p>
+  <p><span class="verdict v-mix">Fits small, fixed knowledge</span>It fits a product manual or a policy set that changes rarely. It does not fit a growing document store.</p>
+  <div class="ask"><span class="lbl">Ask</span>How often does the cached knowledge change?</div>
+</section>
+
+<section class="meaning" id="m7">
+  <h3><span class="n">5.7</span>Routing and combining</h3>
+  <p class="glance"><i><span>Builds</span>two or more indexes</i><i><span>Query cost</span>depends on the route</i><i><span>From</span>several 2024 and 2025 studies</i></p>
+  <p>If no method wins everywhere, a system can send each question to the method that fits it. On one multi-hop benchmark, 13.6% of questions were answered only by GraphRAG and 11.6% only by RAG (<a href="https://arxiv.org/html/2502.11371">Han and colleagues</a>, Feb 2025). Combining the two outputs improved on the best single method by 6.4%. Self-Route, in <a href="#m5">5.5</a>, is a simpler form of the same idea.</p>
+  <p>The cost is more moving parts: two indexes to keep current, and a router that can send a question the wrong way.</p>
+  <p><span class="verdict v-sig">Fits mixed question loads</span>It follows directly from the benchmark evidence in <a href="#s6">section 6</a>. I think it is the design to test first when users ask more than one shape of question.</p>
+  <div class="ask"><span class="lbl">Ask</span>How does the router decide, and how do we know when it routed wrongly?</div>
+</section>
+
+<h2 id="s6"><span class="n">6</span>What independent benchmarks say</h2>
+<p>Three independent studies from 2025 compared plain RAG and graph methods under one protocol. They agree on the main pattern. Graph methods help on multi-hop, comparison, time-based and summary questions. Plain RAG ties or wins on single facts. The matrix below collects the results by question type.</p>
+
+<figure class="figure" id="fig-matrix">
+  <p class="ftitle">Each method fits some question types and not others</p>
+  <p class="fsub">Rows are methods. Columns are question types from <a href="#s1">section 1</a>, plus two design needs. The marks are my reading of the cited results, not a single measurement.</p>
+  <div class="tbl"><table class="cov">
+    <thead><tr><th>Method</th><th>Single fact (A)</th><th>Multi-hop (B)</th><th>Whole corpus (C)</th><th>Rule and count (D)</th><th>Says "no answer"</th><th>Low cost</th></tr></thead>
+    <tbody>
+      <tr><th scope="row"><a href="#s2">Plain RAG</a></th><td><span class="mk full" title="Fits"></span></td><td><span class="mk part" title="Partly"></span></td><td><span class="mk none" title="Poor fit"></span></td><td><span class="mk none" title="Poor fit"></span></td><td><span class="mk full" title="Fits"></span></td><td><span class="mk full" title="Fits"></span></td></tr>
+      <tr><th scope="row"><a href="#s3">GraphRAG local</a></th><td><span class="mk part" title="Partly"></span></td><td><span class="mk full" title="Fits"></span></td><td><span class="mk part" title="Partly"></span></td><td><span class="mk none" title="Poor fit"></span></td><td><span class="mk part" title="Partly"></span></td><td><span class="mk part" title="Partly"></span></td></tr>
+      <tr><th scope="row"><a href="#s3">GraphRAG global</a></th><td><span class="mk none" title="Poor fit"></span></td><td><span class="mk part" title="Partly"></span></td><td><span class="mk full" title="Fits"></span></td><td><span class="mk none" title="Poor fit"></span></td><td><span class="mk none" title="Poor fit"></span></td><td><span class="mk none" title="Poor fit"></span></td></tr>
+      <tr><th scope="row"><a href="#m3">HippoRAG 2</a></th><td><span class="mk part" title="Partly"></span></td><td><span class="mk full" title="Fits"></span></td><td><span class="mk part" title="Partly"></span></td><td><span class="mk none" title="Poor fit"></span></td><td>not tested</td><td><span class="mk full" title="Fits"></span></td></tr>
+      <tr><th scope="row"><a href="#s4">KAG</a></th><td>not tested</td><td><span class="mk full" title="Fits"></span></td><td>not tested</td><td><span class="mk full" title="Fits"></span></td><td>not tested</td><td><span class="mk part" title="Partly"></span></td></tr>
+      <tr><th scope="row"><a href="#m5">Long context</a></th><td><span class="mk part" title="Partly"></span></td><td><span class="mk part" title="Partly"></span></td><td><span class="mk part" title="Partly"></span></td><td><span class="mk none" title="Poor fit"></span></td><td>not tested</td><td><span class="mk none" title="Poor fit"></span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="legend"><span><span class="mk full"></span> Fits</span><span><span class="mk part"></span> Partly</span><span><span class="mk none"></span> Poor fit</span><span>KAG marks are self-reported</span></p>
+  <figcaption>No row has every mark filled. The KAG row has the most gaps, because no outside study tested it.</figcaption>
+</figure>
+
+<h3>Plain RAG wins on single facts</h3>
+<p>Under a unified protocol, plain RAG scored 64.78 F1 on single-hop questions from Natural Questions, against 63.01 for GraphRAG local search (<a href="https://arxiv.org/html/2502.11371">Han and colleagues</a>, Feb 2025). On one multi-hop benchmark, GraphRAG local search won time-based questions, 50.60 against 30.70. Plain RAG won inference questions and questions with no answer. A benchmark by Xiang and colleagues found the same split. On a corpus of novels, GraphRAG beat RAG on complex reasoning, 50.93 against 42.93, but not on simple fact retrieval. On a medical corpus, RAG with reranking won complex reasoning, 58.64 against 47.04 (<a href="https://arxiv.org/html/2506.05690">Xiang and colleagues</a>, Jun 2025).</p>
+
+<h3>Graph methods help, but often by little</h3>
+<p>A third benchmark used 1,018 college-level questions. There, the graph methods beat simple keyword search (BM25) by less than two accuracy points, and three of nine fell below it (<a href="https://arxiv.org/html/2506.02404v3">Xiao and colleagues</a>, Jun 2025). A study of 12 graph methods in one framework found that methods that drop the text chunks and keep only the graph often perform poorly (<a href="https://arxiv.org/html/2503.04338v2">Zhou and colleagues</a>, Mar 2025). Structure helps most when it sits next to the text, not in place of it.</p>
+
+<h3>LLM judges inflate many published wins</h3>
+<p>Many graph papers report win rates from an LLM judge. Judges prefer the answer they see first and the longer answer. One study found that position changed a method's win rate against itself by more than 30 points (<a href="https://arxiv.org/html/2506.06331v1">Zeng and colleagues</a>, May 2025). After the authors removed the biases, the gains of graph methods became much more moderate or vanished. When a paper reports only LLM-judged win rates, treat its gains as an upper bound.</p>
+
+<h3>Test on your own questions</h3>
+<p>The benchmarks disagree in detail because their corpora and questions differ. The useful habit is to build a set of your own test questions, labeled by shape (A, B, C, D, and no-answer), with checked answers. Score exact answers where you can. Where you need an LLM judge, swap the answer order and average both runs.</p>
+
+<h2 id="s7"><span class="n">7</span>How graph-based systems fail in production</h2>
+<p>The benchmarks measure clean datasets. Production adds messy names, daily updates and access rules. These are the failures that the sources document.</p>
+
+<h3>The extracted graph misses entities</h3>
+<p>In one independent study, only about 65% of answer entities appeared in the knowledge graphs that an LLM extracted (<a href="https://arxiv.org/html/2502.11371">Han and colleagues</a>, Feb 2025). A search over the graph alone cannot find the rest. On single-hop questions, a triplet-only graph method scored 34.28 F1, against 64.78 for plain RAG. Better extraction models raised accuracy on one benchmark from 71.17 to 75.08, so graph quality is a lever.</p>
+
+<h3>The same thing appears under many names</h3>
+<p>LLM-built graphs hold duplicates such as "LLM", "LLMs" and "Large Language Models". Entity resolution, the work of matching these names to one entity, removed about 40% of entities in one study and still improved answers (<a href="https://arxiv.org/html/2510.14271v1">Zheng and colleagues</a>, Oct 2025). In the supplier example, this is the difference between one Acme Logistics and three.</p>
+
+<h3>Updates create duplicates and stale facts</h3>
+<p>A batch pipeline matches names only inside each new batch. A practitioner describes how a new spelling of a company name becomes a separate node, cut off from the original node with its 847 links (<a href="https://dev.to/hannune/incremental-graph-updates-for-corporate-knowledge-graphs-three-problems-batch-pipelines-cant-solve-2phm">DEV Community</a>, 2025). Old facts also stay next to new ones, such as two head-office addresses, unless each fact carries the dates when it was true. The post describes the problem and its remedies, not a measured study.</p>
+
+<h3>Summaries can leak restricted content</h3>
+<p>Community summaries combine entities from many documents. One course page says that Microsoft GraphRAG 2.x has no built-in role-based access control for communities. So a summary can carry facts from a restricted document to a user without access (<a href="https://theneuralbase.com/graphrag/learn/advanced/access-control-for-communities/">The Neural Base</a>, Apr 2026). This source has no named author and no measurements, but the mechanism follows from how summaries are built. Plain RAG can filter chunks by permission before the prompt. A summary has no single owner to filter on.</p>
+
+<h3>Confident answers to questions with no answer</h3>
+<p>Global search answered questions that had no answer in the corpus. It scored 19.27 on those questions, against 96.01 for plain RAG (<a href="https://arxiv.org/html/2502.11371">Han and colleagues</a>, Feb 2025). For a compliance tool, a confident wrong answer costs more than "I do not know".</p>
+
+<h3>Build time at company scale</h3>
+<p>SAP estimated the cost to build a graph with GPT-4o for one company corpus. It came to about 800,000 API calls and 65.7 days in series (<a href="https://arxiv.org/html/2507.03226v2">Min and colleagues</a>, Aug 2025). A graph built with a classic dependency parser, with no LLM, reached 94% of the quality of the GPT-4o graph. The cheap graph is often good enough.</p>
+
+<h2 id="s8"><span class="n">8</span>What the structured methods depend on</h2>
+<p>GraphRAG and KAG share one dependency: they are only as good as their entities, relations and rules. Section <a href="#s7">7</a> shows what goes wrong when an LLM extracts them and nobody checks the result. This section gives my view on that dependency, and the evidence on both sides.</p>
+<p>In my view, curated identities, definitions and rules are a design input that the structured methods depend on. They are worth the cost only where the work needs exact identity, joins or rules. By curated, I mean that people own them: one ID per supplier, one definition of "payment term", one written policy. This view is narrower than the claim I started with. I first thought that the knowledge layer is the lasting asset whichever method sits on top. The research did not support that broad form.</p>
+
+<h3>Evidence for the view</h3>
+<p>Automatic extraction loses about a third of answer entities, and entity resolution and better extraction both raise accuracy (sections <a href="#s7">7</a> and <a href="#s6">6</a>). KAG's results, where they exist, come from a schema-first design. Vendors that sell semantic layers report large gains on questions over tables. The vendor data.world reported that GPT-4 answered insurance questions with 16% accuracy on raw SQL and 54% over a knowledge graph (<a href="https://arxiv.org/abs/2311.07509">data.world</a>, Nov 2023). With ontology-based query checks and an LLM step that rewrites bad queries, accuracy rose to 72% (<a href="https://arxiv.org/abs/2405.11706">data.world</a>, May 2024). The vendor Cube reported that a 4 KB hand-written semantic document raised text-to-SQL accuracy by 17 to 23 points across three models (<a href="https://arxiv.org/pdf/2604.25149">Cube</a>, Apr 2026).</p>
+<p>These vendor results are about questions over database tables, not over text. I include them because question D in a real company often spans both. All three vendors sell in the same market as my employer.</p>
+
+<h3>Evidence against the view</h3>
+<p>Curation costs people's time, and KAG's own paper says that the manual work costs a lot (<a href="#s4-5">4.5</a>).</p>
+<p>Newer models close part of the gap. The vendor dbt Labs reran the same insurance benchmark. Plain text-to-SQL rose from 32.7% to 64.5% by 2026 (<a href="https://docs.getdbt.com/blog/semantic-layer-vs-text-to-sql-2026">dbt Labs</a>, Apr 2026). On questions that the semantic layer covered, it scored 100%, against 51-63% for text-to-SQL. But on questions that needed joins outside the layer, the layer scored 0% and one text-to-SQL model scored 100%. A curated layer is exact inside its scope and blind outside it.</p>
+<p>Cheap structure is often enough. LazyGraphRAG and SAP's parser-built graph avoid most LLM costs (<a href="#m1">5.1</a> and <a href="#s7">section 7</a>). Graph methods beat keyword search by less than two points on one large benchmark (<a href="#s6">section 6</a>). If the questions are mostly lookups, curation buys little.</p>
+
+<h3>What follows for the design</h3>
+<p>The view leads to a modest rule. Curate the few entity types and rules that your multi-hop and rule-bound questions touch, and leave the rest to extraction or to plain RAG. In the supplier example, that means one owned list of suppliers with their parent companies and countries, and the payment policy written as a rule. It does not mean an ontology of the whole company.</p>
+
+<h2 id="s9"><span class="n">9</span>Match the method to the design</h2>
+<p>The table maps each design need to the method that fits it and the risk to watch. Read it from the need, not from the method.</p>
+
+<div class="tbl"><table>
+  <thead><tr><th>If the design needs</th><th>Start with</th><th>Watch for</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">Fast, cheap lookups over changing documents (A)</th><td><a href="#s2">Plain RAG</a> with a keyword index and a reranker</td><td>The right chunk ranked too low, facts lost in long prompts</td></tr>
+    <tr><th scope="row">Occasional multi-hop questions (B)</th><td><a href="#m4">Iterative retrieval</a> or <a href="#m3">HippoRAG 2</a></td><td>Many LLM calls per question, or small gains over dense search</td></tr>
+    <tr><th scope="row">Frequent multi-hop questions over named entities (B)</th><td><a href="#s3">GraphRAG local search</a> with entity resolution</td><td>Duplicate and missing entities, update cost</td></tr>
+    <tr><th scope="row">Themes across a large corpus (C)</th><td><a href="#s3">GraphRAG global</a> or <a href="#m1">LazyGraphRAG</a></td><td>Query cost, answers to questions with no answer, leaks across permissions</td></tr>
+    <tr><th scope="row">Rules, counts and an audit trail (D)</th><td><a href="#s4">KAG</a> or a semantic layer over structured data</td><td>Schema upkeep, silent omissions, questions outside the schema</td></tr>
+    <tr><th scope="row">A small, fixed corpus</th><td><a href="#m5">Long context</a> or <a href="#m6">CAG</a></td><td>Cost per question, quality loss at long lengths</td></tr>
+    <tr><th scope="row">A mix of question shapes</th><td><a href="#m7">Routing</a> between plain RAG and one structured method</td><td>Two indexes to keep current, wrong routes</td></tr>
+  </tbody>
+</table></div>
+
+<h3>A staged path</h3>
+<p>I think four stages work best. Each one starts only when the previous one shows a gap.</p>
+<ol class="plain">
+  <li>Build plain RAG with a keyword index and a reranker. Write a test set of real questions, labeled by shape, with checked answers.</li>
+  <li>Score the test set by shape. If lookups pass and other shapes fail, find out which shape fails and how often users ask it.</li>
+  <li>Add one structured method for the failing shape only. Route the other questions to plain RAG.</li>
+  <li>Curate the entity types and rules that the structured method touches, and assign an owner to each one.</li>
+</ol>
+<p>The order matters because the cost rises at each stage. A team that starts at stage 4 pays for curation too early. It does not yet know which questions need it.</p>
+<p>A team that never leaves stage 1 keeps receiving wrong answers to questions B, C and D. It may not notice, because the answers sound right.</p>
+
+<section class="appendix">
+<h2 id="assumptions"><span class="n">A</span>Assumptions and open questions</h2>
+<p class="srcnote">These statements are my view or my framing. No source on this page proves them. Each one is marked in the text.</p>
+<ul class="plain">
+  <li>Curated identities, definitions and rules are worth their cost only where the work needs exact identity, joins or rules (<a href="#s8">section 8</a>). This is my view, softened after the research.</li>
+  <li>I invented the supplier example and its four questions to teach the shapes (<a href="#s1">section 1</a>). Real question mixes differ by company.</li>
+  <li>The positions on the map and the marks in the matrix are my judgment from the cited numbers (<a href="#fig-map">the map</a> and <a href="#fig-matrix">the matrix</a>).</li>
+  <li>The staged path in <a href="#s9">section 9</a> is my proposal. No source tested it end to end.</li>
+  <li>Open question: does KAG hold its results in an independent benchmark? None includes it yet.</li>
+  <li>Open question: what does agentic retrieval cost per question at scale? I found no independent numbers.</li>
+  <li>Open question: how do teams keep access rules intact in graph summaries? The only source is a course page.</li>
+</ul>
+
+<h2 id="apx-b"><span class="n">B</span>Sources</h2>
+<p class="srcnote">Primary sources where possible. Vendor sources carry the mark (vendor). Undated pages show the month I read them. The knowledge bundle in <code>__work/knowledge/</code> records each source and claim.</p>
+<ul class="ref">
+  <li><a href="https://arxiv.org/abs/2005.11401">Lewis and colleagues, Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</a>, May 2020.</li>
+  <li><a href="https://arxiv.org/html/2312.10997">Gao and colleagues, Retrieval-Augmented Generation for Large Language Models: A Survey</a>, Dec 2023.</li>
+  <li><a href="https://arxiv.org/html/2307.03172">Liu and colleagues, Lost in the Middle</a>, Jul 2023.</li>
+  <li><a href="https://arxiv.org/html/2401.15391">Tang and Yang, MultiHop-RAG</a>, Jan 2024.</li>
+  <li><a href="https://arxiv.org/html/2407.16833">Li and colleagues, Retrieval Augmented Generation or Long-Context LLMs?</a>, Jul 2024.</li>
+  <li><a href="https://arxiv.org/html/2409.01666">Yu and colleagues, In Defense of RAG in the Era of Long-Context Language Models</a>, Sep 2024.</li>
+  <li><a href="https://arxiv.org/html/2412.15605">Chan and colleagues, Cache-Augmented Generation</a>, Dec 2024.</li>
+  <li><a href="https://www.databricks.com/blog/long-context-rag-performance-llms">Databricks, Long Context RAG Performance of LLMs</a>, Aug 2024 (vendor).</li>
+  <li><a href="https://arxiv.org/html/2406.13121">Lee and colleagues, LOFT: Can Long-Context Language Models Subsume Retrieval?</a>, Jun 2024.</li>
+  <li><a href="https://arxiv.org/abs/2212.10509">Trivedi and colleagues, Interleaving Retrieval with Chain-of-Thought Reasoning (IRCoT)</a>, Dec 2022.</li>
+  <li><a href="https://arxiv.org/html/2502.11371">Han and colleagues, RAG vs. GraphRAG: A Systematic Evaluation</a>, Feb 2025.</li>
+  <li><a href="https://arxiv.org/html/2506.05690">Xiang and colleagues, When to Use Graphs in RAG (GraphRAG-Bench)</a>, Jun 2025.</li>
+  <li><a href="https://arxiv.org/html/2506.06331v1">Zeng and colleagues, How Significant Are the Real Performance Gains? An Unbiased Evaluation of GraphRAG</a>, May 2025.</li>
+  <li><a href="https://arxiv.org/html/2503.04338v2">Zhou and colleagues, In-depth Analysis of Graph-based RAG in a Unified Framework</a>, Mar 2025.</li>
+  <li><a href="https://arxiv.org/html/2404.16130v2">Edge and colleagues, From Local to Global: A GraphRAG Approach to Query-Focused Summarization</a>, Apr 2024.</li>
+  <li><a href="https://www.microsoft.com/en-us/research/blog/graphrag-unlocking-llm-discovery-on-narrative-private-data/">Microsoft Research, GraphRAG: Unlocking LLM discovery on narrative private data</a>, Feb 2024.</li>
+  <li><a href="https://microsoft.github.io/graphrag/">GraphRAG documentation</a>, read Nov 2026.</li>
+  <li><a href="https://microsoft.github.io/graphrag/query/global_search/">GraphRAG documentation, Global Search</a>, read Nov 2026.</li>
+  <li><a href="https://www.microsoft.com/en-us/research/blog/introducing-drift-search-combining-global-and-local-search-methods-to-improve-quality-and-efficiency/">Microsoft Research, Introducing DRIFT Search</a>, Oct 2024.</li>
+  <li><a href="https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/graphrag-costs-explained-what-you-need-to-know/4207978">Microsoft Tech Community, GraphRAG Costs Explained</a>, Aug 2024 (vendor).</li>
+  <li><a href="https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost/">Microsoft Research, LazyGraphRAG</a>, Nov 2024.</li>
+  <li><a href="https://arxiv.org/html/2410.05779v3">Guo and colleagues, LightRAG</a>, Oct 2024.</li>
+  <li><a href="https://arxiv.org/abs/2405.14831">Gutiérrez and colleagues, HippoRAG</a>, May 2024.</li>
+  <li><a href="https://arxiv.org/html/2502.14802v2">Gutiérrez and colleagues, From RAG to Memory (HippoRAG 2)</a>, Feb 2025.</li>
+  <li><a href="https://arxiv.org/html/2409.13731v3">Liang and colleagues (Ant Group), KAG: Boosting LLMs in Professional Domains via Knowledge Augmented Generation</a>, Sep 2024.</li>
+  <li><a href="https://openspg.github.io/v2/blog/recent_posts/release_notes/0.7">OpenSPG, KAG v0.7 release notes</a>, Apr 2025.</li>
+  <li><a href="https://arxiv.org/html/2506.17728v3">Ant Group, KAG-Thinker</a>, Jun 2025.</li>
+  <li><a href="https://ceur-ws.org/Vol-4085/paper11.pdf">Yaman and colleagues, an evaluation of OpenSPG for root-cause analysis (ISWC 2025)</a>, Nov 2025.</li>
+  <li><a href="https://arxiv.org/html/2506.02404v3">Xiao and colleagues, GraphRAG-Bench</a>, Jun 2025.</li>
+  <li><a href="https://arxiv.org/html/2510.14271v1">Zheng and colleagues, Deg-Rag: denoising knowledge graphs for graph RAG</a>, Oct 2025.</li>
+  <li><a href="https://dev.to/hannune/incremental-graph-updates-for-corporate-knowledge-graphs-three-problems-batch-pipelines-cant-solve-2phm">Kim, Incremental graph updates for corporate knowledge graphs (DEV Community)</a>, 2025.</li>
+  <li><a href="https://arxiv.org/html/2507.03226v2">Min and colleagues (SAP), GraphRAG for enterprise code migration</a>, Aug 2025.</li>
+  <li><a href="https://theneuralbase.com/graphrag/learn/advanced/access-control-for-communities/">The Neural Base, Access control for GraphRAG communities</a>, Apr 2026.</li>
+  <li><a href="https://arxiv.org/abs/2311.07509">Sequeda, Allemang and Jacob (data.world), A Benchmark to Understand the Role of Knowledge Graphs on LLM Accuracy</a>, Nov 2023 (vendor).</li>
+  <li><a href="https://arxiv.org/abs/2405.11706">Allemang and Sequeda (data.world), Increasing the LLM Accuracy with Ontologies</a>, May 2024 (vendor).</li>
+  <li><a href="https://docs.getdbt.com/blog/semantic-layer-vs-text-to-sql-2026">dbt Labs, Semantic layer vs text-to-SQL, 2026 rerun</a>, Apr 2026 (vendor).</li>
+  <li><a href="https://arxiv.org/pdf/2604.25149">Rumiantsau and Fokeev (Cube), a semantic document for text-to-SQL</a>, Apr 2026 (vendor).</li>
+</ul>
+</section>
+
+<footer>
+  <p class="updated">Last updated 24 November 2026. The long-context results in <a href="#m5">5.5</a> and the token costs in <a href="#s3-4">3.4</a> will age first, because each model release changes them.</p>
+  <p>RAG, GraphRAG and KAG: which retrieval method fits which work · CTO's Desk · 24 November 2026</p>
+</footer>
+</main>
+</div>
+
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.toc a.t'));
+  var targets=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1));});
+  function onScroll(){
+    var idx=-1;
+    for(var i=0;i<targets.length;i++){ if(targets[i] && targets[i].getBoundingClientRect().top<=90) idx=i; }
+    links.forEach(function(a,i){a.classList.toggle('active',i===idx);});
+  }
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+})();
+</script>
+<script>
+(function(){
+  var sb=document.getElementById('sidebar'), btn=sb&&sb.querySelector('.toc-toggle'), cur=document.getElementById('tocCurrent');
+  if(!btn) return;
+  function set(open){ sb.classList.toggle('open',open); btn.setAttribute('aria-expanded',open?'true':'false'); }
+  btn.addEventListener('click',function(){ set(!sb.classList.contains('open')); });
+  sb.querySelectorAll('.toc a').forEach(function(a){ a.addEventListener('click',function(){ set(false); }); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && sb.classList.contains('open')){ set(false); btn.focus(); }});
+  function label(){
+    var a=sb.querySelector('.toc a.t.active'); if(!cur) return;
+    if(!a){ cur.textContent=''; return; }
+    var k=a.querySelector('.k'), kt=k?k.textContent.trim():'';
+    var t=a.textContent.trim(); if(kt && t.indexOf(kt)===0) t=t.slice(kt.length).trim();
+    cur.textContent=kt?kt+' · '+t:t;
+  }
+  window.addEventListener('scroll',label,{passive:true}); label();
+})();
+</script>
+<script>
+(function(){
+  var D = {
+    1: ["Plain RAG", "Fits lookups", "Chunks, embeddings and a top-k search. The cheapest to build and to run. It misses links between documents and the view of the whole corpus.", "#s2"],
+    2: ["5.6 Cache-augmented generation", "Fits small, fixed knowledge", "Loads every document into the context once and reuses the cached state. It works only while everything fits in the window.", "#m6"],
+    3: ["5.4 Iterative and agentic retrieval", "Fits rare multi-hop questions", "The model searches, reasons one step and searches again. It needs no graph, but each question costs several LLM calls.", "#m4"],
+    4: ["5.5 Long context", "Fits small corpora", "The model reads everything in one prompt. With enough budget it beats RAG on average, but it costs the most per question and fails on SQL-like tasks.", "#m5"],
+    5: ["5.3 HippoRAG 2", "Fits multi-hop at low cost", "An LLM-built graph ranked with Personalized PageRank. It answers in about a second and keeps simple lookups, with a small gain over strong dense search.", "#m3"],
+    6: ["5.1 LazyGraphRAG", "Fits exploration on a budget", "A concept graph built with no LLM, at 0.1% of GraphRAG's indexing cost, as Microsoft reports. No independent test yet.", "#m1"],
+    7: ["3.2 GraphRAG local search", "Fits multi-hop over entities", "Starts from the entities in the question and reads their neighbors and text. Much cheaper than global search.", "#s3-2"],
+    8: ["3.2 DRIFT search", "Fits local questions that need context", "Reads community reports first, then runs follow-up questions through local search.", "#s3-2"],
+    9: ["5.2 LightRAG", "Claims ahead of evidence", "Two levels of keyword search over an LLM-built graph, with incremental updates. Independent tests measured far more tokens and far lower accuracy than the paper claims.", "#m2"],
+    10: ["3.2 GraphRAG global search", "Fits whole-corpus questions", "Map-reduce over community summaries. It answers theme questions that RAG cannot, at hundreds of thousands of tokens per question.", "#s3-2"],
+    11: ["4 KAG", "Fits rule-bound work", "A schema, a mutual index between graph and text, and a solver that plans logical steps. Strong results, all self-reported by Ant Group.", "#s4"]
+  };
+  var panel = document.getElementById('panel');
+  if (!panel) return;
+  if (window.matchMedia && window.matchMedia('(hover: none)').matches) {
+    var h = document.getElementById('hintText');
+    if (h) h.textContent = h.textContent.replace(/^Select/, 'Tap');
+  }
+  var dots = [].slice.call(document.querySelectorAll('#map .dot'));
+  function show(k){
+    var d = D[k]; if (!d) return;
+    dots.forEach(function(g){ g.classList.toggle('sel', g.getAttribute('data-k') === String(k)); });
+    panel.innerHTML = '<span class="lbl"></span><p></p><p><a></a></p>';
+    panel.querySelector('.lbl').textContent = d[0] + ' · ' + d[1];
+    panel.querySelector('p').textContent = d[2];
+    var a = panel.querySelector('a'); a.href = d[3]; a.textContent = 'Read the full section';
+  }
+  dots.forEach(function(g){
+    g.addEventListener('click', function(){ show(g.getAttribute('data-k')); });
+    g.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(g.getAttribute('data-k')); }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
