@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>11 · Data Vault: the core</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="11">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part II · Chapter 11</div>
+<h1>Data Vault: the core</h1>
+<p class="glance"><i><span>Origin</span>Dan Linstedt, about 2000, version 2.0 about 2013</i><i><span>Shape</span>hubs, links, satellites</i><i><span>Best at</span>change and audit</i><i><span>Costs</span>many tables, hard to query directly</i></p>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s11-1">The idea: separate keys, relationships, and descriptions, and keep everything</a></li>
+    <li><a href="#s11-2">Hubs, and how to choose business keys</a></li>
+    <li><a href="#s11-3">Links, and why every link is many-to-many</a></li>
+    <li><a href="#s11-4">Satellites, change detection, and how to split them</a></li>
+    <li><a href="#s11-5">Hash keys and hash diffs</a></li>
+    <li><a href="#s11-6">The stage layer, parallel loads, late data, and reloads</a></li>
+    <li><a href="#s11-8">Why the raw vault is hard to query</a></li>
+    <li><a href="#s11-10">Strengths and limits of the raw vault on the twelve stress tests</a></li>
+  </ul>
+</div>
+
+<p>By June 2025, Lantern's warehouse team had rebuilt the customer dimension three times. The first rebuild added the store POS and its phone numbers. The second added Happy Tails, with its own customer IDs. The third undid a matching rule that had merged Maria with her sister. Each rebuild meant new match logic, new surrogate keys, and a reload of every fact that pointed at customers.</p>
+<p>Data Vault starts from a different rule: load first, decide later. It stores what each source said, under the source's own keys, and leaves matching and business rules to a separate layer. This chapter builds the core of a Data Vault for Lantern, the raw vault. <a href="12-data-vault-advanced.html">Chapter 12</a> adds the special tables and the layers on top that make a vault usable.</p>
+
+<h2 id="s11-1"><span class="num">11.1</span>The idea</h2>
+<p>Dan Linstedt designed Data Vault in the 1990s and released it around 2000. The first public article series ran in <a href="https://tdan.com/?p=5054">TDAN.com from July 2002</a>. Data Vault 2.0, around 2013, added hash keys, a standard loading method, and rules for the layers above the core. The standard reference is <a href="https://www.sciencedirect.com/book/9780128025109/building-a-scalable-data-warehouse-with-data-vault-2-0">Building a Scalable Data Warehouse with Data Vault 2.0</a> by Linstedt and Michael Olschimke, published in 2015.</p>
+<p>The design starts from what changes least. A business key, such as a customer ID or a SKU, almost never changes. A relationship between keys, such as "this pet belongs to this customer", changes sometimes. Descriptive values, such as an address or a pet's weight, change often. Data Vault gives each of these its own kind of table.</p>
+<p>A <em class="term">hub</em> holds the unique business keys of one business concept: customers, pets, products, employees. A <em class="term">link</em> holds a relationship between two or more hubs: pet and owner, order and customer, sale line and lot. A <em class="term">satellite</em> holds the descriptive values of one hub or one link, with their full history. Figure 11.1 splits one CRM row and one web order into these three kinds.</p>
+<figure class="diag" id="fig-11-1">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A CRM customer row splits into a customer hub and a CRM satellite. A web order splits into an order hub, an order satellite and an order-customer link that joins the two hubs.">
+  <defs><marker id="m111" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <text x="24" y="30" font-size="12" class="mono t-s" letter-spacing="1.4">SOURCE ROWS</text>
+  <text x="320" y="30" font-size="12" class="mono t-s" letter-spacing="1.4">RAW VAULT</text>
+  <g font-size="13">
+    <rect x="24" y="50" width="220" height="84" rx="7" class="bx-n"/>
+    <text x="36" y="70" font-weight="600">CRM.customer</text>
+    <text x="36" y="90" font-size="11" class="mono t-s">C-000123</text>
+    <text x="36" y="106" font-size="11" class="mono t-s">Maria Lopez, 14 Elm St</text>
+    <text x="36" y="122" font-size="11" class="mono t-s">maria.lopez@example.com</text>
+    <rect x="24" y="210" width="220" height="84" rx="7" class="bx-n"/>
+    <text x="36" y="230" font-weight="600">WEBSHOP.web_order</text>
+    <text x="36" y="250" font-size="11" class="mono t-s">W-77810, by email</text>
+    <text x="36" y="266" font-size="11" class="mono t-s">2025-05-20, 64.99 USD</text>
+    <text x="36" y="282" font-size="11" class="mono t-s">status: shipped</text>
+    <rect x="320" y="52" width="160" height="54" rx="7" class="bx-hub"/><text x="334" y="74" font-weight="600" class="t-hub">hub_customer</text><text x="334" y="92" font-size="11" class="mono t-s">customer_bk</text>
+    <rect x="530" y="52" width="166" height="54" rx="7" class="bx-sat"/><text x="544" y="74" font-weight="600" class="t-sat">sat_customer_crm</text><text x="544" y="92" font-size="11" class="mono t-s">name, email, address</text>
+    <rect x="320" y="150" width="160" height="54" rx="7" class="bx-link"/><text x="334" y="172" font-weight="600" class="t-link">link_order_customer</text><text x="334" y="190" font-size="11" class="mono t-s">two hash keys</text>
+    <rect x="320" y="248" width="160" height="54" rx="7" class="bx-hub"/><text x="334" y="270" font-weight="600" class="t-hub">hub_order</text><text x="334" y="288" font-size="11" class="mono t-s">order_bk</text>
+    <rect x="530" y="248" width="166" height="54" rx="7" class="bx-sat"/><text x="544" y="270" font-weight="600" class="t-sat">sat_order_web</text><text x="544" y="288" font-size="11" class="mono t-s">date, amount, status</text>
+  </g>
+  <line class="ln" x1="244" y1="80" x2="316" y2="79" marker-end="url(#m111)"/>
+  <path class="ln" d="M244,112 C380,124 480,122 526,96" marker-end="url(#m111)"/>
+  <line class="ln" x1="244" y1="250" x2="316" y2="273" marker-end="url(#m111)"/>
+  <path class="ln" d="M244,236 C280,236 290,190 316,182" marker-end="url(#m111)"/>
+  <path class="ln" d="M244,280 C300,330 500,330 526,292" marker-end="url(#m111)"/>
+  <line class="ln" x1="480" y1="79" x2="526" y2="79" marker-end="url(#m111)"/>
+  <line class="ln" x1="480" y1="275" x2="526" y2="275" marker-end="url(#m111)"/>
+  <line class="ln" x1="400" y1="150" x2="400" y2="110" marker-end="url(#m111)"/>
+  <line class="ln" x1="400" y1="204" x2="400" y2="244" marker-end="url(#m111)"/>
+</svg>
+</div>
+<figcaption><b>Figure 11.1</b> One CRM row and one web order, split into the three kinds of table. Keys go to hubs, the relationship goes to a link, and every descriptive value goes to a satellite that hangs off its parent.</figcaption>
+</figure>
+<p>The diagrams in this chapter use the usual Data Vault colours: <span class="ent e-hub">hub</span> <span class="ent e-link">link</span> <span class="ent e-sat">satellite</span>. Four rules hold for every table in a raw vault.</p>
+<p><strong>Rows are only inserted.</strong> A normal load never updates or deletes a row. A change becomes a new row.</p>
+<p><strong>Every row says when it arrived.</strong> The column <code>load_dts</code> holds record time, as defined in <a href="../part-1/04-time-and-history.html#s4-1">section 4.1</a>: when the warehouse received the row.</p>
+<p><strong>Every row says where it came from.</strong> The column <code>record_source</code> names the source system and table, such as <code>CRM.customer</code>.</p>
+<p><strong>The raw vault applies no business rules.</strong> It stores what the source sent, with only technical changes, such as data types and hash keys. Rules such as "these two keys are one person" or "an active customer bought in the last 6 months" live in the business vault (<a href="12-data-vault-advanced.html">chapter 12</a>).</p>
+<p>The fourth rule is the main difference from the patterns in chapters 6 to 10. Each of them decides meaning on the way in. Data Vault stores first and decides later, so a decision can change without losing the data behind it.</p>
+<aside class="box">
+<h4>Data Vault 2.0 and 2.1</h4>
+<p>This book teaches Data Vault 2.0, the version that most published material describes. Around December 2023, Dan Linstedt introduced Data Vault 2.1, and the <a href="https://datavaultalliance.com/">Data Vault Alliance</a> launched a certified practitioner course for it in August 2024. Published accounts describe 2.1 as a wider scope rather than a change to the core: it adds guidance for data lakes, data mesh, unstructured data, and streaming. Hubs, links, and satellites work as this chapter describes. A later edition of this guide will add the details of what changed.</p>
+</aside>
+
+<h2 id="s11-2"><span class="num">11.2</span>Hubs</h2>
+<p>A hub is the simplest table in the vault. It has one row per unique business key, and it never changes that row. It has four columns.</p>
+<p class="tblcap"><b>Table 11.1</b> The customer hub</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>hk_customer</th><th>customer_bk</th><th>load_dts</th><th>record_source</th></tr></thead>
+<tbody>
+<tr><td>9f1c…a07e</td><td>C-000123</td><td>2024-11-03 02:00</td><td>CRM.customer</td></tr>
+<tr><td>4b27…19d2</td><td>MARIA.LOPEZ@EXAMPLE.COM</td><td>2024-11-03 02:00</td><td>WEBSHOP.web_account</td></tr>
+<tr><td>e803…5c41</td><td>HT-88412</td><td>2025-06-01 02:00</td><td>HAPPYTAILS.ht_customer</td></tr>
+</tbody></table></div>
+<p><code>customer_bk</code> is the business key, cleaned only for format. <code>hk_customer</code> is a hash of that key, explained in <a href="#s11-5">section 11.5</a>. <code>load_dts</code> is the first time the warehouse saw the key, and <code>record_source</code> is where it saw it first.</p>
+<p>Maria appears three times, under her CRM ID, her email, and her Happy Tails ID. The hub does not try to decide that these are one person. It stores every key that the business uses to identify a customer. This is called <em class="term">passive integration</em>: keys for the same concept land in the same hub, before anyone matches them. The match comes later, in a same-as link (<a href="12-data-vault-advanced.html#s12-4">section 12.4</a>).</p>
+<p>Choosing the business key is the most important design decision in a vault. A good business key is unique, stable, and used by people: a SKU, an employee ID, a lot number. A row number from a source database is a poor key, because it means nothing to the business and changes when the vendor migrates the system. When two sources use keys that can collide, such as two systems that both number customers from 1, the hub adds a <em class="term">business key collision code</em>, a short code for the key's origin, to the key before hashing.</p>
+<p class="lstcap"><b>Listing 11.1</b> Load the customer hub from the CRM stage</p>
+<pre class="sql"><span class="k">INSERT INTO</span> hub_customer (hk_customer, customer_bk, load_dts, record_source)
+<span class="k">SELECT DISTINCT</span>
+       s.hk_customer,                     <span class="c">-- computed once, in the stage layer</span><i class="ann">1</i>
+       s.customer_bk,                     <span class="c">-- trimmed, upper-case business key</span>
+       s.load_dts,                        <span class="c">-- one timestamp for the whole batch</span>
+       s.record_source                    <span class="c">-- 'CRM.customer'</span>
+<span class="k">FROM</span>   stg_crm_customer s
+<span class="k">WHERE</span>  <span class="k">NOT EXISTS</span> (<span class="k">SELECT</span> 1 <span class="k">FROM</span> hub_customer h      <span class="c">-- only keys the hub has never seen</span><i class="ann">2</i>
+                   <span class="k">WHERE</span> h.hk_customer = s.hk_customer);</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>The hub does not compute the hash. The stage layer does it once, so every table that uses this key gets exactly the same value.</span></li>
+<li><i class="ann">2</i><span>A key that already exists is skipped. Running the load twice adds nothing, which makes reloads safe.</span></li>
+</ol>
+<p>Every hub, from every source, loads with this same statement shape. Only the stage table and the column names change. That repetition is why teams generate vault loads from metadata, as <a href="12-data-vault-advanced.html#s12-12">section 12.12</a> describes.</p>
+
+<h2 id="s11-3"><span class="num">11.3</span>Links</h2>
+<p>A link records that two or more business keys were seen together. It holds the hash keys of the hubs it joins, plus its own hash key, a load time, and a record source.</p>
+<p class="tblcap"><b>Table 11.2</b> The pet owner link</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>hk_pet_owner</th><th>hk_pet</th><th>hk_customer</th><th>load_dts</th><th>record_source</th></tr></thead>
+<tbody>
+<tr><td>71aa…0c3e</td><td>BISCUIT…</td><td>9f1c…a07e</td><td>2024-11-03 02:00</td><td>CRM.pet</td></tr>
+<tr><td>0d6e…b812</td><td>PEPPER…</td><td>9f1c…a07e</td><td>2024-11-03 02:00</td><td>CRM.pet</td></tr>
+<tr class="new"><td>c42f…7a90</td><td>BISCUIT…</td><td>3a9b…de11</td><td>2025-09-12 02:00</td><td>CRM.pet_owner</td></tr>
+</tbody></table></div>
+<p>Every link is many-to-many by design. In the CRM, a pet had one owner, stored as a column on the pet row. The link never assumed that. When the CRM starts to allow two owners in September 2025, Sam becomes a second owner of Biscuit, and the vault receives one new row, shown in green. No table changes shape and no query breaks. Compare that with the star, which needed a bridge table and a change of grain (<a href="08-advanced-dimensional.html#s8-3">section 8.3</a>).</p>
+<p>Some links join more than two hubs. A sale line connects an order, a product, a lot, and a store. The four keys appear together in one source row and mean one event: this lot was sold in this order at this store. That is a <em class="term">unit of work</em>, and it belongs in one link, <code>link_sale_line</code>. Splitting it into four two-way links loses the fact that these four keys belong together. This link is what makes the recall trace in stress test 9 a short query.</p>
+<p class="lstcap"><b>Listing 11.2</b> Load the order-customer link from the web shop stage</p>
+<pre class="sql"><span class="k">INSERT INTO</span> link_order_customer
+       (hk_order_customer, hk_order, hk_customer, load_dts, record_source)
+<span class="k">SELECT DISTINCT</span>
+       s.hk_order_customer,               <span class="c">-- hash of BOTH business keys together</span><i class="ann">1</i>
+       s.hk_order,
+       s.hk_customer,                     <span class="c">-- hash of the email, the web shop's key</span>
+       s.load_dts,
+       s.record_source
+<span class="k">FROM</span>   stg_web_order s
+<span class="k">WHERE</span>  <span class="k">NOT EXISTS</span> (<span class="k">SELECT</span> 1 <span class="k">FROM</span> link_order_customer l
+                   <span class="k">WHERE</span> l.hk_order_customer = s.hk_order_customer);<i class="ann">2</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>The link's own key is a hash of the business keys it connects, in a fixed order, so the same pair always gets the same key.</span></li>
+<li><i class="ann">2</i><span>The link does not check that the hub rows exist yet. Hubs and links load in parallel, and both take their keys from the same stage.</span></li>
+</ol>
+<p>A link says that a relationship was seen. It does not say when the relationship ended. If Sam stops being Biscuit's owner, the link row stays. An effectivity satellite on the link records when the relationship is valid (<a href="12-data-vault-advanced.html#s12-2">section 12.2</a>).</p>
+
+<h2 id="s11-4"><span class="num">11.4</span>Satellites</h2>
+<p>A satellite holds the descriptive values of exactly one hub or one link. Each row is one version of those values, from one source, as of one load.</p>
+<p class="tblcap"><b>Table 11.3</b> The CRM customer satellite</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>hk_customer</th><th>load_dts</th><th>hash_diff</th><th>name</th><th>address</th><th>moved_on</th><th>record_source</th></tr></thead>
+<tbody>
+<tr><td>9f1c…a07e</td><td>2024-11-03 02:00</td><td>51e0…</td><td>Maria Lopez</td><td>14 Elm St, Oakland CA</td><td>2022-04-01</td><td>CRM.customer</td></tr>
+<tr><td>9f1c…a07e</td><td>2025-03-14 02:00</td><td>a7b3…</td><td>Maria Lopez</td><td>220 Bay Rd, San Jose CA</td><td>2025-03-10</td><td>CRM.customer</td></tr>
+<tr><td>9f1c…a07e</td><td>2025-08-05 02:00</td><td>2c94…</td><td>Maria Lopez</td><td>9 Pine Ave, Sacramento CA</td><td>2025-08-02</td><td>CRM.customer</td></tr>
+</tbody></table></div>
+<p>The key of a satellite is the parent's hash key plus <code>load_dts</code>. The <code>hash_diff</code> is one hash of all the descriptive columns. The loader compares it with the newest row for the same parent. If the hash is the same, nothing changed and nothing is inserted. If it differs, a new row goes in.</p>
+<p>Look at the two date columns. <code>load_dts</code> is record time: the warehouse learned about the San Jose move on 14 March. <code>moved_on</code> is business time: Maria moved on 10 March. The satellite keeps both clocks, one as a system column and one as data. That is what makes the audit test answerable later.</p>
+
+<div class="lab" id="lab-sat">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Load Maria's CRM row five times</h4><span class="lab-tip">press Next load</span></div>
+  <p>Each load brings that night's CRM row for Maria. The loader hashes the descriptive columns and compares the hash with the newest satellite row.</p>
+  <div class="row"><button class="btn primary" type="button" id="satNext">Next load</button><button class="btn" type="button" id="satReset">Reset</button></div>
+  <div class="tbl" style="margin:0"><table class="rows" id="satIncoming"></table></div>
+  <div class="tbl" style="margin:0"><table class="rows" id="satTable"></table></div>
+  <div class="log" id="satLog" aria-live="polite"></div>
+</div>
+<p>Load 4 holds the lesson. A CRM cleanup changed "Rd" to "Road". Nothing changed in the real world, but the hash changed, so the satellite stored a new row. The raw vault records what the source said, including cosmetic changes. Whether "Road" and "Rd" are the same address is a business rule, and it belongs in the business vault.</p>
+<p class="lstcap"><b>Listing 11.3</b> Load the CRM satellite with change detection</p>
+<pre class="sql"><span class="k">INSERT INTO</span> sat_customer_crm
+       (hk_customer, load_dts, hash_diff, name, email, address, moved_on, record_source)
+<span class="k">SELECT</span> s.hk_customer, s.load_dts, s.hash_diff,
+       s.name, s.email, s.address, s.moved_on, s.record_source
+<span class="k">FROM</span>   stg_crm_customer s
+<span class="k">LEFT JOIN</span> (
+       <span class="k">SELECT</span> hk_customer, hash_diff,
+              <span class="k">ROW_NUMBER</span>() <span class="k">OVER</span> (<span class="k">PARTITION BY</span> hk_customer
+                                 <span class="k">ORDER BY</span> load_dts <span class="k">DESC</span>) <span class="k">AS</span> rn<i class="ann">1</i>
+       <span class="k">FROM</span>   sat_customer_crm
+     ) cur
+  <span class="k">ON</span>   cur.hk_customer = s.hk_customer
+ <span class="k">AND</span>   cur.rn = 1                                 <span class="c">-- the newest row only</span>
+<span class="k">WHERE</span>  cur.hk_customer <span class="k">IS NULL</span>                    <span class="c">-- a customer the satellite has never seen</span><i class="ann">2</i>
+   <span class="k">OR</span>  cur.hash_diff &lt;&gt; s.hash_diff;              <span class="c">-- or a real change in any column</span></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span><code>ROW_NUMBER</code> numbers each customer's rows from newest (1) to oldest. Comparing with the newest row only means that a value which changes back, such as a second move to an old address, is still stored.</span></li>
+<li><i class="ann">2</i><span>A new parent, or a different hash, inserts a row. A reload of the same extract inserts nothing.</span></li>
+</ol>
+
+<h3 id="s11-4-1"><span class="num">11.4.1</span>How to split satellites</h3>
+<p>One hub usually has several satellites. There are four reasons to split them.</p>
+<p><strong>By source.</strong> The CRM and the web shop each send their own idea of Maria's address. Each source gets its own satellite, <code>sat_customer_crm</code> and <code>sat_customer_web</code>. Neither overwrites the other, and a new source adds a satellite without touching the old ones.</p>
+<p><strong>By rate of change.</strong> Biscuit's breed and birth date never change. His weight changes at every grooming visit. If both sit in one satellite, every weigh-in copies the breed and birth date again. So the vault uses <code>sat_pet_profile</code> for slow values and <code>sat_pet_weight</code> for fast ones.</p>
+<p><strong>By sensitivity.</strong> Name, email, and phone are personal data under the CCPA, and pay rates are confidential. Putting them in their own satellites lets you restrict access to one table, and later delete from one table. <a href="12-data-vault-advanced.html#s12-11">Section 12.11</a> depends on this split.</p>
+<p><strong>By meaning.</strong> A pay rate and a home address both describe an employee, but they answer different questions and come from different screens of the HR system. Separate satellites keep each one small and easy to reason about.</p>
+
+<h2 id="s11-5"><span class="num">11.5</span>Hash keys and hash diffs</h2>
+<p>A hash function turns any text into a fixed-length string. The same input always gives the same output, and a tiny change in the input gives a completely different output. Data Vault 2.0 uses a hash of the business key as the key of each hub, link, and satellite.</p>
+<p>The reason is load independence. In a star, a fact load must look up surrogate keys in the dimensions first, so dimensions load before facts (<a href="07-dimensional-modeling.html#s7-5">section 7.5</a>). A hash key needs no lookup. The stage layer computes <code>hk_customer</code> from the email, and the hub, the link, and the satellite all use the same value, at the same time. Two loads in different places also produce the same key for the same customer.</p>
+<p>The hash only works if every loader prepares the input in exactly the same way. A hash of "Maria.Lopez@Example.com " with a trailing space differs from a hash of "maria.lopez@example.com". So every team fixes a normalization recipe and uses it everywhere.</p>
+<ol class="plain">
+<li>Cast the value to text.</li>
+<li>Trim leading and trailing spaces.</li>
+<li>Convert to upper case, unless case matters for this key.</li>
+<li>Replace a null with a fixed placeholder, so that a null never hashes like a real value.</li>
+<li>For a key with several parts, join the parts with a delimiter that never appears in the data, such as <code>||</code>, in a fixed column order.</li>
+<li>Hash with one algorithm, and store the result in one format, such as lower-case hexadecimal.</li>
+</ol>
+<p>A <em class="term">hash diff</em> applies the same recipe to all the descriptive columns of a satellite, in a fixed order. That is how Listing 11.3 detects a change with one comparison instead of one per column.</p>
+
+<div class="lab" id="lab-hash">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Hash a business key</h4><span class="lab-tip">type, then change the switches</span></div>
+  <p>Type a key. Turn the trim and upper-case steps on and off, and watch the hash change. This exercise uses SHA-256, which your browser computes.</p>
+  <div class="row">
+    <input type="text" id="hashIn" value="Maria.Lopez@Example.com " aria-label="Business key" spellcheck="false">
+    <label><input type="checkbox" id="hashTrim" checked> Trim</label>
+    <label><input type="checkbox" id="hashUpper" checked> Upper case</label>
+  </div>
+  <div class="row"><button class="btn" type="button" data-hashset="Maria.Lopez@Example.com ">Web shop value</button><button class="btn" type="button" data-hashset="maria.lopez@example.com">CRM value</button></div>
+  <div class="steps-out" id="hashSteps" aria-live="polite"></div>
+</div>
+<p>With both switches on, the web shop value and the CRM value give the same hash. Turn either switch off and they differ, and the vault treats them as two customers. This is the most common hash bug in real projects: two loaders with two slightly different recipes.</p>
+<p><strong>Collisions are possible but very unlikely.</strong> A collision is two different keys with the same hash. MD5, a common choice, gives 128-bit hashes, and a collision becomes likely only around 2<sup>64</sup> keys, far more than any warehouse stores. Teams that want more margin use SHA-1 or SHA-256, at the cost of longer keys. Some teams also run a check for two business keys with the same hash in each hub.</p>
+<p><strong>ANSI SQL has no hash function.</strong> Every engine has one, with its own name. The listings in this book assume that the stage layer already computed the hashes, so the SQL stays portable.</p>
+<p><strong>Hashes are not the only option.</strong> The original Data Vault used sequence numbers as keys, which need lookups like a star. Hash keys are long, and joins on long strings cost more than joins on integers. Some teams use the business key itself as the hub key, when the engine joins fast enough on text. The rule that matters is the same in every case: a key that every loader can compute on its own.</p>
+<div class="callout warning"><span class="lbl">Warning</span>A hash of a personal value, such as an email, is still personal data. Anyone with a list of emails can hash them and look for matches. <a href="12-data-vault-advanced.html#s12-11">Section 12.11</a> shows how to protect personal business keys.</div>
+
+<h2 id="s11-6"><span class="num">11.6</span>The stage layer and loading</h2>
+<p>A Data Vault load has two steps. First, the <em class="term">stage layer</em> reads each source extract. It adds <code>load_dts</code> and <code>record_source</code>, cleans business keys, and computes every hash key and hash diff. Second, every hub, link, and satellite loads from the stage, all in parallel. No table waits for another.</p>
+
+<div class="lab" id="lab-load">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Run the nightly load</h4><span class="lab-tip">run, then add Happy Tails</span></div>
+  <p>Durations are illustrative, in minutes. Each bar is one job, placed on a shared clock.</p>
+  <div class="row"><button class="btn primary" type="button" id="loadRun">Run both loads</button><label><input type="checkbox" id="loadHT"> Include Happy Tails</label></div>
+  <div class="timeline" id="loadTimeline"></div>
+  <div class="log" id="loadLog" aria-live="polite"></div>
+</div>
+<p>The vault load is shorter, but speed is not the main point. A new source adds jobs that run in parallel, instead of a matching step in front of everything. A source that fails one night also fails alone. The other sources still load, and the failed one catches up the next night.</p>
+<p><strong>Late data needs nothing special.</strong> On Friday, a store's Tuesday sales arrive. They get Friday's <code>load_dts</code> and carry Tuesday's sale date as data. Reports that use the business date see them in Tuesday. Audits that use record time see that they arrived on Friday.</p>
+<p><strong>Corrections are new rows.</strong> On 18 July, a manager corrects Dev's 8 July shift, after the 15 July payroll ran. The original punch stays in the satellite. The corrected one arrives as a new row with a later <code>load_dts</code>. The retro pay calculation can show both versions: what payroll used, and what was true.</p>
+<p><strong>Reloads are safe.</strong> Every load statement in this chapter is <em class="term">idempotent</em>: running it twice gives the same result as running it once. Hubs and links skip keys that exist. Satellites skip rows whose hash diff did not change. When a load fails halfway, you run it again, and nothing duplicates.</p>
+
+<h2 id="s11-7"><span class="num">11.7</span>The Lantern raw vault</h2>
+<p>Figure 11.2 shows the core of Lantern's raw vault after every source has arrived. Hubs are in the middle row, links between the hubs they join, and satellites hang off their parents.</p>
+<figure class="diag" id="fig-11-2">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The Lantern raw vault: hubs for customer, pet, order, product, lot, store and employee; links for pet owner, order customer, sale line, grooming visit and employment; and satellites per source on each.">
+  <g font-size="12.5" text-anchor="middle">
+    <rect x="20" y="40" width="130" height="62" rx="7" class="bx-sat"/><text x="85" y="58" font-weight="600" class="t-sat">sat_customer_*</text><text x="85" y="75" font-size="10.5" class="t-s">crm, web, pos, ht</text><text x="85" y="91" font-size="10.5" class="t-s">sat_customer_pii</text>
+    <rect x="20" y="140" width="130" height="44" rx="7" class="bx-hub"/><text x="85" y="167" font-weight="600" class="t-hub">hub_customer</text>
+    <rect x="200" y="140" width="130" height="44" rx="7" class="bx-link"/><text x="265" y="167" font-weight="600" class="t-link">link_pet_owner</text>
+    <rect x="380" y="140" width="130" height="44" rx="7" class="bx-hub"/><text x="445" y="167" font-weight="600" class="t-hub">hub_pet</text>
+    <rect x="380" y="40" width="130" height="62" rx="7" class="bx-sat"/><text x="445" y="58" font-weight="600" class="t-sat">sat_pet_*</text><text x="445" y="75" font-size="10.5" class="t-s">profile (slow)</text><text x="445" y="91" font-size="10.5" class="t-s">weight (fast)</text>
+    <rect x="200" y="40" width="130" height="62" rx="7" class="bx-sat"/><text x="265" y="62" font-weight="600" class="t-sat">sat_pet_owner</text><text x="265" y="80" font-size="10.5" class="t-s">effectivity, ch. 12</text>
+    <rect x="20" y="230" width="130" height="44" rx="7" class="bx-link"/><text x="85" y="257" font-weight="600" class="t-link">link_order_cust</text>
+    <rect x="20" y="320" width="130" height="44" rx="7" class="bx-hub"/><text x="85" y="347" font-weight="600" class="t-hub">hub_order</text>
+    <rect x="20" y="400" width="130" height="50" rx="7" class="bx-sat"/><text x="85" y="421" font-weight="600" class="t-sat">sat_order_*</text><text x="85" y="438" font-size="10.5" class="t-s">web, pos, ht</text>
+    <rect x="200" y="320" width="130" height="44" rx="7" class="bx-link"/><text x="265" y="341" font-weight="600" class="t-link">link_sale_line</text><text x="265" y="356" font-size="10.5" class="t-s">order, product, lot, store</text>
+    <rect x="200" y="400" width="130" height="50" rx="7" class="bx-sat"/><text x="265" y="421" font-weight="600" class="t-sat">sat_sale_line</text><text x="265" y="438" font-size="10.5" class="t-s">qty, price</text>
+    <rect x="380" y="320" width="130" height="44" rx="7" class="bx-hub"/><text x="445" y="347" font-weight="600" class="t-hub">hub_product</text>
+    <rect x="380" y="400" width="130" height="50" rx="7" class="bx-hub"/><text x="445" y="429" font-weight="600" class="t-hub">hub_lot</text>
+    <rect x="380" y="230" width="130" height="44" rx="7" class="bx-link"/><text x="445" y="251" font-weight="600" class="t-link">link_groom_visit</text><text x="445" y="266" font-size="10.5" class="t-s">pet, employee, store</text>
+    <rect x="570" y="140" width="130" height="44" rx="7" class="bx-hub"/><text x="635" y="167" font-weight="600" class="t-hub">hub_employee</text>
+    <rect x="570" y="40" width="130" height="62" rx="7" class="bx-sat"/><text x="635" y="58" font-weight="600" class="t-sat">sat_employee_*</text><text x="635" y="75" font-size="10.5" class="t-s">hr, pay_rate</text><text x="635" y="91" font-size="10.5" class="t-s">pii</text>
+    <rect x="570" y="230" width="130" height="44" rx="7" class="bx-link"/><text x="635" y="251" font-weight="600" class="t-link">link_employment</text><text x="635" y="266" font-size="10.5" class="t-s">employee, store</text>
+    <rect x="570" y="320" width="130" height="44" rx="7" class="bx-hub"/><text x="635" y="347" font-weight="600" class="t-hub">hub_store</text>
+    <rect x="570" y="400" width="130" height="50" rx="7" class="bx-sat"/><text x="635" y="421" font-weight="600" class="t-sat">sat_timesheet</text><text x="635" y="438" font-size="10.5" class="t-s">on link_employment</text>
+  </g>
+  <g class="ln">
+    <line x1="85" y1="102" x2="85" y2="140"/>
+    <line x1="150" y1="162" x2="200" y2="162"/>
+    <line x1="330" y1="162" x2="380" y2="162"/>
+    <line x1="445" y1="102" x2="445" y2="140"/>
+    <line x1="265" y1="102" x2="265" y2="140"/>
+    <line x1="85" y1="184" x2="85" y2="230"/>
+    <line x1="85" y1="274" x2="85" y2="320"/>
+    <line x1="85" y1="364" x2="85" y2="400"/>
+    <line x1="150" y1="342" x2="200" y2="342"/>
+    <line x1="330" y1="342" x2="380" y2="342"/>
+    <line x1="265" y1="364" x2="265" y2="400"/>
+    <path d="M330,356 C360,380 360,425 380,425"/>
+    <path d="M300,320 C330,300 600,300 600,320"/>
+    <line x1="445" y1="184" x2="445" y2="230"/>
+    <path d="M510,252 C540,252 545,180 570,170"/>
+    <path d="M510,262 C545,262 560,330 570,336"/>
+    <line x1="635" y1="102" x2="635" y2="140"/>
+    <line x1="635" y1="184" x2="635" y2="230"/>
+    <line x1="635" y1="274" x2="635" y2="320"/>
+    <path d="M700,252 C716,252 716,425 700,425"/>
+  </g>
+</svg>
+</div>
+<figcaption><b>Figure 11.2</b> The Lantern raw vault. Each new source added satellites and rows, but none of them changed the shape of a hub or a link that already existed.</figcaption>
+</figure>
+<p>A few details matter later. <code>link_sale_line</code> joins four hubs, because a sale line is one unit of work. <code>sat_timesheet</code> hangs off <code>link_employment</code>, not off the employee, because hours belong to an employee at a store. Personal data sits in its own <code>_pii</code> satellites. And the vault has many more tables than a star: the sales star in chapter 7 had seven tables, and this part of the vault has about thirty.</p>
+
+<h2 id="s11-8"><span class="num">11.8</span>Querying the raw vault</h2>
+<p>The raw vault is built to absorb change, not to answer questions. Listing 11.4 asks for something simple: each customer's current name and loyalty tier, from the CRM and the web shop.</p>
+<p class="lstcap"><b>Listing 11.4</b> Current name and tier, read straight from the raw vault</p>
+<pre class="sql"><span class="k">SELECT</span> h.customer_bk, c.name, w.loyalty_tier
+<span class="k">FROM</span>   hub_customer h
+<span class="k">LEFT JOIN</span> (<span class="k">SELECT</span> hk_customer, name,
+                  <span class="k">ROW_NUMBER</span>() <span class="k">OVER</span> (<span class="k">PARTITION BY</span> hk_customer <span class="k">ORDER BY</span> load_dts <span class="k">DESC</span>) <span class="k">AS</span> rn
+           <span class="k">FROM</span> sat_customer_crm) c
+       <span class="k">ON</span> c.hk_customer = h.hk_customer <span class="k">AND</span> c.rn = 1<i class="ann">1</i>
+<span class="k">LEFT JOIN</span> (<span class="k">SELECT</span> hk_customer, loyalty_tier,
+                  <span class="k">ROW_NUMBER</span>() <span class="k">OVER</span> (<span class="k">PARTITION BY</span> hk_customer <span class="k">ORDER BY</span> load_dts <span class="k">DESC</span>) <span class="k">AS</span> rn
+           <span class="k">FROM</span> sat_customer_web) w
+       <span class="k">ON</span> w.hk_customer = h.hk_customer <span class="k">AND</span> w.rn = 1;<i class="ann">2</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>One window function per satellite, just to find the newest row.</span></li>
+<li><i class="ann">2</i><span>Maria still appears three times, once per hub key, because nothing has matched her keys yet. The CRM row has her name and no tier. The email row has her tier and no name.</span></li>
+</ol>
+<p>The query is long, slow on large satellites, and still wrong for most business questions, because the same person appears under several keys. A question "as of 1 June" needs a date filter inside every window. A revenue report needs links, sale-line satellites, and the same newest-row logic again. This is why the raw vault fails the fast query test on its own, and why <a href="12-data-vault-advanced.html">chapter 12</a> exists: same-as links match the keys, point-in-time tables remove the window functions, and information marts give analysts a star.</p>
+
+<h2 id="s11-9"><span class="num">11.9</span>Common mistakes</h2>
+<p><strong>Building a source vault.</strong> A team creates <code>hub_crm_customer</code>, <code>hub_web_account</code>, and <code>hub_ht_customer</code>, one hub per source table. The result is a copy of the sources with extra columns. Hubs belong to business concepts. Sources belong in satellites.</p>
+<p><strong>Choosing weak business keys.</strong> A hub keyed on a source row ID breaks when the vendor migrates the database and every ID changes. Spend design time on keys before tables. Ask the business what they type, say, and print.</p>
+<p><strong>One giant satellite per source table.</strong> A 200-column satellite that copies a source table stores a full row for every small change. Split by rate of change and by sensitivity.</p>
+<p><strong>Too many tiny satellites.</strong> The opposite mistake splits every column into its own satellite, which builds an anchor model (<a href="13-anchor.html">chapter 13</a>) without its tools. Split for a reason: source, rate, sensitivity, or meaning.</p>
+<p><strong>Links that copy foreign keys.</strong> Turning every source foreign key into a two-way link loses the unit of work. Model links from business events, not from source constraints.</p>
+<p><strong>Two hash recipes.</strong> One loader trims and another does not, and Maria becomes two customers. Put the recipe in one shared function, and test it.</p>
+
+<h2 id="s11-10"><span class="num">11.10</span>Strengths and limits</h2>
+<p>The raw vault is the most change-tolerant core in this book. A new source adds rows and satellites, and changes nothing that exists. Relationships are many-to-many from the start. Every row records when it arrived and where it came from, so the vault can show what it had on record on any date. Loads run in parallel, take late data and corrections as ordinary rows, and can run twice without harm.</p>
+<p>The raw vault alone is not usable by analysts. It has many tables, it needs newest-row logic for every question, and it does not yet say which keys are the same customer. It also has no place for business rules, so those still live in reports. And insert-only storage makes deletion of personal data harder than in any update-in-place model. The strip below scores the raw vault alone, with only this chapter's tables. <a href="12-data-vault-advanced.html">Chapter 12</a> adds the rest, and its strip shows the vault as teams deploy it.</p>
+<div class="strip-wrap" data-pattern="vault_raw"></div>
+<p><strong>Choose a Data Vault core</strong> when sources are many and keep changing, when audit and history matter, and when the team can automate loads and build the layers on top that chapter 12 describes.</p>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>Data Vault separates business keys (hubs), relationships (links), and descriptions (satellites), and stores what sources said before any business rule applies.</li>
+    <li>Every row is inserted once, with a load time and a record source.</li>
+    <li>Hubs hold every business key for one concept, from every source. Choosing good business keys is the main design decision.</li>
+    <li>Links are many-to-many by design and follow units of work, such as a sale line with its order, product, lot, and store.</li>
+    <li>Satellites keep history through hash diff change detection. Split them by source, rate of change, sensitivity, and meaning.</li>
+    <li>Hash keys let every table load in parallel without lookups, but only with one shared normalization recipe.</li>
+    <li>The stage layer computes keys once. Loads are parallel, idempotent, and handle late data and corrections as new rows.</li>
+    <li>The raw vault absorbs change well and is hard to query, which is why chapter 12 adds matching, query helpers, rules, and marts.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 11 · Data Vault: the core · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  function $(s) { return document.querySelector(s); }
+  function $$(s) { return [].slice.call(document.querySelectorAll(s)); }
+
+  /* satellite loads */
+  (function () {
+    var L = [
+      { d: "2024-11-03", addr: "14 Elm St, Oakland CA", moved: "2022-04-01", h: "51e0" },
+      { d: "2024-12-01", addr: "14 Elm St, Oakland CA", moved: "2022-04-01", h: "51e0" },
+      { d: "2025-03-14", addr: "220 Bay Rd, San Jose CA", moved: "2025-03-10", h: "a7b3" },
+      { d: "2025-05-02", addr: "220 Bay Road, San Jose CA", moved: "2025-03-10", h: "e41d" },
+      { d: "2025-08-05", addr: "9 Pine Ave, Sacramento CA", moved: "2025-08-02", h: "2c94" }
+    ];
+    var MSG = [
+      ["ok", "Load 1: the satellite has never seen this customer. Insert."],
+      ["m", "Load 2: same hash as the newest row (51e0). Nothing changed. Skip."],
+      ["ok", "Load 3: hash a7b3 differs from 51e0. Maria moved. Insert."],
+      ["warn", "Load 4: hash e41d differs from a7b3, but only Rd became Road. The raw vault stores it anyway. Insert."],
+      ["ok", "Load 5: hash 2c94 differs. Maria moved again. Insert."]
+    ];
+    var step = 0, sat = [], inc = $("#satIncoming"), tab = $("#satTable"), log = $("#satLog"), next = $("#satNext");
+    var HD = "<thead><tr><th>load_dts</th><th>hash_diff</th><th>address</th><th>moved_on</th></tr></thead>";
+    function cap(s) { return '<caption style="caption-side:top;text-align:left;padding:8px 12px;font-family:var(--sans);font-size:11px;letter-spacing:.08em;color:var(--ink-soft)">' + s + "</caption>"; }
+    function row(r, cls) { return "<tr" + (cls ? ' class="' + cls + '"' : "") + "><td>" + r.d + " 02:00</td><td>" + r.h + "…</td><td>" + esc(r.addr) + "</td><td>" + r.moved + "</td></tr>"; }
+    function paint(last, inserted) {
+      inc.innerHTML = cap("INCOMING FROM CRM") + HD + "<tbody>" + (last ? row(last, inserted ? "new" : "gone") : '<tr><td colspan="4">No load yet.</td></tr>') + "</tbody>";
+      tab.innerHTML = cap("SAT_CUSTOMER_CRM") + HD + "<tbody>" + (sat.length ? sat.map(function (r, i) { return row(r, inserted && i === sat.length - 1 ? "new" : ""); }).join("") : '<tr><td colspan="4">Empty.</td></tr>') + "</tbody>";
+    }
+    function reset() { step = 0; sat = []; paint(null); log.innerHTML = '<span class="m">Press Next load to run load 1 of 5.</span>'; next.textContent = "Next load"; }
+    next.addEventListener("click", function () {
+      if (step >= L.length) { reset(); return; }
+      var r = L[step], latest = sat[sat.length - 1], ins = !latest || latest.h !== r.h;
+      if (ins) sat.push(r);
+      paint(r, ins);
+      log.innerHTML = '<span class="' + MSG[step][0] + '">' + esc(MSG[step][1]) + '</span><br><span class="m">' + sat.length + " rows in the satellite after " + (step + 1) + " loads.</span>";
+      step++;
+      if (step >= L.length) next.textContent = "Start again";
+    });
+    $("#satReset").addEventListener("click", reset);
+    reset();
+  })();
+
+  /* hash */
+  (function () {
+    var inp = $("#hashIn"), tr = $("#hashTrim"), up = $("#hashUpper"), out = $("#hashSteps");
+    var CRM = "maria.lopez@example.com";
+    function show(s) { return '"' + esc(s).replace(/ /g, "·") + '"'; }
+    function norm(s) { s = String(s); if (tr.checked) s = s.trim(); if (up.checked) s = s.toUpperCase(); return s; }
+    function sha(s) {
+      if (!(window.crypto && crypto.subtle && window.TextEncoder)) return Promise.resolve(null);
+      return crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)).then(function (b) {
+        return [].slice.call(new Uint8Array(b)).map(function (x) { return ("0" + x.toString(16)).slice(-2); }).join("");
+      }).catch(function () { return null; });
+    }
+    var seq = 0;
+    function run() {
+      var my = ++seq, raw = inp.value, a = tr.checked ? raw.trim() : raw, b = up.checked ? a.toUpperCase() : a;
+      Promise.all([sha(b), sha(norm(CRM))]).then(function (h) {
+        if (my !== seq) return;
+        if (h[0] === null) { out.innerHTML = '<span class="k">note</span><span class="v">This browser view does not allow hashing. The steps above still apply.</span>'; return; }
+        var same = h[0] === h[1];
+        out.innerHTML =
+          '<span class="k">input</span><span class="v">' + show(raw) + "</span>" +
+          '<span class="k">trim</span><span class="v">' + (tr.checked ? show(a) : "skipped") + "</span>" +
+          '<span class="k">upper</span><span class="v">' + (up.checked ? show(b) : "skipped") + "</span>" +
+          '<span class="k">sha-256</span><span class="v">' + h[0] + "</span>" +
+          '<span class="k">vs CRM</span><span class="v" style="color:var(--' + (same ? "green-ink" : "red-ink") + ')">' + (same ? "Same hash as the CRM email with the same steps. One customer." : "Different hash from the CRM email with the same steps. The vault sees two customers.") + "</span>";
+      });
+    }
+    [inp, tr, up].forEach(function (el) { el.addEventListener("input", run); el.addEventListener("change", run); });
+    $$("[data-hashset]").forEach(function (b) { b.addEventListener("click", function () { inp.value = b.getAttribute("data-hashset"); run(); }); });
+    run();
+  })();
+
+  /* nightly load */
+  (function () {
+    var tl = $("#loadTimeline"), log = $("#loadLog"), ht = $("#loadHT");
+    function plan(x) {
+      return {
+        star: [["Star: stage", 0, 10], ["Star: match keys", 10, x ? 25 : 10], ["Star: dimensions", x ? 25 : 10, x ? 50 : 35], ["Star: facts", x ? 50 : 35, x ? 95 : 75]],
+        vault: [["Vault: stage", 0, x ? 12 : 10], ["Vault: hubs", x ? 12 : 10, x ? 27 : 25], ["Vault: links", x ? 12 : 10, x ? 32 : 30], ["Vault: satellites", x ? 12 : 10, x ? 42 : 40]]
+      };
+    }
+    function draw(animate) {
+      var p = plan(ht.checked), rows = p.star.concat(p.vault);
+      tl.innerHTML = rows.map(function (r, i) {
+        var w = Math.max(0, r[2] - r[1]), bg = i < 4 ? "var(--accent)" : "var(--hub)";
+        return "<span>" + esc(r[0]) + '</span><div class="tl">' + (w ? '<div class="blk" data-w="' + w + '" style="left:' + r[1] + "%;width:" + (animate ? 0 : w) + "%;background:" + bg + '">' + w + "m</div>" : '<span style="font-size:11px;color:var(--ink-soft);padding-left:6px">not needed</span>') + "</div>";
+      }).join("");
+      if (animate) requestAnimationFrame(function () { requestAnimationFrame(function () { $$("#loadTimeline .blk").forEach(function (b) { b.style.width = b.getAttribute("data-w") + "%"; }); }); });
+      log.innerHTML = '<span class="m">Star finishes at ' + p.star[3][2] + " minutes. Vault finishes at " + p.vault[3][2] + " minutes.</span><br>" + (ht.checked ? '<span class="warn">Happy Tails adds a key matching step in front of the star load and pushes every later step back.</span> <span class="ok">In the vault, it adds parallel jobs, and the night grows by 2 minutes.</span>' : '<span class="m">Tick Include Happy Tails to add the acquired chain as a new source.</span>');
+    }
+    $("#loadRun").addEventListener("click", function () { draw(true); });
+    ht.addEventListener("change", function () { draw(true); });
+    draw(false);
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>7 · Dimensional modeling: the star schema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="07">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+
+<main>
+<div class="ch-eyebrow">Part II · Chapter 7</div>
+<h1>Dimensional modeling: the star schema</h1>
+<p class="glance"><i><span>Origin</span>Ralph Kimball, 1990s</i><i><span>Shape</span>facts and dimensions</i><i><span>Best at</span>easy, fast queries</i><i><span>Costs</span>integration work up front</i></p>
+
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s7-1">Designing a star schema with the four-step process</a></li>
+    <li><a href="#s7-2">The four kinds of fact table, and which measures you can add up</a></li>
+    <li><a href="#s7-3">Dimensions, surrogate keys, and the date dimension</a></li>
+    <li><a href="#s7-5">Loading a star in the right order, with unknown and late members</a></li>
+    <li><a href="#s7-6">Querying a star, including two fact tables at once</a></li>
+    <li><a href="#s7-7">Conformed dimensions, the bus matrix, and galaxy schemas</a></li>
+    <li><a href="#s7-10">Strengths and limits on the twelve stress tests</a></li>
+  </ul>
+</div>
+
+<p>On Monday morning, Lantern's finance director sends one question to the data team: "How much dog food did we sell in each region last quarter, and how does that compare with grooming revenue in the same stores?" The data to answer it exists. Sales are in the store POS and the web shop. Grooming revenue is in the booking system. Regions are in a spreadsheet that the operations team maintains.</p>
+<p>Without a model, an analyst joins a dozen source tables, guesses which store code means what, and hopes that the two systems agree on what a quarter is. With a star schema, the same question is one short query that any analyst can read. The star schema is the most widely used analytical model for exactly this reason. It shapes data around the questions that people ask, not around the systems that produced it.</p>
+<p>This chapter builds Lantern's sales star from nothing. It starts with the design process, then covers the two table types, facts and dimensions, in detail. Then it loads the star, queries it, and connects it to other stars. Chapter 8 continues with the advanced techniques, such as slowly changing dimensions and bridge tables.</p>
+<div class="callout"><span class="lbl">Note</span>This chapter uses the Lantern Pet Supply case from <a href="../part-1/02-lantern-pet-supply.html">chapter 2</a>. You need only a short version here. Lantern is a US pet retailer with 85 stores, a web shop, and grooming salons in 40 stores. It sells about 25,000 products and takes about 40,000 orders a day. Customer data comes from a CRM, a web shop, and a store POS.</div>
+
+<h2 id="s7-1"><span class="num">7.1</span>The four-step design process</h2>
+<p>A star schema does not start from a source table. It starts from a business process: an activity that the company performs and measures. Ralph Kimball's method designs each star in four steps, always in the same order. Each step depends on the one before it.</p>
+<ol class="plain">
+<li><strong>Choose the business process.</strong> Pick one activity that produces measurements, such as taking an order, receiving stock, or completing a grooming appointment.</li>
+<li><strong>Declare the grain.</strong> Say in one sentence what one row of the fact table means.</li>
+<li><strong>Identify the dimensions.</strong> List the who, what, where, when, and how that describe each row at that grain.</li>
+<li><strong>Identify the facts.</strong> List the numeric measurements that belong to each row at that grain.</li>
+</ol>
+<p class="tblcap"><b>Table 7.1</b> The four steps, applied to Lantern's sales</p>
+<div class="tbl"><table>
+<thead><tr><th>Step</th><th>Decision for Lantern sales</th></tr></thead>
+<tbody>
+<tr><td>1 Business process</td><td>Selling products, in stores and on the web shop</td></tr>
+<tr><td>2 Grain</td><td>One row per order line: one product on one order</td></tr>
+<tr><td>3 Dimensions</td><td>Date, customer, product, store, promotion, payment type</td></tr>
+<tr><td>4 Facts</td><td>Quantity, gross amount, discount amount, net amount, cost amount</td></tr>
+</tbody></table></div>
+<p>The order matters. Teams that skip to step 4 and list every number they can find end up with a table whose rows mean different things. The grain in step 2 is the contract. Every dimension and every fact must be true for exactly one order line. A store's monthly rent, for example, fails that test. It is a real number, but it does not belong to one order line, so it belongs in a different star.</p>
+<div class="callout tip"><span class="lbl">Tip</span>Choose the most atomic grain that the source can give you. Lantern's POS records every order line, so the star stores every order line. You can always add up fine rows into coarse totals. You can never split a coarse total back into the rows it came from.</div>
+<aside class="box">
+<h4>Where the star came from</h4>
+<p>Ralph Kimball described dimensional modeling in <a href="https://www.wiley.com/en-us/The+Data+Warehouse+Toolkit%3A+The+Definitive+Guide+to+Dimensional+Modeling%2C+3rd+Edition-p-9781118530801">The Data Warehouse Toolkit</a>, first published in 1996. The third edition, written with Margy Ross, appeared in 2013. The Kimball Group also keeps a free <a href="https://www.kimballgroup.com/data-warehouse-business-intelligence-resources/kimball-techniques/dimensional-modeling-techniques/">list of dimensional modeling techniques</a>, with short definitions of every term in this chapter. The method was a reaction to large, normalized enterprise models that took years to deliver. Kimball's answer was to deliver one business process at a time, in a shape that business users could read.</p>
+</aside>
+
+<h2 id="s7-2"><span class="num">7.2</span>Facts</h2>
+<p>A <em class="term">fact</em> is a measurement of a business event. A fact table holds one row per event at the declared grain. Each row has a foreign key to every dimension, plus the measurements themselves. Fact tables are narrow and very long. Lantern's sales fact gains about 100,000 rows a day.</p>
+
+<h3 id="s7-2-1"><span class="num">7.2.1</span>Which measures you can add up</h3>
+<p>The most useful property of a fact is whether you can add it up. The answer decides which queries give correct totals. Measures fall into three groups.</p>
+<p class="tblcap"><b>Table 7.2</b> Additive, semi-additive, and non-additive measures at Lantern</p>
+<div class="tbl"><table>
+<thead><tr><th>Kind</th><th>Lantern example</th><th>Can you add it up?</th></tr></thead>
+<tbody>
+<tr><td>Additive</td><td>Net amount of an order line</td><td>Yes, across every dimension: products, stores, customers, and days</td></tr>
+<tr><td>Semi-additive</td><td>Quantity on hand in a store at closing time</td><td>Across stores and products, yes. Across days, no. Ten units on Monday and ten on Tuesday is not twenty units.</td></tr>
+<tr><td>Non-additive</td><td>Unit price, margin percentage</td><td>No. Adding two prices or two percentages gives a meaningless number.</td></tr>
+</tbody></table></div>
+<p>For a non-additive measure, store its additive parts instead. Lantern does not store a margin percentage on each sales row. It stores <code>net_amount</code> and <code>cost_amount</code>, which both add up. A query then computes the margin from the totals.</p>
+<div class="callout warning"><span class="lbl">Warning</span>Never average a stored percentage. If store A has a 50% margin on 10 USD of sales and store B has a 10% margin on 1,000 USD, the average of the two percentages is 30%. The true margin of the two stores together is about 10.4%. Add up the parts first, then divide.</div>
+
+<h3 id="s7-2-2"><span class="num">7.2.2</span>Four kinds of fact table</h3>
+<p>Business processes do not all behave the same way. Some are single events, some are states measured at intervals, and some are pipelines with several steps. Dimensional modeling has a fact table type for each.</p>
+<p><strong>A transaction fact table records one event per row.</strong> <code>fact_sales_line</code> is one. A row appears when the event happens and does not change afterwards. Most fact tables are of this type.</p>
+<p><strong>A periodic snapshot records a state at a regular interval.</strong> <code>fact_inventory_daily</code> holds one row per product, per store, per day, with the quantity on hand at closing time. A row exists even on a day with no sales, so you can see that a product sat on a shelf for a month. Its measures are often semi-additive.</p>
+<p><strong>An accumulating snapshot follows a process through its milestones.</strong> <code>fact_grooming_appointment</code> holds one row per appointment. The row has one date key per milestone: booked, checked in, groomed, and paid. The load updates the same row as each milestone happens. This is the one fact table type that updates rows, and it answers questions about lags, such as "how many days pass between booking and visit?"</p>
+<p><strong>A factless fact table records that something happened or was true, with no measure.</strong> <code>fact_promotion_coverage</code> holds one row per product, per store, per day that the product was on promotion. Joined with sales, it answers a question that the sales fact alone cannot: which products were on promotion but did not sell?</p>
+<p class="tblcap"><b>Table 7.3</b> The four kinds of fact table</p>
+<div class="tbl"><table>
+<thead><tr><th>Type</th><th>Lantern table</th><th>One row per</th><th>Rows change?</th></tr></thead>
+<tbody>
+<tr><td>Transaction</td><td><code>fact_sales_line</code></td><td>order line</td><td>No</td></tr>
+<tr><td>Periodic snapshot</td><td><code>fact_inventory_daily</code></td><td>product, store, day</td><td>No</td></tr>
+<tr><td>Accumulating snapshot</td><td><code>fact_grooming_appointment</code></td><td>appointment</td><td>Yes, at each milestone</td></tr>
+<tr><td>Factless</td><td><code>fact_promotion_coverage</code></td><td>product, store, promotion day</td><td>No</td></tr>
+</tbody></table></div>
+
+<div class="lab" id="lab-acc">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Follow one grooming appointment</h4><span class="lab-tip">press Next milestone</span></div>
+  <p>Maria books a grooming visit for her dog Biscuit. Each milestone updates the same row of <code>fact_grooming_appointment</code>. Watch the date keys fill in and the lag measures appear.</p>
+  <div class="row"><button class="btn primary" id="accNext" type="button">Next milestone</button><button class="btn" id="accReset" type="button">Reset</button></div>
+  <div class="tbl" style="margin:0"><table class="rows" id="accTable"></table></div>
+  <div class="log" id="accLog" aria-live="polite"></div>
+</div>
+<p>The exercise shows why an accumulating snapshot exists. With a transaction fact, the appointment is four separate events, and every lag question needs four self-joins. The snapshot keeps the whole pipeline on one row, so "average days from booking to visit, by store" is a simple average.</p>
+
+<h2 id="s7-3"><span class="num">7.3</span>Dimensions</h2>
+<p>A <em class="term">dimension</em> holds the context of the facts: everything a user filters, groups, or labels by. Where facts are narrow and long, dimensions are wide and short. Lantern's product dimension has about 25,000 rows and more than 40 columns.</p>
+
+<h3 id="s7-3-1"><span class="num">7.3.1</span>Wide, flat, and in plain words</h3>
+<p>A good dimension describes its subject in the words that users say. The source stores a category code such as <code>DOG_DRY</code>. The dimension stores "Dry dog food". It also stores the department, the brand, the pack size, the life stage ("Puppy", "Adult", "Senior"), and a flag for prescription diets. Each of these becomes a filter or a column header in a report, with no lookup table and no code book.</p>
+<p>A dimension also flattens hierarchies. A product belongs to a category, a category to a department. A store belongs to a district, a district to a region. In a star, every level of each hierarchy is a plain column on the dimension row. Repeating "Dog" on 6,000 product rows costs a little storage. It saves every user from learning the hierarchy.</p>
+
+<h3 id="s7-3-2"><span class="num">7.3.2</span>Surrogate keys</h3>
+<p>Every dimension row has a <em class="term">surrogate key</em>: an integer that the warehouse assigns and that means nothing outside it. Lantern's customer dimension keeps the CRM's <code>C-000123</code> as a normal column, but joins on <code>customer_key = 48211</code>. There are four reasons for this.</p>
+<p><strong>A dimension can hold several versions of one customer.</strong> When Maria moves, chapter 8 shows how the dimension adds a new row for her. Each version needs its own key, and a business key cannot do that.</p>
+<p><strong>Sources disagree about keys.</strong> The CRM, the web shop, and the POS each identify Maria differently. The surrogate key is one key for the matched person.</p>
+<p><strong>The warehouse needs rows that no source has.</strong> The "Unknown customer" row in <a href="#s7-3-4">section 7.3.4</a> needs a key.</p>
+<p><strong>Integer joins are small and fast.</strong> A fact table with 40 million rows a year carries six foreign keys on every row. Four-byte integers keep the table small.</p>
+
+<h3 id="s7-3-3"><span class="num">7.3.3</span>The date dimension</h3>
+<p>Almost every star has a date dimension, and it is the easiest one to build. It has one row per calendar day, created in advance for many years. Its key is often the date written as a number, such as <code>20250520</code>. That keeps the key readable and still an integer.</p>
+<p>Its value is in the columns. Lantern, like many US retailers, reports on a 4-5-4 fiscal calendar: each quarter has a 4-week month, a 5-week month, and a 4-week month, and the fiscal year starts in February. No analyst can compute that in a query. The date dimension stores it once.</p>
+<p class="lstcap"><b>Listing 7.1</b> The Lantern date dimension</p>
+<pre class="sql"><span class="k">CREATE TABLE</span> dim_date (
+  date_key          <span class="k">INTEGER</span>     <span class="k">PRIMARY KEY</span>,  <span class="c">-- 20250520</span><i class="ann">1</i>
+  calendar_date     <span class="k">DATE</span>        <span class="k">NOT NULL</span>,
+  day_name          <span class="k">VARCHAR</span>(9)  <span class="k">NOT NULL</span>,     <span class="c">-- 'Tuesday'</span>
+  is_weekend        <span class="k">BOOLEAN</span>     <span class="k">NOT NULL</span>,
+  is_us_holiday     <span class="k">BOOLEAN</span>     <span class="k">NOT NULL</span>,<i class="ann">2</i>
+  fiscal_year       <span class="k">INTEGER</span>     <span class="k">NOT NULL</span>,     <span class="c">-- starts in February</span><i class="ann">3</i>
+  fiscal_quarter    <span class="k">INTEGER</span>     <span class="k">NOT NULL</span>,
+  fiscal_month      <span class="k">INTEGER</span>     <span class="k">NOT NULL</span>,     <span class="c">-- 4-5-4 weeks</span>
+  fiscal_week       <span class="k">INTEGER</span>     <span class="k">NOT NULL</span>,
+  year_month        <span class="k">CHAR</span>(7)     <span class="k">NOT NULL</span>      <span class="c">-- '2025-05', for calendar reports</span>
+);</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>A readable integer key. You can still join on it and sort by it.</span></li>
+<li><i class="ann">2</i><span>Flags that no query can derive on its own. Holiday sales are a common Lantern question.</span></li>
+<li><i class="ann">3</i><span>The fiscal calendar lives here, once. Every star that joins <code>dim_date</code> gets the same quarters.</span></li>
+</ol>
+
+<h3 id="s7-3-4"><span class="num">7.3.4</span>Unknown and not-applicable rows</h3>
+<p>Some facts arrive without a value for a dimension. A cash sale at the till has no known customer. A web order has no store cashier. Leaving the foreign key empty looks simple. But a null key drops the row from any inner join, and the sales total silently shrinks.</p>
+<p>Instead, each dimension has a few special rows with fixed keys. Key <code>-1</code> is "Unknown", for a value that exists but is missing. Key <code>-2</code> is "Not applicable", for a value that cannot exist. Every fact row then has a real key for every dimension, and every report total adds up.</p>
+<div class="callout"><span class="lbl">Note</span>Keep the two special rows apart. "Unknown customer" on a store sale is a data quality problem that someone fixes. "Not applicable cashier" on a web order is correct. A report that mixes them hides the problem.</div>
+
+<h2 id="s7-4"><span class="num">7.4</span>The Lantern sales star</h2>
+<p>Figure 7.1 puts the pieces together. The fact table sits in the middle, and each dimension is one join away.</p>
+<figure class="diag" id="fig-7-1">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The sales fact table in the middle with date, customer, product, store, promotion and payment type dimensions around it, each one join away.">
+  <defs><marker id="m71" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <g font-size="13">
+    <rect x="262" y="118" width="196" height="124" rx="8" class="bx-a"/>
+    <text x="276" y="140" font-weight="600" class="t-a">fact_sales_line</text>
+    <text x="276" y="158" font-size="11" class="mono t-s">grain: one order line</text>
+    <text x="276" y="178" font-size="11" class="mono">6 dimension keys</text>
+    <text x="276" y="194" font-size="11" class="mono">order_id, lot_number</text>
+    <text x="276" y="210" font-size="11" class="mono">quantity, net_amount,</text>
+    <text x="276" y="226" font-size="11" class="mono">discount, cost_amount</text>
+    <rect x="24" y="24" width="190" height="58" rx="7" class="bx-n"/><text x="36" y="46" font-weight="600">dim_date</text><text x="36" y="64" font-size="11" class="mono t-s">day, fiscal week, holiday</text>
+    <rect x="24" y="151" width="190" height="58" rx="7" class="bx-n"/><text x="36" y="173" font-weight="600">dim_customer</text><text x="36" y="191" font-size="11" class="mono t-s">name, city, tier</text>
+    <rect x="24" y="278" width="190" height="58" rx="7" class="bx-n"/><text x="36" y="300" font-weight="600">dim_payment_type</text><text x="36" y="318" font-size="11" class="mono t-s">card, cash, gift card</text>
+    <rect x="506" y="24" width="190" height="58" rx="7" class="bx-n"/><text x="518" y="46" font-weight="600">dim_product</text><text x="518" y="64" font-size="11" class="mono t-s">category, department</text>
+    <rect x="506" y="151" width="190" height="58" rx="7" class="bx-n"/><text x="518" y="173" font-weight="600">dim_store</text><text x="518" y="191" font-size="11" class="mono t-s">district, region</text>
+    <rect x="506" y="278" width="190" height="58" rx="7" class="bx-n"/><text x="518" y="300" font-weight="600">dim_promotion</text><text x="518" y="318" font-size="11" class="mono t-s">code, channel</text>
+  </g>
+  <path class="ln" d="M262,140 C236,140 236,53 218,53" marker-end="url(#m71)"/>
+  <line class="ln" x1="262" y1="180" x2="218" y2="180" marker-end="url(#m71)"/>
+  <path class="ln" d="M262,220 C236,220 236,307 218,307" marker-end="url(#m71)"/>
+  <path class="ln" d="M458,140 C484,140 484,53 502,53" marker-end="url(#m71)"/>
+  <line class="ln" x1="458" y1="180" x2="502" y2="180" marker-end="url(#m71)"/>
+  <path class="ln" d="M458,220 C484,220 484,307 502,307" marker-end="url(#m71)"/>
+</svg>
+</div>
+<figcaption><b>Figure 7.1</b> The Lantern sales star. Every label that a user wants is one join from the fact, which is why the star is easy to read and fast to query.</figcaption>
+</figure>
+<p>Two columns in the fact are not keys to a dimension table. <code>order_id</code> is the order number, and <code>lot_number</code> is the production batch of the product. Each is a <em class="term">degenerate dimension</em>: a dimension value with no other attributes, so it lives on the fact row itself. You still group and filter by it. "Show every line of order W-77810" and "find every sale of lot L24-0917" both use these columns.</p>
+<p class="lstcap"><b>Listing 7.2</b> The sales fact and the customer dimension</p>
+<pre class="sql"><span class="k">CREATE TABLE</span> dim_customer (
+  customer_key     <span class="k">INTEGER</span>      <span class="k">PRIMARY KEY</span>,   <span class="c">-- surrogate key</span><i class="ann">1</i>
+  customer_id      <span class="k">VARCHAR</span>(20)  <span class="k">NOT NULL</span>,      <span class="c">-- 'C-000123', the business key</span>
+  customer_name    <span class="k">VARCHAR</span>(100),
+  city             <span class="k">VARCHAR</span>(60),
+  loyalty_tier     <span class="k">VARCHAR</span>(20),
+  customer_segment <span class="k">VARCHAR</span>(30)                 <span class="c">-- 'Multi-pet household'</span>
+);
+
+<span class="k">CREATE TABLE</span> fact_sales_line (
+  <span class="c">-- Grain: one row per order line.</span><i class="ann">2</i>
+  date_key         <span class="k">INTEGER</span>  <span class="k">NOT NULL REFERENCES</span> dim_date,
+  customer_key     <span class="k">INTEGER</span>  <span class="k">NOT NULL REFERENCES</span> dim_customer,<i class="ann">3</i>
+  product_key      <span class="k">INTEGER</span>  <span class="k">NOT NULL REFERENCES</span> dim_product,
+  store_key        <span class="k">INTEGER</span>  <span class="k">NOT NULL REFERENCES</span> dim_store,
+  promotion_key    <span class="k">INTEGER</span>  <span class="k">NOT NULL REFERENCES</span> dim_promotion,
+  payment_type_key <span class="k">INTEGER</span>  <span class="k">NOT NULL REFERENCES</span> dim_payment_type,
+  order_id         <span class="k">VARCHAR</span>(20) <span class="k">NOT NULL</span>,          <span class="c">-- degenerate dimension</span><i class="ann">4</i>
+  order_line_no    <span class="k">SMALLINT</span>    <span class="k">NOT NULL</span>,
+  lot_number       <span class="k">VARCHAR</span>(20),
+  quantity         <span class="k">INTEGER</span>       <span class="k">NOT NULL</span>,          <span class="c">-- additive</span><i class="ann">5</i>
+  net_amount       <span class="k">DECIMAL</span>(12,2) <span class="k">NOT NULL</span>,
+  discount_amount  <span class="k">DECIMAL</span>(12,2) <span class="k">NOT NULL</span>,
+  cost_amount      <span class="k">DECIMAL</span>(12,2) <span class="k">NOT NULL</span>,
+  <span class="k">PRIMARY KEY</span> (order_id, order_line_no)
+);</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>The surrogate key from <a href="#s7-3-2">section 7.3.2</a>. The CRM's key stays as an ordinary column for lookups.</span></li>
+<li><i class="ann">2</i><span>Write the grain as a comment on the table. It is the one rule that every load and every query depends on.</span></li>
+<li><i class="ann">3</i><span><code>NOT NULL</code> on every dimension key. Missing values point at the Unknown row instead.</span></li>
+<li><i class="ann">4</i><span>Degenerate dimensions: order number and lot number, stored on the fact.</span></li>
+<li><i class="ann">5</i><span>Only additive measures. Margin percentage is computed in queries from <code>net_amount</code> and <code>cost_amount</code>.</span></li>
+</ol>
+
+<h2 id="s7-5"><span class="num">7.5</span>Loading a star</h2>
+<p>A star loads in a fixed order: dimensions first, then facts. The reason is the surrogate key. A staged sales row from the POS carries the CRM customer ID, a SKU, and a store code. The fact row needs the matching surrogate keys. So the load must find each key in its dimension before it can insert the fact. Figure 7.2 shows the order.</p>
+<figure class="diag" id="fig-7-2">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Staged source rows load the dimensions first. The fact load then looks up each surrogate key in the dimensions, and only then inserts fact rows.">
+  <defs><marker id="m72" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <g font-size="13" text-anchor="middle">
+    <rect x="24" y="80" width="140" height="60" rx="7" class="bx-n"/><text x="94" y="106" font-weight="600">Staged rows</text><text x="94" y="124" font-size="11.5" class="t-s">business keys</text>
+    <rect x="204" y="80" width="150" height="60" rx="7" class="bx-w"/><text x="279" y="106" font-weight="600">1 Load dimensions</text><text x="279" y="124" font-size="11.5" class="t-s">new and changed rows</text>
+    <rect x="394" y="80" width="150" height="60" rx="7" class="bx-w"/><text x="469" y="106" font-weight="600">2 Look up keys</text><text x="469" y="124" font-size="11.5" class="t-s">business key to surrogate</text>
+    <rect x="584" y="80" width="112" height="60" rx="7" class="bx-a"/><text x="640" y="106" font-weight="600" class="t-a">3 Insert facts</text><text x="640" y="124" font-size="11.5" class="t-s">surrogate keys</text>
+    <rect x="369" y="168" width="200" height="34" rx="6" class="bx-am"/><text x="469" y="190" font-size="11.5" class="t-am">no match: Unknown or inferred</text>
+  </g>
+  <line class="ln" x1="164" y1="110" x2="200" y2="110" marker-end="url(#m72)"/>
+  <line class="ln" x1="354" y1="110" x2="390" y2="110" marker-end="url(#m72)"/>
+  <line class="ln" x1="544" y1="110" x2="580" y2="110" marker-end="url(#m72)"/>
+  <line class="ln-am" x1="469" y1="140" x2="469" y2="166"/>
+  <text x="24" y="40" font-size="12" class="mono t-s" letter-spacing="1.4">THE FACT LOAD WAITS FOR EVERY DIMENSION</text>
+</svg>
+</div>
+<figcaption><b>Figure 7.2</b> Load order in a star. The fact load cannot start until every dimension has its rows, and a staged row whose key has no match needs a rule.</figcaption>
+</figure>
+<p class="lstcap"><b>Listing 7.3</b> Load the sales fact with surrogate key lookups</p>
+<pre class="sql"><span class="k">INSERT INTO</span> fact_sales_line
+  (date_key, customer_key, product_key, store_key, promotion_key, payment_type_key,
+   order_id, order_line_no, lot_number, quantity, net_amount, discount_amount, cost_amount)
+<span class="k">SELECT</span>
+  <span class="k">CAST</span>(<span class="k">REPLACE</span>(<span class="k">CAST</span>(s.order_date <span class="k">AS VARCHAR</span>(10)), '-', '') <span class="k">AS INTEGER</span>),<i class="ann">1</i>
+  <span class="k">COALESCE</span>(c.customer_key, -1),                  <span class="c">-- Unknown customer</span><i class="ann">2</i>
+  <span class="k">COALESCE</span>(p.product_key,  -1),
+  <span class="k">COALESCE</span>(st.store_key,   -1),
+  <span class="k">COALESCE</span>(pr.promotion_key, -2),                 <span class="c">-- Not applicable: no promotion</span>
+  pt.payment_type_key,
+  s.order_id, s.order_line_no, s.lot_number,
+  s.quantity, s.net_amount, s.discount_amount, s.cost_amount
+<span class="k">FROM</span> stg_sales_line s
+<span class="k">LEFT JOIN</span> dim_customer c                             <span class="c">-- LEFT JOIN keeps unmatched rows</span><i class="ann">3</i>
+       <span class="k">ON</span>  c.customer_id = s.customer_id
+      <span class="k">AND</span> s.order_date <span class="k">BETWEEN</span> c.valid_from <span class="k">AND</span> c.valid_to  <span class="c">-- the version valid that day</span><i class="ann">4</i>
+<span class="k">LEFT JOIN</span> dim_product   p  <span class="k">ON</span> p.sku            = s.sku
+<span class="k">LEFT JOIN</span> dim_store     st <span class="k">ON</span> st.store_code     = s.store_code
+<span class="k">LEFT JOIN</span> dim_promotion pr <span class="k">ON</span> pr.promo_code     = s.promo_code
+<span class="k">JOIN</span>      dim_payment_type pt <span class="k">ON</span> pt.payment_code = s.payment_code;</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>Turns 2025-05-20 into the date key 20250520. Many teams look this up in <code>dim_date</code> instead, which also checks that the date exists.</span></li>
+<li><i class="ann">2</i><span>A staged row with no matching customer gets the Unknown row, so the sale still counts in every total.</span></li>
+<li><i class="ann">3</i><span>An inner join here would silently drop sales whose customer is missing. That is the most common star loading bug.</span></li>
+<li><i class="ann">4</i><span>Chapter 8 adds version dates to the customer dimension. Joining on the order date picks the version that was valid when the sale happened, which also handles facts that arrive late.</span></li>
+</ol>
+
+<h3 id="s7-5-1"><span class="num">7.5.1</span>Facts that arrive before their dimension</h3>
+<p>Listing 7.3 sends an unmatched customer to the Unknown row. That keeps totals right, but it loses the link. Suppose a new web shop customer places an order at 23:50, and the CRM sends that customer's record the next morning. Tonight's sale points at Unknown forever, unless someone fixes it.</p>
+<p>The common fix is an <em class="term">inferred member</em>. When the fact load finds a business key with no dimension row, it first inserts a placeholder row for that key, with the attributes set to "Pending". The fact gets the placeholder's real surrogate key. When the CRM record arrives, the dimension load fills in the placeholder row in place. The fact never changes, and from the next morning on, it points at a complete customer.</p>
+<p class="lstcap"><b>Listing 7.4</b> Insert inferred members before the fact load</p>
+<pre class="sql"><span class="k">INSERT INTO</span> dim_customer (customer_key, customer_id, customer_name, city, loyalty_tier, is_inferred)
+<span class="k">SELECT</span> <span class="k">NEXT VALUE FOR</span> seq_customer_key,
+       s.customer_id, 'Pending', 'Pending', 'Pending', <span class="k">TRUE</span><i class="ann">1</i>
+<span class="k">FROM</span>  (<span class="k">SELECT DISTINCT</span> customer_id <span class="k">FROM</span> stg_sales_line
+       <span class="k">WHERE</span> customer_id <span class="k">IS NOT NULL</span>) s                  <span class="c">-- a known ID that the dimension lacks</span><i class="ann">2</i>
+<span class="k">WHERE</span> <span class="k">NOT EXISTS</span> (<span class="k">SELECT</span> 1 <span class="k">FROM</span> dim_customer c
+                  <span class="k">WHERE</span> c.customer_id = s.customer_id);</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>The flag tells the next dimension load to overwrite this row when the real record arrives, instead of adding a new version.</span></li>
+<li><i class="ann">2</i><span>Only rows with an ID. A cash sale with no customer ID at all still goes to the Unknown row.</span></li>
+</ol>
+
+<div class="lab" id="lab-load">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Load tonight's sales</h4><span class="lab-tip">choose a rule, then run two nights</span></div>
+  <p>Tonight's stage has four sales lines. Customer <code>C-004410</code> signed up on the web shop an hour ago, and the CRM has not sent that record yet. Choose how the load handles the missing customer, then run both nights.</p>
+  <div class="row" role="group" aria-label="Rule for a missing customer">
+    <button class="btn on" type="button" data-rule="unknown">Use the Unknown row</button>
+    <button class="btn" type="button" data-rule="inferred">Use an inferred member</button>
+  </div>
+  <div class="row"><button class="btn primary" type="button" id="loadNight1">Run night 1</button><button class="btn" type="button" id="loadNight2">Run night 2</button><button class="btn" type="button" id="loadReset">Reset</button></div>
+  <div class="tbl" style="margin:0"><table class="rows" id="loadDim"></table></div>
+  <div class="tbl" style="margin:0"><table class="rows" id="loadFact"></table></div>
+  <div class="log" id="loadLog" aria-live="polite"></div>
+</div>
+<p>With the Unknown row, the sale is counted, but it never reaches the new customer's history. Marketing's "first purchase" report misses that person. With an inferred member, the second night completes the customer row and the old sale is already attached. The extra cost is one more insert before each fact load, and a flag on the dimension.</p>
+
+<h2 id="s7-6"><span class="num">7.6</span>Querying a star</h2>
+<p>The finance director's question from the start of the chapter now takes a few lines. Every query on a star has the same shape: start from the fact, join the dimensions that you filter or group by, and add up the measures.</p>
+<p class="lstcap"><b>Listing 7.5</b> Dog food sales by region, last fiscal quarter</p>
+<pre class="sql"><span class="k">SELECT</span> st.region,
+       <span class="k">SUM</span>(f.net_amount)                              <span class="k">AS</span> net_sales,
+       <span class="k">SUM</span>(f.net_amount - f.cost_amount)              <span class="k">AS</span> margin,
+       <span class="k">SUM</span>(f.net_amount - f.cost_amount)
+         / <span class="k">NULLIF</span>(<span class="k">SUM</span>(f.net_amount), 0)                <span class="k">AS</span> margin_pct<i class="ann">1</i>
+<span class="k">FROM</span>   fact_sales_line f
+<span class="k">JOIN</span>   dim_date    d  <span class="k">ON</span> d.date_key    = f.date_key
+<span class="k">JOIN</span>   dim_product p  <span class="k">ON</span> p.product_key = f.product_key
+<span class="k">JOIN</span>   dim_store   st <span class="k">ON</span> st.store_key  = f.store_key
+<span class="k">WHERE</span>  p.department    = 'Dog'                           <span class="c">-- a plain column, no hierarchy walk</span><i class="ann">2</i>
+<span class="k">AND</span>    p.category_group = 'Food'
+<span class="k">AND</span>    d.fiscal_year    = 2025 <span class="k">AND</span> d.fiscal_quarter = 2  <span class="c">-- the 4-5-4 quarter</span>
+<span class="k">GROUP BY</span> st.region;</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>The margin percentage is computed from the totals, as <a href="#s7-2-1">section 7.2.1</a> requires. <code>NULLIF</code> avoids a division by zero.</span></li>
+<li><i class="ann">2</i><span>Department and category group are flattened onto <code>dim_product</code>, so the filter needs no extra tables.</span></li>
+</ol>
+<p>Semi-additive facts need one extra step. To report average stock per month, you first add up stock across stores for each day, and then average those daily totals across the days of the month.</p>
+<p class="lstcap"><b>Listing 7.6</b> Average daily stock of dog food, by fiscal month</p>
+<pre class="sql"><span class="k">SELECT</span> fiscal_month, <span class="k">AVG</span>(units_on_hand) <span class="k">AS</span> avg_daily_units
+<span class="k">FROM</span> (
+  <span class="k">SELECT</span> d.fiscal_month, d.date_key,
+         <span class="k">SUM</span>(i.quantity_on_hand) <span class="k">AS</span> units_on_hand   <span class="c">-- add across stores and products</span><i class="ann">1</i>
+  <span class="k">FROM</span>   fact_inventory_daily i
+  <span class="k">JOIN</span>   dim_date    d <span class="k">ON</span> d.date_key    = i.date_key
+  <span class="k">JOIN</span>   dim_product p <span class="k">ON</span> p.product_key = i.product_key
+  <span class="k">WHERE</span>  p.department = 'Dog' <span class="k">AND</span> d.fiscal_year = 2025
+  <span class="k">GROUP BY</span> d.fiscal_month, d.date_key
+) daily
+<span class="k">GROUP BY</span> fiscal_month;                                <span class="c">-- then average across days</span><i class="ann">2</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>Stock adds up across stores and products on one day.</span></li>
+<li><i class="ann">2</i><span>Across days, it is averaged, not added. Adding it counts the same units once per day.</span></li>
+</ol>
+
+<h3 id="s7-6-1"><span class="num">7.6.1</span>Two fact tables in one question</h3>
+<p>The second half of the finance question compares sales with grooming revenue per store. Grooming revenue lives in a different fact table. The tempting query joins both fact tables to <code>dim_store</code> at once. It gives wrong numbers.</p>
+<div class="callout warning"><span class="lbl">Warning</span>Never join two fact tables directly, or through a shared dimension, in one <code>FROM</code> clause. Each store has thousands of sales rows and hundreds of grooming rows. Joining them pairs every sales row with every grooming row of the same store, and both sums grow many times over. This error is called a fan trap.</div>
+<p>The correct method is called <em class="term">drilling across</em>. Total each fact separately to the same grain, here store and fiscal quarter. Then join the two small results on the shared dimension attributes.</p>
+<p class="lstcap"><b>Listing 7.7</b> Sales and grooming revenue per store, drilled across</p>
+<pre class="sql"><span class="k">WITH</span> sales <span class="k">AS</span> (
+  <span class="k">SELECT</span> f.store_key, <span class="k">SUM</span>(f.net_amount) <span class="k">AS</span> product_sales<i class="ann">1</i>
+  <span class="k">FROM</span>   fact_sales_line f <span class="k">JOIN</span> dim_date d <span class="k">ON</span> d.date_key = f.date_key
+  <span class="k">WHERE</span>  d.fiscal_year = 2025 <span class="k">AND</span> d.fiscal_quarter = 2
+  <span class="k">GROUP BY</span> f.store_key
+), grooming <span class="k">AS</span> (
+  <span class="k">SELECT</span> g.store_key, <span class="k">SUM</span>(g.amount_paid) <span class="k">AS</span> grooming_revenue
+  <span class="k">FROM</span>   fact_grooming_appointment g <span class="k">JOIN</span> dim_date d <span class="k">ON</span> d.date_key = g.paid_date_key
+  <span class="k">WHERE</span>  d.fiscal_year = 2025 <span class="k">AND</span> d.fiscal_quarter = 2
+  <span class="k">GROUP BY</span> g.store_key
+)
+<span class="k">SELECT</span> st.store_name, st.region, s.product_sales, g.grooming_revenue
+<span class="k">FROM</span>   dim_store st
+<span class="k">LEFT JOIN</span> sales    s <span class="k">ON</span> s.store_key = st.store_key           <span class="c">-- one row per store on each side</span><i class="ann">2</i>
+<span class="k">LEFT JOIN</span> grooming g <span class="k">ON</span> g.store_key = st.store_key
+<span class="k">WHERE</span>  st.store_key &gt; 0;                                <span class="c">-- skip the special rows</span></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>Each fact is totaled on its own, down to one row per store.</span></li>
+<li><i class="ann">2</i><span>Now each side has one row per store, so the join cannot multiply anything. Stores without a salon show an empty grooming value.</span></li>
+</ol>
+<p>Listing 7.7 works only because both facts use the same <code>dim_store</code> and the same <code>dim_date</code>. If the grooming star has its own store table with different codes, there is nothing to join on. That requirement has a name.</p>
+
+<h2 id="s7-7"><span class="num">7.7</span>Conformed dimensions, the bus matrix, and galaxies</h2>
+<p>A <em class="term">conformed dimension</em> is one dimension that several fact tables share, with the same keys, the same rows, and the same meaning. Lantern's <code>dim_store</code> is conformed when the sales star, the grooming star, and the inventory star all use it. Then "store 14" means the same store in every report, and any two facts can be drilled across.</p>
+<p>The same idea applies to measures. A <em class="term">conformed fact</em> has one definition everywhere. If finance and marketing both report "net sales", both must subtract discounts and exclude tax in the same way, or their numbers will never match.</p>
+<p>Kimball plans conformance with the <em class="term">bus matrix</em>. Each row is a business process, and each column is a dimension. A mark means that the process uses the dimension. A column with marks in several rows is a conformed dimension, and the team must build it once and share it. The bus matrix is the plan for a whole warehouse, delivered one star at a time.</p>
+
+<div class="lab" id="lab-bus">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Build the Lantern bus matrix</h4><span class="lab-tip">click cells to mark them</span></div>
+  <p>Mark which dimensions each business process uses. The bottom row counts how many processes share each dimension. A dimension shared by two or more processes must be conformed.</p>
+  <div class="row"><button class="btn" type="button" id="busFill">Show Lantern's answer</button><button class="btn" type="button" id="busClear">Clear</button></div>
+  <div class="tbl" style="margin:0"><table id="busTable"></table></div>
+  <div class="log" id="busLog" aria-live="polite"></div>
+</div>
+<p>Lantern's answer shows that <code>dim_date</code> and <code>dim_store</code> are shared by almost every process, and that <code>dim_customer</code> is shared by three. Those three dimensions carry most of the integration work. They are also where every new source causes trouble, as chapter 16 shows. When Lantern buys a store chain with its own customer IDs, all three customer-facing stars depend on <code>dim_customer</code> absorbing them correctly.</p>
+
+<h3 id="s7-7-1"><span class="num">7.7.1</span>Galaxy schemas</h3>
+<p>Once several stars share conformed dimensions, the whole model is called a <em class="term">galaxy schema</em>, or a fact constellation. Figure 7.3 shows three of Lantern's fact tables and the dimensions they share.</p>
+<figure class="diag" id="fig-7-3">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three fact tables, sales line, grooming appointment and inventory daily, share the date, store and product dimensions in the middle row.">
+  <defs><marker id="m73" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <g font-size="13" text-anchor="middle">
+    <rect x="40" y="26" width="180" height="50" rx="8" class="bx-a"/><text x="130" y="48" font-weight="600" class="t-a">fact_sales_line</text><text x="130" y="66" font-size="11" class="mono t-s">transaction</text>
+    <rect x="270" y="26" width="180" height="50" rx="8" class="bx-a"/><text x="360" y="48" font-weight="600" class="t-a">fact_grooming_appt</text><text x="360" y="66" font-size="11" class="mono t-s">accumulating</text>
+    <rect x="500" y="26" width="180" height="50" rx="8" class="bx-a"/><text x="590" y="48" font-weight="600" class="t-a">fact_inventory_daily</text><text x="590" y="66" font-size="11" class="mono t-s">periodic snapshot</text>
+    <rect x="40" y="146" width="180" height="46" rx="7" class="bx-n"/><text x="130" y="174" font-weight="600">dim_date</text>
+    <rect x="270" y="146" width="180" height="46" rx="7" class="bx-n"/><text x="360" y="174" font-weight="600">dim_store</text>
+    <rect x="500" y="146" width="180" height="46" rx="7" class="bx-n"/><text x="590" y="174" font-weight="600">dim_product</text>
+    <rect x="40" y="230" width="180" height="40" rx="7" class="bx-s"/><text x="130" y="255" font-size="12" class="t-s">also customer, promotion</text>
+    <rect x="270" y="230" width="180" height="40" rx="7" class="bx-s"/><text x="360" y="255" font-size="12" class="t-s">also customer, pet, groomer</text>
+    <rect x="500" y="230" width="180" height="40" rx="7" class="bx-s"/><text x="590" y="255" font-size="12" class="t-s">no other dimensions</text>
+  </g>
+  <line class="ln" x1="120" y1="76" x2="120" y2="142" marker-end="url(#m73)"/>
+  <line class="ln" x1="150" y1="76" x2="330" y2="142" marker-end="url(#m73)"/>
+  <line class="ln" x1="180" y1="76" x2="560" y2="142" marker-end="url(#m73)"/>
+  <line class="ln" x1="330" y1="76" x2="150" y2="142" marker-end="url(#m73)"/>
+  <line class="ln" x1="360" y1="76" x2="360" y2="142" marker-end="url(#m73)"/>
+  <line class="ln" x1="560" y1="76" x2="170" y2="142" marker-end="url(#m73)"/>
+  <line class="ln" x1="580" y1="76" x2="390" y2="142" marker-end="url(#m73)"/>
+  <line class="ln" x1="600" y1="76" x2="600" y2="142" marker-end="url(#m73)"/>
+</svg>
+</div>
+<figcaption><b>Figure 7.3</b> A galaxy schema. The shared middle row makes drilling across possible, and it is also the part of the model that every change must keep consistent.</figcaption>
+</figure>
+<p>The grooming fact does not use <code>dim_product</code>, which is why it has no line to it. A galaxy is not a different pattern from the star. It is what a dimensional warehouse becomes when it grows past one business process. Its strength and its risk come from the same place: one change to a shared dimension reaches every fact that uses it.</p>
+
+<h2 id="s7-8"><span class="num">7.8</span>History in a star</h2>
+<p>Facts rarely change. A sale on 20 May stays a sale on 20 May. When a fact is wrong, the usual fix is a correcting row: a return or a reversal with negative amounts, dated when the correction happened. The original row stays, so last month's report still matches what it showed last month.</p>
+<p>Dimensions do change. Maria moves from Oakland to San Jose. A product changes brand. A store moves to a new district. Each change raises a question: do old sales show the old value or the new one? Dimensional modeling answers with a set of standard techniques called slowly changing dimensions. They are the main subject of <a href="08-advanced-dimensional.html">chapter 8</a>, together with bridge tables for many-to-many relationships and bitemporal dimensions for audits.</p>
+<p>One limit is worth knowing now. A star records history as of the load. If a source corrects a value, the star usually overwrites or versions the row, and the earlier belief is gone unless the design keeps a second set of dates. Chapter 8 shows that technique, and chapter 16 shows its cost.</p>
+
+<h2 id="s7-9"><span class="num">7.9</span>Common mistakes</h2>
+<p><strong>Mixing grains in one fact table.</strong> Order headers and order lines in the same table make every sum wrong, because the header's shipping fee repeats on every line. Give each grain its own fact table.</p>
+<p><strong>Using business keys as fact foreign keys.</strong> A fact keyed on the CRM's <code>C-000123</code> cannot point at a customer version, and it breaks when a second source arrives with different IDs.</p>
+<p><strong>Leaving dimension keys null.</strong> Null keys drop rows from inner joins without any error. Use the Unknown and Not applicable rows from <a href="#s7-3-4">section 7.3.4</a>.</p>
+<p><strong>Adding up semi-additive measures over time.</strong> Stock, balances, and headcount must be averaged or taken at period end across days, as in Listing 7.6.</p>
+<p><strong>Building one star per report.</strong> Stars built for single reports, each with its own customer and store tables, cannot be drilled across. The result is a set of disconnected data marts that disagree. The bus matrix exists to prevent this.</p>
+<p><strong>Normalizing dimensions by habit.</strong> Splitting every hierarchy into separate tables turns the star into a snowflake, with more joins for every query. <a href="09-snowflake.html">Chapter 9</a> covers when that trade is worth it.</p>
+
+<h2 id="s7-10"><span class="num">7.10</span>Strengths and limits</h2>
+<p>The star is the pattern that analysts find easiest to use. Every question has the same shape: one fact, a few dimensions, a sum. The model speaks the business's language, because dimensions store "Dry dog food", not <code>DOG_DRY</code>. Queries are fast, because each join is one hop on a small integer key. Teams can deliver it one business process at a time, and each star is useful on the day it ships.</p>
+<p>Its limits come from the same design. A star decides meaning while it loads. It matches customers across sources, resolves codes, and fixes the grain before any data enters. That makes the integration work heavy whenever a new source arrives, and a wrong decision is expensive to undo, because it is baked into millions of fact rows. Relationships are fixed by the fact grain, so a change from one owner per pet to two owners per pet needs a bridge table and a restated fact. Records of what the warehouse believed on a past date need extra design, and personal data is copied into every version of a dimension row.</p>
+<p>The strip below scores the star with only the techniques in this chapter. That is why history, the relationship change, multi-active data, and the audit fail. <a href="08-advanced-dimensional.html">Chapter 8</a> adds the techniques that teams use in practice, and its strip shows the star as it is usually deployed.</p>
+<div class="strip-wrap" data-pattern="star_basic"></div>
+<p><strong>Choose the star</strong> when analysts and dashboards are the main users, the sources are few and stable, and the questions are well known. It is also the best final layer on top of other patterns, as chapter 17 shows.</p>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>A star schema shapes data around business processes and the questions people ask, not around source systems.</li>
+    <li>Design each star in four steps: choose the business process, declare the grain, identify the dimensions, and identify the facts. The grain is the contract for everything else.</li>
+    <li>Facts are additive, semi-additive, or non-additive. Store the additive parts of a ratio, and compute the ratio from totals.</li>
+    <li>There are four kinds of fact table: transaction, periodic snapshot, accumulating snapshot, and factless. Only the accumulating snapshot updates its rows.</li>
+    <li>Dimensions are wide, flat, and written in business words. They flatten hierarchies into plain columns and use integer surrogate keys.</li>
+    <li>Special Unknown and Not applicable rows keep every fact joinable and every total complete.</li>
+    <li>A star loads dimensions first and facts second. Inferred members link facts that arrive before their dimension rows.</li>
+    <li>Never join two fact tables directly. Drill across: total each fact separately, then join the results on conformed dimensions.</li>
+    <li>Conformed dimensions, planned with a bus matrix, connect stars into a galaxy schema.</li>
+  </ul>
+</div>
+
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · Chapter 7 · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  function $(s) { return document.querySelector(s); }
+  function $$(s) { return [].slice.call(document.querySelectorAll(s)); }
+
+  /* ---------- Try it: accumulating snapshot ---------- */
+  (function () {
+    var H = ["appointment_id", "booked_date_key", "checked_in_date_key", "groomed_date_key", "paid_date_key", "days_to_visit", "minutes_in_salon", "amount_paid"];
+    var STEPS = [
+      { v: ["G-20931", "20250602", "-1", "-1", "-1", "", "", ""], c: 1, msg: ["ok", "Booked on 2 June for 9 June. The load inserts the row. Future milestones point at the Unknown date, key -1."] },
+      { v: ["G-20931", "20250602", "20250609", "-1", "-1", "7", "", ""], c: 2, msg: ["warn", "Checked in on 9 June. The load updates the same row and computes days_to_visit = 7."] },
+      { v: ["G-20931", "20250602", "20250609", "20250609", "-1", "7", "95", ""], c: 3, msg: ["warn", "Groomed the same day, 95 minutes after check-in. The row is updated again."] },
+      { v: ["G-20931", "20250602", "20250609", "20250609", "20250609", "7", "95", "68.00"], c: 4, msg: ["ok", "Paid 68.00 USD. The row is complete. One row now answers lag, duration, and revenue questions."] }
+    ];
+    var step = -1, t = $("#accTable"), log = $("#accLog"), next = $("#accNext");
+    function paint() {
+      var head = "<thead><tr>" + H.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr></thead>";
+      var body;
+      if (step < 0) body = '<tr><td colspan="8">No row yet. Press Next milestone.</td></tr>';
+      else {
+        var s = STEPS[step];
+        body = "<tr>" + s.v.map(function (x, i) {
+          var changed = step > 0 && STEPS[step - 1].v[i] !== x;
+          return "<td" + (changed || step === 0 ? ' style="background:var(--green-tint)"' : "") + ">" + esc(x === "" ? "·" : x) + "</td>";
+        }).join("") + "</tr>";
+      }
+      t.innerHTML = head + "<tbody>" + body + "</tbody>";
+      log.innerHTML = step < 0 ? '<span class="m">The row will be inserted once and updated three times.</span>' : '<span class="' + STEPS[step].msg[0] + '">' + esc(STEPS[step].msg[1]) + "</span>";
+      next.textContent = step >= STEPS.length - 1 ? "Start again" : "Next milestone";
+    }
+    next.addEventListener("click", function () { step = step >= STEPS.length - 1 ? -1 : step + 1; paint(); });
+    $("#accReset").addEventListener("click", function () { step = -1; paint(); });
+    paint();
+  })();
+
+  /* ---------- Try it: load tonight's sales ---------- */
+  (function () {
+    var rule = "unknown", night = 0;
+    var STAGE = [
+      ["W-80101", "1", "C-000123", "64.99"],
+      ["W-80101", "2", "C-000123", "12.50"],
+      ["S-14-5521", "1", "C-002981", "31.00"],
+      ["W-80117", "1", "C-004410", "89.95"]
+    ];
+    var dimBase = [["-1", "(none)", "Unknown", ""], ["48211", "C-000123", "Maria Lopez", ""], ["50177", "C-002981", "Sam Ortiz", ""]];
+    var dimT = $("#loadDim"), factT = $("#loadFact"), log = $("#loadLog");
+    function cap(s) { return '<caption style="caption-side:top;text-align:left;padding:8px 12px;font-family:var(--mono);font-size:11px;color:var(--ink-soft)">' + s + "</caption>"; }
+    function render() {
+      var dim = dimBase.map(function (r) { return r.slice(); }), facts = [];
+      if (night >= 1 && rule === "inferred") dim.push(["51302", "C-004410", night >= 2 ? "Priya Shah" : "Pending", night >= 2 ? "updated" : "inferred"]);
+      if (night >= 1) {
+        facts = STAGE.map(function (s) {
+          var key = s[2] === "C-000123" ? "48211" : s[2] === "C-002981" ? "50177" : (rule === "inferred" ? "51302" : "-1");
+          return [s[0], s[1], key, s[3], s[2] === "C-004410"];
+        });
+      }
+      dimT.innerHTML = cap("DIM_CUSTOMER") + "<thead><tr><th>customer_key</th><th>customer_id</th><th>customer_name</th><th>note</th></tr></thead><tbody>" + dim.map(function (r) {
+        var cls = r[3] === "inferred" ? "hl" : r[3] === "updated" ? "new" : "";
+        return '<tr class="' + cls + '"><td>' + r[0] + "</td><td>" + esc(r[1]) + "</td><td>" + esc(r[2]) + "</td><td>" + esc(r[3] || "·") + "</td></tr>";
+      }).join("") + "</tbody>";
+      factT.innerHTML = cap("FACT_SALES_LINE") + "<thead><tr><th>order_id</th><th>line</th><th>customer_key</th><th>net_amount</th></tr></thead><tbody>" + (facts.length ? facts.map(function (f) {
+        return '<tr class="' + (f[4] ? (f[2] === "-1" ? "hl" : "new") : "") + '"><td>' + f[0] + "</td><td>" + f[1] + "</td><td>" + f[2] + "</td><td>" + f[3] + "</td></tr>";
+      }).join("") : '<tr><td colspan="4">Empty. Run night 1.</td></tr>') + "</tbody>";
+      var msg;
+      if (night === 0) msg = '<span class="m">Four staged lines. Three customers exist in the dimension. C-004410 does not.</span>';
+      else if (night === 1) msg = rule === "unknown" ? '<span class="warn">Night 1: W-80117 points at the Unknown row (-1). Total sales are complete, but the link to C-004410 is lost.</span>' : '<span class="ok">Night 1: the load inserted an inferred row 51302 for C-004410, then the fact used it. Totals are complete and the link exists.</span>';
+      else msg = rule === "unknown" ? '<span class="bad">Night 2: the CRM sends C-004410. The dimension can add the customer, but last night\'s sale still points at -1. Someone must find and fix it, or the customer\'s first purchase is missing from their history.</span>' : '<span class="ok">Night 2: the CRM sends C-004410. The dimension load fills in row 51302 in place. Last night\'s sale needed no change.</span>';
+      log.innerHTML = msg;
+      $$("[data-rule]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-rule") === rule); });
+    }
+    $$("[data-rule]").forEach(function (b) { b.addEventListener("click", function () { rule = b.getAttribute("data-rule"); night = 0; render(); }); });
+    $("#loadNight1").addEventListener("click", function () { night = 1; render(); });
+    $("#loadNight2").addEventListener("click", function () { night = Math.max(night, 1) === 1 ? 2 : 2; render(); });
+    $("#loadReset").addEventListener("click", function () { night = 0; render(); });
+    render();
+  })();
+
+  /* ---------- Try it: bus matrix ---------- */
+  (function () {
+    var P = ["Store and web sales", "Autoship orders", "Grooming appointments", "Inventory snapshots", "Promotion coverage", "Timesheets"];
+    var D = ["Date", "Customer", "Pet", "Product", "Store", "Promotion", "Employee"];
+    var ANSWER = [
+      [1, 1, 0, 1, 1, 1, 1],
+      [1, 1, 1, 1, 0, 0, 0],
+      [1, 1, 1, 0, 1, 0, 1],
+      [1, 0, 0, 1, 1, 0, 0],
+      [1, 0, 0, 1, 1, 1, 0],
+      [1, 0, 0, 0, 1, 0, 1]
+    ];
+    var M = P.map(function () { return D.map(function () { return 0; }); });
+    var t = $("#busTable"), log = $("#busLog");
+    function render() {
+      var counts = D.map(function (d, j) { return M.reduce(function (s, r) { return s + r[j]; }, 0); });
+      t.innerHTML = "<thead><tr><th>Process</th>" + D.map(function (d) { return "<th>" + d + "</th>"; }).join("") + "</tr></thead><tbody>" +
+        P.map(function (p, i) {
+          return "<tr><td>" + esc(p) + "</td>" + D.map(function (d, j) {
+            var on = M[i][j] === 1;
+            return '<td style="padding:4px 6px;text-align:center"><button type="button" class="btn' + (on ? " on" : "") + '" data-r="' + i + '" data-c="' + j + '" aria-pressed="' + on + '" aria-label="' + esc(p + " uses " + d) + '" style="width:34px;padding:4px 0">' + (on ? "x" : "·") + "</button></td>";
+          }).join("") + "</tr>";
+        }).join("") +
+        '<tr><td><strong>Processes sharing it</strong></td>' + counts.map(function (c) {
+          return '<td style="text-align:center">' + (c >= 2 ? '<span class="chip c-good">' + c + "</span>" : '<span class="chip" style="color:var(--ink-soft)">' + c + "</span>") + "</td>";
+        }).join("") + "</tr></tbody>";
+      $$("#busTable [data-r]").forEach(function (b) {
+        b.addEventListener("click", function () { var i = +b.getAttribute("data-r"), j = +b.getAttribute("data-c"); M[i][j] = 1 - M[i][j]; render(); });
+      });
+      var shared = D.filter(function (d, j) { return counts[j] >= 2; });
+      var total = counts.reduce(function (s, c) { return s + c; }, 0);
+      log.innerHTML = total === 0 ? '<span class="m">Click a cell to say that a process uses a dimension.</span>' :
+        (shared.length ? '<span class="ok">Conformed dimensions: ' + esc(shared.join(", ")) + ".</span> " : "") + '<span class="m">Each conformed dimension is built once and shared. A change to it reaches every process in its column.</span>';
+    }
+    $("#busFill").addEventListener("click", function () { M = ANSWER.map(function (r) { return r.slice(); }); render(); });
+    $("#busClear").addEventListener("click", function () { M = P.map(function () { return D.map(function () { return 0; }); }); render(); });
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

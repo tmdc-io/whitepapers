@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>3 · Core concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="03">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part I · Chapter 3</div>
+<h1>Core concepts</h1>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s3-1">Events, states, and entities: three kinds of data</a></li>
+    <li><a href="#s3-2">Facts, measures, and dimensions</a></li>
+    <li><a href="#s3-3">Grain, and why you declare it first</a></li>
+    <li><a href="#s3-4">Natural, surrogate, composite, and smart keys</a></li>
+    <li><a href="#s3-5">Relationships and cardinality</a></li>
+    <li><a href="#s3-6">Normal forms, from the first to the sixth</a></li>
+    <li><a href="#s3-7">Denormalization, and what it trades</a></li>
+  </ul>
+</div>
+
+<p>Every pattern in this book uses the same small set of ideas. They have different names in different patterns, but underneath, a Data Vault satellite and a star schema dimension solve the same problem in two ways. This chapter defines those ideas once, with Lantern examples, so that the pattern chapters can use them without stopping to explain.</p>
+<p>If you already model data, skim the chapter for the vocabulary, and read <a href="#s3-6">section 3.6</a> on normal forms. Chapters 6, 11, and 13 depend on it.</p>
+
+<h2 id="s3-1"><span class="num">3.1</span>Events, states, and entities</h2>
+<p>Most data in a business is one of three kinds. Telling them apart is the first step in any model, because each kind changes in a different way.</p>
+<p><strong>An event is something that happened at one moment.</strong> Maria buys a bag of kibble at 10:21 on 14 February. Dev punches in at 08:58. Events do not change after they happen. If one is recorded wrongly, the fix is a new event that corrects it, such as a return.</p>
+<p><strong>A state is how something was during a period.</strong> The stock of salmon kibble in the Oakland store was 14 bags at closing time on Tuesday. Dev's pay rate was 24.00 USD an hour until 30 June. States change, and each value is true for a period.</p>
+<p><strong>An entity is a thing that the business keeps track of.</strong> A customer, a pet, a product, a store, an employee. An entity has an identity that lasts, and descriptive values, such as an address or a weight, that change over time.</p>
+<p>Many modeling mistakes come from treating one kind as another. A table of "current customer addresses" treats a changing state as if it were fixed. A table of "daily sales totals" turns events into a state and loses the single sales. Keep each kind in the shape that matches how it changes.</p>
+
+<h2 id="s3-2"><span class="num">3.2</span>Facts, measures, and dimensions</h2>
+<p>Analytical questions have a common shape: a number, broken down by some context. "Net sales, by store, by month." The two parts have names.</p>
+<p>A <em class="term">measure</em> is the number: net sales, quantity, hours worked, minutes in the salon. A <em class="term">fact</em> is the record of one event or state that carries measures. One sales line is a fact, with the measures quantity and net amount.</p>
+<p>A <em class="term">dimension</em> is the context: who, what, where, when, and how. Store, month, product, customer, and payment type are dimensions of a sale. You filter by dimensions, group by them, and label reports with them.</p>
+<p>These words come from dimensional modeling, but the idea is general. In a normalized model, the facts are rows in event tables and the dimensions are rows in entity tables. In Data Vault, they are spread across links and satellites. The names change, and the question shape stays the same.</p>
+
+<h2 id="s3-3"><span class="num">3.3</span>Grain</h2>
+<p>The <em class="term">grain</em> of a table is what one row means. "One row per order line" is a grain. So is "one row per product, per store, per day", and "one row per customer, per month". You must state the grain before anything else, because it decides which questions the table can answer and which measures belong on it.</p>
+<p>Finer grains have more rows and answer more questions. Coarser grains are smaller and faster, but each one throws away information for good. The exercise below shows the trade for Lantern's sales.</p>
+
+<div class="lab" id="lab-grain">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Choose the grain of the sales table</h4><span class="lab-tip">select a grain</span></div>
+  <p>Each button is a possible grain for one Lantern sales table. Watch the yearly row count and the questions that the table can answer.</p>
+  <div class="row" role="group" aria-label="Grain">
+    <button class="btn on" type="button" data-grain="line">Order line</button>
+    <button class="btn" type="button" data-grain="order">Order</button>
+    <button class="btn" type="button" data-grain="day">Product, store, day</button>
+    <button class="btn" type="button" data-grain="month">Customer, month</button>
+  </div>
+  <div class="tbl" style="margin:0"><table id="grainTable"></table></div>
+  <div class="log" id="grainLog" aria-live="polite"></div>
+</div>
+<p>Only the finest grain answers every question. That is why most patterns store the finest grain that the source provides, the <em class="term">atomic grain</em>, and build coarser summaries on top when speed matters.</p>
+<div class="callout tip"><span class="lbl">Tip</span>Write the grain as one sentence on every table, as a comment or in its documentation. A table without a declared grain soon has rows that mean different things.</div>
+
+<h2 id="s3-4"><span class="num">3.4</span>Keys</h2>
+<p>A key identifies a row. Analytical models use four kinds, and every pattern chooses among them.</p>
+<p>A <em class="term">natural key</em>, also called a <em class="term">business key</em>, is the identifier that the business itself uses: a SKU, an employee ID, a lot number, an order number. People say it out loud and print it on labels. A good natural key is unique, stable, and meaningful. A poor one is a row number from a source database, which means nothing to the business and changes when the vendor migrates the system.</p>
+<p>A <em class="term">surrogate key</em> is a value that the warehouse creates, usually an integer, with no meaning outside the warehouse. Patterns use surrogate keys to join tables quickly, to keep several versions of one entity apart, and to give one key to an entity that sources identify in different ways.</p>
+<p>A <em class="term">composite key</em> is a key made of several columns. A sales line is identified by order number and line number together. A daily stock row is identified by product, store, and date.</p>
+<p>A <em class="term">smart key</em> packs meaning into its value. <code>OAK-014</code> says that store 14 is in Oakland. Smart keys are easy to read and hard to keep. When the store moves to another city, the key either lies or changes, and every reference to it must follow.</p>
+<p class="tblcap"><b>Table 3.1</b> Keys at Lantern</p>
+<div class="tbl"><table>
+<thead><tr><th>Key</th><th>Example</th><th>Kind</th><th>Risk</th></tr></thead>
+<tbody>
+<tr><td>Customer ID</td><td><code>C-000123</code></td><td>Natural, from the CRM</td><td>Other systems do not use it</td></tr>
+<tr><td>Email</td><td><code>maria.lopez@example.com</code></td><td>Natural, from the web shop</td><td>Changes, and is personal data</td></tr>
+<tr><td>Customer key</td><td><code>48211</code></td><td>Surrogate</td><td>Means nothing outside the warehouse</td></tr>
+<tr><td>Order line</td><td><code>W-77810</code>, line 2</td><td>Composite natural</td><td>Line numbers can be reused after edits</td></tr>
+<tr><td>Store code</td><td><code>OAK-014</code></td><td>Smart</td><td>Wrong as soon as the store moves</td></tr>
+</tbody></table></div>
+
+<h2 id="s3-5"><span class="num">3.5</span>Relationships and cardinality</h2>
+<p>A relationship connects two entities, such as a pet and its owner. Its <em class="term">cardinality</em> says how many of one side can connect to the other.</p>
+<p><strong>One-to-one.</strong> Each store has one manager at a time, and each manager runs one store.</p>
+<p><strong>One-to-many.</strong> One customer places many orders, and each order has one customer. In a relational table, the "many" side holds a foreign key to the "one" side: each order row has a customer ID.</p>
+<p><strong>Many-to-many.</strong> One customer can own many pets, and from September 2025, one pet can have many owners. A many-to-many relationship needs its own table, often called an associative table or a bridge, with one row per pair.</p>
+<p>Cardinality is the part of a model that business changes break most often. Lantern's CRM treated pet ownership as one-to-many for years, with an owner ID on each pet row. When it started to allow two owners, every model that had copied that assumption had to change. Watch for this in each pattern chapter, as stress test 4.</p>
+<div class="callout warning"><span class="lbl">Warning</span>A relationship that is one-to-many today is a business rule, not a law of nature. Before you build a foreign key into a central table, ask whether the "one" side can ever become "many".</div>
+
+<h2 id="s3-6"><span class="num">3.6</span>Normal forms</h2>
+<p><em class="term">Normalization</em> is the process of splitting tables so that each fact is stored in exactly one place. Each step removes one kind of repetition, and with it one kind of update error. The steps are called normal forms, and each form includes the ones before it. Figure 3.1 shows the ladder.</p>
+<figure class="diag" id="fig-3-1">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A ladder of normal forms from first to sixth. Each step removes one kind of repetition. The first three forms are the everyday ones. Sixth normal form puts each attribute in its own table, and is used by anchor modeling.">
+  <g font-size="12.5">
+    <rect x="24" y="234" width="104" height="48" rx="6" class="bx-a"/><text x="36" y="254" font-weight="600">1NF</text><text x="36" y="271" font-size="11" class="t-s">one value per cell</text>
+    <rect x="140" y="196" width="104" height="48" rx="6" class="bx-a"/><text x="152" y="216" font-weight="600">2NF</text><text x="152" y="233" font-size="11" class="t-s">whole key</text>
+    <rect x="256" y="158" width="104" height="48" rx="6" class="bx-a"/><text x="268" y="178" font-weight="600">3NF</text><text x="268" y="195" font-size="11" class="t-s">nothing but the key</text>
+    <rect x="372" y="120" width="104" height="48" rx="6" class="bx-w"/><text x="384" y="140" font-weight="600">BCNF</text><text x="384" y="157" font-size="11" class="t-s">every determinant</text>
+    <rect x="488" y="82" width="104" height="48" rx="6" class="bx-w"/><text x="500" y="102" font-weight="600">4NF, 5NF</text><text x="500" y="119" font-size="11" class="t-s">independent facts</text>
+    <rect x="604" y="44" width="96" height="48" rx="6" class="bx-am"/><text x="616" y="64" font-weight="600">6NF</text><text x="616" y="81" font-size="11" class="t-am">one attribute</text>
+  </g>
+  <text x="24" y="40" font-size="12" class="mono t-s" letter-spacing="1.3">EACH STEP REMOVES ONE KIND OF REPETITION</text>
+  <text x="24" y="214" font-size="11.5" class="t-a">everyday design</text>
+  <text x="700" y="34" font-size="11.5" class="t-am" text-anchor="end">used by anchor modeling, ch. 13</text>
+</svg>
+</div>
+<figcaption><b>Figure 3.1</b> The normalization ladder. Most operational systems stop at third normal form, while anchor modeling climbs to the sixth.</figcaption>
+</figure>
+<p>The best way to learn the first three forms is to apply them to one bad table. The exercise starts from a single row that a spreadsheet user might type.</p>
+
+<div class="lab" id="lab-norm">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Normalize one order</h4><span class="lab-tip">press Next form</span></div>
+  <p>One order, stored badly. Each step applies one normal form and shows the tables that result.</p>
+  <div class="row"><button class="btn primary" type="button" id="normNext">Next form</button><button class="btn" type="button" id="normReset">Reset</button></div>
+  <div id="normTables"></div>
+  <div class="log" id="normLog" aria-live="polite"></div>
+</div>
+
+<h3 id="s3-6-1"><span class="num">3.6.1</span>First, second, and third normal form</h3>
+<p><strong>First normal form (1NF)</strong> requires one value in each cell and no repeating groups. A cell that holds "SKU-30118, SKU-41007" breaks it. The fix is one row per order line.</p>
+<p><strong>Second normal form (2NF)</strong> requires every non-key column to depend on the whole key. In the 1NF order lines, the key is order and line number together. The product name depends only on the SKU, not on the order, so it repeats on every line that sells that product. If the name changes, every one of those rows must change. The fix is a product table.</p>
+<p><strong>Third normal form (3NF)</strong> requires every non-key column to depend on the key and on nothing else. In the order table, the region depends on the customer's city, not on the order. That is a <em class="term">transitive dependency</em>: order to city to region. The fix is a city table that holds the region. A common way to remember the first three forms: every column depends on the key, the whole key, and nothing but the key.</p>
+
+<h3 id="s3-6-2"><span class="num">3.6.2</span>Boyce-Codd, fourth, and fifth normal form</h3>
+<p>These forms deal with rarer cases. You meet them less often, but they explain some of the advanced tables in later chapters.</p>
+<p><strong>Boyce-Codd normal form (BCNF)</strong> tightens 3NF for tables with overlapping candidate keys. Suppose each Lantern groomer works in exactly one store, and a table lists pet, service, and groomer. If the groomer decides the store, but the store is not part of any key, store data repeats per groomer. BCNF says that anything that determines another column must itself be a key.</p>
+<p><strong>Fourth normal form (4NF)</strong> separates independent multi-valued facts. Maria has three phone numbers and two pets, and the two lists have nothing to do with each other. A single table of customer, phone, and pet needs six rows to say this, and adding a fourth phone adds two rows. 4NF puts phones and pets in separate tables. <a href="../part-2/12-data-vault-advanced.html">Chapter 12</a> returns to this case with multi-active satellites.</p>
+<p><strong>Fifth normal form (5NF)</strong> handles facts that can only be rebuilt correctly by joining three or more smaller tables. It is rare in practice, and this book does not need it beyond knowing that it exists.</p>
+
+<h3 id="s3-6-3"><span class="num">3.6.3</span>Sixth normal form</h3>
+<p><strong>Sixth normal form (6NF)</strong> was defined by C. J. Date, Hugh Darwen, and Nikos Lorentzos for data that changes over time. In 6NF, a table holds a key and at most one other attribute, usually with the period when the value was true. A customer is no longer one table with ten columns. It is one table per attribute: one for the name, one for the address, one for the loyalty tier, each with its own history.</p>
+<p class="tblcap"><b>Table 3.2</b> Maria's address in sixth normal form</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>customer_id</th><th>address</th><th>valid_from</th></tr></thead>
+<tbody>
+<tr><td>C-000123</td><td>14 Elm St, Oakland</td><td>2022-04-01</td></tr>
+<tr><td>C-000123</td><td>220 Bay Rd, San Jose</td><td>2025-03-10</td></tr>
+<tr><td>C-000123</td><td>9 Pine Ave, Sacramento</td><td>2025-08-02</td></tr>
+</tbody></table></div>
+<p>The benefit is that each attribute changes on its own. A new address adds one row to one small table. It never copies the name, the email, or the tier. A new attribute is a new table, so no existing table ever changes shape. The cost is that a full customer row needs one join per attribute. <a href="../part-2/13-anchor.html">Chapter 13</a> shows how anchor modeling builds a whole warehouse this way, and how it keeps those joins manageable.</p>
+
+<h2 id="s3-7"><span class="num">3.7</span>Denormalization</h2>
+<p><em class="term">Denormalization</em> is the opposite move: copying values into a table on purpose, so that queries need fewer joins. A star schema's product dimension stores the category and the department on every product row. One big table stores the customer's city on every sales row.</p>
+<p>Denormalization trades update effort and storage for query speed and simplicity. The trade is a good one when the copied values change rarely, when the table is rebuilt from a normalized source anyway, and when the readers are people who do not need to know the join paths. It is a bad trade when values change often, because every copy must change too, and when the denormalized table is the only record, because then a wrong copy is the truth.</p>
+<p>No pattern in this book is fully normalized or fully denormalized. Each one chooses where to normalize and where to copy. That choice explains much of its scorecard.</p>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>Data is mostly events, states, or entities. Each kind changes in its own way. Keep each in a shape that matches.</li>
+    <li>Questions combine measures with dimensions. A fact is the record that carries the measures.</li>
+    <li>The grain says what one row means. Declare it first, and keep the finest grain that the source provides.</li>
+    <li>Natural keys come from the business, surrogate keys from the warehouse. Composite keys combine columns. Smart keys carry meaning and age badly.</li>
+    <li>Cardinality is often a business rule that changes. Many-to-many relationships need their own table.</li>
+    <li>Normal forms remove repetition step by step. 1NF to 3NF are everyday design. 4NF separates independent lists. 6NF gives each attribute its own table and history.</li>
+    <li>Denormalization copies values to simplify queries. It suits rebuildable serving layers, not the only copy of the record.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 3 · Core concepts · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  function $$(s) { return [].slice.call(document.querySelectorAll(s)); }
+
+  /* grain */
+  (function () {
+    var Q = ["Revenue by category per month", "Average lines per order", "Who bought recalled lot L24-0917", "Daily sales trend per store", "Customers who lapsed this quarter"];
+    var G = {
+      line:  { rows: "about 38 million", label: "One row per order line", a: [1, 1, 1, 1, 1] },
+      order: { rows: "about 14.6 million", label: "One row per order", a: [0, 1, 0, 1, 1], why: "An order holds many products, so category and lot are lost." },
+      day:   { rows: "about 22 million", label: "One row per product, per store, per day", a: [1, 0, 0, 1, 0], why: "Orders and customers are added away." },
+      month: { rows: "about 7.2 million", label: "One row per customer, per month", a: [0, 0, 0, 0, 1], why: "Products, stores, and days are added away." }
+    };
+    var table = document.getElementById("grainTable"), log = document.getElementById("grainLog");
+    function render(k) {
+      var g = G[k], n = g.a.reduce(function (s, v) { return s + v; }, 0);
+      table.innerHTML = "<thead><tr><th>Question</th><th>Answerable</th></tr></thead><tbody>" + Q.map(function (q, i) {
+        return "<tr><td>" + esc(q) + "</td><td>" + (g.a[i] ? '<span class="chip c-good">Yes</span>' : '<span class="chip c-fail">No</span>') + "</td></tr>";
+      }).join("") + "</tbody>";
+      log.innerHTML = '<span class="' + (n === 5 ? "ok" : "warn") + '">' + esc(g.label) + ": " + g.rows + " rows a year. Answers " + n + " of 5 questions.</span>" + (g.why ? ' <span class="m">' + esc(g.why) + "</span>" : "");
+      $$("[data-grain]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-grain") === k); });
+    }
+    $$("[data-grain]").forEach(function (b) { b.addEventListener("click", function () { render(b.getAttribute("data-grain")); }); });
+    render("line");
+  })();
+
+  /* normalization */
+  (function () {
+    var STEPS = [
+      { title: "Unnormalized", msg: ["bad", "One row holds two products in one cell, and the customer's name, city, and region are typed into the order. Nothing is stored only once."],
+        tables: [["order_sheet", ["order_id", "customer", "city", "region", "skus", "product_names", "quantities"], [["O-5001", "Maria Lopez", "Oakland", "Bay Area", "SKU-30118, SKU-41007", "Salmon Kibble 12 kg, Rope Toy L", "1, 2"]]]] },
+      { title: "1NF", msg: ["warn", "First normal form: one value per cell. Each product gets its own row. The customer's name, city, and region now repeat on every line."],
+        tables: [["order_line", ["order_id", "line", "customer", "city", "region", "sku", "product_name", "qty"], [["O-5001", "1", "Maria Lopez", "Oakland", "Bay Area", "SKU-30118", "Salmon Kibble 12 kg", "1"], ["O-5001", "2", "Maria Lopez", "Oakland", "Bay Area", "SKU-41007", "Rope Toy L", "2"]]]] },
+      { title: "2NF", msg: ["warn", "Second normal form: every column depends on the whole key. Product name depends only on the SKU, and the customer depends only on the order, so both move out of the line table."],
+        tables: [["order_line", ["order_id", "line", "sku", "qty"], [["O-5001", "1", "SKU-30118", "1"], ["O-5001", "2", "SKU-41007", "2"]]],
+                 ["sales_order", ["order_id", "customer", "city", "region"], [["O-5001", "Maria Lopez", "Oakland", "Bay Area"]]],
+                 ["product", ["sku", "product_name"], [["SKU-30118", "Salmon Kibble 12 kg"], ["SKU-41007", "Rope Toy L"]]]] },
+      { title: "3NF", msg: ["ok", "Third normal form: nothing but the key. The region depends on the city, and the city on the customer, not on the order. Each fact is now stored once."],
+        tables: [["order_line", ["order_id", "line", "sku", "qty"], [["O-5001", "1", "SKU-30118", "1"], ["O-5001", "2", "SKU-41007", "2"]]],
+                 ["sales_order", ["order_id", "customer_id"], [["O-5001", "C-000123"]]],
+                 ["customer", ["customer_id", "name", "city"], [["C-000123", "Maria Lopez", "Oakland"]]],
+                 ["city", ["city", "region"], [["Oakland", "Bay Area"]]],
+                 ["product", ["sku", "product_name"], [["SKU-30118", "Salmon Kibble 12 kg"], ["SKU-41007", "Rope Toy L"]]]] }
+    ];
+    var step = 0, box = document.getElementById("normTables"), log = document.getElementById("normLog"), next = document.getElementById("normNext");
+    function render() {
+      var s = STEPS[step];
+      box.innerHTML = s.tables.map(function (t) {
+        return '<div class="tbl" style="margin:8px 0"><table class="rows"><caption style="caption-side:top;text-align:left;padding:8px 12px;font-family:var(--sans);font-size:11px;letter-spacing:.08em;color:var(--ink-soft)">' + esc(t[0].toUpperCase()) + "</caption><thead><tr>" + t[1].map(function (c) { return "<th>" + esc(c) + "</th>"; }).join("") + "</tr></thead><tbody>" + t[2].map(function (r) {
+          return "<tr>" + r.map(function (v) { return "<td>" + esc(v) + "</td>"; }).join("") + "</tr>";
+        }).join("") + "</tbody></table></div>";
+      }).join("");
+      log.innerHTML = '<span class="m">Step ' + (step + 1) + " of 4 · " + s.title + ".</span><br>" + '<span class="' + s.msg[0] + '">' + esc(s.msg[1]) + "</span>";
+      next.textContent = step >= STEPS.length - 1 ? "Start again" : "Next form";
+    }
+    next.addEventListener("click", function () { step = step >= STEPS.length - 1 ? 0 : step + 1; render(); });
+    document.getElementById("normReset").addEventListener("click", function () { step = 0; render(); });
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

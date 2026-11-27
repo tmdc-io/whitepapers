@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>12 · Data Vault: advanced</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="12">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part II · Chapter 12</div>
+<h1>Data Vault: advanced</h1>
+<p class="glance"><i><span>Origin</span>Data Vault 2.0 practice</i><i><span>Shape</span>raw vault, business vault, query helpers, marts</i><i><span>Best at</span>change, audit, and easy reads together</i><i><span>Costs</span>many tables, needs automation</i></p>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s12-1">Multi-active, effectivity, record-tracking, and status-tracking satellites</a></li>
+    <li><a href="#s12-4">Same-as, hierarchical, and non-historized links</a></li>
+    <li><a href="#s12-7">Point-in-time and bridge tables that make a vault fast to read</a></li>
+    <li><a href="#s12-9">The business vault: rules stored as data, with versions</a></li>
+    <li><a href="#s12-10">Information marts built from the vault</a></li>
+    <li><a href="#s12-11">Deleting personal data in an insert-only store</a></li>
+    <li><a href="#s12-12">Building a vault from metadata</a></li>
+    <li><a href="#s12-14">Strengths and limits of the full Data Vault</a></li>
+  </ul>
+</div>
+
+<p>The raw vault from <a href="11-data-vault-core.html">chapter 11</a> absorbs change better than any pattern so far, and nobody can use it yet. It holds three keys for Maria with nothing that says they are one person. It holds one row per load in every satellite, so every question starts with "find the newest row". It has no place for business rules, and its insert-only rule collides with the right to delete. Its strip showed one Fails and four Costly results.</p>
+<p>This chapter adds what teams build around the raw vault in practice: special satellites and links for awkward data, helper tables for fast reads, a business vault for rules, information marts for analysts, and a plan for deletion. At the end, the vault is scored again, as it is usually deployed.</p>
+
+<h2 id="s12-1"><span class="num">12.1</span>Multi-active satellites</h2>
+<p>Maria has three phone numbers in the CRM: mobile, home, and work. All three are valid at the same time. A normal satellite has one row per key per load, so it cannot hold three current values. A <em class="term">multi-active satellite</em> adds a sub-key that tells the values apart. Here the sub-key is the phone type.</p>
+<p class="tblcap"><b>Table 12.1</b> The CRM phone satellite</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>hk_customer</th><th>load_dts</th><th>phone_type</th><th>phone</th><th>hash_diff</th></tr></thead>
+<tbody>
+<tr><td>9f1c…a07e</td><td>2024-11-03 02:00</td><td>mobile</td><td>(415) 555-0142</td><td>d011…</td></tr>
+<tr><td>9f1c…a07e</td><td>2024-11-03 02:00</td><td>home</td><td>(510) 555-0199</td><td>d011…</td></tr>
+<tr><td>9f1c…a07e</td><td>2024-11-03 02:00</td><td>work</td><td>(510) 555-0300</td><td>d011…</td></tr>
+<tr class="new"><td>9f1c…a07e</td><td>2025-03-14 02:00</td><td>mobile</td><td>(415) 555-0142</td><td>6f3a…</td></tr>
+<tr class="new"><td>9f1c…a07e</td><td>2025-03-14 02:00</td><td>work</td><td>(408) 555-0777</td><td>6f3a…</td></tr>
+</tbody></table></div>
+<p>Change detection works on the whole set. The hash diff covers all of Maria's phones in one load. When she moves to San Jose, she drops the home phone and gets a new work number. The set changes, so the loader inserts the full new set, shown in green. To read her phones on any date, take the whole set with the newest <code>load_dts</code> up to that date.</p>
+<p>The grooming system's pets fit the same shape. Its bookings name pets but do not key them, so until the pets are matched to <code>hub_pet</code>, the vault stores them in a multi-active satellite on the customer, with the pet name as the sub-key.</p>
+
+<h2 id="s12-2"><span class="num">12.2</span>Effectivity satellites and driving keys</h2>
+<p>A link records that a relationship was seen, never that it ended. An <em class="term">effectivity satellite</em> on a link records when the relationship is valid. In September 2025, Sam becomes a co-owner of Biscuit. In January 2026, Sam and Maria separate, and the CRM removes Sam as an owner.</p>
+<p class="tblcap"><b>Table 12.2</b> Effectivity of Sam's ownership</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>hk_pet_owner</th><th>load_dts</th><th>start_date</th><th>end_date</th></tr></thead>
+<tbody>
+<tr><td>c42f…7a90</td><td>2025-09-12 02:00</td><td>2025-09-10</td><td>9999-12-31</td></tr>
+<tr class="new"><td>c42f…7a90</td><td>2026-01-21 02:00</td><td>2025-09-10</td><td>2026-01-19</td></tr>
+</tbody></table></div>
+<p>The link row stays forever, and the effectivity satellite closes it. Some relationships also have a <em class="term">driving key</em>: the side of the link that decides what "the same relationship" means. An order has exactly one customer. If the web shop moves order W-77810 from Maria's account to Sam's, the order is the driving key. The old order-to-Maria relationship must end when the order-to-Sam relationship starts, even though the source never sent "ended". The effectivity load uses the driving key to close the old row on its own.</p>
+
+<h2 id="s12-3"><span class="num">12.3</span>Record-tracking and status-tracking satellites</h2>
+<p>Some sources send a full snapshot every night, with every customer, changed or not. Happy Tails works this way. A <em class="term">record-tracking satellite</em> stores one small row per key per load, saying "this key was present". It answers "when did the Happy Tails system last show this customer?" without storing the full attributes every night.</p>
+<p>Deletes are invisible in an insert-only model unless you look for them. When Happy Tails removes a duplicate customer, the record simply stops appearing in the snapshot. A <em class="term">status-tracking satellite</em> compares each full snapshot with the keys that the vault already knows. A key that is missing gets a new row with status <code>D</code>, for deleted. A key that returns gets status <code>I</code> again. The vault never removes the old rows, but every report can exclude records that the source deleted, and an auditor can see when it happened.</p>
+
+<h2 id="s12-4"><span class="num">12.4</span>Same-as and hierarchical links</h2>
+<h3 id="s12-4-1"><span class="num">12.4.1</span>Same-as links</h3>
+<p>Stress test 2 asks for one Maria, while audit wants to see what each system said. The hub already holds all her keys. A <em class="term">same-as link</em> records which keys belong to the same real customer. It links the hub to itself: one hash key for the chosen master key, one for the duplicate. Figure 12.1 shows Maria's.</p>
+<figure class="diag" id="fig-12-1">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four keys in the customer hub. A same-as link points the email, the phone number and the Happy Tails ID to the CRM ID as the master key. One match is marked as wrong and ended.">
+  <defs><marker id="m121" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <text x="24" y="28" font-size="12" class="mono t-s" letter-spacing="1.4">HUB_CUSTOMER KEYS</text>
+  <text x="372" y="28" font-size="11" class="mono t-link" text-anchor="middle">link_customer_same_as</text>
+  <text x="470" y="80" font-size="12" class="mono t-s" letter-spacing="1.4">MASTER KEY</text>
+  <g font-size="12.5">
+    <rect x="24" y="44" width="250" height="34" rx="6" class="bx-hub"/><text x="36" y="66" class="mono">MARIA.LOPEZ@EXAMPLE.COM</text>
+    <rect x="24" y="90" width="250" height="34" rx="6" class="bx-hub"/><text x="36" y="112" class="mono">PHONE 4155550142</text>
+    <rect x="24" y="136" width="250" height="34" rx="6" class="bx-hub"/><text x="36" y="158" class="mono">HT-88412</text>
+    <rect x="24" y="182" width="250" height="34" rx="6" class="bx-hub"/><text x="36" y="204" class="mono">HT-90051</text>
+    <rect x="470" y="96" width="226" height="56" rx="7" class="bx-hub"/><text x="484" y="120" font-weight="600" class="mono t-hub">C-000123</text><text x="484" y="140" font-size="11.5" class="t-s">Maria Lopez, CRM</text>
+  </g>
+  <path class="ln" d="M274,61 C380,61 380,118 466,120"/>
+  <path class="ln" d="M274,107 C370,107 380,122 466,124"/>
+  <path class="ln" d="M274,153 C380,153 380,128 466,128" marker-end="url(#m121)"/>
+  <path class="ln-am" d="M274,199 C390,199 390,136 466,132"/>
+  <rect x="300" y="182" width="124" height="26" rx="5" class="bx-am"/><text x="362" y="199" font-size="11" text-anchor="middle" class="mono t-am">ended 2025-09-02</text>
+</svg>
+</div>
+<figcaption><b>Figure 12.1</b> Maria's same-as link. The dashed match was a mistake, so an effectivity row ended it, and no existing row had to change.</figcaption>
+</figure>
+<p>The matching rules are business decisions, so they live in the business vault (<a href="#s12-9">section 12.9</a>), and their results are stored as rows of the same-as link. Lantern's rule says: the same email after trim and lower case is a match, and the same phone plus the same last name is a match. In June, the rule wrongly matched Happy Tails customer HT-90051, Maria's sister Ana, to Maria, because they share a family phone. Chapter 6 showed what that mistake cost in a normalized core. The exercise shows the same fix in a vault.</p>
+
+<div class="lab" id="lab-sal">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Fix the wrong match with new rows</h4><span class="lab-tip">run the steps in order</span></div>
+  <p>The same three Happy Tails customers as in chapter 6. Run the match, find the mistake, and fix it.</p>
+  <div class="row">
+    <button class="btn primary" type="button" id="salMatch">1 Run the match</button>
+    <button class="btn" type="button" id="salFind">2 Find the mistake</button>
+    <button class="btn" type="button" id="salFix">3 End the match</button>
+    <button class="btn" type="button" id="salReset">Reset</button>
+  </div>
+  <div class="tbl" style="margin:0"><table class="rows" id="salTable"></table></div>
+  <div class="log" id="salLog" aria-live="polite"></div>
+</div>
+<p>The difference from chapter 6 is not that the vault avoids the mistake. Both models make the same wrong match. The difference is where the mistake lives. In the normalized core, the match was baked into 41 order rows. In the vault, Ana's orders were always stored under her own key, <code>HT-90051</code>. The match was one row in one link, and the fix is one more row. The vault can also say exactly when the warehouse believed the wrong match, because both rows have load times.</p>
+
+<h3 id="s12-4-2"><span class="num">12.4.2</span>Hierarchical links</h3>
+<p>Lantern's product categories form a tree: Dog, then Dog food, then Dry dog food. A <em class="term">hierarchical link</em> joins a hub to itself to store parent and child, such as <code>link_category_parent</code>. When merchandising moves cat litter under Home and Hygiene, the vault inserts a new link row, and an effectivity row ends the old one. Every past report can still show the tree as it was on any date. This is the vault's answer to the catalog reorganization in <a href="09-snowflake.html#s9-2">chapter 9</a>.</p>
+
+<h2 id="s12-5"><span class="num">12.5</span>Non-historized links</h2>
+<p>Some events never change once they happen: a card tender at the till, a timesheet punch, a web page view. Change detection is wasted on them, and a satellite per event doubles the row count. A <em class="term">non-historized link</em>, also called a transactional link, stores the event's values in the link row itself. Each punch is one row with the employee, the store, the time, and the punch type. It loads with a plain insert. Lantern's clocks record about 6 million punches a year, so the saving is real.</p>
+<p>A correction to an event is not an update. The source sends a new event that reverses or adjusts the first one. That matches how payroll systems already work. The 8 July shift correction from chapter 2 arrives as an adjustment punch, and both punches stay.</p>
+
+<h2 id="s12-6"><span class="num">12.6</span>Reference tables</h2>
+<p>Some data is neither a business key nor an event: lists of states, payment types, and minimum wages by city. These are <em class="term">reference tables</em>, small lookup tables that the business vault reads. They are not hubs. They usually keep history with effective dates and load times, like this one.</p>
+<p class="tblcap"><b>Table 12.3</b> Minimum wages, with illustrative rates</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>jurisdiction</th><th>effective_from</th><th>hourly_rate</th><th>load_dts</th></tr></thead>
+<tbody>
+<tr><td>California</td><td>2025-01-01</td><td>16.50</td><td>2024-12-15 02:00</td></tr>
+<tr><td>Oakland</td><td>2025-01-01</td><td>16.89</td><td>2024-12-15 02:00</td></tr>
+<tr class="new"><td>Oakland</td><td>2026-01-01</td><td>17.40</td><td>2025-12-12 02:00</td></tr>
+</tbody></table></div>
+
+<h2 id="s12-7"><span class="num">12.7</span>Point-in-time tables</h2>
+<p>Listing 11.4 showed the problem. To read Maria as of 1 June, you need the newest row up to that date from each satellite, with a window function each. Across 600,000 customers and a year of daily snapshots, that query is slow and hard to write.</p>
+<p>A <em class="term">point-in-time table</em>, or PIT, does that work once. For each hub key and each snapshot date, it stores the <code>load_dts</code> of the valid row in each satellite. Every later query then joins on equality, which every engine does fast.</p>
+<p class="tblcap"><b>Table 12.4</b> The customer PIT, one row per customer per snapshot date</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>hk_customer</th><th>snapshot_date</th><th>crm_load_dts</th><th>web_load_dts</th><th>pii_load_dts</th></tr></thead>
+<tbody>
+<tr><td>9f1c…a07e</td><td>2025-03-01</td><td>2024-11-03 02:00</td><td>2024-11-03 02:00</td><td>2024-11-03 02:00</td></tr>
+<tr><td>9f1c…a07e</td><td>2025-06-01</td><td>2025-05-02 02:00</td><td>2025-04-02 02:00</td><td>2024-11-03 02:00</td></tr>
+<tr><td>9f1c…a07e</td><td>2025-09-01</td><td>2025-08-05 02:00</td><td>2025-04-02 02:00</td><td>2025-08-05 02:00</td></tr>
+</tbody></table></div>
+
+<div class="lab" id="lab-pit">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Pick a snapshot date</h4><span class="lab-tip">move the slider</span></div>
+  <p>The PIT picks, for each satellite, the newest row loaded before the snapshot date. Highlighted rows are the ones that the PIT points at.</p>
+  <div class="row"><label for="pitRange">Snapshot</label><input type="range" id="pitRange" min="0" max="11" step="1" value="6"><span class="lab-tip" id="pitDate"></span></div>
+  <div id="pitTables"></div>
+  <div class="log" id="pitLog" aria-live="polite"></div>
+</div>
+
+<p class="lstcap"><b>Listing 12.1</b> Build the customer PIT for one snapshot date, then read through it</p>
+<pre class="sql"><span class="k">INSERT INTO</span> pit_customer (hk_customer, snapshot_date, crm_load_dts, web_load_dts, pii_load_dts)
+<span class="k">SELECT</span> h.hk_customer,
+       <span class="k">DATE</span> '2025-06-01',
+       <span class="k">COALESCE</span>((<span class="k">SELECT MAX</span>(c.load_dts) <span class="k">FROM</span> sat_customer_crm c
+                 <span class="k">WHERE</span> c.hk_customer = h.hk_customer
+                 <span class="k">AND</span>   c.load_dts &lt; <span class="k">TIMESTAMP</span> '2025-06-01 00:00:00'),<i class="ann">1</i>
+                <span class="k">TIMESTAMP</span> '0001-01-01 00:00:00'),                       <span class="c">-- ghost row</span><i class="ann">2</i>
+       <span class="k">COALESCE</span>((<span class="k">SELECT MAX</span>(w.load_dts) <span class="k">FROM</span> sat_customer_web w
+                 <span class="k">WHERE</span> w.hk_customer = h.hk_customer
+                 <span class="k">AND</span>   w.load_dts &lt; <span class="k">TIMESTAMP</span> '2025-06-01 00:00:00'),
+                <span class="k">TIMESTAMP</span> '0001-01-01 00:00:00'),
+       <span class="k">COALESCE</span>((<span class="k">SELECT MAX</span>(p.load_dts) <span class="k">FROM</span> sat_customer_pii p
+                 <span class="k">WHERE</span> p.hk_customer = h.hk_customer
+                 <span class="k">AND</span>   p.load_dts &lt; <span class="k">TIMESTAMP</span> '2025-06-01 00:00:00'),
+                <span class="k">TIMESTAMP</span> '0001-01-01 00:00:00')
+<span class="k">FROM</span>   hub_customer h;
+
+<span class="c">-- Reading through the PIT: plain equality joins, no window functions.</span>
+<span class="k">SELECT</span> p.snapshot_date, c.address, w.loyalty_tier
+<span class="k">FROM</span>   pit_customer p
+<span class="k">JOIN</span>   sat_customer_crm c <span class="k">ON</span> c.hk_customer = p.hk_customer <span class="k">AND</span> c.load_dts = p.crm_load_dts<i class="ann">3</i>
+<span class="k">JOIN</span>   sat_customer_web w <span class="k">ON</span> w.hk_customer = p.hk_customer <span class="k">AND</span> w.load_dts = p.web_load_dts;</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>For each satellite, the newest load before the snapshot. The half-open rule from <a href="../part-1/04-time-and-history.html#s4-3">section 4.3</a> applies: the snapshot date itself is excluded.</span></li>
+<li><i class="ann">2</i><span>A customer with no web account yet points at a <em class="term">ghost record</em>: one dummy row per satellite, with the earliest possible date and empty values. It lets the read query use inner joins everywhere.</span></li>
+<li><i class="ann">3</i><span>Equality on both columns of the satellite's key. Engines join this fast, and analysts can read it.</span></li>
+</ol>
+
+<h2 id="s12-8"><span class="num">12.8</span>Bridge tables</h2>
+<p>A PIT table removes the newest-row logic from satellites. A <em class="term">bridge table</em> removes long walks across links. To find the customer behind a sale line, a query walks <code>link_sale_line</code> to <code>hub_order</code> to <code>link_order_customer</code> to <code>hub_customer</code>, then through the same-as link to the master key. A bridge stores that whole path, with the hash key at each step, for each snapshot date. The recall query for lot L24-0917 becomes: find the lot in the bridge, read the master customer key, done.</p>
+<p>PIT and bridge tables hold no data of their own, only keys and load times. They can be dropped and rebuilt at any time. Most teams rebuild them after each load, for the snapshot dates that reports need.</p>
+<div class="callout"><span class="lbl">Note</span>The Data Vault bridge and the dimensional bridge in <a href="08-advanced-dimensional.html#s8-3">section 8.3</a> share a name and not a purpose. The dimensional bridge models a many-to-many relationship with weights. The vault bridge is a query helper that shortens join paths.</div>
+
+<h2 id="s12-9"><span class="num">12.9</span>The business vault</h2>
+<p>The raw vault stores what sources said. The <em class="term">business vault</em> stores what the company decided. It uses the same table types, built by queries over the raw vault instead of loaded from sources. Its main tool is the <em class="term">computed satellite</em>, which holds the result of a business rule for each key and date. Three Lantern rules show how it works.</p>
+<p><strong>Address standardization.</strong> A computed satellite turns "220 Bay Road" and "220 Bay Rd" into one standard form. The raw satellite still shows both, as in the exercise in <a href="11-data-vault-core.html#s11-4">section 11.4</a>.</p>
+<p><strong>Active customer, two versions.</strong> Stress test 8 changes the meaning of active customer from 12 months to 6 months. The computed satellite gets a <code>rule_version</code> column, and both versions are stored for every customer and every date. Last year's board report used version 1, and it still reproduces exactly. This year's reports use version 2. Nobody has to explain why last year's numbers changed, because they did not.</p>
+<p><strong>Pay and labor rules.</strong> California's daily overtime and meal break rules (<a href="../part-1/02-lantern-pet-supply.html#s2-4">section 2.4</a>) become a computed satellite on <code>link_employment</code>. For each shift, it stores regular hours, overtime hours, double-time hours, and any meal break penalty hour. The inputs are the raw punches and the minimum wage reference table.</p>
+<p class="lstcap"><b>Listing 12.2</b> A versioned business rule: active customers</p>
+<pre class="sql"><span class="k">INSERT INTO</span> bv_sat_customer_active (hk_customer, snapshot_date, rule_version, is_active)
+<span class="k">SELECT</span> m.master_hk, <span class="k">DATE</span> '2026-01-01', 'v2-6-months',<i class="ann">1</i>
+       <span class="k">CASE WHEN MAX</span>(s.order_date) &gt;= <span class="k">DATE</span> '2025-07-01' <span class="k">THEN TRUE ELSE FALSE END</span>
+<span class="k">FROM</span>   bv_customer_master m                                 <span class="c">-- same-as results</span><i class="ann">2</i>
+<span class="k">JOIN</span>   link_order_customer l <span class="k">ON</span> l.hk_customer = m.member_hk
+<span class="k">JOIN</span>   sat_order_web       s <span class="k">ON</span> s.hk_order    = l.hk_order
+<span class="k">WHERE</span>  s.load_dts &lt; <span class="k">TIMESTAMP</span> '2026-01-01 00:00:00'
+<span class="k">GROUP BY</span> m.master_hk;
+<span class="c">-- Version 1, with a 12-month window, stays in the same table, untouched.</span></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>The rule version is part of the row. Reports choose a version, and an old report keeps its old version.</span></li>
+<li><i class="ann">2</i><span>The rule counts orders across all of a person's keys, through the same-as results. A real version also unions store and Happy Tails orders.</span></li>
+</ol>
+<p>The wage claim from stress test 7 is now answerable in two ways. What did Lantern have on record on the 15 July pay date? Filter the raw punches and pay rates on <code>load_dts</code> up to that date. What was the correct pay? Rerun the overtime rule on the corrected punches. The difference is the retro pay, and every input carries its source and arrival time.</p>
+
+<h2 id="s12-10"><span class="num">12.10</span>Information marts</h2>
+<p>Analysts at Lantern never query hubs and links. They query <em class="term">information marts</em>: stars, wide tables, or summaries built from the raw and business vault. A mart can be a set of views or a set of tables. Views cost nothing to store and always show the latest data, but every query pays the join cost. Tables are fast and must be refreshed after each load. Most teams start with views and turn the slow ones into tables.</p>
+<p class="lstcap"><b>Listing 12.3</b> A type 2 customer dimension, built from the vault</p>
+<pre class="sql"><span class="k">CREATE VIEW</span> mart.dim_customer <span class="k">AS</span>
+<span class="k">SELECT</span> m.master_bk                                 <span class="k">AS</span> customer_id,   <span class="c">-- one id per person</span>
+       std.address_std                             <span class="k">AS</span> address,
+       s.moved_on                                  <span class="k">AS</span> valid_from,
+       <span class="k">COALESCE</span>(<span class="k">LEAD</span>(s.moved_on) <span class="k">OVER</span> (<span class="k">PARTITION BY</span> m.master_bk
+                                     <span class="k">ORDER BY</span> s.moved_on),
+                <span class="k">DATE</span> '9999-12-31')                  <span class="k">AS</span> valid_to<i class="ann">1</i>
+<span class="k">FROM</span>   sat_customer_crm s
+<span class="k">JOIN</span>   bv_customer_master m        <span class="k">ON</span> m.member_hk   = s.hk_customer
+<span class="k">JOIN</span>   bv_sat_customer_address_std std
+  <span class="k">ON</span>   std.hk_customer = s.hk_customer <span class="k">AND</span> std.load_dts = s.load_dts;<i class="ann">2</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span><code>LEAD</code> takes the next move date for the same person, which ends this version. The newest version gets the far-future date.</span></li>
+<li><i class="ann">2</i><span>The standardized address comes from the business vault, so "Rd" and "Road" are one version, not two.</span></li>
+</ol>
+<p>In a star built straight from sources, the SCD type is decided once and baked into stored rows. On a vault, a dimension is a query. If finance wants type 1 and marketing wants type 2, each gets its own view over the same satellites, and changing the type later is a change to a view, not a data migration.</p>
+
+<h2 id="s12-11"><span class="num">12.11</span>Deleting personal data</h2>
+<p>Stress test 12 is a real conflict. On 9 February 2026, Dev Patel asks Lantern to delete his personal information as a customer. The CCPA allows exceptions, including data that a business must keep to meet a legal duty, and payroll record keeping is one. So Lantern must delete Dev's customer data and keep his pay records. In an insert-only store, both halves need a plan made at design time.</p>
+<p><strong>Split personal data into its own satellites.</strong> Name, email, phone, and address go into <code>sat_customer_pii</code>, as <a href="11-data-vault-core.html#s11-4-1">section 11.4.1</a> suggested. Purchase history goes elsewhere. On request, delete Dev's rows from the personal-data satellites only. This is a deliberate, logged exception to the insert-only rule. His sales stay as anonymous history.</p>
+<p><strong>Protect personal business keys.</strong> The hub key for a web customer is an email, and a hash of an email is still personal data. Options include a keyed hash with a secret (an HMAC), a random token issued by a separate key store, or a non-personal customer number as the business key instead of the email.</p>
+<p><strong>Encrypt, then delete the key.</strong> With <em class="term">crypto-shredding</em>, each customer's personal values are encrypted with that customer's own key. To delete, destroy the key. The rows stay, and nobody can read them, including from backups.</p>
+<p><strong>Keep the employee side separate.</strong> Dev's employee data lives under <code>hub_employee</code>, with its own personal-data and pay satellites. The deletion touches the customer hub only. Pay records stay for the legal retention period, then follow their own schedule.</p>
+<p><strong>Record the request.</strong> The deletion is an event that an auditor will ask about. Store it in a non-historized link: who asked, when, which keys, and what was removed.</p>
+<div class="callout warning"><span class="lbl">Warning</span>Marts and PIT tables copy personal values. After a deletion, rebuild every mart that holds the customer's attributes, or build marts as views over the personal-data satellites so that they follow the deletion automatically.</div>
+
+<h2 id="s12-12"><span class="num">12.12</span>Building a vault from metadata</h2>
+<p>A vault for Lantern has hundreds of tables, and almost all of their load statements share one of three shapes: Listing 11.1 for hubs, Listing 11.2 for links, and Listing 11.3 for satellites. Writing each one by hand is slow and invites small differences, such as a missing <code>TRIM</code>, that break hash keys.</p>
+<p>So vault teams describe the model as metadata instead. A table lists each hub with its business key columns per source. Another lists each link with the hubs it joins, and another each satellite with its parent and columns. A generator turns that metadata into DDL, stage logic, and load statements, using one template per table type. Adding a source then means adding rows of metadata, and every load follows the same rules, including the same hash recipe. Many teams treat this automation as a requirement for Data Vault, not an extra: the pattern pays for its many tables only when the tables cost little to create.</p>
+
+<h2 id="s12-13"><span class="num">12.13</span>Common mistakes</h2>
+<p><strong>Skipping the business vault.</strong> If matching, standardization, and pay rules live in report queries or dashboard tools, they are repeated, they disagree, and nobody can version them. Then stress test 8 fails even though the raw vault is fine.</p>
+<p><strong>Letting analysts query the raw vault.</strong> The raw vault is for loading and audit. Without PIT tables and marts, analysts write slow, wrong queries and decide that Data Vault does not work.</p>
+<p><strong>No plan for deletion.</strong> Personal data mixed into general satellites makes stress test 12 a rewrite. Decide the personal-data split before the first load.</p>
+<p><strong>Treating every table as historized.</strong> Events that never change belong in non-historized links. Change detection on 6 million punches a year wastes time and storage.</p>
+<p><strong>Building everything before delivering anything.</strong> A vault grows well in small pieces. Start with one business process, deliver a mart on it, and add sources one at a time. That is the vault's main strength, so use it from the first month.</p>
+
+<h2 id="s12-14"><span class="num">12.14</span>Strengths and limits</h2>
+<p>With its special tables and its layers, Data Vault keeps every strength of the raw vault and adds the missing pieces. Same-as links match identities without losing any source's view, and a wrong match is one more row. Effectivity and multi-active satellites handle relationships that end and values that come in sets. The business vault stores rules as versioned data, so an old report reproduces exactly. PIT tables, bridges, and marts give analysts the easy shape of a star. Every row still carries its load time and record source, so audits work across the whole stack.</p>
+<p>The price is size and discipline. The vault has the most tables of any pattern in this book, and it needs automation to build and run them. Its layers must be rebuilt in the right order after each load. Deletion works only if the personal-data split was designed in from the start, and even then it is a deliberate exception to the pattern's main rule. Build and run effort, the thirteenth measure in <a href="../part-1/05-stress-tests.html#s5-5">section 5.5</a>, is High.</p>
+<div class="strip-wrap" data-pattern="vault"></div>
+<p><strong>Choose the full Data Vault</strong> when sources are many and keep changing, when audit and regulation matter, and when the team can automate. For a small team with a few stable sources, its tables and layers cost more than they return.</p>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>Multi-active satellites hold sets of current values. Effectivity satellites record when relationships start and end, using driving keys where one side decides.</li>
+    <li>Record-tracking and status-tracking satellites detect presence and deletion in snapshot sources.</li>
+    <li>Same-as links record which keys are one entity. A wrong match is ended with new rows, and the history of the mistake stays visible.</li>
+    <li>Hierarchical links store trees with history. Non-historized links store events that never change. Reference tables hold small lookup lists.</li>
+    <li>Point-in-time and bridge tables are rebuildable query helpers that remove newest-row logic and long join paths.</li>
+    <li>The business vault stores rule results as versioned computed satellites.</li>
+    <li>Information marts give analysts stars and wide tables, as views or tables over the vault.</li>
+    <li>Deletion needs personal-data satellites, protected business keys, and a separate employee side, designed in from the start.</li>
+    <li>Vaults are built from metadata and templates. The full vault scores Good on eleven tests, at the highest build and run effort in the book.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 12 · Data Vault: advanced · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  function $(s) { return document.querySelector(s); }
+
+  /* same-as fix */
+  (function () {
+    var state = 0, tab = $("#salTable"), log = $("#salLog");
+    function render() {
+      var head = "<thead><tr><th>master</th><th>duplicate</th><th>load_dts</th><th>effective</th><th>rule</th></tr></thead>";
+      var rows = [];
+      if (state >= 1) {
+        rows.push(["C-000123", "HT-88412", "2025-06-01 02:00", "from 2025-06-01", "phone and last name", ""]);
+        rows.push(["C-000123", "HT-90051", "2025-06-01 02:00", "from 2025-06-01", "phone and last name", state === 2 ? "hl" : ""]);
+        rows.push(["new 60122", "HT-90377", "2025-06-01 02:00", "from 2025-06-01", "no match, own master", ""]);
+      }
+      if (state >= 3) rows.push(["C-000123", "HT-90051", "2025-09-02 02:00", "ended 2025-09-02", "manual review", "new"]);
+      if (state >= 3) rows.push(["HT-90051", "HT-90051", "2025-09-02 02:00", "from 2025-09-02", "own master", "new"]);
+      tab.innerHTML = head + "<tbody>" + (rows.length ? rows.map(function (r) {
+        return '<tr class="' + r[5] + '"><td>' + r[0] + "</td><td>" + r[1] + "</td><td>" + r[2] + "</td><td>" + r[3] + "</td><td>" + esc(r[4]) + "</td></tr>";
+      }).join("") : '<tr><td colspan="5">No same-as rows yet.</td></tr>') + "</tbody>";
+      log.innerHTML = [
+        '<span class="m">The three Happy Tails keys are already in hub_customer. Their orders are in the vault under their own keys.</span>',
+        '<span class="ok">The rule wrote three same-as rows. Reports that use the master key now count HT-90051\'s orders as Maria\'s.</span>',
+        '<span class="bad">HT-90051 is Ana Lopez, Maria\'s sister, who shares the family phone. The mistake is one row in one link. Ana\'s 41 orders were always stored under her own key.</span>',
+        '<span class="ok">Two new rows: one ends the wrong match, one makes Ana her own master. No order row changes. Marts and PIT tables rebuild on the next load. The vault can show that it believed the wrong match from 1 June to 2 September.</span>'
+      ][state];
+    }
+    $("#salMatch").addEventListener("click", function () { state = 1; render(); });
+    $("#salFind").addEventListener("click", function () { state = 2; render(); });
+    $("#salFix").addEventListener("click", function () { state = 3; render(); });
+    $("#salReset").addEventListener("click", function () { state = 0; render(); });
+    render();
+  })();
+
+  /* PIT */
+  (function () {
+    var DATES = ["2024-12-01", "2025-01-01", "2025-02-01", "2025-03-01", "2025-04-01", "2025-05-01", "2025-06-01", "2025-07-01", "2025-08-01", "2025-09-01", "2025-10-01", "2025-11-01"];
+    var S = [
+      { name: "sat_customer_crm", col: "address", rows: [["2024-11-03", "14 Elm St, Oakland"], ["2025-03-14", "220 Bay Rd, San Jose"], ["2025-05-02", "220 Bay Road, San Jose"], ["2025-08-05", "9 Pine Ave, Sacramento"]] },
+      { name: "sat_customer_web", col: "loyalty_tier", rows: [["2024-11-03", "none"], ["2025-04-02", "Silver"], ["2025-10-01", "Gold"]] },
+      { name: "sat_customer_pii", col: "email", rows: [["2024-11-03", "maria.lopez@example.com"], ["2025-08-05", "maria.l@example.com"]] }
+    ];
+    var rng = $("#pitRange"), lbl = $("#pitDate"), box = $("#pitTables"), log = $("#pitLog");
+    function render() {
+      var d = DATES[+rng.value]; lbl.textContent = d;
+      var picks = [];
+      box.innerHTML = S.map(function (s) {
+        var idx = -1; s.rows.forEach(function (r, i) { if (r[0] < d) idx = i; });
+        picks.push(idx >= 0 ? s.rows[idx] : null);
+        return '<div class="tbl" style="margin:8px 0"><table class="rows"><thead><tr><th>' + s.name + " · load_dts</th><th>" + s.col + "</th></tr></thead><tbody>" + s.rows.map(function (r, i) {
+          return "<tr" + (i === idx ? ' class="hl"' : "") + "><td>" + r[0] + " 02:00</td><td>" + esc(r[1]) + "</td></tr>";
+        }).join("") + "</tbody></table></div>";
+      }).join("");
+      log.innerHTML = '<span class="m">pit_customer row for ' + d + ":</span><br>" + S.map(function (s, i) { var p = picks[i]; return esc(s.col) + " = " + (p ? esc(p[1]) + ' <span class="m">(row loaded ' + p[0] + ")</span>" : '<span class="warn">ghost record</span>'); }).join("<br>");
+    }
+    rng.addEventListener("input", render);
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>10 · One big table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="10">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part II · Chapter 10</div>
+<h1>One big table</h1>
+<p class="glance"><i><span>Origin</span>column-oriented engines, 2010s</i><i><span>Shape</span>one wide table per question area</i><i><span>Best at</span>simple, fast reads</i><i><span>Costs</span>every change is a rebuild</i></p>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s10-1">Why wide tables became popular</a></li>
+    <li><a href="#s10-2">What one row means, and how to choose the grain</a></li>
+    <li><a href="#s10-3">Building a wide table: full, partition, and incremental rebuilds</a></li>
+    <li><a href="#s10-4">History in a wide table</a></li>
+    <li><a href="#s10-5">The fan-out trap, and two ways around it</a></li>
+    <li><a href="#s10-6">Wide tables for dashboards and machine learning</a></li>
+    <li><a href="#s10-8">Strengths and limits on the twelve stress tests</a></li>
+  </ul>
+</div>
+
+<p>Lantern's store managers use a dashboard that shows sales by hour, product, and promotion. It has to answer in under a second, and it is built by a team that does not want to learn join paths. The team asks for one table with everything on it: one row per sale line, with the product name, the category, the store, the customer's tier, the promotion code, and about a hundred other columns.</p>
+<p>That request describes the pattern called <em class="term">one big table</em>, or OBT. It is the simplest pattern in this book to query, and the one with the least modeling in it. This chapter shows when that simplicity is the right choice, and the specific traps that come with it.</p>
+
+<h2 id="s10-1"><span class="num">10.1</span>The idea</h2>
+<p>One big table takes denormalization to its end. Instead of a fact table with dimensions around it, there is a single wide table. Every attribute that a user can filter or group by is copied onto every row. A Lantern sales OBT has one row per order line and about 120 columns.</p>
+<p>For a long time, this was considered a mistake. Row-oriented databases store each row together, so a wide table makes every query read every column, and repeated text values waste space. Two changes made the pattern practical in the 2010s. <em class="term">Column-oriented</em> storage keeps each column separately, so a query that reads 5 of 120 columns reads only those 5. And columns with many repeated values compress very well, so "Dog food" repeated 10 million times costs little. Wide tables became cheap to store and fast to scan, and their simplicity won many teams over.</p>
+<p>The pattern is rarely the whole warehouse in a mature team. It is usually the last layer: built from a star, a normalized core, or a vault, for one group of users. But some small teams build it straight from sources and use nothing else. This chapter covers both, and its scorecard treats one big table as it stands, built from sources, because that is when its limits show.</p>
+
+<h2 id="s10-2"><span class="num">10.2</span>What one row means</h2>
+<p>A wide table still has a grain, and it matters even more than in a star, because there is no other table to hold anything at a different grain. Lantern's <code>sales_wide</code> has one row per order line. Every column must make sense for one order line.</p>
+<p class="tblcap"><b>Table 10.1</b> A few columns of sales_wide</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>order_line_id</th><th>order_date</th><th>customer_name</th><th>customer_city</th><th>product_name</th><th>category</th><th>store_city</th><th>net_amount</th></tr></thead>
+<tbody>
+<tr><td>O-5001-1</td><td>2025-02-14</td><td>Maria Lopez</td><td>Oakland</td><td>Salmon Kibble 12 kg</td><td>Dog food</td><td>Oakland</td><td>64.99</td></tr>
+<tr><td>O-5102-1</td><td>2025-05-20</td><td>Maria Lopez</td><td>San Jose</td><td>Salmon Kibble 12 kg</td><td>Dog food</td><td>web</td><td>64.99</td></tr>
+</tbody></table></div>
+<p>Attributes from a coarser grain are safe to copy. Each order line has one order date, one store, and one customer. The trouble comes from attributes at a finer or crossing grain. An order has a shipping fee, and an order line does not. A customer has several pets. Putting either one on an order-line row breaks the grain, and <a href="#s10-5">section 10.5</a> shows what happens.</p>
+<div class="callout tip"><span class="lbl">Tip</span>Build one wide table per grain, not one wide table for the whole company. Lantern has <code>sales_wide</code> at order-line grain, <code>orders_wide</code> at order grain for shipping and payment, and <code>grooming_wide</code> at appointment grain.</div>
+
+<h2 id="s10-3"><span class="num">10.3</span>Building a wide table</h2>
+<p>A wide table is always derived. It is the result of a query that joins events to all their context. Listing 10.1 builds <code>sales_wide</code> from Lantern's star. The same query works from a normalized core or a vault, with different joins.</p>
+<p class="lstcap"><b>Listing 10.1</b> Build sales_wide from the star</p>
+<pre class="sql"><span class="k">INSERT INTO</span> sales_wide
+<span class="k">SELECT</span> f.order_id || '-' || <span class="k">CAST</span>(f.order_line_no <span class="k">AS VARCHAR</span>(4)) <span class="k">AS</span> order_line_id,
+       d.calendar_date   <span class="k">AS</span> order_date,
+       d.fiscal_month,
+       c.customer_name,  c.city <span class="k">AS</span> customer_city,  c.loyalty_tier,<i class="ann">1</i>
+       p.product_name,   p.brand, p.category, p.department,
+       s.store_name,     s.city <span class="k">AS</span> store_city,     s.region,
+       pr.promo_code,
+       f.lot_number,
+       f.quantity, f.net_amount, f.cost_amount
+<span class="k">FROM</span>   fact_sales_line f
+<span class="k">JOIN</span>   dim_date      d  <span class="k">ON</span> d.date_key      = f.date_key
+<span class="k">JOIN</span>   dim_customer  c  <span class="k">ON</span> c.customer_key  = f.customer_key<i class="ann">2</i>
+<span class="k">JOIN</span>   dim_product   p  <span class="k">ON</span> p.product_key   = f.product_key
+<span class="k">JOIN</span>   dim_store     s  <span class="k">ON</span> s.store_key     = f.store_key
+<span class="k">JOIN</span>   dim_promotion pr <span class="k">ON</span> pr.promotion_key = f.promotion_key
+<span class="k">WHERE</span>  d.calendar_date &gt;= <span class="k">DATE</span> '2025-05-01'
+<span class="k">AND</span>    d.calendar_date &lt;  <span class="k">DATE</span> '2025-06-01';                <span class="c">-- one month partition</span><i class="ann">3</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>Every attribute is copied as a plain column. The customer's city here is the one on the dimension row that the fact points to.</span></li>
+<li><i class="ann">2</i><span>Inner joins are safe because the star has Unknown rows for every missing key. Built straight from sources, these must be outer joins, or rows disappear.</span></li>
+<li><i class="ann">3</i><span>The build runs per month, so a change to one month rebuilds only that month.</span></li>
+</ol>
+<p>There are three ways to keep a wide table up to date. A <strong>full rebuild</strong> drops and recreates the table each night. It is simple and always consistent, and it grows slower as history grows. A <strong>partition rebuild</strong> recreates only the date partitions that changed, as in Listing 10.1. It is the common choice. An <strong>incremental merge</strong> updates only the rows whose inputs changed. It is the fastest, and the hardest to get right, because a change to one dimension row can touch millions of wide rows.</p>
+<div class="callout warning"><span class="lbl">Warning</span>A change to a dimension attribute is a change to every wide row that copied it. When merchandising renames a category, a partition rebuild must rebuild every partition that contains products of that category, which is usually all of them.</div>
+
+<h2 id="s10-4"><span class="num">10.4</span>History in a wide table</h2>
+<p>Each value on a wide row is frozen at build time. Whether it shows history depends on what the build query read.</p>
+<p>If the build joins to a type 2 star, as in Listing 10.1, each row copies the version that was valid on the order date. Maria's February order shows Oakland, and her May order shows San Jose. The wide table has business-time history for free, because the star did the work.</p>
+<p>If the build reads current values, such as today's CRM table, every row shows today's value. All of Maria's orders show Sacramento. Many teams add both: <code>customer_city_at_order</code> and <code>customer_city_now</code>, which is type 6 from <a href="08-advanced-dimensional.html#s8-1">section 8.1</a>, flattened into columns.</p>
+<p>Record time is harder. A rebuild replaces rows, so the table never shows what it held before. If that matters, teams keep <em class="term">snapshot tables</em>: a full copy of the wide table, or of its changed partitions, stamped with the build date. Snapshots answer "what did the dashboard show on 1 March", at the cost of storing the table many times over.</p>
+
+<h2 id="s10-5"><span class="num">10.5</span>The fan-out trap</h2>
+<p>The most dangerous mistake in a wide table is a row that means two things. In September 2025, Biscuit gets a second owner. The team that maintains <code>grooming_wide</code> wants owner names on each visit. The obvious build joins visits to owners, and each of Biscuit's visits becomes two rows, one per owner. Every revenue total that includes Biscuit now counts his visits twice. This is <em class="term">fan-out</em>: a join that multiplies rows, silently.</p>
+<p>There are two safe ways to add many-valued data to a wide table.</p>
+<p><strong>Allocation columns</strong> keep one row per owner, but add a share column, such as <code>owner_share = 0.5</code>, and use <code>amount_paid * owner_share</code> in every sum. This is the bridge weight from <a href="08-advanced-dimensional.html#s8-3">section 8.3</a>, copied onto the row. It works only if every user knows to multiply.</p>
+<p><strong>Array columns</strong> keep one row per visit and store the owners as a list in a single column, such as <code>owners = ['Maria Lopez', 'Sam Ortiz']</code>. Sums stay correct, because the row count does not change. Questions about one owner need a function that looks inside the list. ANSI SQL has array types since SQL:1999, and most analytical engines support them, with different syntax.</p>
+
+<div class="lab" id="lab-fan">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Add a second owner</h4><span class="lab-tip">choose a design</span></div>
+  <p>Biscuit has three 68 USD visits after Sam becomes an owner. Choose how <code>grooming_wide</code> stores owners, and see the rows and the revenue total that a dashboard shows.</p>
+  <div class="row" role="group" aria-label="Design">
+    <button class="btn on" type="button" data-fan="join">Join to owners</button>
+    <button class="btn" type="button" data-fan="alloc">Allocation column</button>
+    <button class="btn" type="button" data-fan="array">Array column</button>
+  </div>
+  <div class="tbl" style="margin:0"><table class="rows" id="fanTable"></table></div>
+  <div class="log" id="fanLog" aria-live="polite"></div>
+</div>
+<p>The same trap applies to Maria's three phone numbers, a product's several suppliers, and any other many-valued attribute. Put only values with exactly one value per row at its grain into a wide table. Everything else needs an array, an allocation, or its own wide table at its own grain.</p>
+
+<h2 id="s10-6"><span class="num">10.6</span>Wide tables for dashboards and machine learning</h2>
+<p>Two kinds of user benefit most from wide tables.</p>
+<p><strong>Dashboards</strong> issue many small queries with filters on a few columns, and they need answers in under a second. A wide table, partitioned by date, lets each query scan a few columns of a few partitions, with no joins to plan. Lantern's store dashboard reads <code>sales_wide</code> for the current and previous week only.</p>
+<p><strong>Machine learning</strong> works on wide tables by nature. A model that predicts which customers will lapse needs one row per customer with many features: days since last order, average basket, number of pets, loyalty tier, share of autoship. That table is a wide table at customer grain, usually called a <em class="term">feature table</em>. It must be built with care for time: each feature must use only data that was known at the prediction date, or the model learns from the future. The as-of queries in <a href="../part-1/04-time-and-history.html#s4-5">section 4.5</a> are the tool for that.</p>
+
+<h2 id="s10-7"><span class="num">10.7</span>Common mistakes</h2>
+<p><strong>One table for everything.</strong> A single wide table at order-line grain cannot hold order-level shipping fees or customer-level pet counts without breaking its sums. Build one wide table per grain.</p>
+<p><strong>Joining in many-valued data.</strong> See <a href="#s10-5">section 10.5</a>. Check the row count before and after every join in the build. If it grows, the grain is broken.</p>
+<p><strong>Using the wide table as the only record.</strong> A wide table that is built from sources and has no layer underneath cannot be rebuilt after a mistake, and cannot show history it did not copy. Keep the raw sources, or a model underneath, from which the table can be rebuilt.</p>
+<p><strong>Copying personal data by default.</strong> Every wide row that carries a name or email is one more place to delete it. Copy personal attributes only into the tables that need them.</p>
+<p><strong>Inner joins from sources.</strong> Without Unknown rows, an inner join drops every sale whose customer or product is missing. Use outer joins and fill in placeholders.</p>
+
+<h2 id="s10-8"><span class="num">10.8</span>Strengths and limits</h2>
+<p>One big table is the easiest pattern to use. Any person who can filter a spreadsheet can query it, any dashboard tool can read it, and on column-oriented engines it is fast. It needs little design, it is quick to build, and it gives machine learning the shape it already wants. As the last layer on top of a better model, it costs little, because it can always be rebuilt from the layer below.</p>
+<p>As the whole warehouse, its limits are serious. Every attribute is a copy, so every change to a source, a rule, or a match means a rebuild, and every copy of personal data must be found. The grain cannot hold many-valued data without arrays or allocation. And because each rebuild replaces rows, the table keeps no record of what it showed before. The strip below scores one big table built straight from sources, which is when these limits apply.</p>
+<div class="strip-wrap" data-pattern="obt"></div>
+<p><strong>Choose one big table</strong> for dashboards, self-service analysis, and machine learning features, built from a model underneath that can rebuild it. Use it alone only when the sources are few, history matters little, and the team is small.</p>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>One big table copies every attribute onto every row. Column-oriented storage and compression made the pattern practical.</li>
+    <li>A wide table still has a grain. Build one wide table per grain, and copy only values that have one value per row at that grain.</li>
+    <li>Wide tables are derived. Full, partition, and incremental rebuilds keep them up to date, and a dimension change can touch every partition.</li>
+    <li>Business-time history comes from the build's source. Record-time history needs snapshot tables.</li>
+    <li>Joining many-valued data causes fan-out, which multiplies rows and sums. Allocation columns and array columns avoid it.</li>
+    <li>Wide tables suit dashboards and machine learning features, built with as-of logic so that features do not use future data.</li>
+    <li>As the last layer, one big table is cheap and useful. As the whole warehouse, it makes every change a rebuild and keeps no record of past states.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 10 · One big table · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  var V = ["G-21455", "G-22018", "G-22640"];
+  var D = {
+    join:  { head: ["visit_id", "pet", "owner", "amount_paid"], rows: function () { var r = []; V.forEach(function (v) { r.push([v, "Biscuit", "Maria Lopez", "68.00"]); r.push([v, "Biscuit", "Sam Ortiz", "68.00"]); }); return r; },
+             total: "408.00", cls: "bad", msg: "Six rows for three visits. SUM(amount_paid) shows 408.00 instead of 204.00, and nothing on the dashboard says why." },
+    alloc: { head: ["visit_id", "pet", "owner", "amount_paid", "owner_share"], rows: function () { var r = []; V.forEach(function (v) { r.push([v, "Biscuit", "Maria Lopez", "68.00", "0.5"]); r.push([v, "Biscuit", "Sam Ortiz", "68.00", "0.5"]); }); return r; },
+             total: "204.00", cls: "warn", msg: "Six rows, and SUM(amount_paid * owner_share) gives 204.00. Correct, as long as every user multiplies. A plain SUM still shows 408.00." },
+    array: { head: ["visit_id", "pet", "owners", "amount_paid"], rows: function () { return V.map(function (v) { return [v, "Biscuit", "[Maria Lopez, Sam Ortiz]", "68.00"]; }); },
+             total: "204.00", cls: "ok", msg: "Three rows for three visits. SUM(amount_paid) gives 204.00. A question about one owner needs a function that looks inside the list." }
+  };
+  var tab = document.getElementById("fanTable"), log = document.getElementById("fanLog");
+  function render(k) {
+    var d = D[k], rows = d.rows();
+    tab.innerHTML = "<thead><tr>" + d.head.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr></thead><tbody>" + rows.map(function (r) {
+      return "<tr>" + r.map(function (c) { return "<td>" + esc(c) + "</td>"; }).join("") + "</tr>";
+    }).join("") + '<tr class="hl"><td colspan="' + (d.head.length - 1) + '">Dashboard revenue total</td><td>' + d.total + "</td></tr></tbody>";
+    log.innerHTML = '<span class="' + d.cls + '">' + esc(d.msg) + "</span>";
+    [].slice.call(document.querySelectorAll("[data-fan]")).forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-fan") === k); });
+  }
+  [].slice.call(document.querySelectorAll("[data-fan]")).forEach(function (b) { b.addEventListener("click", function () { render(b.getAttribute("data-fan")); }); });
+  render("join");
+})();
+</script>
+</body>
+</html>

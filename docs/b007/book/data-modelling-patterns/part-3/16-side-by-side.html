@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>16 · All patterns side by side</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="16">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part III · Chapter 16</div>
+<h1>All patterns side by side</h1>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s16-1">How to read the comparison</a></li>
+    <li><a href="#s16-2">The full grid: eight patterns, twelve tests, and effort</a></li>
+    <li><a href="#s16-3">What the columns say about each pattern</a></li>
+    <li><a href="#s16-4">What the rows say about each test</a></li>
+    <li><a href="#s16-5">Weighting the tests for your situation</a></li>
+    <li><a href="#s16-6">The full reasoning for every result</a></li>
+  </ul>
+</div>
+
+<p>Each pattern chapter ended with a strip of twelve chips and a link to this chapter. This is where the strips meet. The grid puts every pattern next to every other on the same twelve tests, with the reasoning for each result, so that you can compare them directly and disagree with any single result for a stated reason.</p>
+
+<h2 id="s16-1"><span class="num">16.1</span>How to read the comparison</h2>
+<p>Three rules from <a href="../part-1/05-stress-tests.html">chapter 5</a> apply to everything in this chapter.</p>
+<p><strong>Each pattern is scored as teams deploy it.</strong> The normalized warehouse includes its dependent marts. The star includes the techniques from chapter 8. Data Vault includes its PIT tables, business vault, and marts. Anchor modeling includes its generated views. The basic star and the raw vault, scored in chapters 7 and 11, are not in the grid.</p>
+<p><strong>The results are judgments.</strong> Each one follows from the reasoning in its pattern chapter and in <a href="#s16-6">section 16.6</a>. A team with different skills can reasonably move a result by one step.</p>
+<p><strong>Effort is the thirteenth row.</strong> It counts tables, load code, and what a new team member must learn. It is not a stress test, and it is what keeps the heavy patterns from winning by default.</p>
+
+<h2 id="s16-2"><span class="num">16.2</span>The full grid</h2>
+<p>Table 16.1 holds every result. Each test name links to its definition in chapter 5. Each chip links to its reasoning in section 16.6.</p>
+<p class="tblcap"><b>Table 16.1</b> Eight patterns on twelve tests, plus build and run effort</p>
+<div class="tbl"><table id="grid16"></table></div>
+<div class="legend"><span><span class="chip c-good">Good</span> new rows or tables only</span><span><span class="chip c-cost">Costly</span> changes to existing tables, or a reload</span><span><span class="chip c-fail">Fails</span> loses information or needs a redesign</span><span>Effort: <span class="chip c-good">Low</span> <span class="chip c-cost">Medium</span> <span class="chip c-fail">High</span></span></div>
+
+<h2 id="s16-3"><span class="num">16.3</span>Reading by column</h2>
+<p>Read each column as a profile of one pattern.</p>
+<p><strong>The dimensional family is mostly amber.</strong> The star, the snowflake, and the unified star schema handle every test, and most of them at a cost: integration happens on the way in, relationships live in the fact grain, and audits need bitemporal dimensions. Their green cells are history and fast queries. Their effort is the lowest of the patterns that keep history well.</p>
+<p><strong>The normalized warehouse is amber with green at the edges.</strong> It is strong on many-valued data, which normalization handles naturally, and on fast queries through its marts. With one big table, it is one of two patterns that fail the audit test as deployed, because update-in-place loads lose record time.</p>
+<p><strong>One big table is mostly amber, with green on fast queries and one red cell.</strong> As a pattern on its own, it handles change by rebuilding, which works and costs. It fails only the audit, because a rebuild keeps no record of what the table held before.</p>
+<p><strong>Data Vault is almost all green.</strong> It is the only pattern that is good on every test except deletion. Its effort is High, and that is the honest price of the column.</p>
+<p><strong>Anchor modeling is mostly green, with amber where identity and rules matter.</strong> It handles structural and temporal change best of all at the level of single attributes. It decides identity on the way in and has no separate rule layer.</p>
+<p><strong>The activity schema is mixed, in a different way.</strong> It is green on history, schema change, late data, rules, fast simple queries, and deletion, all of which follow from one immutable table per entity. It is amber on anything that crosses entities or needs record time.</p>
+
+<h2 id="s16-4"><span class="num">16.4</span>Reading by row</h2>
+<p>Read each row to see which tests separate the patterns, and which do not.</p>
+<p><strong>The audit, test 7, separates most.</strong> Only Data Vault and anchor modeling keep record time on every value by design. Every other pattern needs extra design or fails.</p>
+<p><strong>The new source and the key conflict, tests 1 and 2, split the patterns by when they decide identity.</strong> Data Vault stores every source key and matches later, so it is the only one that is good on both. Every other pattern matches on the way in, at a cost.</p>
+<p><strong>Fast queries, test 11, are green for most patterns as deployed.</strong> That is because the patterns that are hard to query, the normalized core and the vault, are deployed with stars or marts on top. The row shows why serving layers exist.</p>
+<p><strong>Deletion, test 12, is amber almost everywhere.</strong> Only the activity schema is better, because each customer's data sits under one key in one table. No pattern makes the conflict between privacy and record keeping disappear. It is solved by design choices made before the first load.</p>
+
+<h2 id="s16-5"><span class="num">16.5</span>Weighting the tests</h2>
+<p>No pattern wins every row, so the right choice depends on which rows matter to you. The exercise turns that into numbers. Each slider sets how much a test matters, from 0 to 3. Scores use Good = 2, Costly = 1, and Fails = 0, times the weight. For effort, Low = 2, Medium = 1, and High = 0.</p>
+<div class="lab" id="lab-weight">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Weight the tests for your situation</h4><span class="lab-tip">move sliders or pick a preset</span></div>
+  <div class="row" id="presets">
+    <button class="btn" type="button" data-preset="small">Small team, one source</button>
+    <button class="btn" type="button" data-preset="regulated">Regulated, many sources</button>
+    <button class="btn" type="button" data-preset="customer">Customer analytics</button>
+    <button class="btn on" type="button" data-preset="lantern">Lantern Pet Supply</button>
+    <button class="btn" type="button" data-preset="flat">All equal</button>
+  </div>
+  <div class="weights" id="weightSliders"></div>
+  <div class="bars" id="weightBars" aria-live="polite"></div>
+  <div class="log" id="weightLog"></div>
+</div>
+<p>The presets tell the story. A small team with one stable source gets the low-effort patterns at the top, the activity schema, the star, and one big table, and a vault is expensive overhead. The activity schema leads that preset only because it ignores the tests that the activity schema handles poorly, such as relationships and payroll, so read it together with the questions in chapter 18. A regulated company with many sources gets Data Vault at the top. A team focused on customer behavior gets the activity schema near the top. Lantern, with seven sources, an acquisition, wage claims, recalls, and privacy requests, lands closest to the regulated case. <a href="17-hybrid.html">Chapter 17</a> shows why the best answer is usually more than one pattern.</p>
+
+<h2 id="s16-6"><span class="num">16.6</span>The full reasoning</h2>
+<p>Each pattern's results are listed below with their reasons. Every chip in a chapter strip links to its row here.</p>
+<div id="reasons16"></div>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>The grid scores eight patterns, as deployed, on twelve tests and on build and run effort.</li>
+    <li>The dimensional family is mostly Costly with Good on history and fast queries, at low effort.</li>
+    <li>Data Vault is Good on every test except deletion, at the highest effort.</li>
+    <li>Anchor modeling is strongest on structural and temporal change. The activity schema is strongest on events, rules, and deletion within one entity.</li>
+    <li>The audit test and the identity tests separate the patterns most. Fast queries separate them least, because heavy cores are deployed with serving layers.</li>
+    <li>The right pattern depends on which tests matter to you. Weighting them changes the ranking.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 16 · All patterns side by side · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var B = window.Book, esc = B.esc, TESTS = B.tests, S = B.scores;
+  var P = [
+    ["normalized", "Normalized", "06-normalized.html", 1],
+    ["star", "Star", "07-dimensional-modeling.html", 2],
+    ["snowflake", "Snowflake", "09-snowflake.html", 2],
+    ["obt", "One big table", "10-one-big-table.html", 2],
+    ["vault", "Data Vault", "11-data-vault-core.html", 0],
+    ["anchor", "Anchor", "13-anchor.html", 0],
+    ["activity", "Activity schema", "14-activity-schema.html", 2],
+    ["uss", "Unified star", "15-unified-star-schema.html", 1]
+  ];
+  var EFFORT_WHY = {
+    normalized: "An enterprise model, integration rules, a key cross-reference, and dependent marts to build and keep in step.",
+    star: "Few tables per process, well-known techniques, and many people who already know them.",
+    snowflake: "The star's effort, plus chained dimensions and their load order.",
+    obt: "One build query per table. The least design of any pattern.",
+    vault: "The most tables in the book, a stage layer, PIT tables, a business vault, and marts. Needs automation.",
+    anchor: "One table per attribute, generated views, and an engine that eliminates joins. Needs a generator.",
+    activity: "One stream table and one transformation per activity. Identity stitching is the main ongoing work.",
+    uss: "The star's effort, plus a bridge as long as all the facts together, rebuilt after each load."
+  };
+  var CH = [["c-fail", "Fails"], ["c-cost", "Costly"], ["c-good", "Good"]], EF = ["High", "Medium", "Low"];
+  function chip(v, lbl) { return '<span class="chip ' + CH[v][0] + '">' + (lbl || CH[v][1]) + "</span>"; }
+  var g = document.getElementById("grid16");
+  g.innerHTML = "<thead><tr><th>Test</th>" + P.map(function (p) { return '<th><a href="../part-2/' + p[2] + '" style="border:none;color:inherit">' + esc(p[1]) + "</a></th>"; }).join("") + "</tr></thead><tbody>" +
+    TESTS.map(function (t, i) {
+      return '<tr><td style="white-space:nowrap"><a href="../part-1/05-stress-tests.html#t' + (i + 1) + '">' + (i + 1) + " " + esc(t) + "</a></td>" + P.map(function (p) {
+        var v = S[p[0]][i][0]; return '<td><a href="#' + p[0] + "-t" + (i + 1) + '" style="border:none" title="' + esc(S[p[0]][i][1]) + '">' + chip(v) + "</a></td>";
+      }).join("") + "</tr>";
+    }).join("") +
+    '<tr><td style="white-space:nowrap"><strong>Build and run effort</strong></td>' + P.map(function (p) { return '<td><a href="#' + p[0] + '-effort" style="border:none" title="' + esc(EFFORT_WHY[p[0]]) + '">' + chip(p[3], EF[p[3]]) + "</a></td>"; }).join("") + "</tr></tbody>";
+
+  var r = document.getElementById("reasons16");
+  r.innerHTML = P.map(function (p) {
+    var s = S[p[0]];
+    var g2 = s.filter(function (x) { return x[0] === 2; }).length, c = s.filter(function (x) { return x[0] === 1; }).length, f = s.filter(function (x) { return x[0] === 0; }).length;
+    return '<h3 id="' + p[0] + '">' + esc(p[1]) + ' <span style="font-weight:400;font-size:14px;color:var(--ink-soft)">· ' + g2 + " good, " + c + " costly, " + f + ' fail · <a href="../part-2/' + p[2] + '">chapter</a></span></h3>' +
+      '<div class="tbl"><table class="scorecard"><thead><tr><th>Test</th><th>Result</th><th>Why</th></tr></thead><tbody>' +
+      s.map(function (x, i) { return '<tr id="' + p[0] + "-t" + (i + 1) + '"><td style="white-space:nowrap"><a href="../part-1/05-stress-tests.html#t' + (i + 1) + '">' + (i + 1) + " " + esc(TESTS[i]) + "</a></td><td>" + chip(x[0]) + "</td><td>" + esc(x[1]) + "</td></tr>"; }).join("") +
+      '<tr id="' + p[0] + '-effort"><td><strong>Effort</strong></td><td>' + chip(p[3], EF[p[3]]) + "</td><td>" + esc(EFFORT_WHY[p[0]]) + "</td></tr></tbody></table></div>";
+  }).join("");
+
+  var ROWS = TESTS.concat(["Build and run effort"]);
+  var PRESETS = {
+    small:     [0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 3, 1, 3],
+    regulated: [3, 3, 2, 2, 2, 2, 3, 2, 3, 1, 2, 2, 1],
+    customer:  [1, 2, 3, 0, 2, 2, 0, 2, 0, 1, 3, 2, 2],
+    lantern:   [3, 3, 2, 2, 1, 2, 3, 2, 3, 2, 2, 3, 1],
+    flat:      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+  };
+  var W = PRESETS.lantern.slice();
+  var sl = document.getElementById("weightSliders"), bars = document.getElementById("weightBars"), wlog = document.getElementById("weightLog");
+  sl.innerHTML = ROWS.map(function (t, i) {
+    return '<label for="w' + i + '"><span>' + esc(t) + '</span><span style="display:inline-flex;gap:8px;align-items:center"><input type="range" id="w' + i + '" min="0" max="3" step="1" value="' + W[i] + '" data-i="' + i + '"><b style="font-family:var(--mono);font-size:12px;width:10px" id="wv' + i + '">' + W[i] + "</b></span></label>";
+  }).join("");
+  function score() {
+    var max = 2 * W.reduce(function (s, v) { return s + v; }, 0) || 1;
+    var res = P.map(function (p) {
+      var s = 0; for (var i = 0; i < 12; i++) s += S[p[0]][i][0] * W[i];
+      s += p[3] * W[12];
+      return [p[1], Math.round(s / max * 100)];
+    }).sort(function (a, b) { return b[1] - a[1]; });
+    bars.innerHTML = res.map(function (r) { return '<div class="bar"><span>' + esc(r[0]) + '</span><div class="track"><div class="fill" style="width:' + r[1] + '%"></div></div><span class="val">' + r[1] + "%</span></div>"; }).join("");
+    wlog.innerHTML = '<span class="ok">Best fit: ' + esc(res[0][0]) + " at " + res[0][1] + '%.</span> <span class="m">Runner-up: ' + esc(res[1][0]) + " at " + res[1][1] + "%. Scores are a share of the best possible total for these weights.</span>";
+  }
+  [].slice.call(sl.querySelectorAll("input")).forEach(function (r) { r.addEventListener("input", function () { W[+r.getAttribute("data-i")] = +r.value; document.getElementById("wv" + r.getAttribute("data-i")).textContent = r.value; [].slice.call(document.querySelectorAll("[data-preset]")).forEach(function (b) { b.classList.remove("on"); }); score(); }); });
+  [].slice.call(document.querySelectorAll("[data-preset]")).forEach(function (b) { b.addEventListener("click", function () {
+    W = PRESETS[b.getAttribute("data-preset")].slice();
+    W.forEach(function (v, i) { document.getElementById("w" + i).value = v; document.getElementById("wv" + i).textContent = v; });
+    [].slice.call(document.querySelectorAll("[data-preset]")).forEach(function (x) { x.classList.toggle("on", x === b); });
+    score();
+  }); });
+  score();
+  if (location.hash) { var el = document.getElementById(location.hash.slice(1)); if (el) el.scrollIntoView(); }
+})();
+</script>
+</body>
+</html>

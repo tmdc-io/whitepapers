@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>4 · Time and history</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="04">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part I · Chapter 4</div>
+<h1>Time and history</h1>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s4-1">Business time and record time, the two clocks of history</a></li>
+    <li><a href="#s4-2">Three ways to keep history: snapshots, change logs, and versioned rows</a></li>
+    <li><a href="#s4-3">Effective dating with half-open intervals</a></li>
+    <li><a href="#s4-4">Bitemporal data, with both clocks on every row</a></li>
+    <li><a href="#s4-5">As-of queries for each clock</a></li>
+    <li><a href="#s4-6">Insert-only storage compared with update in place</a></li>
+  </ul>
+</div>
+
+<p>Operational systems live in the present. They know Maria's address now. An analytical model lives in the past as well. It must know where Maria lived when she placed each order, and sometimes also what the company believed about her address on a given day. Those two questions sound the same. They are not, and the difference decides several of the stress tests in this book.</p>
+<p>This chapter explains the two clocks of history, the main ways to store history, and how to query it. Every pattern chapter refers back to these ideas when it shows how its pattern keeps change.</p>
+
+<h2 id="s4-1"><span class="num">4.1</span>Two clocks</h2>
+<p><em class="term">Business time</em>, also called valid time, is when something was true in the real world. Maria lived at 14 Elm St in Oakland until 10 March 2025. That date belongs to her life, not to any computer.</p>
+<p><em class="term">Record time</em>, also called transaction time or system time, is when a database learned or recorded something. Lantern's CRM recorded her move on 14 March, four days later. If a clerk then fixed a typo in the move date on 21 March, the database has a third date: when its belief changed.</p>
+<p>Most questions use business time. "Revenue by the customer's city at the time of the order" needs to know where Maria lived on each order date. Audits and investigations use record time. "What address did the company have on file when it sent the 18 March mailing?" needs to know what the database believed on 18 March, even if that belief was later corrected.</p>
+<div class="callout"><span class="lbl">Note</span>Different patterns and books use different names for the two clocks: valid time and transaction time, effective date and load date, business time and system time. This book says business time and record time, and uses the column names <code>valid_from</code> and <code>recorded_at</code> or <code>load_dts</code>.</div>
+
+<h2 id="s4-2"><span class="num">4.2</span>Three ways to keep history</h2>
+<p>There are three basic ways to keep history. Every pattern in this book uses one or more of them.</p>
+<p><strong>Snapshots</strong> copy the whole state at regular times. Every night, Lantern copies the full customer table and stamps it with the date. History is complete at each snapshot time and missing in between. If Maria moved and moved back within one day, the snapshots do not show it. Snapshots are simple and expensive: 600,000 customer rows a night is about 220 million rows a year, almost all unchanged.</p>
+<p><strong>Change logs</strong> store each change as an event. "On 14 March, the CRM changed Maria's address from Elm St to Bay Rd." A log is small and complete, but it is hard to query, because the state on any date must be rebuilt by replaying the changes up to that date.</p>
+<p><strong>Versioned rows</strong> store one row per version of an entity, with the period during which that version was true. This is the most common method in analytical models. A star schema's slowly changing dimension, a Data Vault satellite, and an anchor model's historized attribute are all versioned rows.</p>
+<p class="tblcap"><b>Table 4.1</b> Maria's address as versioned rows</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>customer_id</th><th>address</th><th>valid_from</th><th>valid_to</th></tr></thead>
+<tbody>
+<tr><td>C-000123</td><td>14 Elm St, Oakland</td><td>2022-04-01</td><td>2025-03-10</td></tr>
+<tr><td>C-000123</td><td>220 Bay Rd, San Jose</td><td>2025-03-10</td><td>2025-08-02</td></tr>
+<tr><td>C-000123</td><td>9 Pine Ave, Sacramento</td><td>2025-08-02</td><td>9999-12-31</td></tr>
+</tbody></table></div>
+
+<h2 id="s4-3"><span class="num">4.3</span>Effective dating</h2>
+<p>Table 4.1 uses <em class="term">effective dating</em>: each row carries the start and end of its period. Two small decisions make effective dating reliable.</p>
+<p><strong>Use half-open intervals.</strong> A half-open interval includes its start and excludes its end, written [valid_from, valid_to). Maria's Oakland row is valid from 1 April 2022 up to, but not including, 10 March 2025. Her San Jose row starts on 10 March. Each end equals the next start, with no gaps and no overlaps. A query for any date finds exactly one row with <code>valid_from &lt;= d AND d &lt; valid_to</code>.</p>
+<div class="callout warning"><span class="lbl">Warning</span>Avoid closed intervals with an end date of "the day before", such as Oakland until 9 March. They break as soon as a value can change twice in one day, or when the column holds timestamps instead of dates. They also tempt people to write <code>BETWEEN</code>, which includes both ends and returns two rows on the change date.</div>
+<p><strong>Use a fixed date for "still true".</strong> The current row needs an end. Many teams use a far-future date such as 9999-12-31 instead of a null, so that the same range condition works on every row without a special case.</p>
+<p class="lstcap"><b>Listing 4.1</b> The address valid on each order date</p>
+<pre class="sql"><span class="k">SELECT</span> o.order_id, o.order_date, a.address
+<span class="k">FROM</span>   sales_order o
+<span class="k">JOIN</span>   customer_address a
+  <span class="k">ON</span>   a.customer_id = o.customer_id
+ <span class="k">AND</span>   a.valid_from &lt;= o.order_date                   <span class="c">-- started on or before</span><i class="ann">1</i>
+ <span class="k">AND</span>   o.order_date &lt;  a.valid_to;                    <span class="c">-- ended after</span><i class="ann">2</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>The start is included. An order on 10 March gets the San Jose row.</span></li>
+<li><i class="ann">2</i><span>The end is excluded, with a strict less-than. An order on 10 March does not also match the Oakland row.</span></li>
+</ol>
+
+<h2 id="s4-4"><span class="num">4.4</span>Bitemporal data</h2>
+<p>Versioned rows with business dates answer "where did Maria live on 12 March?" They cannot answer "what did we believe on 18 March about where she lived on 12 March?" For that, each row needs a second period: when the database held that belief. A table with both periods is <em class="term">bitemporal</em>. Richard Snodgrass's <a href="https://www2.cs.arizona.edu/~rts/tdbbook.pdf">Developing Time-Oriented Database Applications in SQL</a> is the classic reference.</p>
+<p>Here is what happened at Lantern. Maria moved on 10 March. On 14 March, a clerk recorded the move, but typed 17 March as the move date. On 21 March, another clerk fixed the date to 10 March. Table 4.2 shows the bitemporal rows that result.</p>
+<p class="tblcap"><b>Table 4.2</b> Maria's address with both clocks</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>#</th><th>address</th><th>valid_from</th><th>valid_to</th><th>recorded_from</th><th>recorded_to</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Oakland</td><td>2022-04-01</td><td>9999-12-31</td><td>2024-11-02</td><td>2025-03-14</td></tr>
+<tr><td>2</td><td>Oakland</td><td>2022-04-01</td><td>2025-03-17</td><td>2025-03-14</td><td>2025-03-21</td></tr>
+<tr><td>3</td><td>San Jose</td><td>2025-03-17</td><td>9999-12-31</td><td>2025-03-14</td><td>2025-03-21</td></tr>
+<tr><td>4</td><td>Oakland</td><td>2022-04-01</td><td>2025-03-10</td><td>2025-03-21</td><td>9999-12-31</td></tr>
+<tr><td>5</td><td>San Jose</td><td>2025-03-10</td><td>9999-12-31</td><td>2025-03-21</td><td>9999-12-31</td></tr>
+</tbody></table></div>
+<p>No row is ever updated in its business values. When a belief changes, the old rows are closed in record time, and new rows open. Figure 4.1 draws the same table as a grid, with business time across and record time down.</p>
+<figure class="diag" id="fig-4-1">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A grid with business time from 1 to 31 March across and record time from 10 to 31 March down. Until 14 March the record says Oakland everywhere. From 14 to 21 March it says Oakland until 17 March and San Jose after. From 21 March on it says Oakland until 10 March and San Jose after. A marked point at business date 12 March and record date 18 March falls in Oakland.">
+  <text x="90" y="28" font-size="12" class="mono t-s" letter-spacing="1.3">BUSINESS TIME: WHEN IT WAS TRUE →</text>
+  <text x="24" y="200" font-size="12" class="mono t-s" letter-spacing="1.3" transform="rotate(-90 24 200)">RECORD TIME ↓</text>
+  <rect x="90" y="50" width="600" height="53" class="bx-n"/>
+  <rect x="90" y="103" width="320" height="94" class="bx-n"/>
+  <rect x="410" y="103" width="280" height="94" class="bx-a"/>
+  <rect x="90" y="197" width="180" height="133" class="bx-n"/>
+  <rect x="270" y="197" width="420" height="133" class="bx-a"/>
+  <g font-size="12.5" font-weight="600">
+    <text x="104" y="82">Oakland · row 1</text>
+    <text x="104" y="155">Oakland · row 2</text>
+    <text x="424" y="155" class="t-a">San Jose · row 3</text>
+    <text x="104" y="268">Oakland · row 4</text>
+    <text x="284" y="268" class="t-a">San Jose · row 5</text>
+  </g>
+  <g font-size="11" class="mono t-s">
+    <text x="90" y="346">Mar 1</text><text x="270" y="346" text-anchor="middle">Mar 10</text><text x="410" y="346" text-anchor="middle">Mar 17</text><text x="690" y="346" text-anchor="end">Mar 31</text>
+    <text x="84" y="54" text-anchor="end">Mar 10</text><text x="84" y="107" text-anchor="end">Mar 14</text><text x="84" y="201" text-anchor="end">Mar 21</text><text x="84" y="330" text-anchor="end">Mar 31</text>
+  </g>
+  <line x1="310" y1="50" x2="310" y2="330" class="ln-am"/>
+  <line x1="90" y1="157" x2="690" y2="157" class="ln-am"/>
+  <circle cx="310" cy="157" r="6" class="bx-am" stroke-width="2"/>
+  <text x="318" y="184" font-size="11.5" class="t-am">12 March, as believed on 18 March</text>
+</svg>
+</div>
+<figcaption><b>Figure 4.1</b> Maria's address on two clocks. The marked point is in Oakland, although today's record says that she was in San Jose on 12 March.</figcaption>
+</figure>
+<p>Read a column of the grid from top to bottom to see how the company's belief about one business date changed over time. Read a row from left to right to see the whole history as it was believed on one record date. The bottom band is today's view. The marked point is the auditor's question, and its answer, Oakland, exists only because the table kept record time.</p>
+
+<div class="lab" id="lab-bi">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Ask the two-clock question</h4><span class="lab-tip">choose both dates</span></div>
+  <p>Choose a business date and a record date. The exercise finds the row of Table 4.2 whose two periods contain both dates.</p>
+  <div class="row" role="group" aria-label="Business date"><span class="lab-tip" style="min-width:110px">Business date</span>
+    <button class="btn" type="button" data-b="2025-03-08">8 Mar</button><button class="btn on" type="button" data-b="2025-03-12">12 Mar</button><button class="btn" type="button" data-b="2025-03-20">20 Mar</button>
+  </div>
+  <div class="row" role="group" aria-label="Record date"><span class="lab-tip" style="min-width:110px">Record date</span>
+    <button class="btn" type="button" data-r="2025-03-10">10 Mar</button><button class="btn on" type="button" data-r="2025-03-18">18 Mar</button><button class="btn" type="button" data-r="2025-03-25">25 Mar</button>
+  </div>
+  <div class="log" id="biLog" aria-live="polite"></div>
+</div>
+<p>Most models in this book keep only one clock fully. A star schema with type 2 dimensions keeps business time. A Data Vault keeps record time on every row and business time in its data. Bitemporal designs keep both, at the cost of more columns, more rows, and more careful queries. Stress test 7 in <a href="05-stress-tests.html">chapter 5</a> asks each pattern for exactly this kind of answer.</p>
+
+<h2 id="s4-5"><span class="num">4.5</span>As-of queries</h2>
+<p>An <em class="term">as-of query</em> asks for data as it was at a point in time. With two clocks, there are two kinds. Listing 4.2 shows both on Table 4.2.</p>
+<p class="lstcap"><b>Listing 4.2</b> As-of queries on each clock</p>
+<pre class="sql"><span class="c">-- Business time: where did Maria live on 12 March, by today's knowledge?</span>
+<span class="k">SELECT</span> address
+<span class="k">FROM</span>   customer_address_bt
+<span class="k">WHERE</span>  customer_id   = 'C-000123'
+<span class="k">AND</span>    valid_from    &lt;= <span class="k">DATE</span> '2025-03-12' <span class="k">AND</span> <span class="k">DATE</span> '2025-03-12' &lt; valid_to
+<span class="k">AND</span>    recorded_to   = <span class="k">DATE</span> '9999-12-31';                  <span class="c">-- current belief only</span><i class="ann">1</i>
+
+<span class="c">-- Both clocks: what did we believe on 18 March about 12 March?</span>
+<span class="k">SELECT</span> address
+<span class="k">FROM</span>   customer_address_bt
+<span class="k">WHERE</span>  customer_id   = 'C-000123'
+<span class="k">AND</span>    valid_from    &lt;= <span class="k">DATE</span> '2025-03-12' <span class="k">AND</span> <span class="k">DATE</span> '2025-03-12' &lt; valid_to
+<span class="k">AND</span>    recorded_from &lt;= <span class="k">DATE</span> '2025-03-18' <span class="k">AND</span> <span class="k">DATE</span> '2025-03-18' &lt; recorded_to;<i class="ann">2</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>Today's view keeps only the rows whose record period is still open. The answer is San Jose.</span></li>
+<li><i class="ann">2</i><span>The same half-open rule, applied to the second clock. The answer is Oakland.</span></li>
+</ol>
+<div class="callout"><span class="lbl">Note</span>The SQL:2011 standard added temporal tables, with periods for both clocks and clauses for as-of queries. Support differs between engines, so this book writes the conditions out by hand, as in Listing 4.2. The result is the same.</div>
+
+<h2 id="s4-6"><span class="num">4.6</span>Insert-only storage and update in place</h2>
+<p>There are two broad ways to apply a change. <em class="term">Update in place</em> overwrites the old value, or closes the old row by changing its end date. <em class="term">Insert-only</em> storage never changes a row. It adds a new row for every change and leaves the old rows exactly as they were.</p>
+<p>Update in place keeps tables smaller and queries simpler. Its cost is that some history is lost. If a load closes a row by updating <code>valid_to</code>, the table no longer shows when that update happened, so record time is gone unless another column keeps it.</p>
+<p>Insert-only storage keeps every version that ever arrived, with the time that it arrived. It makes loads simple and safe to repeat, and it makes audits possible. Its costs are larger tables and queries that must find the newest row for each key. It also makes deletion hard, because removing a row breaks the rule that the store only grows. Stress test 12 in <a href="05-stress-tests.html">chapter 5</a> is about exactly that conflict.</p>
+<p class="tblcap"><b>Table 4.3</b> How the patterns keep history</p>
+<div class="tbl"><table>
+<thead><tr><th>Pattern</th><th>Main method</th><th>Clock kept fully</th></tr></thead>
+<tbody>
+<tr><td>Normalized warehouse</td><td>Effective-dated child tables, often update in place</td><td>Business time, where designed</td></tr>
+<tr><td>Star schema</td><td>Slowly changing dimensions</td><td>Business time</td></tr>
+<tr><td>One big table</td><td>Rebuilds, sometimes snapshots</td><td>Neither, unless snapshotted</td></tr>
+<tr><td>Data Vault</td><td>Insert-only versioned rows</td><td>Record time, plus business dates as data</td></tr>
+<tr><td>Anchor modeling</td><td>Insert-only, one table per attribute</td><td>Both, by design</td></tr>
+<tr><td>Activity schema</td><td>Immutable events</td><td>Business time of each event</td></tr>
+</tbody></table></div>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>History has two clocks: business time, when something was true, and record time, when the database learned it.</li>
+    <li>History can be kept as snapshots, change logs, or versioned rows. Versioned rows are the common choice in analytical models.</li>
+    <li>Use half-open intervals, [valid_from, valid_to), and a far-future end date for current rows.</li>
+    <li>A bitemporal table keeps both periods on every row. It can answer what was true, and what was believed, on any date.</li>
+    <li>As-of queries apply the same range condition to one clock or to both.</li>
+    <li>Insert-only storage keeps every version and its arrival time. It makes audits and reloads safe, and makes deletion hard.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 4 · Time and history · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var ROWS = [
+    { n: 1, a: "Oakland", vf: "2022-04-01", vt: "9999-12-31", rf: "2024-11-02", rt: "2025-03-14" },
+    { n: 2, a: "Oakland", vf: "2022-04-01", vt: "2025-03-17", rf: "2025-03-14", rt: "2025-03-21" },
+    { n: 3, a: "San Jose", vf: "2025-03-17", vt: "9999-12-31", rf: "2025-03-14", rt: "2025-03-21" },
+    { n: 4, a: "Oakland", vf: "2022-04-01", vt: "2025-03-10", rf: "2025-03-21", rt: "9999-12-31" },
+    { n: 5, a: "San Jose", vf: "2025-03-10", vt: "9999-12-31", rf: "2025-03-21", rt: "9999-12-31" }
+  ];
+  var b = "2025-03-12", r = "2025-03-18", log = document.getElementById("biLog");
+  function find(bd, rd) { for (var i = 0; i < ROWS.length; i++) { var x = ROWS[i]; if (x.vf <= bd && bd < x.vt && x.rf <= rd && rd < x.rt) return x; } return null; }
+  function render() {
+    var hit = find(b, r), today = find(b, "9999-12-30");
+    var msg = hit ? '<span class="ok">Row ' + hit.n + ": " + hit.a + ".</span>" : '<span class="bad">No row. The company had no record yet.</span>';
+    var cmp = today && hit && today.a !== hit.a ? '<br><span class="warn">Today\'s record says ' + today.a + " for the same business date. The belief on " + r + " was different, and only the record clock keeps it.</span>" : '<br><span class="m">Today\'s record gives the same answer.</span>';
+    log.innerHTML = '<span class="m">Business date ' + b + ", record date " + r + ".</span><br>" + msg + cmp;
+    [].slice.call(document.querySelectorAll("[data-b]")).forEach(function (x) { x.classList.toggle("on", x.getAttribute("data-b") === b); });
+    [].slice.call(document.querySelectorAll("[data-r]")).forEach(function (x) { x.classList.toggle("on", x.getAttribute("data-r") === r); });
+  }
+  [].slice.call(document.querySelectorAll("[data-b]")).forEach(function (x) { x.addEventListener("click", function () { b = x.getAttribute("data-b"); render(); }); });
+  [].slice.call(document.querySelectorAll("[data-r]")).forEach(function (x) { x.addEventListener("click", function () { r = x.getAttribute("data-r"); render(); }); });
+  render();
+})();
+</script>
+</body>
+</html>

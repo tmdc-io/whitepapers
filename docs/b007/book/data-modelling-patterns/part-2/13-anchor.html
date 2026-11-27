@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>13 · Anchor modeling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="13">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part II · Chapter 13</div>
+<h1>Anchor modeling</h1>
+<p class="glance"><i><span>Origin</span>Rönnbäck, Regardt, and colleagues, 2009</i><i><span>Shape</span>sixth normal form: one table per attribute</i><i><span>Best at</span>change by extension only</i><i><span>Costs</span>very many tables, needs generated views</i></p>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s13-1">Sixth normal form as a warehouse pattern</a></li>
+    <li><a href="#s13-2">Anchors, attributes, ties, and knots</a></li>
+    <li><a href="#s13-3">The Lantern anchor model and its naming convention</a></li>
+    <li><a href="#s13-5">Generated views and join elimination</a></li>
+    <li><a href="#s13-6">The concurrent-reliance-temporal model: posits, assertions, positors, and reliability</a></li>
+    <li><a href="#s13-7">Schema evolution without changing any table</a></li>
+    <li><a href="#s13-9">Strengths and limits on the twelve stress tests</a></li>
+  </ul>
+</div>
+
+<p>On 4 November 2025, the web shop adds a loyalty tier column and renames another. In the star, that meant a new dimension column and a broken load. In the vault, it meant a new satellite. In an anchor model, it means one new table, and nothing else changes: no existing table gains a column, no existing row is rewritten, and no existing query notices.</p>
+<p>Anchor modeling takes the vault's idea, separate what changes from what does not, as far as it can go. Every attribute gets its own table. This chapter builds Lantern's customers and pets as an anchor model, shows how generated views keep the many tables usable, and then explains the full model that anchor modeling uses to record time, sources, and certainty.</p>
+
+<h2 id="s13-1"><span class="num">13.1</span>The idea</h2>
+<p>Anchor modeling was published by Olle Regardt, Lars Rönnbäck, Maria Bergholtz, Paul Johannesson, and Petia Wohed in 2009, in a paper that won the <a href="https://www.anchormodeling.com/2009/11/">best paper award at the ER 2009 conference</a>. An extended version appeared in the journal Data and Knowledge Engineering in 2010. The <a href="https://www.anchormodeling.com/">anchor modeling site</a> hosts the papers, and its authors publish an open-source generator for the database code.</p>
+<p>The design goal is stated plainly in the original paper: a change to the model needs only extensions, never modifications. A model built that way can evolve for years without a migration, because every change adds tables and leaves old ones alone.</p>
+<p>The tool for that goal is sixth normal form, from <a href="../part-1/03-core-concepts.html#s3-6-3">section 3.6.3</a>. In 6NF, a table holds a key and at most one other value, usually with the time when the value was true. A customer is not one table with ten columns. It is an identity table plus one table per attribute.</p>
+
+<h2 id="s13-2"><span class="num">13.2</span>The building blocks</h2>
+<p>An anchor model has four constructs. Each maps to exactly one kind of table.</p>
+<p><strong>An anchor holds an identity.</strong> <code>CU_Customer</code> has one column, <code>CU_ID</code>, and one row per customer. It stores nothing else, not even a business key. A business key, such as the CRM ID, is just another attribute.</p>
+<p><strong>An attribute holds one property of an anchor.</strong> <code>CU_NAM_Customer_Name</code> holds names, and <code>CU_ADR_Customer_Address</code> holds addresses. A <em class="term">static attribute</em> never changes, such as a pet's birth date. A <em class="term">historized attribute</em> adds a changing-time column, such as <code>CU_ADR_ChangedAt</code>, and keeps one row per value.</p>
+<p><strong>A tie holds a relationship between anchors.</strong> <code>CU_owner_PE_owned</code> connects customers and pets, with a role for each side. Ties can be static or historized, and their cardinality comes from which roles form the key.</p>
+<p><strong>A knot holds a small shared set of values.</strong> Lantern's loyalty tiers, None, Silver, Gold, and Platinum, form the knot <code>TIR_Tier</code>. A <em class="term">knotted attribute</em> stores a reference to the knot instead of the text, so "Gold" is stored once.</p>
+<p>Recent versions of the method add a fifth construct, the <em class="term">nexus</em>, for event-like things that have their own identity and roles, such as a grooming visit. This chapter uses anchors, attributes, ties, and knots, which carry the pattern.</p>
+
+<h2 id="s13-3"><span class="num">13.3</span>The Lantern anchor model</h2>
+<p>Figure 13.1 shows Lantern's customers and pets as an anchor model. Anchors are the plum boxes, attributes the grey boxes around them, the tie sits between the anchors, and the knot sits on the right.</p>
+<figure class="diag" id="fig-13-1">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A customer anchor with five attribute tables around it, a knotted tier attribute pointing to a tier knot, and a tie to a pet anchor that has its own breed and weight attributes.">
+  <g font-size="12">
+    <rect x="210" y="140" width="150" height="56" rx="8" class="bx-a"/><text x="222" y="163" font-weight="600" class="t-a">CU_Customer</text><text x="222" y="181" font-size="11" class="mono t-s">CU_ID only</text>
+    <rect x="20" y="22" width="170" height="44" rx="7" class="bx-n"/><text x="30" y="41" font-weight="600">CU_CID_Customer_CrmId</text><text x="30" y="57" font-size="10.5" class="mono t-s">static</text>
+    <rect x="20" y="78" width="170" height="44" rx="7" class="bx-n"/><text x="30" y="97" font-weight="600">CU_NAM_Customer_Name</text><text x="30" y="113" font-size="10.5" class="mono t-s">historized</text>
+    <rect x="20" y="146" width="170" height="44" rx="7" class="bx-n"/><text x="30" y="165" font-weight="600">CU_EML_Customer_Email</text><text x="30" y="181" font-size="10.5" class="mono t-s">historized</text>
+    <rect x="20" y="214" width="170" height="44" rx="7" class="bx-n"/><text x="30" y="233" font-weight="600">CU_ADR_Customer_Address</text><text x="30" y="249" font-size="10.5" class="mono t-s">historized</text>
+    <rect x="20" y="270" width="170" height="44" rx="7" class="bx-n"/><text x="30" y="289" font-weight="600">CU_PHO_Customer_Phone</text><text x="30" y="305" font-size="10.5" class="mono t-s">historized, several rows</text>
+    <rect x="210" y="262" width="150" height="52" rx="7" class="bx-w"/><text x="222" y="282" font-weight="600">CU_TIR_Customer_Tier</text><text x="222" y="300" font-size="10.5" class="mono t-s">knotted, historized</text>
+    <rect x="388" y="268" width="104" height="40" rx="7" class="bx-am"/><text x="400" y="292" font-weight="600" class="t-am">TIR_Tier</text>
+    <rect x="388" y="146" width="140" height="44" rx="7" class="bx-w"/><text x="398" y="165" font-weight="600">CU_owner_PE_owned</text><text x="398" y="181" font-size="10.5" class="mono t-s">tie, historized</text>
+    <rect x="556" y="140" width="144" height="56" rx="8" class="bx-a"/><text x="568" y="163" font-weight="600" class="t-a">PE_Pet</text><text x="568" y="181" font-size="11" class="mono t-s">PE_ID only</text>
+    <rect x="556" y="40" width="144" height="44" rx="7" class="bx-n"/><text x="566" y="59" font-weight="600">PE_BRD_Pet_Breed</text><text x="566" y="75" font-size="10.5" class="mono t-s">static</text>
+    <rect x="556" y="250" width="144" height="44" rx="7" class="bx-n"/><text x="566" y="269" font-weight="600">PE_WGT_Pet_Weight</text><text x="566" y="285" font-size="10.5" class="mono t-s">historized</text>
+  </g>
+  <g class="ln">
+    <path d="M190,44 C204,44 206,120 236,140"/>
+    <path d="M190,100 C202,100 204,130 222,140"/>
+    <line x1="190" y1="168" x2="210" y2="168"/>
+    <path d="M190,236 C202,236 206,206 222,196"/>
+    <path d="M190,292 C204,292 206,220 236,196"/>
+    <line x1="285" y1="196" x2="285" y2="262"/>
+    <line x1="360" y1="288" x2="388" y2="288"/>
+    <line x1="360" y1="168" x2="388" y2="168"/>
+    <line x1="528" y1="168" x2="556" y2="168"/>
+    <line x1="628" y1="84" x2="628" y2="140"/>
+    <line x1="628" y1="196" x2="628" y2="250"/>
+  </g>
+</svg>
+</div>
+<figcaption><b>Figure 13.1</b> Lantern's customers and pets as an anchor model. Every box is one table, identities live alone in the anchors, and every new property is one more box on the edge.</figcaption>
+</figure>
+<p>The table names follow the method's naming convention. Each anchor has a two-letter mnemonic, such as <code>CU</code>. Each attribute has a three-letter mnemonic, such as <code>ADR</code>, and its table name combines both mnemonics with the descriptive names: <code>CU_ADR_Customer_Address</code>. Columns follow the same pattern, such as <code>CU_ADR_ChangedAt</code>. With hundreds of tables, the convention is what keeps a model readable: anyone can tell from a name which anchor a table belongs to and what it holds.</p>
+<p class="lstcap"><b>Listing 13.1</b> The customer anchor and two attributes</p>
+<pre class="sql"><span class="k">CREATE TABLE</span> CU_Customer (
+  CU_ID              <span class="k">INTEGER</span>      <span class="k">PRIMARY KEY</span>              <span class="c">-- identity only</span><i class="ann">1</i>
+);
+<span class="k">CREATE TABLE</span> CU_NAM_Customer_Name (
+  CU_NAM_CU_ID       <span class="k">INTEGER</span>      <span class="k">NOT NULL REFERENCES</span> CU_Customer,
+  CU_NAM_Customer_Name <span class="k">VARCHAR</span>(100) <span class="k">NOT NULL</span>,
+  CU_NAM_ChangedAt   <span class="k">DATE</span>         <span class="k">NOT NULL</span>,
+  <span class="k">PRIMARY KEY</span> (CU_NAM_CU_ID, CU_NAM_ChangedAt)<i class="ann">2</i>
+);
+<span class="k">CREATE TABLE</span> CU_ADR_Customer_Address (
+  CU_ADR_CU_ID       <span class="k">INTEGER</span>      <span class="k">NOT NULL REFERENCES</span> CU_Customer,
+  CU_ADR_Customer_Address <span class="k">VARCHAR</span>(200) <span class="k">NOT NULL</span>,
+  CU_ADR_ChangedAt   <span class="k">DATE</span>         <span class="k">NOT NULL</span>,
+  <span class="k">PRIMARY KEY</span> (CU_ADR_CU_ID, CU_ADR_ChangedAt)
+);</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>The anchor holds no business key. The CRM ID is a static attribute, <code>CU_CID_Customer_CrmId</code>, so a customer can exist before any source key is known.</span></li>
+<li><i class="ann">2</i><span>A historized attribute is keyed by identity and changing time. A new value is a new row, and nothing is ever updated.</span></li>
+</ol>
+
+<h2 id="s13-4"><span class="num">13.4</span>Loading</h2>
+<p>An anchor model loads insert-only, like a vault, and each attribute loads on its own. When the CRM sends Maria's new address, the load inserts one row into <code>CU_ADR_Customer_Address</code> and touches no other table. Her name, email, and tier are not copied.</p>
+<p>Identity works differently from a vault. A vault stores every source key in a hub and matches them later. An anchor holds a surrogate identity, so the load must decide which anchor a source row belongs to before it can insert attributes. When Happy Tails customers arrive, each must be matched to an existing <code>CU_ID</code> or given a new one. In that respect, an anchor model behaves like a normalized core or a star: identity is decided at load time.</p>
+<p class="lstcap"><b>Listing 13.2</b> Load changed addresses</p>
+<pre class="sql"><span class="k">INSERT INTO</span> CU_ADR_Customer_Address (CU_ADR_CU_ID, CU_ADR_Customer_Address, CU_ADR_ChangedAt)
+<span class="k">SELECT</span> k.CU_ID, s.address, s.moved_on
+<span class="k">FROM</span>   stg_crm_customer s
+<span class="k">JOIN</span>   CU_CID_Customer_CrmId k <span class="k">ON</span> k.CU_CID_Customer_CrmId = s.customer_id<i class="ann">1</i>
+<span class="k">WHERE</span>  <span class="k">NOT EXISTS</span> (                                        <span class="c">-- skip if the latest value is the same</span><i class="ann">2</i>
+         <span class="k">SELECT</span> 1 <span class="k">FROM</span> CU_ADR_Customer_Address a
+         <span class="k">WHERE</span>  a.CU_ADR_CU_ID = k.CU_ID
+         <span class="k">AND</span>    a.CU_ADR_Customer_Address = s.address
+         <span class="k">AND</span>    a.CU_ADR_ChangedAt = (<span class="k">SELECT MAX</span>(b.CU_ADR_ChangedAt)
+                                  <span class="k">FROM</span> CU_ADR_Customer_Address b
+                                  <span class="k">WHERE</span> b.CU_ADR_CU_ID = k.CU_ID));</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>The CRM ID finds the anchor. A new customer needs an anchor row and a CRM ID row first.</span></li>
+<li><i class="ann">2</i><span>The method calls a repeated identical value a restatement. Most models skip restatements, so the same address loaded twice adds nothing.</span></li>
+</ol>
+
+<h2 id="s13-5"><span class="num">13.5</span>Generated views and join elimination</h2>
+<p>Nobody queries attribute tables one by one. The method generates views that assemble each anchor with all its attributes, and the generator writes them for every anchor.</p>
+<p>The <em class="term">latest view</em>, such as <code>lCU_Customer</code>, shows each customer with the most recent value of every attribute. The <em class="term">point-in-time view</em>, a function such as <code>pCU_Customer</code>, takes a time and shows the values valid at that time. The <em class="term">now view</em> shows values as of the current time. The <em class="term">difference view</em> shows every change between two times.</p>
+<p class="lstcap"><b>Listing 13.3</b> A simplified latest view</p>
+<pre class="sql"><span class="k">CREATE VIEW</span> lCU_Customer <span class="k">AS</span>
+<span class="k">SELECT</span> cu.CU_ID,
+       cid.CU_CID_Customer_CrmId,
+       nam.CU_NAM_Customer_Name,
+       adr.CU_ADR_Customer_Address,
+       tir.TIR_Tier
+<span class="k">FROM</span>   CU_Customer cu
+<span class="k">LEFT JOIN</span> CU_CID_Customer_CrmId cid <span class="k">ON</span> cid.CU_CID_CU_ID = cu.CU_ID<i class="ann">1</i>
+<span class="k">LEFT JOIN</span> CU_NAM_Customer_Name nam
+       <span class="k">ON</span> nam.CU_NAM_CU_ID = cu.CU_ID
+      <span class="k">AND</span> nam.CU_NAM_ChangedAt = (<span class="k">SELECT MAX</span>(x.CU_NAM_ChangedAt) <span class="k">FROM</span> CU_NAM_Customer_Name x
+                                <span class="k">WHERE</span> x.CU_NAM_CU_ID = cu.CU_ID)
+<span class="k">LEFT JOIN</span> CU_ADR_Customer_Address adr
+       <span class="k">ON</span> adr.CU_ADR_CU_ID = cu.CU_ID
+      <span class="k">AND</span> adr.CU_ADR_ChangedAt = (<span class="k">SELECT MAX</span>(x.CU_ADR_ChangedAt) <span class="k">FROM</span> CU_ADR_Customer_Address x
+                                <span class="k">WHERE</span> x.CU_ADR_CU_ID = cu.CU_ID)
+<span class="k">LEFT JOIN</span> CU_TIR_Customer_Tier ct
+       <span class="k">ON</span> ct.CU_TIR_CU_ID = cu.CU_ID
+      <span class="k">AND</span> ct.CU_TIR_ChangedAt = (<span class="k">SELECT MAX</span>(x.CU_TIR_ChangedAt) <span class="k">FROM</span> CU_TIR_Customer_Tier x
+                               <span class="k">WHERE</span> x.CU_TIR_CU_ID = cu.CU_ID)
+<span class="k">LEFT JOIN</span> TIR_Tier tir <span class="k">ON</span> tir.TIR_ID = ct.CU_TIR_TIR_ID;           <span class="c">-- knot: the text</span><i class="ann">2</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>Left outer joins on the anchor's key. Each attribute table can only add values to an anchor row, never remove or repeat it.</span></li>
+<li><i class="ann">2</i><span>The knot turns a stored tier ID into its text, so "Gold" exists once in the database.</span></li>
+</ol>
+<p>The view looks expensive: one join per attribute. It is not, thanks to <em class="term">join elimination</em>, also called table elimination. Each joined table can contribute at most one row per anchor, through a left join on its key. So when a query does not select any column of that table, the engine can prove that the join changes nothing, and skip the table entirely. A query for names reads only the anchor and the name table, however many attributes the view has.</p>
+
+<div class="lab" id="lab-elim">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Which tables does the query read?</h4><span class="lab-tip">pick columns</span></div>
+  <p>Choose the columns that a query selects from <code>lCU_Customer</code>. The table shows which tables an engine with join elimination actually reads.</p>
+  <div class="row" role="group" aria-label="Columns" id="elimCols"></div>
+  <div class="tbl" style="margin:0"><table class="rows" id="elimTable"></table></div>
+  <div class="log" id="elimLog" aria-live="polite"></div>
+</div>
+<div class="callout warning"><span class="lbl">Warning</span>Join elimination depends on the engine. It needs declared keys and left outer joins on those keys, and not every engine does it, or does it for every view shape. Test it on your engine before you commit to anchor modeling for interactive queries.</div>
+
+<h2 id="s13-6"><span class="num">13.6</span>The concurrent-reliance-temporal model</h2>
+<p>So far, each attribute row says: this value was true from this changing time on. That is one clock, business time, and one implicit source. Anchor modeling has three settings for time. The <em class="term">uni-temporal</em> setting, used so far, keeps changing time only. The <em class="term">bitemporal</em> setting adds recording time. The <em class="term">concurrent-reliance-temporal</em> setting, or CRT, goes further. It records several sources at once (concurrency), how certain each source is (reliance), and both clocks (temporal). This section defines the CRT model in full, following Lars Rönnbäck's <a href="https://www.anchormodeling.com/wp-content/uploads/2017/04/Posits-and-Assertions.pdf">Posits and Assertions</a> and the <a href="https://github.com/Roenbaeck/anchor">anchor modeling generator's documentation</a>.</p>
+
+<h3 id="s13-6-1"><span class="num">13.6.1</span>Posits</h3>
+<p>A <em class="term">posit</em> is a statement about something, separated from anyone's opinion of it. Formally, a posit is a triple:</p>
+<p style="font-family:var(--mono);font-size:15px;padding-left:20px">p = [ {(i<sub>1</sub>, r<sub>1</sub>), …, (i<sub>n</sub>, r<sub>n</sub>)}, v, t ]</p>
+<p>The first element is the <em class="term">dereferencing set</em>: a set of pairs, each pairing an identity with a role. It says what the statement is about, and in what capacity. The second element, v, is a value. The third, t, is a time point: the <em class="term">changing time</em>, when the value took effect. For Maria's address, a posit is:</p>
+<p style="font-family:var(--mono);font-size:14px;padding-left:20px">[ {(CU 48211, address)}, "220 Bay Rd, San Jose", 2025-03-10 ]</p>
+<p>A posit about a relationship has several pairs. Sam's ownership of Biscuit is <code>[ {(CU 50177, owner), (PE 905, owned)}, true, 2025-09-10 ]</code>. A posit is neither true nor false on its own. It is a candidate fact.</p>
+
+<h3 id="s13-6-2"><span class="num">13.6.2</span>Assertions</h3>
+<p>An <em class="term">assertion</em> records someone's opinion of a posit. Formally, it is a predicate with four arguments:</p>
+<p style="font-family:var(--mono);font-size:15px;padding-left:20px">assert(P, p, α, T)</p>
+<p>P is the <em class="term">positor</em>: the source that holds the opinion, such as the CRM or the web shop. p is the posit. α is the <em class="term">reliability</em>, a real number between −1 and 1. T is the <em class="term">positing time</em>: when the positor held that opinion, which in a warehouse is when the warehouse recorded it.</p>
+<p>The reliability scale carries meaning at every point. A reliability of 1 means the positor is certain that the posit is true. A reliability of −1 means it is certain that the posit is false, which asserts the opposite. Values between express degrees of certainty. A reliability of 0 means complete uncertainty, and it is how a positor <em class="term">retracts</em> an earlier assertion: it does not delete anything, it records that it no longer holds an opinion.</p>
+<p>In the uni-temporal setting, an assertion is simply assert(p): every stored posit is taken as true, by the database, now. CRT makes the hidden arguments explicit.</p>
+
+<h3 id="s13-6-3"><span class="num">13.6.3</span>From the formal model to tables</h3>
+<p>The generator maps each CRT attribute and tie to two tables. A <em class="term">posit table</em> holds the posits: a posit ID, the anchor identity, the value, and the changing time. An <em class="term">annex table</em> holds the assertions about those posits: the posit ID, the positor, the positing time, and the reliability. A small table of positors lists the sources. Listing 13.4 shows the shape, simplified.</p>
+<p class="lstcap"><b>Listing 13.4</b> Posit and annex tables for customer addresses</p>
+<pre class="sql"><span class="k">CREATE TABLE</span> CU_ADR_Customer_Address_Posit (
+  CU_ADR_ID          <span class="k">INTEGER</span>      <span class="k">PRIMARY KEY</span>,              <span class="c">-- posit identity</span>
+  CU_ADR_CU_ID       <span class="k">INTEGER</span>      <span class="k">NOT NULL REFERENCES</span> CU_Customer,
+  CU_ADR_Customer_Address <span class="k">VARCHAR</span>(200) <span class="k">NOT NULL</span>,          <span class="c">-- v</span>
+  CU_ADR_ChangedAt   <span class="k">DATE</span>         <span class="k">NOT NULL</span>,                 <span class="c">-- t, changing time</span>
+  <span class="k">UNIQUE</span> (CU_ADR_CU_ID, CU_ADR_Customer_Address, CU_ADR_ChangedAt)<i class="ann">1</i>
+);
+<span class="k">CREATE TABLE</span> CU_ADR_Customer_Address_Annex (
+  CU_ADR_ID          <span class="k">INTEGER</span>      <span class="k">NOT NULL REFERENCES</span> CU_ADR_Customer_Address_Posit,
+  CU_ADR_Positor     <span class="k">SMALLINT</span>     <span class="k">NOT NULL</span>,                 <span class="c">-- P</span>
+  CU_ADR_PositedAt   <span class="k">TIMESTAMP</span>    <span class="k">NOT NULL</span>,                 <span class="c">-- T, positing time</span>
+  CU_ADR_Reliability <span class="k">DECIMAL</span>(3,2) <span class="k">NOT NULL</span>,                <span class="c">-- alpha, from -1 to 1</span><i class="ann">2</i>
+  <span class="k">PRIMARY KEY</span> (CU_ADR_ID, CU_ADR_Positor, CU_ADR_PositedAt)
+);</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>A posit is stored once, however many sources assert it. Two systems that agree on an address share one posit row.</span></li>
+<li><i class="ann">2</i><span>Every opinion is a new annex row. A correction is a retraction of the old posit, with reliability 0, plus an assertion of a new posit.</span></li>
+</ol>
+<p>Here is Maria's March 2025 move in CRT form. On 14 March, the CRM records the move with the wrong date. On 21 March, a clerk fixes it. The web shop still shows her old address until she updates her account on 2 April.</p>
+<p class="tblcap"><b>Table 13.1</b> Posits and assertions for Maria's address</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>posit</th><th>value</th><th>changed_at</th><th>positor</th><th>posited_at</th><th>reliability</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>14 Elm St, Oakland</td><td>2022-04-01</td><td>CRM</td><td>2024-11-02</td><td>1</td></tr>
+<tr><td>1</td><td>14 Elm St, Oakland</td><td>2022-04-01</td><td>Web shop</td><td>2024-11-02</td><td>1</td></tr>
+<tr><td>2</td><td>220 Bay Rd, San Jose</td><td>2025-03-17</td><td>CRM</td><td>2025-03-14</td><td>1</td></tr>
+<tr class="hl"><td>2</td><td>220 Bay Rd, San Jose</td><td>2025-03-17</td><td>CRM</td><td>2025-03-21</td><td>0</td></tr>
+<tr><td>3</td><td>220 Bay Rd, San Jose</td><td>2025-03-10</td><td>CRM</td><td>2025-03-21</td><td>1</td></tr>
+<tr><td>3</td><td>220 Bay Rd, San Jose</td><td>2025-03-10</td><td>Web shop</td><td>2025-04-02</td><td>1</td></tr>
+</tbody></table></div>
+<p>Each row is one assertion. Posit 2, the move dated 17 March, is asserted on 14 March and retracted on 21 March, with reliability 0 (highlighted). Posit 3, the correct date, is asserted by the CRM on 21 March and by the web shop on 2 April. Between 21 March and 2 April, the two sources disagree, and the model records that disagreement instead of hiding it.</p>
+
+<h3 id="s13-6-4"><span class="num">13.6.4</span>Asking questions</h3>
+<p>A CRT question has three parameters: a changing time (what was true when), a positing time (according to what was recorded by when), and a positor (according to whom). The generated views take these parameters, and by default show only positive assertions, one row per identity and positor. A rule called <em class="term">decisiveness</em> controls whether one positor may hold several contradicting opinions at once. A decisive positor holds one value per identity at a time.</p>
+
+<div class="lab" id="lab-crt">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Ask the three-parameter question</h4><span class="lab-tip">choose all three</span></div>
+  <p>Where did Maria live on the chosen changing date, according to the chosen positor, as recorded by the chosen positing date? The exercise evaluates Table 13.1.</p>
+  <div class="row" role="group" aria-label="Positor"><span class="lab-tip" style="min-width:110px">Positor</span><button class="btn on" type="button" data-pos="CRM">CRM</button><button class="btn" type="button" data-pos="Web shop">Web shop</button></div>
+  <div class="row" role="group" aria-label="Changing date"><span class="lab-tip" style="min-width:110px">True on</span><button class="btn" type="button" data-chg="2025-03-08">8 Mar</button><button class="btn on" type="button" data-chg="2025-03-12">12 Mar</button><button class="btn" type="button" data-chg="2025-03-20">20 Mar</button></div>
+  <div class="row" role="group" aria-label="Positing date"><span class="lab-tip" style="min-width:110px">Recorded by</span><button class="btn" type="button" data-pst="2025-03-10">10 Mar</button><button class="btn on" type="button" data-pst="2025-03-18">18 Mar</button><button class="btn" type="button" data-pst="2025-03-25">25 Mar</button><button class="btn" type="button" data-pst="2025-04-05">5 Apr</button></div>
+  <div class="log" id="crtLog" aria-live="polite"></div>
+</div>
+<p>The CRT model answers every question that the bitemporal table in <a href="../part-1/04-time-and-history.html#s4-4">section 4.4</a> answers, and two more: what each source believed, and how sure it was. Stress tests 2 and 7 both benefit. The key conflict can keep every source's view of a customer side by side, and the wage claim can show which system asserted each rate and when. The price is more tables, more columns, and queries that must always say which positor and which positing time they mean.</p>
+
+<h2 id="s13-7"><span class="num">13.7</span>Schema evolution</h2>
+<p>The web shop's new loyalty tier is the cleanest test of anchor modeling's main promise. Every pattern in this book can absorb it. The difference is what each one changes.</p>
+<div class="lab" id="lab-evolve">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Add the loyalty tier</h4><span class="lab-tip">select a pattern</span></div>
+  <p>Select a pattern to see what it changes when the web shop adds <code>loyalty_tier</code>.</p>
+  <div class="row" role="group" aria-label="Pattern" id="evoBtns"></div>
+  <div class="tbl" style="margin:0"><table id="evoTable"></table></div>
+</div>
+<p>Only the vault and the anchor model add the tier without altering an existing table, and only the anchor model gives the tier its own history independent of every other web shop value. That independence is the reason the pattern exists.</p>
+
+<h2 id="s13-8"><span class="num">13.8</span>Common mistakes</h2>
+<p><strong>Querying attribute tables directly.</strong> Hand-written joins across dozens of attribute tables are slow to write and easy to get wrong. Use the generated views, and let join elimination do its work.</p>
+<p><strong>Hand-writing the database code.</strong> An anchor model has many more tables than any other pattern, and their views and load logic follow strict templates. Generate them from the model.</p>
+<p><strong>Choosing CRT by default.</strong> Concurrency and reliability are powerful and expensive. Use uni-temporal or bitemporal settings unless sources really disagree and the business needs to see it.</p>
+<p><strong>Skipping knots.</strong> Storing "Gold" as text on every tier row wastes space and makes a renamed tier a mass update. Shared small value sets belong in knots.</p>
+<p><strong>Ignoring the engine.</strong> If the engine does not eliminate joins in the generated views, every query reads every table. Test before you build.</p>
+
+<h2 id="s13-9"><span class="num">13.9</span>Strengths and limits</h2>
+<p>Anchor modeling is the most change-friendly pattern in this book at the level of single attributes. A new attribute, a new relationship, or a new kind of history is always an extension. Each attribute keeps its own history, so a fast-changing value never copies slow ones. Ties are many-to-many and can be historized. The bitemporal and CRT settings record when each value was recorded, by which source, and with what certainty, which makes the pattern strong on audits.</p>
+<p>Its limits are the number of tables and the dependence on tools. A query for many attributes joins many tables, and only an engine with join elimination keeps that fast. Identity is decided at load time, so new sources and wrong matches still cost matching work. There is no separate layer for business rules, and personal data, while neatly separated, must still be removed from an insert-only store.</p>
+<div class="strip-wrap" data-pattern="anchor"></div>
+<p><strong>Choose anchor modeling</strong> when the schema changes constantly, when attribute-level history matters, and when the team has a generator and an engine that eliminates joins. For most teams, it is the core of a layered design, with stars or wide tables on top for analysts.</p>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>Anchor modeling builds a warehouse in sixth normal form, so that every model change is an extension and never a modification.</li>
+    <li>Anchors hold identities, attributes hold one property each, ties hold relationships, and knots hold small shared value sets.</li>
+    <li>A strict naming convention, built from mnemonics, keeps hundreds of tables readable.</li>
+    <li>Loads are insert-only and per attribute, but identity is decided at load time.</li>
+    <li>Generated latest, point-in-time, now, and difference views assemble anchors, and join elimination keeps them fast.</li>
+    <li>A posit is a triple of a dereferencing set, a value, and a changing time. An assertion records a positor's reliability in a posit at a positing time. Reliability 0 is a retraction.</li>
+    <li>The CRT setting maps posits and assertions to posit and annex tables, and answers questions by changing time, positing time, and positor.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 13 · Anchor modeling · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  function $(s) { return document.querySelector(s); }
+  function $$(s) { return [].slice.call(document.querySelectorAll(s)); }
+
+  /* join elimination */
+  (function () {
+    var COLS = [["CU_ID", null], ["crm_id", "CU_CID_Customer_CrmId"], ["name", "CU_NAM_Customer_Name"], ["address", "CU_ADR_Customer_Address"], ["tier", "CU_TIR_Customer_Tier, TIR_Tier"]];
+    var sel = { name: true };
+    var box = $("#elimCols"), tab = $("#elimTable"), log = $("#elimLog");
+    box.innerHTML = COLS.map(function (c) { return '<button class="btn" type="button" data-col="' + c[0] + '">' + c[0] + "</button>"; }).join("");
+    function render() {
+      var read = ["CU_Customer"], skipped = [];
+      COLS.forEach(function (c) { if (!c[1]) return; (sel[c[0]] ? read : skipped).push(c[1]); });
+      tab.innerHTML = "<thead><tr><th>table</th><th>read?</th></tr></thead><tbody>" +
+        read.map(function (r) { return '<tr class="new"><td>' + esc(r) + "</td><td>read</td></tr>"; }).join("") +
+        skipped.map(function (r) { return '<tr class="gone"><td>' + esc(r) + "</td><td>eliminated</td></tr>"; }).join("") + "</tbody>";
+      var nRead = read.join(", ").split(", ").length, nAll = 6;
+      log.innerHTML = '<span class="ok">The query reads ' + nRead + " of " + nAll + " tables.</span> " + '<span class="m">Every eliminated table is a left join on its key that no selected column needs.</span>';
+      $$("[data-col]").forEach(function (b) { b.classList.toggle("on", !!sel[b.getAttribute("data-col")] || b.getAttribute("data-col") === "CU_ID"); });
+    }
+    $$("[data-col]").forEach(function (b) { b.addEventListener("click", function () { var k = b.getAttribute("data-col"); if (k === "CU_ID") return; sel[k] = !sel[k]; render(); }); });
+    render();
+  })();
+
+  /* CRT */
+  (function () {
+    var A = [
+      { posit: 1, v: "14 Elm St, Oakland", chg: "2022-04-01", P: "CRM", T: "2024-11-02", a: 1 },
+      { posit: 1, v: "14 Elm St, Oakland", chg: "2022-04-01", P: "Web shop", T: "2024-11-02", a: 1 },
+      { posit: 2, v: "220 Bay Rd, San Jose", chg: "2025-03-17", P: "CRM", T: "2025-03-14", a: 1 },
+      { posit: 2, v: "220 Bay Rd, San Jose", chg: "2025-03-17", P: "CRM", T: "2025-03-21", a: 0 },
+      { posit: 3, v: "220 Bay Rd, San Jose", chg: "2025-03-10", P: "CRM", T: "2025-03-21", a: 1 },
+      { posit: 3, v: "220 Bay Rd, San Jose", chg: "2025-03-10", P: "Web shop", T: "2025-04-02", a: 1 }
+    ];
+    var P = "CRM", C = "2025-03-12", T = "2025-03-18", log = $("#crtLog");
+    function evaluate(P, C, T) {
+      var latest = {};
+      A.forEach(function (x) { if (x.P === P && x.T <= T) { var cur = latest[x.posit]; if (!cur || x.T >= cur.T) latest[x.posit] = x; } });
+      var held = Object.keys(latest).map(function (k) { return latest[k]; }).filter(function (x) { return x.a > 0 && x.chg <= C; });
+      held.sort(function (a, b) { return a.chg < b.chg ? 1 : -1; });
+      return held[0] || null;
+    }
+    function render() {
+      var r = evaluate(P, C, T), today = evaluate(P, C, "9999-12-31");
+      var other = evaluate(P === "CRM" ? "Web shop" : "CRM", C, T);
+      var s = '<span class="m">Positor ' + P + ", true on " + C + ", recorded by " + T + ".</span><br>";
+      s += r ? '<span class="ok">' + esc(r.v) + ' <span class="m">(posit ' + r.posit + ", changed " + r.chg + ", asserted " + r.T + ")</span></span>" : '<span class="bad">No positive assertion. The source had no opinion yet.</span>';
+      if (today && r && today.v !== r.v) s += '<br><span class="warn">Today the same positor says ' + esc(today.v) + " for that date. The opinion changed later.</span>";
+      if (other && r && other.v !== r.v) s += '<br><span class="warn">The other positor says ' + esc(other.v) + " for the same question. The sources disagree.</span>";
+      log.innerHTML = s;
+      $$("[data-pos]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-pos") === P); });
+      $$("[data-chg]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-chg") === C); });
+      $$("[data-pst]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-pst") === T); });
+    }
+    $$("[data-pos]").forEach(function (b) { b.addEventListener("click", function () { P = b.getAttribute("data-pos"); render(); }); });
+    $$("[data-chg]").forEach(function (b) { b.addEventListener("click", function () { C = b.getAttribute("data-chg"); render(); }); });
+    $$("[data-pst]").forEach(function (b) { b.addEventListener("click", function () { T = b.getAttribute("data-pst"); render(); }); });
+    render();
+  })();
+
+  /* schema evolution */
+  (function () {
+    var E = [
+      ["Normalized", "ALTER TABLE customer ADD loyalty_tier, or a new effective-dated child table", "1 existing table altered", "c-cost"],
+      ["Star", "ALTER TABLE dim_customer ADD loyalty_tier, plus an SCD type decision and a reload of history", "1 existing table altered", "c-cost"],
+      ["Snowflake", "A new column on the customer dimension, or a new outrigger", "1 existing table altered", "c-cost"],
+      ["One big table", "A new column on every wide table that holds customers, then a rebuild", "Every wide table rebuilt", "c-cost"],
+      ["Data Vault", "A new satellite, sat_customer_web_tier, on the existing hub", "0 existing tables altered", "c-good"],
+      ["Anchor", "A new knotted historized attribute, CU_TIR_Customer_Tier, and its knot", "0 existing tables altered", "c-good"]
+    ];
+    var btns = $("#evoBtns"), tab = $("#evoTable"), cur = 5;
+    btns.innerHTML = E.map(function (e, i) { return '<button class="btn" type="button" data-evo="' + i + '">' + e[0] + "</button>"; }).join("");
+    function render() {
+      var e = E[cur];
+      tab.innerHTML = "<tbody><tr><td style=\"width:150px\"><strong>Change</strong></td><td>" + esc(e[1]) + "</td></tr><tr><td><strong>Existing tables</strong></td><td><span class=\"chip " + e[3] + "\">" + esc(e[2]) + "</span></td></tr></tbody>";
+      $$("[data-evo]").forEach(function (b) { b.classList.toggle("on", +b.getAttribute("data-evo") === cur); });
+    }
+    $$("[data-evo]").forEach(function (b) { b.addEventListener("click", function () { cur = +b.getAttribute("data-evo"); render(); }); });
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

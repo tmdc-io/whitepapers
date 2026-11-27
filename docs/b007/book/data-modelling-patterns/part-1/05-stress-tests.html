@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>5 · The twelve stress tests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="05">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part I · Chapter 5</div>
+<h1>The twelve stress tests</h1>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s5-1">Why this book tests patterns instead of describing them</a></li>
+    <li><a href="#s5-2">The twelve events that every pattern must survive</a></li>
+    <li><a href="#s5-3">How a result is scored: Good, Costly, or Fails</a></li>
+    <li><a href="#s5-4">Scoring each pattern as teams deploy it</a></li>
+    <li><a href="#s5-5">Build and run effort, the thirteenth measure</a></li>
+    <li><a href="#s5-6">How to read a chapter's strip, and how to disagree with it</a></li>
+  </ul>
+</div>
+
+<p>Every modeling pattern looks good on a whiteboard. Its diagram is clean, its tables have clear names, and its first load works. The differences between patterns show later, when something changes: a new source arrives, a relationship changes shape, a regulator asks an awkward question. This chapter defines twelve such changes at Lantern, and the scoring that every pattern chapter uses for them.</p>
+
+<h2 id="s5-1"><span class="num">5.1</span>Why test instead of describe</h2>
+<p>Descriptions of patterns tend to list strengths in the words of the pattern's own community. "Agile", "auditable", "business-friendly", and "flexible" each mean something, but they are hard to compare. A test is easier to compare. It asks one concrete question: when this event happens at Lantern, what must change in the model, and what is lost?</p>
+<p>The twelve tests come from the systems and rules in <a href="02-lantern-pet-supply.html">chapter 2</a> and from the timeline in Table 2.3. Ten of them are about change over time, because change is what separates the patterns. One is about how easy the data is to query. One is about the law. The mix is deliberate. A pattern that absorbs every change can still be slow to query or hard to delete from, and the tests show that too.</p>
+
+<h2 id="s5-2"><span class="num">5.2</span>The twelve tests</h2>
+<p class="tblcap"><b>Table 5.1</b> The twelve stress tests</p>
+<div class="tbl"><table id="stress-list">
+<thead><tr><th>#</th><th>Test</th><th>What happens at Lantern</th><th>What it checks</th></tr></thead>
+<tbody>
+<tr id="t1"><td>1</td><td>New source</td><td>Lantern buys Happy Tails on 1 June 2025. Its POS has its own customer IDs, such as <code>HT-88412</code>, and its own product codes.</td><td>Can the model add a source without changing what exists?</td></tr>
+<tr id="t2"><td>2</td><td>Key conflict</td><td>Maria is <code>C-000123</code> in the CRM, an email in the web shop, and a phone number at the till. Finance wants one customer. Audit wants to see what each system said.</td><td>Can it keep one identity and every source's view of it?</td></tr>
+<tr id="t3"><td>3</td><td>Attribute history</td><td>Maria moves twice in 2025. Dev Patel gets a raise on 1 July. Biscuit's weight changes at every grooming visit.</td><td>Can it show the value that was true on any date?</td></tr>
+<tr id="t4"><td>4</td><td>Relationship change</td><td>On 10 September 2025, the CRM starts to allow two owners per pet. Before, each pet had exactly one owner.</td><td>Can a one-to-many relationship become many-to-many?</td></tr>
+<tr id="t5"><td>5</td><td>Schema change</td><td>On 4 November 2025, the web shop adds <code>loyalty_tier</code> and renames <code>ship_address</code> to <code>shipping_address</code>.</td><td>Can it absorb a changed source table?</td></tr>
+<tr id="t6"><td>6</td><td>Late data</td><td>A store's Tuesday sales arrive on Friday. On 18 July, a manager corrects Dev's 8 July shift, after the 15 July payroll ran, which creates retro pay.</td><td>Can it take data out of order, and keep corrections?</td></tr>
+<tr id="t7"><td>7</td><td>Audit</td><td>A groomer files a wage claim. The state asks what rate and hours the company had on record on each pay date, and where each value came from.</td><td>Can it show what it had on record on a past date, and from where?</td></tr>
+<tr id="t8"><td>8</td><td>Rule change</td><td>On 1 January 2026, Oakland raises its minimum wage, and marketing changes "active customer" from 12 months to 6 months. Old reports must still make sense.</td><td>Can a rule change without rewriting the past?</td></tr>
+<tr id="t9"><td>9</td><td>Recall trace</td><td>On 3 October 2025, the FDA recalls lot <code>L24-0917</code> of a salmon kibble. Lantern must find every buyer, in every channel, including Happy Tails sales from before the acquisition.</td><td>Can it connect a lot to customers across all channels and years?</td></tr>
+<tr id="t10"><td>10</td><td>Multi-active data</td><td>Maria has three phone numbers and two pets at the same time. The grooming system names pets but does not key them.</td><td>Can it hold several current values per key?</td></tr>
+<tr id="t11"><td>11</td><td>Fast simple query</td><td>An analyst wants revenue by store and month, in seconds, with one short query that a new team member can read.</td><td>Can an analyst get a quick answer from a short query?</td></tr>
+<tr id="t12"><td>12</td><td>Delete versus retain</td><td>On 9 February 2026, Dev Patel asks for deletion of his customer data under the CCPA. Payroll law says to keep his pay records.</td><td>Can it delete personal data and keep what the law requires?</td></tr>
+</tbody></table></div>
+
+<div class="lab" id="lab-test">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Inside a test</h4><span class="lab-tip">select a test</span></div>
+  <p>Each test touches specific systems, rules, people, and ideas from earlier chapters. Select a test to see them.</p>
+  <label for="testSel" style="font-size:14px">Stress test
+    <select id="testSel" class="btn" style="margin-left:6px"></select>
+  </label>
+  <div class="tbl" style="margin:0"><table id="testTable"></table></div>
+</div>
+
+<h2 id="s5-3"><span class="num">5.3</span>Scoring</h2>
+<p>Each pattern gets one of three results on each test.</p>
+<p><span class="chip c-good">Good</span> means the pattern absorbs the event with new rows or new tables only. Nothing that already exists has to change, and nothing is lost.</p>
+<p><span class="chip c-cost">Costly</span> means the pattern handles the event, but someone must change existing tables, rewrite queries, or reload data. The cost can be small or large. The pattern chapter explains which.</p>
+<p><span class="chip c-fail">Fails</span> means the pattern loses information, gives wrong answers, or needs a redesign to handle the event.</p>
+<p>The results are the author's judgment, based on the reasoning in each pattern chapter and in <a href="../part-3/16-side-by-side.html">chapter 16</a>. They are not measurements. A different team, with different skills and tools, can reasonably move a result by one step. What matters more than any single chip is the reason behind it, and every result has one.</p>
+
+<h2 id="s5-4"><span class="num">5.4</span>Each pattern as teams deploy it</h2>
+<p>A pattern is scored the way teams usually run it, not in its barest form. The rule matters most for test 11. Inmon's normalized core and a Data Vault are both hard to query directly, and both are normally deployed with a serving layer on top. Scoring one with its serving layer and the other without it would not be fair.</p>
+<p class="tblcap"><b>Table 5.2</b> What each pattern is scored with</p>
+<div class="tbl"><table>
+<thead><tr><th>Pattern</th><th>Scored with</th></tr></thead>
+<tbody>
+<tr><td>Normalized warehouse</td><td>The third normal form core, plus the dependent data marts built from it</td></tr>
+<tr><td>Star schema and galaxy</td><td>As is, including the techniques in chapter 8, such as type 2 dimensions and bridge tables</td></tr>
+<tr><td>Snowflake schema</td><td>As is</td></tr>
+<tr><td>One big table</td><td>As is</td></tr>
+<tr><td>Data Vault</td><td>The raw vault plus point-in-time tables, bridge tables, the business vault, and information marts</td></tr>
+<tr><td>Anchor modeling</td><td>The anchor tables plus the views that anchor modeling generates</td></tr>
+<tr><td>Activity schema</td><td>The activity stream plus the queries that its specification defines</td></tr>
+<tr><td>Unified star schema</td><td>The central bridge plus the star tables that it connects</td></tr>
+</tbody></table></div>
+<p>When a bare core gives a different result, the pattern chapter says so. For example, the raw Data Vault without its serving layer fails test 11, and the Data Vault chapters explain why the serving layer exists.</p>
+
+<h2 id="s5-5"><span class="num">5.5</span>Build and run effort</h2>
+<p>Serving layers and extra tables are not free. A Data Vault with marts on top has many more tables and much more load code than a single star. A comparison of the twelve tests alone favors the heaviest patterns every time, and gives a small team with simple needs the wrong advice.</p>
+<p>So the full comparison in <a href="../part-3/16-side-by-side.html">chapter 16</a> adds a thirteenth measure that is not a stress test: <em class="term">build and run effort</em>. It counts the number of tables, the amount of load code, and what a new team member must learn before they can work on the model. It is rated <span class="chip c-good">Low</span>, <span class="chip c-cost">Medium</span>, or <span class="chip c-fail">High</span>, using the same three colors.</p>
+
+<h2 id="s5-6"><span class="num">5.6</span>How to read a strip</h2>
+<p>Each pattern chapter ends with a section called Strengths and limits. It has two or three paragraphs about what the pattern does well and where it struggles, then a strip of twelve chips, one per test, and one sentence on when to choose the pattern. The strip below is the one from <a href="../part-2/08-advanced-dimensional.html#s8-11">chapter 8</a>, for the star schema with its advanced techniques.</p>
+<div class="strip-wrap" data-pattern="star"></div>
+<p>Read the strip as a profile, not as a score. Count the colors for a quick impression: the star is mostly amber, with green on history and fast queries. Then select the chips that matter for your situation, and read the reason. If you disagree with a result, follow the link to chapter 16, where the full argument for each result sits next to the results for every other pattern.</p>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>Patterns differ most when something changes, so this book tests them against twelve events at Lantern instead of describing them.</li>
+    <li>Ten tests are about change, one is about querying, and one is about the law.</li>
+    <li>Each result is Good, Costly, or Fails, and each one comes with its reason. The results are judgments, not measurements.</li>
+    <li>Each pattern is scored as teams deploy it, including the serving layers that it normally has.</li>
+    <li>Build and run effort is a thirteenth measure, so that heavy patterns do not win by default.</li>
+    <li>Every pattern chapter ends with the same strip, and chapter 16 holds the full reasoning.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 5 · The twelve stress tests · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc, TESTS = window.Book.tests;
+  var D = [
+    { sys: "Happy Tails POS, CRM", rule: "None", who: "Maria as HT-88412", idea: "Identity across sources (3.4)" },
+    { sys: "CRM, web shop, store POS", rule: "None", who: "Maria under three keys", idea: "Natural and surrogate keys (3.4)" },
+    { sys: "CRM, HR and payroll, grooming", rule: "Pay rates with effective dates", who: "Maria, Dev Patel, Biscuit", idea: "Versioned rows and effective dating (4.2, 4.3)" },
+    { sys: "CRM", rule: "None", who: "Sam Ortiz and Biscuit", idea: "Cardinality (3.5)" },
+    { sys: "Web shop", rule: "None", who: "Every web customer", idea: "Integration decisions (1.3)" },
+    { sys: "Store POS, HR and payroll", rule: "California overtime and meal breaks", who: "Dev Patel", idea: "Business time and record time (4.1)" },
+    { sys: "HR and payroll", rule: "FLSA record keeping, California wage rules", who: "Dev Patel", idea: "Bitemporal data (4.4)" },
+    { sys: "HR and payroll, CRM", rule: "Oakland minimum wage", who: "Every Oakland employee and customer", idea: "When a model decides meaning (1.3)" },
+    { sys: "ERP, store POS, web shop, Happy Tails POS", rule: "FDA recalls", who: "Every buyer of lot L24-0917", idea: "Grain and degenerate keys (3.3)" },
+    { sys: "CRM, grooming", rule: "None", who: "Maria, Biscuit, Pepper", idea: "Fourth normal form (3.6.2)" },
+    { sys: "Any", rule: "None", who: "An analyst", idea: "Denormalization (3.7)" },
+    { sys: "CRM, HR and payroll", rule: "CCPA, FLSA record keeping", who: "Dev Patel as customer and employee", idea: "Insert-only storage (4.6)" }
+  ];
+  var sel = document.getElementById("testSel"), tab = document.getElementById("testTable");
+  sel.innerHTML = TESTS.map(function (t, i) { return '<option value="' + i + '">' + (i + 1) + " " + esc(t) + "</option>"; }).join("");
+  function render(i) {
+    var d = D[i];
+    tab.innerHTML = "<tbody>" + [["Systems", d.sys], ["Rules", d.rule], ["People", d.who], ["Ideas it uses", d.idea]].map(function (r) {
+      return "<tr><td style=\"width:140px\"><strong>" + r[0] + "</strong></td><td>" + esc(r[1]) + "</td></tr>";
+    }).join("") + "</tbody>";
+  }
+  sel.addEventListener("change", function () { render(+sel.value); });
+  render(0);
+})();
+</script>
+</body>
+</html>

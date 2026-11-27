@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>2 · Lantern Pet Supply</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="02">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part I · Chapter 2</div>
+<h1>Lantern Pet Supply</h1>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s2-1">The business behind every example in the book</a></li>
+    <li><a href="#s2-2">The seven source systems, their tables, and their keys</a></li>
+    <li><a href="#s2-3">The people who appear in the examples</a></li>
+    <li><a href="#s2-4">The laws and rules that turn into data requirements</a></li>
+    <li><a href="#s2-5">The timeline of events that the stress tests use</a></li>
+  </ul>
+</div>
+
+<p>A modeling pattern is easy to admire in the abstract. Its strengths and costs only show on real data, with real keys that disagree, real values that change, and real rules that the data must obey. So every chapter in this book works on one business. This chapter introduces it.</p>
+<p>Lantern Pet Supply is made up, but nothing about it is unusual. Its systems, its data quality problems, and its legal duties are the ones that any mid-size retailer in the United States has. Read this chapter once, and refer back to it when a later chapter mentions a person, a system, or an event.</p>
+
+<h2 id="s2-1"><span class="num">2.1</span>The business</h2>
+<p>Lantern sells food, toys, and supplies for pets. It has 85 stores in six states, with its head office in Oakland, California. It also runs a web shop. The web shop has an <em class="term">autoship</em> option: a customer chooses a product and a frequency, such as every four weeks, and the order repeats on its own. Forty of the stores have a grooming salon, where groomers wash, trim, and weigh pets by appointment.</p>
+<p class="tblcap"><b>Table 2.1</b> Lantern in numbers</p>
+<div class="tbl"><table>
+<thead><tr><th>Measure</th><th>Size</th><th>Why it matters for modeling</th></tr></thead>
+<tbody>
+<tr><td>Stores</td><td>85, then 97 after June 2025</td><td>Store is a shared dimension in almost every question</td></tr>
+<tr><td>Customers</td><td>about 600,000</td><td>Large enough that matching across systems is real work</td></tr>
+<tr><td>Pets</td><td>about 900,000</td><td>Most customers have more than one pet</td></tr>
+<tr><td>Products</td><td>about 25,000 SKUs</td><td>Deep category tree, frequent reorganizations</td></tr>
+<tr><td>Orders</td><td>about 40,000 a day</td><td>Roughly 100,000 order lines a day, 38 million a year</td></tr>
+<tr><td>Employees</td><td>about 1,400</td><td>Pay rules differ by state and by city</td></tr>
+<tr><td>Grooming visits</td><td>about 1,800 a day</td><td>Each visit has several milestones and a weigh-in</td></tr>
+</tbody></table></div>
+<p>A <em class="term">SKU</em>, or stock keeping unit, is one sellable product in one size, such as a 12 kg bag of a salmon kibble. Food is the biggest category by revenue. Food also carries a <em class="term">lot number</em>, the production batch printed on the bag, which matters when a product is recalled.</p>
+
+<h2 id="s2-2"><span class="num">2.2</span>The source systems</h2>
+<p>Lantern's data comes from seven operational systems. Only two of them, the CRM and the web shop, feed the warehouse at the start of the story. The other five arrive one at a time, and each arrival tests the model. Figure 2.1 shows all seven.</p>
+<figure class="diag" id="fig-2-1">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Seven source systems feed one warehouse. Only the CRM and the web shop exist on day one. The warehouse serves finance, marketing, HR compliance and store operations.">
+  <defs><marker id="m21" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <text x="24" y="34" font-size="12" class="mono t-s" letter-spacing="1.4">SOURCES</text>
+  <text x="300" y="34" font-size="12" class="mono t-s" letter-spacing="1.4">WAREHOUSE</text>
+  <text x="520" y="34" font-size="12" class="mono t-s" letter-spacing="1.4">WHO ASKS</text>
+  <g font-size="13.5">
+    <rect x="24" y="50" width="210" height="42" rx="7" class="bx-a"/><text x="36" y="68" font-weight="600">CRM</text><text x="36" y="84" font-size="11.5" class="t-s">day one · key C-000123</text>
+    <rect x="24" y="100" width="210" height="42" rx="7" class="bx-a"/><text x="36" y="118" font-weight="600">Web shop</text><text x="36" y="134" font-size="11.5" class="t-s">day one · key email</text>
+    <rect x="24" y="150" width="210" height="42" rx="7" class="bx-n"/><text x="36" y="168" font-weight="600">Store POS</text><text x="36" y="184" font-size="11.5" class="t-s">later · key phone number</text>
+    <rect x="24" y="200" width="210" height="42" rx="7" class="bx-n"/><text x="36" y="218" font-weight="600">Happy Tails POS</text><text x="36" y="234" font-size="11.5" class="t-s">later · acquired chain</text>
+    <rect x="24" y="250" width="210" height="42" rx="7" class="bx-n"/><text x="36" y="268" font-weight="600">Grooming bookings</text><text x="36" y="284" font-size="11.5" class="t-s">later · pets named, not keyed</text>
+    <rect x="24" y="300" width="210" height="42" rx="7" class="bx-n"/><text x="36" y="318" font-weight="600">ERP and inventory</text><text x="36" y="334" font-size="11.5" class="t-s">later · SKU and lot number</text>
+    <rect x="24" y="350" width="210" height="42" rx="7" class="bx-n"/><text x="36" y="368" font-weight="600">HR and payroll</text><text x="36" y="384" font-size="11.5" class="t-s">later · employee_id</text>
+  </g>
+  <path class="ln" d="M234,71 C268,71 270,206 296,214"/>
+  <path class="ln" d="M234,121 C266,121 272,210 296,216"/>
+  <path class="ln" d="M234,171 C262,171 274,214 296,218"/>
+  <path class="ln" d="M234,221 L296,220"/>
+  <path class="ln" d="M234,271 C262,271 274,226 296,222"/>
+  <path class="ln" d="M234,321 C266,321 272,230 296,224"/>
+  <path class="ln" d="M234,371 C268,371 270,234 296,226" marker-end="url(#m21)"/>
+  <g text-anchor="middle">
+    <rect x="300" y="160" width="160" height="120" rx="9" class="bx-w"/>
+    <text x="380" y="210" font-size="14" font-weight="600">One warehouse</text>
+    <text x="380" y="230" font-size="12" class="t-s">the pattern is the</text>
+    <text x="380" y="246" font-size="12" class="t-s">open question</text>
+  </g>
+  <line class="ln" x1="460" y1="220" x2="512" y2="98" marker-end="url(#m21)"/>
+  <line class="ln" x1="460" y1="220" x2="512" y2="176" marker-end="url(#m21)"/>
+  <line class="ln" x1="460" y1="220" x2="512" y2="262" marker-end="url(#m21)"/>
+  <line class="ln" x1="460" y1="220" x2="512" y2="340" marker-end="url(#m21)"/>
+  <g font-size="13.5">
+    <rect x="516" y="74" width="180" height="46" rx="7" class="bx-n"/><text x="528" y="94" font-weight="600">Finance</text><text x="528" y="110" font-size="11.5" class="t-s">sales, margin, recalls</text>
+    <rect x="516" y="152" width="180" height="46" rx="7" class="bx-n"/><text x="528" y="172" font-weight="600">Marketing</text><text x="528" y="188" font-size="11.5" class="t-s">customers, loyalty</text>
+    <rect x="516" y="238" width="180" height="46" rx="7" class="bx-n"/><text x="528" y="258" font-weight="600">HR compliance</text><text x="528" y="274" font-size="11.5" class="t-s">pay, hours, breaks</text>
+    <rect x="516" y="316" width="180" height="46" rx="7" class="bx-n"/><text x="528" y="336" font-weight="600">Store operations</text><text x="528" y="352" font-size="11.5" class="t-s">grooming, stock</text>
+  </g>
+</svg>
+</div>
+<figcaption><b>Figure 2.1</b> Lantern's source systems. Two sources exist at the start, five arrive later, and each one brings its own idea of what identifies a customer.</figcaption>
+</figure>
+<p>Read the second line of each source box. It names the key that the system uses. Most of the trouble in this book starts there. Three systems identify the same customer in three different ways, and two of them were designed by other companies.</p>
+<p class="tblcap"><b>Table 2.2</b> The source systems</p>
+<div class="tbl"><table>
+<thead><tr><th>System</th><th>Main tables</th><th>Customer key</th><th>Arrives</th></tr></thead>
+<tbody>
+<tr><td>CRM</td><td>customer, household, pet, pet_owner, loyalty_account, consent</td><td><code>C-000123</code></td><td>Day one</td></tr>
+<tr><td>Web shop</td><td>web_account, web_order, web_order_line, autoship_subscription, return</td><td>email</td><td>Day one</td></tr>
+<tr><td>Store POS</td><td>store, register_sale, sale_line, tender, loyalty_scan</td><td>phone at the till</td><td>Early 2025</td></tr>
+<tr><td>Happy Tails POS</td><td>ht_customer, ht_ticket, ht_ticket_item</td><td><code>HT-88412</code></td><td>June 2025</td></tr>
+<tr><td>Grooming bookings</td><td>appointment, service, groomer_assignment, pet_health_note</td><td>booking_id, pet by name</td><td>Spring 2025</td></tr>
+<tr><td>ERP and inventory</td><td>product, category, supplier, purchase_order, lot, recall_notice</td><td>none (products)</td><td>Spring 2025</td></tr>
+<tr><td>HR and payroll</td><td>employee, position, pay_rate, timesheet_punch, payroll_run, pay_stub_line, commission</td><td>employee_id</td><td>Summer 2025</td></tr>
+</tbody></table></div>
+
+<div class="lab" id="lab-src">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Explore the sources</h4><span class="lab-tip">select a system</span></div>
+  <p>Each system shows a sample row and the quirks that a model must handle. The same person, Maria Lopez, appears in several of them.</p>
+  <div class="row" role="group" aria-label="Source system" id="srcBtns"></div>
+  <div class="tbl" style="margin:0"><table class="rows" id="srcTable"></table></div>
+  <div class="log" id="srcLog" aria-live="polite"></div>
+</div>
+<p>Look at the web shop sample again. The email has capital letters and a trailing space, the name is shortened, and the street type is spelled out. None of this is an error in the usual sense. Each system was built for its own purpose, and its data is correct for that purpose. The warehouse is the first place where the systems meet.</p>
+
+<h2 id="s2-3"><span class="num">2.3</span>The people</h2>
+<p>A few people appear again and again. Their details are fixed, so that you can follow them from chapter to chapter.</p>
+<p><strong>Maria Lopez</strong> is a loyalty customer with the CRM ID <code>C-000123</code>. She has a golden retriever, Biscuit, and a cat, Pepper. She buys in stores and on the web shop, and she has three phone numbers. She moves twice in 2025, from Oakland to San Jose and then to Sacramento, where she starts to shop at a Happy Tails store as <code>HT-88412</code>.</p>
+<p><strong>Sam Ortiz</strong> is Maria's partner, CRM ID <code>C-002981</code>. In September 2025 he becomes a second owner of Biscuit, which tests every model's idea of the pet-to-owner relationship.</p>
+<p><strong>Dev Patel</strong> is a groomer at the Oakland store, employee ID <code>E-1047</code>. He is paid by the hour plus a commission on grooming services. He is also a loyalty customer, <code>C-003377</code>. That makes him the most interesting person in the book for privacy and payroll rules.</p>
+<p><strong>Priya Shah</strong> is a new web shop customer, <code>C-004410</code>. Her first order arrives before the CRM has her record, which tests how a model handles a fact that arrives before its context.</p>
+
+<h2 id="s2-4"><span class="num">2.4</span>The rules</h2>
+<p>Lantern's head office and most of its stores are in California. California has some of the strictest employment and privacy rules in the United States, and each rule becomes a requirement on the data.</p>
+<p><strong>Minimum wages differ by place and date.</strong> California sets a state minimum wage, and many cities, including Oakland, set a higher one. Each rate has an effective date, often 1 January. A pay rate is therefore a value that is valid for a period, not a single fact.</p>
+<p><strong>Overtime is daily as well as weekly.</strong> In California, overtime is due after 8 hours in one workday, as well as after 40 hours in a week, as the <a href="https://www.dir.ca.gov/dlse/faq_overtime.htm">Labor Commissioner's overtime guidance</a> explains. An employee must also get a meal break before the end of the fifth hour of work, per the <a href="https://www.dir.ca.gov/dlse/faq_mealperiods.htm">meal period guidance</a>. A late or missed break costs one extra hour of pay. So payroll needs every punch, with its exact time.</p>
+<p><strong>Payroll records must be kept.</strong> The federal <a href="https://www.dol.gov/agencies/whd/fact-sheets/21-flsa-recordkeeping">FLSA record keeping rules</a> require employers to keep payroll records for at least three years. A model must never lose them, even when other data is deleted.</p>
+<p><strong>Customers can ask for deletion.</strong> The <a href="https://oag.ca.gov/privacy/ccpa">California Consumer Privacy Act (CCPA)</a> gives customers the right to ask a business to delete their personal information, with exceptions such as data that the business must keep by law.</p>
+<p><strong>Card numbers never enter the warehouse.</strong> The <a href="https://www.pcisecuritystandards.org/">PCI Data Security Standard</a> makes stored card numbers expensive to protect. The tills send only the payment type and a token.</p>
+<p><strong>Recalls need a trace.</strong> When the FDA announces a <a href="https://www.fda.gov/animal-veterinary/safety-health/recalls-withdrawals">pet food recall</a>, it names a product and its lot numbers. Lantern must find every customer who bought an affected lot, in every channel.</p>
+<div class="callout warning"><span class="lbl">Warning</span>The wage rates in this book are illustrative. Real rates change every year, and some change twice. Never use the examples as a source for payroll.</div>
+
+<h2 id="s2-5"><span class="num">2.5</span>The story timeline</h2>
+<p>The examples follow one sequence of events. Table 2.3 lists them in order. The stress tests in <a href="05-stress-tests.html">chapter 5</a> refer to these events by date.</p>
+<p class="tblcap"><b>Table 2.3</b> Events at Lantern, 2024 to 2026</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>Date</th><th>Event</th></tr></thead>
+<tbody>
+<tr><td>2024-11-02</td><td class="wrap">Maria's CRM record exists, with her address at 14 Elm St, Oakland</td></tr>
+<tr><td>2025-02-14</td><td class="wrap">Maria places order O-5001 in the Oakland store</td></tr>
+<tr><td>2025-03-10</td><td class="wrap">Maria moves to 220 Bay Rd, San Jose. The CRM records the move on 14 March, at first with the wrong date</td></tr>
+<tr><td>2025-05-02</td><td class="wrap">A CRM cleanup changes "Bay Rd" to "Bay Road"</td></tr>
+<tr><td>2025-05-20</td><td class="wrap">Maria places web order O-5102</td></tr>
+<tr><td>2025-06-01</td><td class="wrap">Lantern buys Happy Tails, a 12-store chain with its own POS and customer IDs</td></tr>
+<tr><td>2025-07-01</td><td class="wrap">Dev Patel's pay rate rises from 24.00 to 25.50 USD an hour</td></tr>
+<tr><td>2025-07-18</td><td class="wrap">A manager corrects Dev's 8 July shift, three days after the 15 July payroll ran</td></tr>
+<tr><td>2025-08-02</td><td class="wrap">Maria moves to 9 Pine Ave, Sacramento</td></tr>
+<tr><td>2025-09-05</td><td class="wrap">Maria places order O-5203 at a Happy Tails store, as HT-88412</td></tr>
+<tr><td>2025-09-10</td><td class="wrap">The CRM starts to allow two owners per pet. Sam becomes a second owner of Biscuit</td></tr>
+<tr><td>2025-10-03</td><td class="wrap">The FDA recalls lot L24-0917 of a salmon kibble</td></tr>
+<tr><td>2025-11-04</td><td class="wrap">The web shop adds a loyalty_tier column and renames ship_address to shipping_address</td></tr>
+<tr><td>2026-01-01</td><td class="wrap">Oakland's minimum wage rises. Marketing changes "active customer" from 12 months to 6 months</td></tr>
+<tr><td>2026-02-09</td><td class="wrap">Dev Patel asks Lantern to delete his personal information as a customer</td></tr>
+</tbody></table></div>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>Lantern Pet Supply is a made-up US pet retailer with 85 stores, a web shop with autoship, and grooming salons. Every example in the book uses it.</li>
+    <li>Seven source systems feed the warehouse. Only the CRM and the web shop exist at the start, and each later system brings its own customer key.</li>
+    <li>Maria Lopez, Sam Ortiz, Dev Patel, and Priya Shah appear throughout the book, each with fixed details.</li>
+    <li>California wage, overtime, and meal break rules, payroll retention, the CCPA, PCI, and FDA recalls all become requirements on the data.</li>
+    <li>A fixed timeline of events, from Maria's moves to Dev's deletion request, drives the stress tests in chapter 5.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 2 · Lantern Pet Supply · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  var S = [
+    { name: "CRM", key: "customer_id", cols: ["customer_id", "name", "email", "address", "updated_at"], row: ["C-000123", "Maria Lopez", "maria.lopez@example.com", "14 Elm St, Oakland CA", "2024-11-02"],
+      notes: ["Overwrites the address when a customer moves.", "Knows pets and households. Until September 2025, a pet has exactly one owner."] },
+    { name: "Web shop", key: "email", cols: ["email", "display_name", "ship_address", "autoship", "created_at"], row: ["Maria.Lopez@Example.com ", "M. Lopez", "14 Elm Street, Oakland, CA", "yes", "2023-06-19"],
+      notes: ["Keys customers by email, typed by the customer, with any capitals and spaces.", "No link to the CRM ID until the customer links accounts."] },
+    { name: "Store POS", key: "phone", cols: ["sale_id", "store_code", "loyalty_phone", "tender", "sold_at"], row: ["S-14-5521", "OAK-014", "4155550142", "card token", "2025-02-14 10:21"],
+      notes: ["Knows customers only by the phone number typed at the till.", "Sends sales in nightly batches. A store with a network problem sends days later."] },
+    { name: "Happy Tails POS", key: "ht_customer_id", cols: ["ht_customer_id", "full_name", "phone", "store", "first_visit"], row: ["HT-88412", "Maria Lopez", "(415) 555-0142", "HT Sacramento 3", "2025-08-20"],
+      notes: ["A different company's system, with its own customer IDs and product codes.", "Sends a full snapshot of all customers every night, not only changes."] },
+    { name: "Grooming", key: "booking_id", cols: ["booking_id", "customer_phone", "pet_name", "service", "groomer"], row: ["G-20931", "4155550142", "Biscuit", "Full groom, large", "Dev P."],
+      notes: ["Names pets but does not key them. Two pets called Biscuit are two different rows of text.", "Knows groomers by a short name, not by employee ID."] },
+    { name: "ERP", key: "sku and lot", cols: ["sku", "product_name", "category_code", "lot_number", "expiry"], row: ["SKU-30118", "Salmon Kibble 12 kg", "DOG_DRY", "L24-0917", "2026-03-31"],
+      notes: ["Owns the product catalog and its category tree, which merchandising reorganizes every spring.", "Knows which lots each store received, but not who bought them."] },
+    { name: "HR and payroll", key: "employee_id", cols: ["employee_id", "name", "position", "hourly_rate", "effective_from"], row: ["E-1047", "Dev Patel", "Groomer", "25.50", "2025-07-01"],
+      notes: ["Pay rates have effective dates, and corrections arrive after payroll runs.", "Must be kept for years, even when the same person's customer data is deleted."] }
+  ];
+  var btns = document.getElementById("srcBtns"), tab = document.getElementById("srcTable"), log = document.getElementById("srcLog");
+  btns.innerHTML = S.map(function (s, i) { return '<button class="btn" type="button" data-s="' + i + '">' + esc(s.name) + "</button>"; }).join("");
+  function render(i) {
+    var s = S[i];
+    tab.innerHTML = "<thead><tr>" + s.cols.map(function (c) { return "<th>" + esc(c) + "</th>"; }).join("") + "</tr></thead><tbody><tr>" + s.row.map(function (v) { return "<td>" + esc(v).replace(/ $/, "&middot;") + "</td>"; }).join("") + "</tr></tbody>";
+    log.innerHTML = '<span class="m">Customer or row key: ' + esc(s.key) + "</span><br>" + s.notes.map(function (n) { return '<span class="warn">' + esc(n) + "</span>"; }).join("<br>");
+    [].slice.call(btns.querySelectorAll("button")).forEach(function (b) { b.classList.toggle("on", +b.getAttribute("data-s") === i); });
+  }
+  [].slice.call(btns.querySelectorAll("button")).forEach(function (b) { b.addEventListener("click", function () { render(+b.getAttribute("data-s")); }); });
+  render(0);
+})();
+</script>
+</body>
+</html>

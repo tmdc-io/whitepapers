@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>15 · Unified star schema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="15">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part II · Chapter 15</div>
+<h1>Unified star schema</h1>
+<p class="glance"><i><span>Origin</span>Francesco Puppini and Bill Inmon, 2020</i><i><span>Shape</span>stars joined through one central bridge</i><i><span>Best at</span>multi-fact questions without double counting</i><i><span>Costs</span>a large bridge to build and rebuild</i></p>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s15-1">Why stars break when one question needs several facts</a></li>
+    <li><a href="#s15-2">Fan traps, chasm traps, and loops</a></li>
+    <li><a href="#s15-3">The central bridge: stages, keys, and UNION ALL</a></li>
+    <li><a href="#s15-4">Building the Lantern bridge</a></li>
+    <li><a href="#s15-5">Querying any combination of facts in one query</a></li>
+    <li><a href="#s15-6">How it relates to stars, galaxies, and self-service tools</a></li>
+    <li><a href="#s15-8">Strengths and limits on the twelve stress tests</a></li>
+  </ul>
+</div>
+
+<p>In <a href="07-dimensional-modeling.html#s7-6-1">section 7.6.1</a>, the finance director asked for product sales and grooming revenue per store. The answer needed care: never join two fact tables directly, total each one separately, then join the totals. An analyst who knows that writes two subqueries. An analyst in a self-service tool, who drags "net sales" and "grooming revenue" onto one report, gets numbers that are several times too large, and no warning.</p>
+<p>The unified star schema is a design for exactly that analyst. It puts one table, a bridge, in the middle of all the stars, so that any combination of facts and dimensions can be queried in one simple query without double counting. This chapter builds the bridge for Lantern and shows when it is worth its size.</p>
+
+<h2 id="s15-1"><span class="num">15.1</span>The idea</h2>
+<p>Francesco Puppini proposed the unified star schema with Bill Inmon in the 2020 book The Unified Star Schema: An Agile and Resilient Approach to Data Warehouse and Analytics Design. The idea keeps the star's tables, facts and dimensions, and changes how they connect. Instead of each fact joining its own dimensions, every table joins one central table, the bridge. Practitioners often call it the <em class="term">Puppini bridge</em>.</p>
+<p>The bridge is built with UNION ALL, not with joins. It stacks one block of rows per table, so it never multiplies rows. And every table hangs off the bridge by a many-to-one join, one hop away. Those two properties together are what remove the traps that multi-fact queries fall into.</p>
+<div class="callout"><span class="lbl">Note</span>This pattern sits in the serving layer, like the star. It needs the same dimension design as a star, including the techniques in <a href="08-advanced-dimensional.html">chapter 8</a>. What it changes is the query layer on top.</div>
+
+<h2 id="s15-2"><span class="num">15.2</span>Three traps</h2>
+<p><strong>The fan trap.</strong> A table with a measure joins to a table on its "many" side, and the measure repeats. Lantern's web orders have a shipping fee on the order header. Joining headers to order lines to show fees by product repeats each fee once per line. A sum of the fee is then too large by the number of lines.</p>
+<p><strong>The chasm trap.</strong> Two fact tables share a dimension, and a query joins both to it. Each store has many sales rows and many grooming rows. The join pairs every sales row with every grooming row of the same store, and both sums grow. This is the trap from <a href="07-dimensional-modeling.html#s7-6-1">section 7.6.1</a>, and the one that self-service tools fall into most often.</p>
+<p><strong>The loop.</strong> A table can be reached by two paths, and the paths mean different things. A sale points to the store where it happened. A customer points to their home store. "Sales by store" through the sale and "sales by store" through the customer are two different reports, and a tool that picks a path silently picks a meaning.</p>
+<p>A star schema avoids these traps through discipline: drill across, choose paths explicitly, keep measures at their grain. The unified star schema avoids them through structure.</p>
+
+<h2 id="s15-3"><span class="num">15.3</span>How the bridge works</h2>
+<p>The bridge has one column that names the table each row comes from, usually called <code>stage</code>, and one key column per table in the model, such as <code>_key_sales</code>, <code>_key_store</code>, and <code>_key_date</code>. Each table contributes one block of rows, one row per row of the table. A block fills in its own key, plus the keys of every table that it reaches through many-to-one relationships. All other key columns stay empty.</p>
+<figure class="diag" id="fig-15-1">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A central bridge table with sales, grooming and inventory facts on the left and store, date, product and customer dimensions on the right. Every table joins the bridge directly, one hop away, and no table joins another.">
+  <defs><marker id="m151" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <text x="24" y="28" font-size="12" class="mono t-s" letter-spacing="1.3">FACTS</text>
+  <text x="540" y="28" font-size="12" class="mono t-s" letter-spacing="1.3">DIMENSIONS</text>
+  <g font-size="12.5">
+    <rect x="24" y="60" width="170" height="46" rx="7" class="bx-n"/><text x="36" y="80" font-weight="600">fact_sales_line</text><text x="36" y="96" font-size="11" class="mono t-s">net_amount</text>
+    <rect x="24" y="136" width="170" height="46" rx="7" class="bx-n"/><text x="36" y="156" font-weight="600">fact_grooming_appt</text><text x="36" y="172" font-size="11" class="mono t-s">amount_paid</text>
+    <rect x="24" y="212" width="170" height="46" rx="7" class="bx-n"/><text x="36" y="232" font-weight="600">fact_inventory_daily</text><text x="36" y="248" font-size="11" class="mono t-s">units_on_hand</text>
+    <rect x="270" y="40" width="180" height="240" rx="9" class="bx-a"/>
+    <text x="284" y="64" font-weight="600" class="t-a">bridge</text>
+    <text x="284" y="86" font-size="11" class="mono">stage</text>
+    <text x="284" y="106" font-size="11" class="mono">_key_sales</text>
+    <text x="284" y="126" font-size="11" class="mono">_key_grooming</text>
+    <text x="284" y="146" font-size="11" class="mono">_key_inventory</text>
+    <text x="284" y="166" font-size="11" class="mono">_key_store</text>
+    <text x="284" y="186" font-size="11" class="mono">_key_date</text>
+    <text x="284" y="206" font-size="11" class="mono">_key_product</text>
+    <text x="284" y="226" font-size="11" class="mono">_key_customer</text>
+    <text x="284" y="256" font-size="11" class="t-s">one block per table, UNION ALL</text>
+    <rect x="526" y="48" width="170" height="40" rx="7" class="bx-n"/><text x="538" y="73" font-weight="600">dim_store</text>
+    <rect x="526" y="108" width="170" height="40" rx="7" class="bx-n"/><text x="538" y="133" font-weight="600">dim_date</text>
+    <rect x="526" y="168" width="170" height="40" rx="7" class="bx-n"/><text x="538" y="193" font-weight="600">dim_product</text>
+    <rect x="526" y="228" width="170" height="40" rx="7" class="bx-n"/><text x="538" y="253" font-weight="600">dim_customer</text>
+  </g>
+  <line class="ln" x1="266" y1="96" x2="198" y2="83" marker-end="url(#m151)"/>
+  <line class="ln" x1="266" y1="122" x2="198" y2="159" marker-end="url(#m151)"/>
+  <line class="ln" x1="266" y1="142" x2="198" y2="235" marker-end="url(#m151)"/>
+  <line class="ln" x1="450" y1="162" x2="522" y2="68" marker-end="url(#m151)"/>
+  <line class="ln" x1="450" y1="182" x2="522" y2="128" marker-end="url(#m151)"/>
+  <line class="ln" x1="450" y1="202" x2="522" y2="188" marker-end="url(#m151)"/>
+  <line class="ln" x1="450" y1="222" x2="522" y2="248" marker-end="url(#m151)"/>
+</svg>
+</div>
+<figcaption><b>Figure 15.1</b> The unified star schema. Every table, fact or dimension, is one many-to-one join from the bridge, and no table joins another directly.</figcaption>
+</figure>
+<p>Table 15.1 shows a few bridge rows for the Oakland store. A sales row fills in its sale key, and the store, date, product, and customer that the sale points to. A grooming row fills in its own key, and its store, date, and customer. A store row fills in only the store key. The empty cells are the reason the bridge is safe: a sales row has no grooming key, so joining the grooming fact to it adds nothing.</p>
+<p class="tblcap"><b>Table 15.1</b> Bridge rows for the Oakland store</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>stage</th><th>_key_sales</th><th>_key_grooming</th><th>_key_store</th><th>_key_date</th><th>_key_customer</th></tr></thead>
+<tbody>
+<tr><td>Sales</td><td>O-5001-1</td><td>·</td><td>14</td><td>20250214</td><td>48211</td></tr>
+<tr><td>Sales</td><td>O-5001-2</td><td>·</td><td>14</td><td>20250214</td><td>48211</td></tr>
+<tr><td>Grooming</td><td>·</td><td>G-20931</td><td>14</td><td>20250609</td><td>48211</td></tr>
+<tr><td>Store</td><td>·</td><td>·</td><td>14</td><td>·</td><td>·</td></tr>
+<tr><td>Customer</td><td>·</td><td>·</td><td>·</td><td>·</td><td>48211</td></tr>
+</tbody></table></div>
+
+<h2 id="s15-4"><span class="num">15.4</span>Building the Lantern bridge</h2>
+<p>The bridge is a query over the existing star tables. Listing 15.1 builds it for two facts and two dimensions. A real bridge has one block for every table in the model.</p>
+<p class="lstcap"><b>Listing 15.1</b> The bridge, built with UNION ALL</p>
+<pre class="sql"><span class="k">CREATE TABLE</span> bridge <span class="k">AS</span>
+<span class="k">SELECT</span> 'Sales'      <span class="k">AS</span> stage,
+       f.sale_line_key <span class="k">AS</span> _key_sales,  <span class="k">CAST</span>(<span class="k">NULL AS</span> <span class="k">VARCHAR</span>(20)) <span class="k">AS</span> _key_grooming,<i class="ann">1</i>
+       f.store_key  <span class="k">AS</span> _key_store,  f.date_key <span class="k">AS</span> _key_date,  f.customer_key <span class="k">AS</span> _key_customer
+<span class="k">FROM</span>   fact_sales_line f
+<span class="k">UNION ALL</span>
+<span class="k">SELECT</span> 'Grooming', <span class="k">NULL</span>, g.appointment_id,
+       g.store_key, g.paid_date_key, g.customer_key<i class="ann">2</i>
+<span class="k">FROM</span>   fact_grooming_appointment g
+<span class="k">UNION ALL</span>
+<span class="k">SELECT</span> 'Store',    <span class="k">NULL</span>, <span class="k">NULL</span>, s.store_key, <span class="k">NULL</span>, <span class="k">NULL</span>
+<span class="k">FROM</span>   dim_store s<i class="ann">3</i>
+<span class="k">UNION ALL</span>
+<span class="k">SELECT</span> 'Customer', <span class="k">NULL</span>, <span class="k">NULL</span>, <span class="k">NULL</span>, <span class="k">NULL</span>, c.customer_key
+<span class="k">FROM</span>   dim_customer c;</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>Each block fills in its own key and leaves the keys of other facts empty, so facts never meet in one row.</span></li>
+<li><i class="ann">2</i><span>A fact block carries the keys of every dimension it points to. For grooming, the paid date plays the role of "the date" in this bridge.</span></li>
+<li><i class="ann">3</i><span>Dimension blocks let a report show stores with no sales and no grooming at all, which an inner join from a fact would hide.</span></li>
+</ol>
+<p>The bridge has about as many rows as all the tables together, so for Lantern it is dominated by the sales fact: around 38 million rows a year. It holds only keys, which compress well, and it must be rebuilt, or appended to, after each load.</p>
+<div class="callout"><span class="lbl">Note</span>Loops are resolved in the bridge, too. If a report needs both the store where a sale happened and the customer's home store, the bridge gives them two key columns, such as <code>_key_store</code> and <code>_key_home_store</code>, each joined to its own role-playing view of <code>dim_store</code>, as in <a href="08-advanced-dimensional.html#s8-5">section 8.5</a>. Each path then has a name, and a report picks a meaning on purpose.</div>
+
+<h2 id="s15-5"><span class="num">15.5</span>Querying through the bridge</h2>
+<p>Every query has the same shape: start from the bridge, left-join the tables you need on their keys, group, and add up. Because each bridge row joins at most one row of each table, sums are always correct, for one fact or for several.</p>
+<p class="lstcap"><b>Listing 15.2</b> Product sales and grooming revenue per store, in one query</p>
+<pre class="sql"><span class="k">SELECT</span> st.store_name,
+       <span class="k">SUM</span>(f.net_amount)  <span class="k">AS</span> product_sales,
+       <span class="k">SUM</span>(g.amount_paid) <span class="k">AS</span> grooming_revenue
+<span class="k">FROM</span>   bridge b
+<span class="k">LEFT JOIN</span> fact_sales_line           f  <span class="k">ON</span> f.sale_line_key  = b._key_sales<i class="ann">1</i>
+<span class="k">LEFT JOIN</span> fact_grooming_appointment g  <span class="k">ON</span> g.appointment_id = b._key_grooming
+<span class="k">LEFT JOIN</span> dim_store                 st <span class="k">ON</span> st.store_key     = b._key_store
+<span class="k">LEFT JOIN</span> dim_date                  d  <span class="k">ON</span> d.date_key       = b._key_date
+<span class="k">WHERE</span>  b.stage <span class="k">IN</span> ('Sales', 'Grooming')<i class="ann">2</i>
+<span class="k">AND</span>    d.fiscal_year = 2025 <span class="k">AND</span> d.fiscal_quarter = 2
+<span class="k">GROUP BY</span> st.store_name;</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>On a sales row, the grooming join finds nothing, and on a grooming row, the sales join finds nothing. No row is ever paired with another fact's row.</span></li>
+<li><i class="ann">2</i><span>The stage filter is optional here. It skips dimension-only rows, which carry no measures and no date.</span></li>
+</ol>
+
+<div class="lab" id="lab-uss">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Sales and grooming for one store</h4><span class="lab-tip">choose a method</span></div>
+  <p>The Oakland store has three sales lines, totaling 108.49 USD, and two grooming visits, totaling 140.00 USD. Choose how the query combines the two facts.</p>
+  <div class="row" role="group" aria-label="Method">
+    <button class="btn on" type="button" data-uss="direct">Direct join through dim_store</button>
+    <button class="btn" type="button" data-uss="drill">Drill across, two queries</button>
+    <button class="btn" type="button" data-uss="bridge">Through the bridge</button>
+  </div>
+  <div class="tbl" style="margin:0"><table class="rows" id="ussTable"></table></div>
+  <div class="log" id="ussLog" aria-live="polite"></div>
+</div>
+<p>Drilling across and the bridge both give the right totals. The difference is who must know the rule. Drilling across asks the analyst, or the tool, to write two queries and join their results. The bridge builds the rule into the data, so a simple query is also a correct one.</p>
+
+<h2 id="s15-6"><span class="num">15.6</span>Stars, galaxies, and self-service tools</h2>
+<p>A unified star schema is a galaxy (<a href="07-dimensional-modeling.html#s7-7-1">section 7.7.1</a>) with a different join layer. The facts and dimensions, their grain, their slowly changing dimensions, and their conformed keys are the same. Everything in chapters 7 and 8 still applies.</p>
+<p>The bridge helps most where users build their own reports. A self-service tool that sees a galaxy must either forbid multi-fact reports or risk chasm traps. A tool that sees one bridge, with every table one hop away, can let users combine any fields freely. Its authors argue that this makes the model easier to extend, too: a new fact is a new block in the bridge, and existing queries keep working.</p>
+<p>It helps least where users write SQL and know the drill-across rule, and where most questions touch one fact. Then the bridge is a large extra table that buys little.</p>
+
+<h2 id="s15-7"><span class="num">15.7</span>Common mistakes</h2>
+<p><strong>Joining a fact to a dimension directly.</strong> One shortcut join outside the bridge brings back the chasm trap. Every table joins the bridge only.</p>
+<p><strong>Filling in keys that a table does not reach many-to-one.</strong> A grooming block that carries product keys, by guessing which products were used, puts fan-out back into the bridge. A block carries only keys that its rows determine exactly.</p>
+<p><strong>Inner joins from the bridge.</strong> An inner join to one fact removes the rows of every other stage. Use left joins.</p>
+<p><strong>Forgetting the rebuild.</strong> The bridge is derived. Late facts, corrections, and new dimension rows must reach it, or reports disagree with the facts.</p>
+
+<h2 id="s15-8"><span class="num">15.8</span>Strengths and limits</h2>
+<p>The unified star schema makes multi-fact questions safe by structure. Any combination of facts and dimensions is one simple query, with correct totals, and loops become named paths. That is a real gain for self-service tools and for teams whose users combine processes often, such as sales with grooming, or labor hours with revenue.</p>
+<p>On the twelve stress tests, it behaves like the star from chapter 8, because it is built from the same tables and the same techniques. It still decides identity on the way in, still fixes relationships in the fact grain, and still needs bitemporal dimensions for audits. It adds a bridge that is as long as all the facts together and must be rebuilt after each load. Its one clear advantage, safe multi-fact queries, is not one of the twelve tests, so the strip below looks almost the same as the star's. Read it with that in mind.</p>
+<div class="strip-wrap" data-pattern="uss"></div>
+<p><strong>Choose the unified star schema</strong> when users build their own reports across several business processes, and when double counting has already cost trust. Otherwise, a galaxy with the drill-across rule does the same work with less.</p>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>The unified star schema keeps a star's facts and dimensions, and connects all of them through one central bridge.</li>
+    <li>It targets three traps: the fan trap, the chasm trap, and loops.</li>
+    <li>The bridge has a stage column and one key column per table. Each table adds one block of rows with UNION ALL, filling in its own key and the keys it reaches many-to-one.</li>
+    <li>Every table joins the bridge with a left join, one hop away, so multi-fact sums are correct in one simple query.</li>
+    <li>Loops become separate key columns with role-playing dimensions.</li>
+    <li>The bridge is as long as all the facts together and must be rebuilt after each load.</li>
+    <li>On the twelve stress tests, it scores like the star. Its advantage, safe multi-fact queries for self-service, lies outside the tests.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 15 · Unified star schema · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  var D = {
+    direct: { head: ["store", "product_sales", "grooming_revenue"], rows: [["Oakland", "216.98", "420.00"]], cls: "bad",
+      msg: "Every one of the 3 sales rows pairs with every one of the 2 grooming rows, giving 6 rows. Sales are counted twice and grooming three times. Both totals are wrong, and nothing warns the user." },
+    drill: { head: ["store", "product_sales", "grooming_revenue"], rows: [["Oakland", "108.49", "140.00"]], cls: "ok",
+      msg: "Correct. Query 1 totals sales per store, query 2 totals grooming per store, and a third step joins the two results. The analyst must know to do this." },
+    bridge: { head: ["stage", "_key_sales", "_key_grooming", "net_amount", "amount_paid"], rows: [["Sales", "O-5001-1", "·", "64.99", "·"], ["Sales", "O-5001-2", "·", "12.50", "·"], ["Sales", "S-14-5521-1", "·", "31.00", "·"], ["Grooming", "·", "G-20931", "·", "68.00"], ["Grooming", "·", "G-21455", "·", "72.00"]], cls: "ok",
+      msg: "Correct, in one query. Five bridge rows, each joined to at most one row of each fact. SUM(net_amount) = 108.49 and SUM(amount_paid) = 140.00." }
+  };
+  var tab = document.getElementById("ussTable"), log = document.getElementById("ussLog");
+  function render(k) {
+    var d = D[k];
+    tab.innerHTML = "<thead><tr>" + d.head.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr></thead><tbody>" + d.rows.map(function (r) {
+      return '<tr class="' + (k === "direct" ? "hl" : "") + '">' + r.map(function (c) { return "<td>" + esc(c) + "</td>"; }).join("") + "</tr>";
+    }).join("") + "</tbody>";
+    log.innerHTML = '<span class="' + d.cls + '">' + esc(d.msg) + "</span>";
+    [].slice.call(document.querySelectorAll("[data-uss]")).forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-uss") === k); });
+  }
+  [].slice.call(document.querySelectorAll("[data-uss]")).forEach(function (b) { b.addEventListener("click", function () { render(b.getAttribute("data-uss")); }); });
+  render("direct");
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>8 · Advanced dimensional techniques</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="08">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part II · Chapter 8</div>
+<h1>Advanced dimensional techniques</h1>
+<p class="glance"><i><span>Origin</span>Kimball and the dimensional community</i><i><span>Shape</span>a star, plus helper tables</i><i><span>Best at</span>history and many-to-many in stars</i><i><span>Costs</span>more tables and load logic</i></p>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s8-1">Slowly changing dimensions, types 0 to 7</a></li>
+    <li><a href="#s8-2">Mini-dimensions for values that change often</a></li>
+    <li><a href="#s8-3">Bridge tables for many-to-many relationships, with weights</a></li>
+    <li><a href="#s8-4">Hierarchy bridges for ragged trees</a></li>
+    <li><a href="#s8-5">Role-playing, junk, degenerate, and outrigger dimensions</a></li>
+    <li><a href="#s8-7">Audit dimensions and bitemporal type 2</a></li>
+    <li><a href="#s8-8">Aggregate tables</a></li>
+    <li><a href="#s8-9">Masking and deleting personal data in dimensions</a></li>
+    <li><a href="#s8-11">Strengths and limits of the full dimensional toolkit</a></li>
+  </ul>
+</div>
+
+<p>The basic star schema from <a href="07-dimensional-modeling.html">chapter 7</a> answers simple questions well and struggles with change. Its strip showed four Fails: attribute history, a relationship that becomes many-to-many, several values per customer, and the audit. Those failures are not the end of the dimensional story. Over three decades, dimensional modelers built a set of standard techniques for exactly these cases. This chapter teaches them, and then scores the star again with all of them in place.</p>
+<p>The chapter stands on its own, but it uses the vocabulary of chapter 7. In short: a <em class="term">fact table</em> holds one row per event at a declared grain, with numeric measures. A <em class="term">dimension</em> holds the descriptive context, one row per member, with an integer <em class="term">surrogate key</em> that facts point to. The <em class="term">grain</em> is what one fact row means. Lantern's sales star has one row per order line, with dimensions for date, customer, product, store, promotion, and payment type.</p>
+
+<h2 id="s8-1"><span class="num">8.1</span>Slowly changing dimensions</h2>
+<p>Dimension values change. Maria moves. A product changes brand. A store moves to a new district. A <em class="term">slowly changing dimension</em>, or SCD, is a dimension with a defined rule for each such change. The rules are numbered by type. Maria's two moves in 2025 test each one.</p>
+<p>Maria lived at 14 Elm St in Oakland until 10 March 2025, then at 220 Bay Rd in San Jose until 2 August 2025, then at 9 Pine Ave in Sacramento. She placed order O-5001 on 14 February, O-5102 on 20 May, and O-5203 on 5 September. The question for every type is the same: which city does each order belong to?</p>
+<p><strong>Type 0 keeps the original value.</strong> The value never changes after the first load. It suits attributes that are fixed by definition, such as the date a customer joined the loyalty program.</p>
+<p><strong>Type 1 overwrites.</strong> The row always shows the current value, and all history is lost. It suits corrections of mistakes, such as a misspelled name, and values for which nobody needs history.</p>
+<p><strong>Type 2 adds a row.</strong> Each change creates a new dimension row, with its own surrogate key and a validity period. Facts point to the row that was valid when the event happened. This is the most widely used type, and the one that gives the star full business-time history.</p>
+<p><strong>Type 3 adds a column.</strong> The row keeps the current value and the previous value in two columns. It suits a planned, one-time change, such as a sales territory redesign, where reports need "old territory" and "new territory" side by side. It keeps only one step of history.</p>
+<p><strong>Type 4 adds a separate history table.</strong> The main dimension holds current values only, and a history table holds every past version. Queries that need history join the history table.</p>
+<p><strong>Type 6 combines types 1, 2, and 3.</strong> It keeps type 2 rows, and every row also carries a current-value column that is overwritten on every change. One row then answers both "what was it then" and "what is it now".</p>
+<p><strong>Type 5</strong> pairs a type 1 view of a mini-dimension (<a href="#s8-2">section 8.2</a>) with the base dimension, so a fact can be read with the profile that it had when it happened, or with the profile that the customer has now. <strong>Type 7</strong> gives the fact table two foreign keys to the same dimension: a surrogate key for the version valid at the time, and a <em class="term">durable key</em>, a key that stays the same for one customer across all versions, to join to the current row. Both types are rarer, and they solve the same problem as type 6 in a different shape.</p>
+
+<div class="lab" id="lab-scd">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Apply Maria's two moves</h4><span class="lab-tip">select a type</span></div>
+  <p>Choose an SCD type. The table shows what <code>dim_customer</code> holds after both moves. The log shows which city each order gets.</p>
+  <div class="row" role="group" aria-label="SCD type">
+    <button class="btn" type="button" data-scd="0">Type 0</button>
+    <button class="btn" type="button" data-scd="1">Type 1</button>
+    <button class="btn on" type="button" data-scd="2">Type 2</button>
+    <button class="btn" type="button" data-scd="3">Type 3</button>
+    <button class="btn" type="button" data-scd="4">Type 4</button>
+    <button class="btn" type="button" data-scd="6">Type 6</button>
+  </div>
+  <div class="tbl" style="margin:0"><table class="rows" id="scdTable"></table></div>
+  <div class="log" id="scdLog" aria-live="polite"></div>
+</div>
+<p>Only types 2, 4, and 6 put every order in the right city. Most teams choose type 2 by default and add type 6 columns for the attributes that users also want to see as of today. Listing 8.1 shows a type 2 load in two statements: close the open row, then insert the new version.</p>
+<p class="lstcap"><b>Listing 8.1</b> Type 2 load for customer address</p>
+<pre class="sql"><span class="c">-- Step 1: close the current row of each customer whose address changed.</span>
+<span class="k">UPDATE</span> dim_customer
+<span class="k">SET</span>    valid_to   = (<span class="k">SELECT</span> s.moved_on <span class="k">FROM</span> stg_customer s
+                     <span class="k">WHERE</span> s.customer_id = dim_customer.customer_id),
+       is_current = <span class="k">FALSE</span>
+<span class="k">WHERE</span>  is_current = <span class="k">TRUE</span>
+<span class="k">AND</span>    <span class="k">EXISTS</span> (<span class="k">SELECT</span> 1 <span class="k">FROM</span> stg_customer s
+               <span class="k">WHERE</span> s.customer_id = dim_customer.customer_id
+               <span class="k">AND</span>   s.address    &lt;&gt; dim_customer.address);<i class="ann">1</i>
+
+<span class="c">-- Step 2: insert a new version for changed and new customers.</span>
+<span class="k">INSERT INTO</span> dim_customer
+       (customer_key, durable_key, customer_id, address, valid_from, valid_to, is_current)
+<span class="k">SELECT</span> <span class="k">NEXT VALUE FOR</span> seq_customer_key,<i class="ann">2</i>
+       <span class="k">COALESCE</span>((<span class="k">SELECT MAX</span>(d.durable_key) <span class="k">FROM</span> dim_customer d
+                 <span class="k">WHERE</span> d.customer_id = s.customer_id),
+                <span class="k">NEXT VALUE FOR</span> seq_customer_durable),<i class="ann">3</i>
+       s.customer_id, s.address, s.moved_on, <span class="k">DATE</span> '9999-12-31', <span class="k">TRUE</span>
+<span class="k">FROM</span>   stg_customer s
+<span class="k">WHERE</span>  <span class="k">NOT EXISTS</span> (<span class="k">SELECT</span> 1 <span class="k">FROM</span> dim_customer d
+                   <span class="k">WHERE</span> d.customer_id = s.customer_id
+                   <span class="k">AND</span>   d.is_current  = <span class="k">TRUE</span>
+                   <span class="k">AND</span>   d.address     = s.address);</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>Only rows with a real change are closed. A reload of the same extract changes nothing.</span></li>
+<li><i class="ann">2</i><span>Each version gets a new surrogate key, so old facts keep pointing at the old version.</span></li>
+<li><i class="ann">3</i><span>The durable key stays the same for one customer across versions. It is what type 7 joins on, and what <a href="#s8-9">section 8.9</a> uses for deletion.</span></li>
+</ol>
+
+<h2 id="s8-2"><span class="num">8.2</span>Mini-dimensions</h2>
+<p>Type 2 works well for values that change a few times a year. It works badly for values that change often. Lantern recalculates every customer's loyalty tier and spending band each month. With type 2 on the customer dimension, 600,000 customers gain up to 600,000 new rows a month, each copying the name, address, and everything else.</p>
+<p>A <em class="term">mini-dimension</em> moves the fast-changing attributes into a small dimension of their own. Its rows are the combinations of values, not the customers. Lantern's <code>dim_customer_profile</code> holds every combination of loyalty tier (4 values), spending band (6 values), and pet count band (4 values): 96 rows in total. The fact table gets a second foreign key, <code>customer_profile_key</code>, set at load time to the profile that the customer had on the day of the sale.</p>
+<p class="tblcap"><b>Table 8.1</b> A few rows of the customer profile mini-dimension</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>customer_profile_key</th><th>loyalty_tier</th><th>spending_band</th><th>pet_count_band</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>None</td><td>Under 100 USD</td><td>1 pet</td></tr>
+<tr><td>37</td><td>Silver</td><td>500 to 1,000 USD</td><td>2 to 3 pets</td></tr>
+<tr><td>58</td><td>Gold</td><td>500 to 1,000 USD</td><td>2 to 3 pets</td></tr>
+</tbody></table></div>
+<p>When Maria moves from Silver to Gold in October, the customer dimension does not change at all. New sales simply carry profile key 58 instead of 37. Old sales still carry 37. The history lives in the facts, and the mini-dimension stays tiny.</p>
+<div class="callout tip"><span class="lbl">Tip</span>Band continuous values before they go into a mini-dimension. A weight of 31.4 kg has thousands of possible values. A weight band of "30 to 40 kg" has a handful, and it is what reports group by anyway.</div>
+
+<h2 id="s8-3"><span class="num">8.3</span>Bridge tables</h2>
+<p>A fact row has one foreign key per dimension. That works while each event has one member of each dimension. From September 2025, a Lantern pet can have two owners. A grooming visit for Biscuit belongs to Maria and to Sam. The grooming fact has one customer key, and there is no right value to put in it.</p>
+<p>A <em class="term">bridge table</em> sits between the fact and the dimension. The fact points to a <em class="term">group</em>, and the bridge lists the members of each group. Biscuit's owners form group 905: Maria and Sam. The grooming fact carries <code>owner_group_key = 905</code>.</p>
+<p class="tblcap"><b>Table 8.2</b> The pet owner bridge</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>owner_group_key</th><th>customer_key</th><th>weight</th></tr></thead>
+<tbody>
+<tr><td>904</td><td>48211 (Maria)</td><td>1.0</td></tr>
+<tr><td>905</td><td>48211 (Maria)</td><td>0.5</td></tr>
+<tr><td>905</td><td>50177 (Sam)</td><td>0.5</td></tr>
+</tbody></table></div>
+<p>The <em class="term">weighting factor</em> solves the next problem. If a report joins the fact through the bridge to customers and adds up revenue, each visit for Biscuit appears twice, once per owner. Total revenue doubles. Multiplying each measure by the weight shares it between the owners, so the totals stay correct. The weights in each group add up to 1.</p>
+<p class="lstcap"><b>Listing 8.2</b> Grooming revenue per customer, through the bridge</p>
+<pre class="sql"><span class="k">SELECT</span> c.customer_name,
+       <span class="k">SUM</span>(g.amount_paid * b.weight) <span class="k">AS</span> allocated_revenue,<i class="ann">1</i>
+       <span class="k">SUM</span>(g.amount_paid)            <span class="k">AS</span> impact_revenue<i class="ann">2</i>
+<span class="k">FROM</span>   fact_grooming_appointment g
+<span class="k">JOIN</span>   bridge_pet_owner b <span class="k">ON</span> b.owner_group_key = g.owner_group_key
+<span class="k">JOIN</span>   dim_customer     c <span class="k">ON</span> c.customer_key    = b.customer_key
+<span class="k">GROUP BY</span> c.customer_name;</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>The weighted sum shares each visit between its owners. Across all customers, it adds up to the true total.</span></li>
+<li><i class="ann">2</i><span>The unweighted sum answers a different question: "how much grooming revenue involved this customer?" It is useful per customer, and wrong as a grand total.</span></li>
+</ol>
+
+<div class="lab" id="lab-bridge">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Split one grooming visit</h4><span class="lab-tip">choose a design</span></div>
+  <p>Biscuit has a 68 USD grooming visit after Sam becomes a second owner. Choose how the star records owners, and see revenue per customer and the grand total.</p>
+  <div class="row" role="group" aria-label="Design">
+    <button class="btn on" type="button" data-br="one">One owner key</button>
+    <button class="btn" type="button" data-br="noweight">Bridge, no weights</button>
+    <button class="btn" type="button" data-br="weight">Bridge with weights</button>
+  </div>
+  <div class="tbl" style="margin:0"><table class="rows" id="brTable"></table></div>
+  <div class="log" id="brLog" aria-live="polite"></div>
+</div>
+<p>A bridge also handles Lantern's multi-active data: several phone numbers per customer, or several pets per household. The cost is real. Every query through a bridge must choose between weighted and unweighted measures, and the load must maintain the groups. Use bridges where the business truly has many-to-many data, and nowhere else.</p>
+
+<h2 id="s8-4"><span class="num">8.4</span>Hierarchy bridges</h2>
+<p>Chapter 7 flattened hierarchies into columns: department, category, and subcategory on each product row. That works when every branch has the same depth. Lantern's category tree is ragged. "Dog" has four levels below it, "Fish" has two, and merchandising adds levels every spring.</p>
+<p>A <em class="term">hierarchy bridge</em> stores every ancestor-descendant pair in the tree, with the distance between them. A row for "Dog" and "Dry dog food" says that one is two levels above the other. To roll up sales to any node, join the fact's product category to the bridge as the descendant, and filter on the ancestor.</p>
+<p class="lstcap"><b>Listing 8.3</b> All sales under the Dog node, at any depth</p>
+<pre class="sql"><span class="k">SELECT</span> <span class="k">SUM</span>(f.net_amount) <span class="k">AS</span> dog_sales
+<span class="k">FROM</span>   fact_sales_line f
+<span class="k">JOIN</span>   dim_product p          <span class="k">ON</span> p.product_key   = f.product_key
+<span class="k">JOIN</span>   bridge_category_tree t <span class="k">ON</span> t.descendant_id = p.category_id<i class="ann">1</i>
+<span class="k">JOIN</span>   dim_category a         <span class="k">ON</span> a.category_id   = t.ancestor_id
+<span class="k">WHERE</span>  a.category_name = 'Dog';                   <span class="c">-- any level below Dog, and Dog itself</span><i class="ann">2</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>Each product's category matches one bridge row per ancestor, including a row that pairs the category with itself at distance 0.</span></li>
+<li><i class="ann">2</i><span>Filtering on one ancestor picks each product once, so the sum is correct. Grouping by several ancestors at once double counts, because a product belongs to all of them.</span></li>
+</ol>
+
+<h2 id="s8-5"><span class="num">8.5</span>Role-playing dimensions</h2>
+<p>The grooming fact has four dates: booked, checked in, groomed, and paid. Each one is a foreign key to the same <code>dim_date</code>. A dimension that plays several roles in one fact is a <em class="term">role-playing dimension</em>. Most teams create one view per role, with renamed columns, so that a query reads clearly and a report tool does not confuse the roles.</p>
+<p class="lstcap"><b>Listing 8.4</b> Role-playing views of the date dimension</p>
+<pre class="sql"><span class="k">CREATE VIEW</span> dim_booked_date <span class="k">AS</span>
+  <span class="k">SELECT</span> date_key <span class="k">AS</span> booked_date_key, calendar_date <span class="k">AS</span> booked_date,
+         fiscal_month <span class="k">AS</span> booked_fiscal_month
+  <span class="k">FROM</span>   dim_date;
+
+<span class="k">CREATE VIEW</span> dim_paid_date <span class="k">AS</span>
+  <span class="k">SELECT</span> date_key <span class="k">AS</span> paid_date_key, calendar_date <span class="k">AS</span> paid_date,
+         fiscal_month <span class="k">AS</span> paid_fiscal_month
+  <span class="k">FROM</span>   dim_date;
+<span class="c">-- One table, two meanings. A query can now group by booked month</span>
+<span class="c">-- and filter by paid month without aliasing dim_date twice.</span></pre>
+
+<h2 id="s8-6"><span class="num">8.6</span>Junk, degenerate, and outrigger dimensions</h2>
+<p><strong>A junk dimension holds small flags.</strong> A web order has flags: gift wrap, autoship, coupon used, first order. Each is a yes or no. Four foreign keys for four flags clutter the fact, and four columns on the fact mix descriptions into measurements. A <em class="term">junk dimension</em> holds every combination of the flags, 16 rows here, and the fact carries one key to it.</p>
+<p><strong>A degenerate dimension has no table.</strong> The order number and the lot number describe a sale, but they have no other attributes. They stay on the fact row as plain columns, as chapter 7 showed.</p>
+<p><strong>An outrigger is a dimension of a dimension.</strong> Lantern's stores sit in wage zones, and each wage zone has a minimum wage history. The zone is not part of the sale. It describes the store. An <em class="term">outrigger</em> is a small table that a dimension points to, such as <code>dim_store</code> pointing to <code>dim_wage_zone</code>. Used sparingly, outriggers avoid repeating large attribute sets. Used everywhere, they turn the star into a snowflake, as <a href="09-snowflake.html">chapter 9</a> shows.</p>
+
+<h2 id="s8-7"><span class="num">8.7</span>Audit dimensions and bitemporal type 2</h2>
+<p>Stress test 7 asks what the company had on record on a past date. A type 2 dimension keeps business time: when Dev's pay rate was valid. It does not keep record time: when the warehouse learned the rate, or what it believed before a correction. Two techniques add record time to a star.</p>
+<p><strong>An audit dimension describes the load.</strong> Each fact row gets a key to <code>dim_audit</code>, which records the load batch, the source system, the load time, and any data quality flags. "Which sales came from the Happy Tails system, loaded after 1 June?" becomes a filter. It tells you where each row came from. It does not tell you what a dimension held on a past date.</p>
+<p><strong>Bitemporal type 2 adds a second pair of dates.</strong> Each dimension row carries business dates, <code>valid_from</code> and <code>valid_to</code>, and record dates, <code>recorded_from</code> and <code>recorded_to</code>. A correction never overwrites a row. It closes the old row in record time and inserts the corrected row, as in <a href="../part-1/04-time-and-history.html#s4-4">section 4.4</a>.</p>
+<p class="lstcap"><b>Listing 8.5</b> The wage claim: Dev's rate on each pay date, as recorded on that date</p>
+<pre class="sql"><span class="k">SELECT</span> pr.pay_date,
+       e.hourly_rate     <span class="k">AS</span> rate_on_record,
+       e.source_system   <span class="k">AS</span> recorded_by
+<span class="k">FROM</span>   payroll_run pr                                  <span class="c">-- one row per pay date</span>
+<span class="k">JOIN</span>   dim_employee_bt e
+  <span class="k">ON</span>   e.employee_id   = 'E-1047'
+ <span class="k">AND</span>   e.valid_from    &lt;= pr.period_end   <span class="k">AND</span> pr.period_end &lt; e.valid_to<i class="ann">1</i>
+ <span class="k">AND</span>   e.recorded_from &lt;= pr.pay_date     <span class="k">AND</span> pr.pay_date   &lt; e.recorded_to<i class="ann">2</i>
+<span class="k">ORDER BY</span> pr.pay_date;</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>Business time: the rate valid at the end of the pay period.</span></li>
+<li><i class="ann">2</i><span>Record time: as the warehouse knew it on the pay date, before any later correction. Without these two columns, the query can only show today's corrected view.</span></li>
+</ol>
+<p>Bitemporal dimensions are powerful and costly. Every dimension query must choose a record date, or filter to current records, and every load must close rows in two clocks. Most teams use them only for dimensions that face audits, such as employee pay and customer consent, and keep plain type 2 elsewhere. Fact corrections follow the same idea: a correction is a reversing row and a new row, each with its own recorded date, so last month's totals can be reproduced.</p>
+
+<h2 id="s8-8"><span class="num">8.8</span>Aggregate tables</h2>
+<p>Lantern's sales fact gains about 38 million rows a year. Most finance reports read monthly totals by store and department. An <em class="term">aggregate table</em> stores those totals in advance: one row per store, department, and fiscal month, a few hundred thousand rows a year.</p>
+<p>An aggregate is a smaller star with the same conformed dimensions, or shrunken versions of them, such as a <code>dim_month</code> that holds the month-level columns of <code>dim_date</code>. It must be rebuilt or updated whenever the base fact changes, including late data and corrections, or its totals drift from the base. Treat aggregates as a performance tool, built from the base fact and never loaded from sources directly.</p>
+
+<h2 id="s8-9"><span class="num">8.9</span>Masking and deleting personal data</h2>
+<p>On 9 February 2026, Dev Patel asks Lantern to delete his customer data. In a type 2 customer dimension, Dev exists as several rows, one per version, and his name and email are copied into each. The fact table points at all of them.</p>
+<p>The common dimensional answer has three parts. First, split personal attributes into their own small dimension or table, keyed by the <em class="term">durable key</em> from <a href="#s8-1">section 8.1</a>. Name, email, phone, and street address live there, once per person, not once per version. Second, to delete, replace those values with a fixed placeholder, such as "Deleted customer", or remove the row and point the durable key at a shared "Deleted" member. Facts keep their keys, so sales totals do not change. Third, keep employees in a separate dimension, so that Dev's pay records stay untouched.</p>
+<p class="lstcap"><b>Listing 8.6</b> Mask one customer's personal data</p>
+<pre class="sql"><span class="k">UPDATE</span> dim_customer_pii
+<span class="k">SET</span>    customer_name = 'Deleted customer',
+       email         = <span class="k">NULL</span>,
+       phone         = <span class="k">NULL</span>,
+       street        = <span class="k">NULL</span>,
+       deleted_on    = <span class="k">DATE</span> '2026-02-16'
+<span class="k">WHERE</span>  durable_key   = 7731;                            <span class="c">-- Dev's customer durable key</span><i class="ann">1</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>One statement, one row, because personal data lives once per person. Without the split, the same change must find every type 2 version and every aggregate or extract that copied them.</span></li>
+</ol>
+<div class="callout warning"><span class="lbl">Warning</span>Personal data also hides in places that the dimension design does not control: aggregate tables, extracts sent to other teams, and backups. A deletion process must list every place that copies customer attributes.</div>
+
+<h2 id="s8-10"><span class="num">8.10</span>Techniques behind the star's scores</h2>
+<p>Table 8.3 compares the basic star from chapter 7 with the star that uses this chapter's techniques, test by test. The second column is how teams usually deploy a star, and it is the version that <a href="../part-3/16-side-by-side.html">chapter 16</a> compares with other patterns.</p>
+<p class="tblcap"><b>Table 8.3</b> What each technique changes</p>
+<div class="tbl"><table>
+<thead><tr><th>Test</th><th>Basic star</th><th>With chapter 8</th><th>Technique</th></tr></thead>
+<tbody>
+<tr><td><a href="../part-1/05-stress-tests.html#t3">3 Attribute history</a></td><td><span class="chip c-fail">Fails</span></td><td><span class="chip c-good">Good</span></td><td>Type 2, with type 6 where users want current values</td></tr>
+<tr><td><a href="../part-1/05-stress-tests.html#t4">4 Relationship change</a></td><td><span class="chip c-fail">Fails</span></td><td><span class="chip c-cost">Costly</span></td><td>Bridge table, plus a change to the fact</td></tr>
+<tr><td><a href="../part-1/05-stress-tests.html#t7">7 Audit</a></td><td><span class="chip c-fail">Fails</span></td><td><span class="chip c-cost">Costly</span></td><td>Bitemporal type 2 and an audit dimension</td></tr>
+<tr><td><a href="../part-1/05-stress-tests.html#t10">10 Multi-active data</a></td><td><span class="chip c-fail">Fails</span></td><td><span class="chip c-cost">Costly</span></td><td>Bridge table or a separate dimension</td></tr>
+<tr><td><a href="../part-1/05-stress-tests.html#t12">12 Delete versus retain</a></td><td><span class="chip c-cost">Costly</span></td><td><span class="chip c-cost">Costly</span></td><td>Personal data split by durable key, separate employee dimension</td></tr>
+</tbody></table></div>
+<p>Three of the four Fails become Costly, not Good. Each technique works, but each one adds tables, load logic, and query rules that someone must maintain and every analyst must understand. That trade is the theme of the dimensional approach: the star stays easy to query because the complexity moves into the load and into a few helper tables.</p>
+
+<h2 id="s8-11"><span class="num">8.11</span>Strengths and limits</h2>
+<p>With these techniques, the star keeps full business-time history, handles many-to-many relationships, absorbs fast-changing attributes, and can answer audit questions where it has to. It does all of this while the main tables keep their simple shape: one fact, a ring of dimensions, one-hop joins. That combination is why the star remains the most common serving pattern for analysts.</p>
+<p>The limits are the price of keeping that shape. Each technique is a separate piece of design and load code, and the toolkit is large. Identity is still decided while data loads, so a new source and a wrong match still mean changes to dimensions and reloads of facts. Bitemporal history is possible but expensive, so most stars keep record time only in a few places. Relationships still live in the fact grain, so a change in cardinality still touches the fact table.</p>
+<div class="strip-wrap" data-pattern="star"></div>
+<p><strong>Choose the full dimensional toolkit</strong> when analysts are the main users and the business needs history and many-to-many data in the same easy shape. Add each technique only where a real question needs it.</p>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>Slowly changing dimensions have numbered types. Type 2 adds a row per change and is the default. Types 1, 3, 4, and 6 suit specific needs, and types 5 and 7 are rarer variants.</li>
+    <li>Mini-dimensions hold fast-changing attributes as a small set of combinations, so the main dimension stays stable.</li>
+    <li>Bridge tables connect a fact to many members of a dimension. Weighting factors keep totals correct.</li>
+    <li>Hierarchy bridges store every ancestor-descendant pair, so ragged trees can roll up at any level.</li>
+    <li>Role-playing, junk, degenerate, and outrigger dimensions handle repeated dates, small flags, bare identifiers, and dimensions of dimensions.</li>
+    <li>Audit dimensions record where rows came from. Bitemporal type 2 records what the warehouse believed on a past date.</li>
+    <li>Aggregate tables speed up common reports and must stay in step with the base fact.</li>
+    <li>Personal data split by durable key makes deletion a single, targeted change.</li>
+    <li>With these techniques, the star's four Fails become one Good and three Costly results.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 8 · Advanced dimensional techniques · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  function $$(s) { return [].slice.call(document.querySelectorAll(s)); }
+
+  /* SCD */
+  (function () {
+    var H = ["key", "customer_id", "city", "valid_from", "valid_to", "note"];
+    var O = "Oakland", SJ = "San Jose", SA = "Sacramento";
+    var T = {
+      "0": { rows: [["101", "C-000123", O, "", "", "original value kept"]], ans: [O, O, O], msg: "Type 0 never changes. Every order lands in Oakland." },
+      "1": { rows: [["101", "C-000123", SA, "", "", "overwritten twice"]], ans: [SA, SA, SA], msg: "Type 1 keeps only today's value. Every order moves to Sacramento, including the February one." },
+      "2": { rows: [["101", "C-000123", O, "2022-04-01", "2025-03-10", ""], ["102", "C-000123", SJ, "2025-03-10", "2025-08-02", ""], ["103", "C-000123", SA, "2025-08-02", "9999-12-31", "current"]], ans: [O, SJ, SA], msg: "Type 2 keeps three versions. Each order points to the key valid on its date." },
+      "3": { rows: [["101", "C-000123", SA, "", "", "previous_city = San Jose"]], ans: [SA, SA, SA], msg: "Type 3 keeps one step back. Oakland is gone, and nothing says which orders came before the last move." },
+      "4": { rows: [["101", "C-000123", SA, "", "", "main table, current only"], ["h1", "C-000123", O, "2022-04-01", "2025-03-10", "history table"], ["h2", "C-000123", SJ, "2025-03-10", "2025-08-02", "history table"], ["h3", "C-000123", SA, "2025-08-02", "9999-12-31", "history table"]], ans: [O, SJ, SA], msg: "Type 4 is right through the history table, at the cost of one extra join." },
+      "6": { rows: [["101", "C-000123", O, "2022-04-01", "2025-03-10", "current_city = Sacramento"], ["102", "C-000123", SJ, "2025-03-10", "2025-08-02", "current_city = Sacramento"], ["103", "C-000123", SA, "2025-08-02", "9999-12-31", "current_city = Sacramento"]], ans: [O, SJ, SA], msg: "Type 6 is right for the order date, and every row also knows today's city." }
+    };
+    var ORD = [["O-5001", "2025-02-14", O], ["O-5102", "2025-05-20", SJ], ["O-5203", "2025-09-05", SA]];
+    var table = document.getElementById("scdTable"), log = document.getElementById("scdLog");
+    function render(k) {
+      var t = T[k];
+      table.innerHTML = "<thead><tr>" + H.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr></thead><tbody>" + t.rows.map(function (r) {
+        return "<tr>" + r.map(function (c, i) { return "<td" + (i === 5 ? ' class="wrap"' : "") + ">" + esc(c || "·") + "</td>"; }).join("") + "</tr>";
+      }).join("") + "</tbody>";
+      var right = 0;
+      var lines = ORD.map(function (o, i) { var ok = t.ans[i] === o[2]; if (ok) right++; return '<span class="' + (ok ? "ok" : "bad") + '">' + o[0] + " on " + o[1] + ": " + t.ans[i] + (ok ? " (right)" : " (wrong, was " + o[2] + ")") + "</span>"; });
+      log.innerHTML = lines.join("<br>") + '<br><span class="m">' + right + " of 3 right. " + esc(t.msg) + "</span>";
+      $$("[data-scd]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-scd") === k); });
+    }
+    $$("[data-scd]").forEach(function (b) { b.addEventListener("click", function () { render(b.getAttribute("data-scd")); }); });
+    render("2");
+  })();
+
+  /* bridge */
+  (function () {
+    var tab = document.getElementById("brTable"), log = document.getElementById("brLog");
+    var D = {
+      one: { rows: [["Maria Lopez", "68.00"], ["Sam Ortiz", "0.00"]], total: "68.00", cls: "warn", msg: "The fact holds one owner key, so the visit goes to Maria. Sam's grooming history is empty, although he is an owner. The total is right and the split is wrong." },
+      noweight: { rows: [["Maria Lopez", "68.00"], ["Sam Ortiz", "68.00"]], total: "136.00", cls: "bad", msg: "The bridge lists both owners, and each gets the full 68.00. Per customer this answers 'revenue involving this customer'. As a grand total it doubles the revenue." },
+      weight: { rows: [["Maria Lopez", "34.00"], ["Sam Ortiz", "34.00"]], total: "68.00", cls: "ok", msg: "Weights of 0.5 share the visit. Each owner has a fair share, and the grand total is right." }
+    };
+    function render(k) {
+      var d = D[k];
+      tab.innerHTML = "<thead><tr><th>customer</th><th>grooming revenue</th></tr></thead><tbody>" + d.rows.map(function (r) { return "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td></tr>"; }).join("") + '<tr class="hl"><td>Grand total</td><td>' + d.total + "</td></tr></tbody>";
+      log.innerHTML = '<span class="' + d.cls + '">' + esc(d.msg) + "</span>";
+      $$("[data-br]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-br") === k); });
+    }
+    $$("[data-br]").forEach(function (b) { b.addEventListener("click", function () { render(b.getAttribute("data-br")); }); });
+    render("one");
+  })();
+})();
+</script>
+</body>
+</html>

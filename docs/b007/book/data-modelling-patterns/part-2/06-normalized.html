@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>6 · The normalized warehouse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="06">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part II · Chapter 6</div>
+<h1>The normalized warehouse</h1>
+<p class="glance"><i><span>Origin</span>Bill Inmon, 1992</i><i><span>Shape</span>third normal form core, dependent marts</i><i><span>Best at</span>one consistent record</i><i><span>Costs</span>slow to change</i></p>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s6-1">The enterprise warehouse: integrated, subject-oriented, and time-variant</a></li>
+    <li><a href="#s6-2">The building blocks of a normalized core</a></li>
+    <li><a href="#s6-4">Integrating sources on the way in, with a key cross-reference</a></li>
+    <li><a href="#s6-5">The party pattern for people who play several roles</a></li>
+    <li><a href="#s6-6">Querying the core, and the dependent marts built from it</a></li>
+    <li><a href="#s6-9">Strengths and limits on the twelve stress tests</a></li>
+  </ul>
+</div>
+
+<p>Lantern's CFO has a simple complaint. Finance says Lantern has 600,000 customers. Marketing says 640,000. The loyalty team says 580,000. Each team counts from its own system, with its own idea of who a customer is, and every board meeting starts with an argument about whose number is right.</p>
+<p>The normalized warehouse was designed for exactly this problem. It builds one integrated record of the whole company, in which every customer, product, and store exists once, under one definition. Every report then counts from the same rows. This chapter builds that record for Lantern, and shows what it costs.</p>
+
+<h2 id="s6-1"><span class="num">6.1</span>The idea</h2>
+<p>Bill Inmon defined the data warehouse in <a href="https://openlibrary.org/books/OL1560174M/Building_the_data_warehouse">Building the Data Warehouse</a> in 1992 as a store with four properties. The definition is still the clearest statement of what this pattern is for.</p>
+<p><strong>Subject-oriented.</strong> Data is organized by business subject, such as customer, product, and employee, not by the system that produced it. There is no "CRM area" and "web shop area". There is one customer area.</p>
+<p><strong>Integrated.</strong> Every source is translated into one set of definitions, codes, and keys on the way in. A customer from the CRM and the same customer from the web shop become one row.</p>
+<p><strong>Time-variant.</strong> The warehouse keeps history. Each value can be related to the time when it was true.</p>
+<p><strong>Non-volatile.</strong> Loaded data is not edited by users. The warehouse changes only through its loads.</p>
+<p>Inmon's model for storing this record is a normalized one, in third normal form (<a href="../part-1/03-core-concepts.html#s3-6">section 3.6</a>). Each fact is stored once, so it can never disagree with itself. Departments do not query the core directly. Each one gets a <em class="term">dependent data mart</em>: a star or summary built from the core, for its own questions. "Dependent" means that the mart has no other source. If finance and marketing both count customers from marts built on the same core, they get the same number.</p>
+<aside class="box">
+<h4>The corporate information factory</h4>
+<p>Inmon later described the full architecture around the core as the corporate information factory. It has sources, a staging and integration layer, the normalized enterprise warehouse, an operational data store for current operational reporting (<a href="#s6-7">section 6.7</a>), and dependent marts for each department. The shape matches the layers in <a href="../part-1/01-why-a-model.html#s1-4">Figure 1.1</a>, with the normalized model as the integrated core.</p>
+</aside>
+
+<h2 id="s6-2"><span class="num">6.2</span>The building blocks</h2>
+<p>A normalized core uses ordinary relational tables, designed with care. Five kinds of table carry most of the model.</p>
+<p><strong>Entity tables</strong> hold one row per business thing: <code>customer</code>, <code>product</code>, <code>store</code>, <code>employee</code>. Their keys are core surrogate keys, because the core must give one key to a thing that sources identify in different ways.</p>
+<p><strong>Event tables</strong> hold one row per business event: <code>sales_order</code>, <code>order_line</code>, <code>grooming_visit</code>, <code>timesheet_punch</code>. They point to the entities involved.</p>
+<p><strong>Associative tables</strong> hold many-to-many relationships, one row per pair: <code>product_promotion</code>, and, after September 2025, <code>pet_owner</code>.</p>
+<p><strong>Effective-dated child tables</strong> hold values that change over time, one row per version: <code>customer_address</code>, <code>employee_pay_rate</code>, <code>product_price</code>. This is where the warehouse becomes time-variant. Each has <code>valid_from</code> and <code>valid_to</code>, as in <a href="../part-1/04-time-and-history.html#s4-3">section 4.3</a>.</p>
+<p><strong>Reference tables</strong> hold the company's agreed codes and their meanings: <code>country</code>, <code>payment_type</code>, <code>product_category</code>, <code>wage_jurisdiction</code>. Every source code is translated into a reference code during integration.</p>
+<div class="callout"><span class="lbl">Note</span>Only values that the business needs history for get an effective-dated child table. A customer's date of birth goes on the <code>customer</code> row. Their address, loyalty tier, and marketing consent each get a child table, because questions depend on the value at a past date.</div>
+
+<h2 id="s6-3"><span class="num">6.3</span>The Lantern core</h2>
+<p>Figure 6.1 shows the customer, sales, and employee subjects of Lantern's core. Each box is one table, and each line is a foreign key.</p>
+<figure class="diag" id="fig-6-1">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A normalized core. Party is the central table. Customer and employee are roles of a party. Customers have effective-dated addresses and own pets through pet_owner. Orders belong to customers and have order lines that point to products and lots. Employees have effective-dated pay rates and timesheet punches.">
+  <defs><marker id="m61" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <g font-size="12.5">
+    <rect x="280" y="24" width="160" height="48" rx="7" class="bx-a"/><text x="292" y="44" font-weight="600" class="t-a">party</text><text x="292" y="61" font-size="11" class="mono t-s">party_id, name</text>
+    <rect x="96" y="112" width="160" height="48" rx="7" class="bx-a"/><text x="108" y="132" font-weight="600" class="t-a">customer_role</text><text x="108" y="149" font-size="11" class="mono t-s">party_id, since</text>
+    <rect x="464" y="112" width="160" height="48" rx="7" class="bx-a"/><text x="476" y="132" font-weight="600" class="t-a">employee_role</text><text x="476" y="149" font-size="11" class="mono t-s">party_id, hired_on</text>
+    <rect x="24" y="200" width="150" height="48" rx="7" class="bx-n"/><text x="36" y="220" font-weight="600">customer_address</text><text x="36" y="237" font-size="11" class="mono t-s">valid_from, valid_to</text>
+    <rect x="186" y="200" width="120" height="48" rx="7" class="bx-n"/><text x="198" y="220" font-weight="600">pet_owner</text><text x="198" y="237" font-size="11" class="mono t-s">associative</text>
+    <rect x="186" y="284" width="120" height="44" rx="7" class="bx-n"/><text x="198" y="304" font-weight="600">pet</text><text x="198" y="320" font-size="11" class="mono t-s">pet_id, species</text>
+    <rect x="24" y="284" width="150" height="48" rx="7" class="bx-n"/><text x="36" y="304" font-weight="600">sales_order</text><text x="36" y="321" font-size="11" class="mono t-s">order_id, store_id</text>
+    <rect x="24" y="346" width="150" height="40" rx="7" class="bx-n"/><text x="36" y="371" font-weight="600">order_line</text>
+    <rect x="200" y="346" width="120" height="40" rx="7" class="bx-n"/><text x="212" y="371" font-weight="600">product, lot</text>
+    <rect x="420" y="200" width="150" height="48" rx="7" class="bx-n"/><text x="432" y="220" font-weight="600">employee_pay_rate</text><text x="432" y="237" font-size="11" class="mono t-s">valid_from, valid_to</text>
+    <rect x="582" y="200" width="120" height="48" rx="7" class="bx-n"/><text x="594" y="220" font-weight="600">timesheet_punch</text><text x="594" y="237" font-size="11" class="mono t-s">punched_at</text>
+    <rect x="420" y="284" width="150" height="44" rx="7" class="bx-n"/><text x="432" y="304" font-weight="600">store</text><text x="432" y="320" font-size="11" class="mono t-s">city_id</text>
+    <rect x="582" y="284" width="120" height="44" rx="7" class="bx-w"/><text x="594" y="304" font-weight="600">reference</text><text x="594" y="320" font-size="11" class="mono t-s">codes, wages</text>
+  </g>
+  <line class="ln" x1="300" y1="72" x2="200" y2="108" marker-end="url(#m61)"/>
+  <line class="ln" x1="420" y1="72" x2="520" y2="108" marker-end="url(#m61)"/>
+  <line class="ln" x1="140" y1="160" x2="100" y2="196" marker-end="url(#m61)"/>
+  <line class="ln" x1="200" y1="160" x2="240" y2="196" marker-end="url(#m61)"/>
+  <line class="ln" x1="246" y1="248" x2="246" y2="280" marker-end="url(#m61)"/>
+  <path class="ln" d="M96,136 C8,136 8,308 20,308" marker-end="url(#m61)"/>
+  <line class="ln" x1="99" y1="332" x2="99" y2="342" marker-end="url(#m61)"/>
+  <line class="ln" x1="174" y1="366" x2="196" y2="366" marker-end="url(#m61)"/>
+  <line class="ln" x1="520" y1="160" x2="495" y2="196" marker-end="url(#m61)"/>
+  <line class="ln" x1="580" y1="160" x2="630" y2="196" marker-end="url(#m61)"/>
+  <line class="ln" x1="642" y1="248" x2="642" y2="280" marker-end="url(#m61)"/>
+  <line class="ln" x1="495" y1="248" x2="495" y2="280" marker-end="url(#m61)"/>
+</svg>
+</div>
+<figcaption><b>Figure 6.1</b> Part of Lantern's normalized core. Every person is one party, customers and employees are roles of a party, and every changing value has its own effective-dated table.</figcaption>
+</figure>
+<p>Three details in the figure matter later. The <code>party</code> table at the top is explained in <a href="#s6-5">section 6.5</a>. The address and pay rate tables are effective-dated, so the core can answer "what was true on a date" for those two values. And <code>pet_owner</code> is an associative table. In the first version of the core, before September 2025, it was a plain <code>owner_id</code> column on the pet table, copied from the CRM's one-owner rule. <a href="#s6-8">Section 6.8</a> comes back to that.</p>
+
+<h2 id="s6-4"><span class="num">6.4</span>Integration on the way in</h2>
+<p>The defining work of a normalized warehouse happens before data reaches the core. Each source extract lands in a staging area. A set of integration steps then cleans it, translates its codes, matches its keys to core keys, and only then writes it into the core.</p>
+<p>The central tool for keys is the <em class="term">key cross-reference table</em>. It records, for each source key, the core key that it maps to. When the web shop sends an order for <code>maria.lopez@example.com</code>, the load looks up that email in the cross-reference, finds core party 48211, and writes the order for party 48211.</p>
+<p class="tblcap"><b>Table 6.1</b> The key cross-reference for one customer</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>source_system</th><th>source_key</th><th>party_id</th><th>matched_by</th><th>matched_on</th></tr></thead>
+<tbody>
+<tr><td>CRM</td><td>C-000123</td><td>48211</td><td>master</td><td>2024-11-03</td></tr>
+<tr><td>WEBSHOP</td><td>MARIA.LOPEZ@EXAMPLE.COM</td><td>48211</td><td>email rule</td><td>2024-11-03</td></tr>
+<tr><td>POS</td><td>4155550142</td><td>48211</td><td>phone and name rule</td><td>2025-02-15</td></tr>
+<tr><td>HAPPYTAILS</td><td>HT-88412</td><td>48211</td><td>phone and name rule</td><td>2025-08-21</td></tr>
+</tbody></table></div>
+<p class="lstcap"><b>Listing 6.1</b> Load web orders through the cross-reference</p>
+<pre class="sql"><span class="k">INSERT INTO</span> sales_order (order_id, party_id, store_id, channel, order_date)
+<span class="k">SELECT</span> s.order_id,
+       x.party_id,                                  <span class="c">-- core key, not the email</span><i class="ann">1</i>
+       st.store_id,
+       'WEB',
+       s.order_date
+<span class="k">FROM</span>   stg_web_order s
+<span class="k">JOIN</span>   key_xref x
+  <span class="k">ON</span>   x.source_system = 'WEBSHOP'
+ <span class="k">AND</span>   x.source_key    = <span class="k">UPPER</span>(<span class="k">TRIM</span>(s.email))           <span class="c">-- same cleaning as the match rule</span><i class="ann">2</i>
+<span class="k">JOIN</span>   store st <span class="k">ON</span> st.store_code = 'WEB'
+<span class="k">WHERE</span>  <span class="k">NOT EXISTS</span> (<span class="k">SELECT</span> 1 <span class="k">FROM</span> sales_order o <span class="k">WHERE</span> o.order_id = s.order_id);<i class="ann">3</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>Every core table speaks in core keys. Source keys live only in the cross-reference.</span></li>
+<li><i class="ann">2</i><span>The cleaning here must match the cleaning in the match rule exactly. A missing <code>TRIM</code> makes Maria a stranger.</span></li>
+<li><i class="ann">3</i><span>An inner join on the cross-reference means that orders from unmatched customers wait in staging. A separate step matches new keys, or creates new parties, before the next load.</span></li>
+</ol>
+<p>Effective-dated tables need one more step. When the CRM sends Maria's new address, the load closes the current row and inserts a new one, like a type 2 dimension. Listing 6.2 shows the pattern in two statements.</p>
+<p class="lstcap"><b>Listing 6.2</b> Load a changed address into an effective-dated table</p>
+<pre class="sql"><span class="c">-- Close the open row when the address changed.</span>
+<span class="k">UPDATE</span> customer_address
+<span class="k">SET</span>    valid_to = (<span class="k">SELECT</span> s.moved_on <span class="k">FROM</span> stg_crm_customer s
+                   <span class="k">JOIN</span> key_xref x <span class="k">ON</span> x.source_system = 'CRM' <span class="k">AND</span> x.source_key = s.customer_id
+                   <span class="k">WHERE</span> x.party_id = customer_address.party_id)
+<span class="k">WHERE</span>  valid_to = <span class="k">DATE</span> '9999-12-31'
+<span class="k">AND</span>    party_id <span class="k">IN</span> (<span class="k">SELECT</span> x.party_id <span class="k">FROM</span> stg_crm_customer s
+                  <span class="k">JOIN</span> key_xref x <span class="k">ON</span> x.source_system = 'CRM' <span class="k">AND</span> x.source_key = s.customer_id
+                  <span class="k">JOIN</span> customer_address a <span class="k">ON</span> a.party_id = x.party_id
+                  <span class="k">WHERE</span> a.valid_to = <span class="k">DATE</span> '9999-12-31' <span class="k">AND</span> a.address &lt;&gt; s.address);<i class="ann">1</i>
+
+<span class="c">-- Insert the new version.</span>
+<span class="k">INSERT INTO</span> customer_address (party_id, address, valid_from, valid_to)
+<span class="k">SELECT</span> x.party_id, s.address, s.moved_on, <span class="k">DATE</span> '9999-12-31'
+<span class="k">FROM</span>   stg_crm_customer s
+<span class="k">JOIN</span>   key_xref x <span class="k">ON</span> x.source_system = 'CRM' <span class="k">AND</span> x.source_key = s.customer_id
+<span class="k">WHERE</span>  <span class="k">NOT EXISTS</span> (<span class="k">SELECT</span> 1 <span class="k">FROM</span> customer_address a
+                   <span class="k">WHERE</span> a.party_id = x.party_id <span class="k">AND</span> a.valid_to = <span class="k">DATE</span> '9999-12-31'
+                   <span class="k">AND</span> a.address = s.address);<i class="ann">2</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>An update in place. After it runs, the table no longer shows that the row was ever open-ended, or when the warehouse learned of the move. This is the record-time loss from <a href="../part-1/04-time-and-history.html#s4-6">section 4.6</a>.</span></li>
+<li><i class="ann">2</i><span>Inserts a version only if the open row does not already hold this address, so a repeated load adds nothing.</span></li>
+</ol>
+
+<div class="lab" id="lab-xref">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Integrate Happy Tails</h4><span class="lab-tip">run the steps in order</span></div>
+  <p>On 1 June 2025, the Happy Tails customers arrive. The integration step matches each one to a core party by phone and last name, or creates a new party. Run the match, then discover the mistake, then fix it.</p>
+  <div class="row">
+    <button class="btn primary" type="button" id="xrMatch">1 Run the match</button>
+    <button class="btn" type="button" id="xrFind">2 Find the mistake</button>
+    <button class="btn" type="button" id="xrFix">3 Undo the match</button>
+    <button class="btn" type="button" id="xrReset">Reset</button>
+  </div>
+  <div class="tbl" style="margin:0"><table class="rows" id="xrTable"></table></div>
+  <div class="log" id="xrLog" aria-live="polite"></div>
+</div>
+<p>The exercise shows the main cost of integrating on the way in. The match is a decision, and the core stores only its result. When the decision is wrong, the fix is not a new row. It is a search for every row that the wrong decision touched, in every subject area, followed by updates. The next pattern chapters show two other approaches: the star makes the same decision in its dimensions, and Data Vault stores the sources' own keys first and decides later.</p>
+
+<h2 id="s6-5"><span class="num">6.5</span>The party pattern</h2>
+<p>Dev Patel is a groomer at the Oakland store and a loyalty customer. A model with separate <code>customer</code> and <code>employee</code> tables stores him twice, with two names, two addresses, and no link between them. When Dev changes his address, one copy goes stale. When he asks Lantern to delete his customer data, nothing tells the warehouse that the same person's pay records must stay.</p>
+<p>The <em class="term">party pattern</em> solves this. A <em class="term">party</em> is any person or organization that the business deals with. Each party has one row in a <code>party</code> table, with the facts about the person: name, date of birth, contact points. Each way that the party relates to the business is a <em class="term">role</em>, in its own table: <code>customer_role</code>, <code>employee_role</code>, <code>supplier_role</code>. Dev is one party with two roles.</p>
+<p class="tblcap"><b>Table 6.2</b> Dev Patel as one party with two roles</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>table</th><th>party_id</th><th>role details</th></tr></thead>
+<tbody>
+<tr><td>party</td><td>51907</td><td class="wrap">name Dev Patel, address and phone in effective-dated child tables</td></tr>
+<tr><td>employee_role</td><td>51907</td><td class="wrap">employee E-1047, groomer, Oakland store, hired 2021-05-03</td></tr>
+<tr><td>customer_role</td><td>51907</td><td class="wrap">loyalty customer C-003377, member since 2022-01-14</td></tr>
+</tbody></table></div>
+<p>The pattern pays off twice in the stress tests. Dev's address changes once, for both roles. And his deletion request in February 2026 has a clear scope: end the customer role and remove or mask the data that only that role needs, while the employee role and its pay records stay. The pattern is common in normalized enterprise models, and its ideas reappear in Data Vault as separate hubs and links.</p>
+<div class="callout warning"><span class="lbl">Warning</span>Do not let the party table become a dumping ground. Values that belong to a role, such as a loyalty tier or a job title, go in the role table or its children. Only facts about the person or organization itself belong on <code>party</code>.</div>
+
+<h2 id="s6-6"><span class="num">6.6</span>Querying the core, and dependent marts</h2>
+<p>The core is correct and complete, and it is not pleasant to query. Listing 6.3 answers a common finance question directly from it.</p>
+<p class="lstcap"><b>Listing 6.3</b> Net sales by the customer's city at the time of each order</p>
+<pre class="sql"><span class="k">SELECT</span> c.city_name,
+       <span class="k">SUM</span>(l.quantity * l.unit_price - l.discount) <span class="k">AS</span> net_sales
+<span class="k">FROM</span>   sales_order o
+<span class="k">JOIN</span>   order_line l        <span class="k">ON</span> l.order_id  = o.order_id
+<span class="k">JOIN</span>   customer_address a  <span class="k">ON</span> a.party_id  = o.party_id
+                          <span class="k">AND</span> a.valid_from &lt;= o.order_date
+                          <span class="k">AND</span> o.order_date &lt;  a.valid_to          <span class="c">-- address valid that day</span><i class="ann">1</i>
+<span class="k">JOIN</span>   city c              <span class="k">ON</span> c.city_id   = a.city_id
+<span class="k">WHERE</span>  o.order_date &gt;= <span class="k">DATE</span> '2025-04-01' <span class="k">AND</span> o.order_date &lt; <span class="k">DATE</span> '2025-07-01'
+<span class="k">GROUP BY</span> c.city_name;</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>A range join on the effective dates. It is correct, but every analyst must remember to write it, and get the half-open interval right.</span></li>
+</ol>
+<p>So analysts rarely write queries like this one. Instead, the warehouse team builds <em class="term">dependent marts</em>: stars, summary tables, or flat extracts, refreshed from the core after each load. For example, a finance mart holds a sales star with the customer's city at the time of the order already resolved. Chapter 7 describes the star shape itself. The difference here is the source: a dependent mart is built only from the core, so all marts share the core's definitions and keys.</p>
+<p class="lstcap"><b>Listing 6.4</b> Refresh a customer dimension in a dependent mart</p>
+<pre class="sql"><span class="k">INSERT INTO</span> mart_finance.dim_customer
+       (customer_key, party_id, customer_name, city, region, valid_from, valid_to)
+<span class="k">SELECT</span> <span class="k">ROW_NUMBER</span>() <span class="k">OVER</span> (<span class="k">ORDER BY</span> p.party_id, a.valid_from),<i class="ann">1</i>
+       p.party_id, p.name, c.city_name, r.region_name, a.valid_from, a.valid_to
+<span class="k">FROM</span>   party p
+<span class="k">JOIN</span>   customer_role cr     <span class="k">ON</span> cr.party_id = p.party_id      <span class="c">-- customers only</span>
+<span class="k">JOIN</span>   customer_address a   <span class="k">ON</span> a.party_id  = p.party_id
+<span class="k">JOIN</span>   city c               <span class="k">ON</span> c.city_id   = a.city_id
+<span class="k">JOIN</span>   region r             <span class="k">ON</span> r.region_id = c.region_id;<i class="ann">2</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>The mart creates its own surrogate keys. This listing rebuilds the dimension in full after the table is emptied, which is the simplest refresh. Larger marts refresh only changed rows.</span></li>
+<li><i class="ann">2</i><span>The mart flattens the chain from party to city to region into one row per address version, so its users never see the joins.</span></li>
+</ol>
+
+<h2 id="s6-7"><span class="num">6.7</span>The operational data store</h2>
+<p>Some questions need integrated data but only the current state, and they need it fast. A store manager wants today's grooming bookings with the customer's loyalty tier and any unpaid balance, across systems, refreshed every few minutes. The core is integrated, but it is loaded nightly and full of history.</p>
+<p>An <em class="term">operational data store</em>, or ODS, fills that gap. It is integrated like the core, but it holds only current values, and it is refreshed often. It uses the same cross-reference and reference codes, so its numbers match the warehouse. It is not a replacement for the core, because it keeps no history.</p>
+
+<h2 id="s6-8"><span class="num">6.8</span>Common mistakes</h2>
+<p><strong>Modeling the whole company before delivering anything.</strong> An enterprise model that tries to define every subject before the first mart ships can take a year to show value. Build the core one subject area at a time, and ship a mart for each.</p>
+<p><strong>Copying source rules into the core.</strong> A source's constraints are not the company's. The CRM's one owner per pet was a screen design, and the first version of Lantern's core copied it as an <code>owner_id</code> column. Model relationships as the business sees them, and use associative tables where the "one" side might become "many".</p>
+<p><strong>Forgetting record time.</strong> Effective-dated tables answer "what was true then", not "what did we know then". If audits matter, add load timestamps and keep closed rows unchanged, or use a bitemporal design (<a href="../part-1/04-time-and-history.html#s4-4">section 4.4</a>).</p>
+<p><strong>Letting marts read from sources.</strong> A mart that pulls one extra column straight from a source system is no longer dependent, and its numbers will drift from the others. Add the column to the core first.</p>
+<p><strong>Hiding the cross-reference.</strong> Matching decisions are business decisions. Keep the cross-reference visible, with how and when each match was made, so that people can review it and fix it.</p>
+
+<h2 id="s6-9"><span class="num">6.9</span>Strengths and limits</h2>
+<p>The normalized warehouse is the pattern for one version of the truth. Every customer, product, and store exists once, under one definition, and every mart counts from the same rows. Normalization makes the core consistent by construction, because a fact stored once cannot disagree with itself. Many-to-many data, such as phones and pets, fits naturally in child tables. And because personal data lives in one place, deletion has a clear target.</p>
+<p>Its costs come from deciding everything on the way in. Every new source waits for the integration work, and every matching mistake is stored as a fact. Many values keep only their current state unless someone added an effective-dated table in advance. Update-in-place loads lose record time, so the core cannot show what it believed on a past date. And the core is hard to query, so the pattern needs marts, which add their own copies and their own loads.</p>
+<div class="strip-wrap" data-pattern="normalized"></div>
+<p><strong>Choose the normalized warehouse</strong> when consistency across the company matters most, when sources are few and stable, and when there is a team to own the enterprise model. It is also a strong base for an operational data store.</p>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>The normalized warehouse is subject-oriented, integrated, time-variant, and non-volatile, in Inmon's definition.</li>
+    <li>Its core is in third normal form, so each fact is stored once. Departments query dependent marts built only from the core.</li>
+    <li>Entity, event, associative, effective-dated, and reference tables carry most of the model.</li>
+    <li>Integration happens on the way in. A key cross-reference maps every source key to one core key.</li>
+    <li>The party pattern stores each person once, with customer and employee as roles.</li>
+    <li>An operational data store gives integrated current data, refreshed often, without history.</li>
+    <li>The pattern gives consistency and clear ownership of data, at the cost of slow integration, hard-to-undo matches, and lost record time.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 6 · The normalized warehouse · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  var ROWS = [
+    ["HT-88412", "Maria Lopez", "(415) 555-0142", "48211", "phone and last name"],
+    ["HT-90051", "Ana Lopez", "(415) 555-0142", "48211", "phone and last name"],
+    ["HT-90377", "Kofi Mensah", "(916) 555-0108", "new 60122", "no match, new party"]
+  ];
+  var state = 0, tab = document.getElementById("xrTable"), log = document.getElementById("xrLog");
+  function render() {
+    var head = "<thead><tr><th>ht_customer_id</th><th>name</th><th>phone</th><th>party_id</th><th>matched_by</th></tr></thead>";
+    var body = state === 0 ? '<tr><td colspan="5">Nothing matched yet.</td></tr>' : ROWS.map(function (r, i) {
+      var cls = "", pid = r[3];
+      if (i === 1 && state === 2) cls = "hl";
+      if (i === 1 && state === 3) { cls = "new"; pid = "new 60123"; }
+      return '<tr class="' + cls + '"><td>' + r[0] + "</td><td>" + esc(r[1]) + "</td><td>" + r[2] + "</td><td>" + pid + "</td><td>" + (i === 1 && state === 3 ? "manual fix" : esc(r[4])) + "</td></tr>";
+    }).join("");
+    tab.innerHTML = head + "<tbody>" + body + "</tbody>";
+    var msg = [
+      '<span class="m">Three Happy Tails customers wait in staging.</span>',
+      '<span class="ok">The match wrote three cross-reference rows. HT-88412 and HT-90051 both point to party 48211, Maria. Their sales load into the core as Maria\'s sales.</span>',
+      '<span class="bad">HT-90051 is Ana Lopez, Maria\'s sister, who shares the family phone. For three months, Ana\'s 41 purchases were loaded into the core as Maria\'s, into sales_order, loyalty points, and two marts.</span>',
+      '<span class="warn">The fix: create party 60123 for Ana, update her cross-reference row, find and update all 41 orders and their loyalty rows, then rebuild the affected marts. Nothing records that the core was wrong for three months.</span>'
+    ][state];
+    log.innerHTML = msg;
+  }
+  document.getElementById("xrMatch").addEventListener("click", function () { state = 1; render(); });
+  document.getElementById("xrFind").addEventListener("click", function () { state = Math.max(state, 1) && 2; render(); });
+  document.getElementById("xrFix").addEventListener("click", function () { state = 3; render(); });
+  document.getElementById("xrReset").addEventListener("click", function () { state = 0; render(); });
+  render();
+})();
+</script>
+</body>
+</html>

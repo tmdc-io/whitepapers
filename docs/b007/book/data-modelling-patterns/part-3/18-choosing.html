@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>18 · Choosing a pattern</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="18">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part III · Chapter 18</div>
+<h1>Choosing a pattern</h1>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s18-1">Starting from the tests that matter to you</a></li>
+    <li><a href="#s18-2">Six questions that point to a design</a></li>
+    <li><a href="#s18-3">Typical situations and their designs</a></li>
+    <li><a href="#s18-4">Signs that a design no longer fits</a></li>
+    <li><a href="#s18-5">Moving from one pattern to another</a></li>
+  </ul>
+</div>
+
+<p>Every pattern in this book is the right answer somewhere. The star is the right answer for most analysts, Data Vault for many changing sources under audit, anchor modeling for a schema in constant motion, the activity schema for customer journeys. The mistake is not choosing a weaker pattern. It is choosing a pattern for a situation that is not yours, usually because another company used it, or because it was the pattern the team knew.</p>
+<p>This chapter turns the comparison into a decision. It starts from the stress tests that matter to you, asks six questions, and maps the answers to a design.</p>
+
+<h2 id="s18-1"><span class="num">18.1</span>Start from the tests that matter</h2>
+<p>Before choosing, go through the twelve tests in <a href="../part-1/05-stress-tests.html">chapter 5</a> and mark each one as critical, useful, or irrelevant for your company. Then ask how often each event happens. Lantern buys a company every few years, adds a source column every few months, and corrects payroll every week. A test that happens weekly matters more than one that happens once a decade, even if the rare one is dramatic.</p>
+<p>The weighting exercise in <a href="16-side-by-side.html#s16-5">section 16.5</a> does this with numbers. The questions below do it with judgment, which is usually enough.</p>
+
+<h2 id="s18-2"><span class="num">18.2</span>Six questions</h2>
+<p>Six questions separate the situations in which each pattern does best. Answer them for your company, and the exercise suggests a design, with the reason for each part.</p>
+<div class="lab" id="lab-choose">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Answer six questions</h4><span class="lab-tip">pick one answer per question</span></div>
+  <div id="qBox" style="display:flex;flex-direction:column;gap:10px"></div>
+  <div class="log" id="chooseLog" aria-live="polite"></div>
+</div>
+<p>The suggestion is a starting point for a design discussion, not a verdict. The questions leave out many real factors, such as the skills the team already has, the engines it runs on, and the budget. Use the answer to decide which chapters to reread before the decision.</p>
+
+<h2 id="s18-3"><span class="num">18.3</span>Typical situations</h2>
+<p><strong>A small team with one or two stable sources.</strong> Use stars, built from a persistent staging area, and wide tables for dashboards. Add type 2 dimensions where history matters. This is the lowest-effort design that still keeps a full record, and it can grow into a vault later. See <a href="../part-2/07-dimensional-modeling.html">chapters 7</a> and 10.</p>
+<p><strong>A regulated company with many changing sources.</strong> Use a Data Vault core, a business vault for rules, and stars and wide tables as marts. Invest in automation from the first month. Design personal-data satellites before the first load. See chapters 11 and 12.</p>
+<p><strong>A company whose main questions are about customer behavior.</strong> Use an activity stream for customers, beside stars for finance and operations. Make identity stitching part of every load. See <a href="../part-2/14-activity-schema.html">chapter 14</a>.</p>
+<p><strong>A domain whose schema changes constantly.</strong> Use an anchor core with generated views, and stars on top for analysts. Test join elimination on your engine first. See <a href="../part-2/13-anchor.html">chapter 13</a>.</p>
+<p><strong>Self-service users who combine many business processes.</strong> Use a galaxy of stars with a unified bridge on top, so that any combination of fields gives correct totals. See <a href="../part-2/15-unified-star-schema.html">chapter 15</a>.</p>
+<p><strong>A company that wants one consistent record above all.</strong> Use a normalized core with dependent marts, owned by an enterprise modeling team. Add record time on purpose, or the audit test fails. See <a href="../part-2/06-normalized.html">chapter 6</a>.</p>
+<p><strong>Machine learning features.</strong> Use wide tables at the grain of the prediction, such as one row per customer, built with as-of logic from any core that keeps history. See <a href="../part-2/10-one-big-table.html#s10-6">section 10.6</a>.</p>
+
+<h2 id="s18-4"><span class="num">18.4</span>Signs that a design no longer fits</h2>
+<p>Designs that fit at the start stop fitting as a company changes. These signs mean it is time to revisit the choice.</p>
+<p><strong>The same dimension is rebuilt again and again.</strong> If every new source, merger, or matching fix means rebuilding the customer dimension and reloading facts, the integration work has outgrown a star built straight from sources. A record layer underneath, persistent staging or a vault, makes those rebuilds safe and cheap.</p>
+<p><strong>Audits cannot be answered.</strong> If someone asks what the warehouse said on a past date and nobody can answer, record time is missing. Add load times to the core, bitemporal dimensions where audits focus, or a vault.</p>
+<p><strong>Totals disagree between reports.</strong> If finance and marketing get different numbers for the same measure, either the definitions differ, which is a rule problem for a business layer, or self-service queries fall into chasm traps, which is a problem for drill-across rules or a unified bridge.</p>
+<p><strong>Every small change becomes a project.</strong> If adding one source column takes weeks because it touches many tables and reports, the model is too rigid for the rate of change. Look at the vault or anchor patterns for the core.</p>
+<p><strong>The model is more complex than the questions.</strong> If a team spends most of its time running layers that few people query, the design is heavier than the situation. Remove layers that no test needs.</p>
+
+<h2 id="s18-5"><span class="num">18.5</span>Moving between patterns</h2>
+<p>Changing a pattern does not mean starting again. Most moves add a layer below or above what exists.</p>
+<p><strong>From stars to a vault core.</strong> Start a persistent staging area now, if there is none. Build hubs, links, and satellites from it, one business process at a time. Rebuild each star from the vault, and compare it with the old star until they match. Then switch the loads.</p>
+<p><strong>From a normalized core to a vault core.</strong> The normalized core's entities suggest the hubs, and its associative tables suggest the links. Its effective-dated tables become satellites. The key cross-reference becomes the source of the first same-as links.</p>
+<p><strong>From wide tables to stars.</strong> The wide table's grain becomes the fact grain. Each group of repeated attributes becomes a dimension. Build the stars, then rebuild the wide tables from them, so that dashboards do not change.</p>
+<p><strong>Adding an activity stream.</strong> Each activity is a transformation over existing tables, such as the sales fact or the vault's order links. The stream can be built beside any core without changing it.</p>
+<div class="callout"><span class="lbl">Note</span>Every one of these moves is easier when the source data was kept. A persistent staging area is the single decision that keeps the most future options open, whatever pattern you choose today.</div>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>Choose a pattern for your situation, not for its popularity. Start from the stress tests that matter, and how often they happen.</li>
+    <li>Six questions, about sources, audits, users, customer journeys, the team, and schema change, point to a design.</li>
+    <li>Typical designs are stars for small teams, a vault core for regulated multi-source companies, an activity stream for customer behavior, an anchor core for constant schema change, a unified bridge for self-service, and a normalized core for one consistent record.</li>
+    <li>Repeated rebuilds, unanswerable audits, disagreeing totals, slow small changes, and unused layers are signs to revisit the design.</li>
+    <li>Moves between patterns usually add a layer. A persistent staging area keeps the most options open.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 18 · Choosing a pattern · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  var Q = [
+    ["src", "How many sources, and how often do they change?", [["few", "One or two, stable"], ["many", "Many, or new ones every year"]]],
+    ["audit", "How often must you show what the warehouse said on a past date?", [["low", "Rarely"], ["high", "Regularly, for regulators or claims"]]],
+    ["users", "Who builds the reports?", [["sql", "Analysts who write SQL"], ["self", "Self-service users combining processes"]]],
+    ["journey", "Are customer journeys and sequences central?", [["no", "No"], ["yes", "Yes"]]],
+    ["team", "What team runs the warehouse?", [["small", "A small team, little automation"], ["platform", "A platform team that can automate"]]],
+    ["schema", "How often do source attributes change?", [["rare", "Rarely"], ["often", "Constantly"]]]
+  ];
+  var A = { src: "few", audit: "low", users: "sql", journey: "no", team: "small", schema: "rare" };
+  var box = document.getElementById("qBox"), log = document.getElementById("chooseLog");
+  box.innerHTML = Q.map(function (q) {
+    return '<div><div style="font-size:14px;margin-bottom:4px">' + esc(q[1]) + '</div><div class="row" role="group">' + q[2].map(function (o) {
+      return '<button class="btn" type="button" data-q="' + q[0] + '" data-v="' + o[0] + '">' + esc(o[1]) + "</button>";
+    }).join("") + "</div></div>";
+  }).join("");
+  function render() {
+    var parts = [], why = [];
+    if ((A.src === "many" || A.audit === "high") && A.team === "platform") { parts.push("a Data Vault core with a business vault"); why.push("Many sources or audits, and a team that can automate: the vault absorbs change and keeps record time (chapters 11 and 12)."); }
+    else if (A.schema === "often" && A.team === "platform") { parts.push("an anchor core with generated views"); why.push("Constant attribute change and a team with a generator: every change is an extension (chapter 13)."); }
+    else if (A.team === "platform") { parts.push("a normalized core with dependent marts"); why.push("Stable sources and a team to own the enterprise model: one consistent record (chapter 6)."); }
+    else { parts.push("a persistent staging area"); why.push("A small team: keep every extract with its load time, so any later layer can be rebuilt (chapter 17)."); }
+    parts.push("stars for analysts"); why.push("Stars are the easiest shape for analysts, with type 2 dimensions for history (chapters 7 and 8).");
+    if (A.audit === "high" && A.team === "small") { why.push("Audits matter but the team is small: use bitemporal dimensions where audits focus (section 8.7), and plan a vault for later."); }
+    if (A.users === "self") { parts.push("a unified bridge over the stars"); why.push("Self-service users combine processes: the bridge keeps multi-fact totals correct (chapter 15)."); }
+    if (A.team === "small" || A.users === "self") { parts.push("wide tables for dashboards"); why.push("Wide tables are the simplest shape for dashboard tools (chapter 10)."); }
+    if (A.journey === "yes") { parts.push("a customer activity stream"); why.push("Journeys and funnels are temporal joins on one stream (chapter 14)."); }
+    log.innerHTML = '<span class="ok">Suggested design: ' + esc(parts.join(", ")) + ".</span><br>" + why.map(function (w) { return '<span class="m">' + esc(w) + "</span>"; }).join("<br>");
+    [].slice.call(document.querySelectorAll("[data-q]")).forEach(function (b) { b.classList.toggle("on", A[b.getAttribute("data-q")] === b.getAttribute("data-v")); });
+  }
+  [].slice.call(document.querySelectorAll("[data-q]")).forEach(function (b) { b.addEventListener("click", function () { A[b.getAttribute("data-q")] = b.getAttribute("data-v"); render(); }); });
+  render();
+})();
+</script>
+</body>
+</html>

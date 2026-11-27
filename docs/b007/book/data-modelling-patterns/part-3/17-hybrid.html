@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>17 · Hybrid architectures</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="17">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part III · Chapter 17</div>
+<h1>Hybrid architectures</h1>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s17-1">Why most warehouses use more than one pattern</a></li>
+    <li><a href="#s17-2">The line between records and decisions</a></li>
+    <li><a href="#s17-3">Five common combinations</a></li>
+    <li><a href="#s17-4">Building a combination for Lantern</a></li>
+    <li><a href="#s17-5">The costs of combining</a></li>
+  </ul>
+</div>
+
+<p>The grid in <a href="16-side-by-side.html">chapter 16</a> shows that no pattern is good at everything. The core patterns, Data Vault, anchor modeling, and the normalized warehouse, absorb change and keep records well, and are hard to query. The serving patterns, the star, one big table, the activity schema, and the unified star schema, are easy to query and less tolerant of change. Most real warehouses therefore use one pattern underneath and others on top, each where its strip is strong.</p>
+
+<h2 id="s17-1"><span class="num">17.1</span>Why combine</h2>
+<p>The layers from <a href="../part-1/01-why-a-model.html#s1-4">section 1.4</a> exist because the work in each layer is different. The core must take in every source, keep every version, and survive every change for years. The serving layer must answer questions quickly in the shape that people think in, and it can be rebuilt whenever that shape changes. A pattern optimized for one job is usually poor at the other.</p>
+<p>Combining patterns lets each layer use the pattern that suits its job. The price is more than one set of tables, and loads that move data from one layer to the next. <a href="#s17-5">Section 17.5</a> counts that price.</p>
+
+<h2 id="s17-2"><span class="num">17.2</span>Records and decisions</h2>
+<p>The most useful line in any layered warehouse separates records from decisions. Figure 17.1 draws it.</p>
+<figure class="diag" id="fig-17-1">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Five layers from sources at the bottom to serving at the top. A boundary separates the lower layers, which record what sources said, from the upper layers, which apply business decisions and can be rebuilt.">
+  <g font-size="12.5">
+    <rect x="24" y="24" width="672" height="74" rx="9" class="bx-s"/>
+    <text x="40" y="46" font-size="11.5" class="t-s" letter-spacing="1.2">SERVING · CHAPTERS 7 TO 10, 14, 15</text>
+    <rect x="40" y="56" width="150" height="32" rx="6" class="bx-n"/><text x="115" y="77" text-anchor="middle" font-weight="600">Stars</text>
+    <rect x="204" y="56" width="150" height="32" rx="6" class="bx-n"/><text x="279" y="77" text-anchor="middle" font-weight="600">Wide tables</text>
+    <rect x="368" y="56" width="150" height="32" rx="6" class="bx-n"/><text x="443" y="77" text-anchor="middle" font-weight="600">Activity streams</text>
+    <rect x="532" y="56" width="148" height="32" rx="6" class="bx-n"/><text x="606" y="77" text-anchor="middle" font-weight="600">Unified bridge</text>
+    <rect x="24" y="108" width="672" height="66" rx="9" class="bx-a"/>
+    <text x="40" y="130" font-size="11.5" class="t-a" letter-spacing="1.2">DECISIONS · RULES, MATCHING, STANDARDS</text>
+    <text x="40" y="158" font-size="12" class="t-s">business vault, same-as results, key cross-references, versioned rules</text>
+    <line x1="24" y1="192" x2="696" y2="192" class="dash-am" stroke-width="2.5"/>
+    <rect x="236" y="178" width="248" height="28" rx="6" class="bx-am"/><text x="360" y="197" text-anchor="middle" font-size="12" class="t-am" font-weight="600">above: decisions · below: records</text>
+    <rect x="24" y="214" width="672" height="74" rx="9" class="bx-s"/>
+    <text x="40" y="236" font-size="11.5" class="t-s" letter-spacing="1.2">INTEGRATED CORE · CHAPTERS 6, 11 TO 13</text>
+    <rect x="40" y="246" width="200" height="32" rx="6" class="bx-n"/><text x="140" y="267" text-anchor="middle" font-weight="600">Normalized core</text>
+    <rect x="260" y="246" width="200" height="32" rx="6" class="bx-n"/><text x="360" y="267" text-anchor="middle" font-weight="600">Raw Data Vault</text>
+    <rect x="480" y="246" width="200" height="32" rx="6" class="bx-n"/><text x="580" y="267" text-anchor="middle" font-weight="600">Anchor model</text>
+    <rect x="24" y="298" width="672" height="40" rx="9" class="bx-n"/>
+    <text x="40" y="323" font-size="11.5" class="t-s" letter-spacing="1.2">LANDING</text><text x="160" y="323" font-size="12" class="t-s">persistent staging: every extract, append-only, with load times</text>
+    <rect x="24" y="348" width="672" height="36" rx="9" class="bx-n"/>
+    <text x="40" y="371" font-size="11.5" class="t-s" letter-spacing="1.2">SOURCES</text><text x="160" y="371" font-size="12" class="t-s">CRM, web shop, POS, Happy Tails, grooming, ERP, HR and payroll</text>
+  </g>
+</svg>
+</div>
+<figcaption><b>Figure 17.1</b> The layers of a hybrid warehouse. Everything below the amber line records what sources said and is kept, and everything above it can be dropped and rebuilt when a decision changes.</figcaption>
+</figure>
+<p>Below the line, data is a record: append-only where possible, with sources and arrival times. Above the line, data is a set of decisions: which keys are one customer, what an active customer is, how overtime is computed, and what shape a report needs. Decisions change. If the record below never changes, every layer above can be rebuilt with the new decision, and old reports can be reproduced with the old one.</p>
+<p>The patterns differ in where they put the line. A raw Data Vault sits clearly below it, and its business vault sits above. A normalized core straddles it: it records, but it also matches keys and overwrites corrections on the way in. A star built straight from sources sits above it entirely, which is why it struggles with tests that need the record, such as the audit.</p>
+<div class="callout tip"><span class="lbl">Tip</span>A persistent staging area is the cheapest way to get a record below the line. Keep every source extract, append-only, with its load time. Even a warehouse made only of stars can then rebuild any star from the original data.</div>
+
+<h2 id="s17-3"><span class="num">17.3</span>Five common combinations</h2>
+<p><strong>Persistent staging with stars.</strong> The lightest hybrid. A landing layer keeps every extract, and stars are built from it. It suits a small team with few sources. It keeps the most important vault property, a permanent record, without hubs and links. If sources multiply later, a vault can be built from the persistent stage, because the history is already there.</p>
+<p><strong>Normalized core with dependent marts.</strong> Inmon's own architecture, from <a href="../part-2/06-normalized.html">chapter 6</a>. It suits companies that want one consistent integrated record, with stable sources and an enterprise modeling team.</p>
+<p><strong>Data Vault with stars and wide tables.</strong> A raw vault and a business vault in the core, information marts as stars for analysts, and wide tables for dashboards and machine learning. It suits many changing sources and audit pressure, and it needs automation. <a href="../part-2/12-data-vault-advanced.html">Chapter 12</a> describes it.</p>
+<p><strong>Anchor model with generated views and stars.</strong> An anchor core for a schema that changes constantly, its latest and point-in-time views for technical users, and stars on top for analysts. It suits fast-evolving domains with a team that owns the generator.</p>
+<p><strong>A star warehouse with an activity stream beside it.</strong> Stars for finance and operations, and a customer activity stream for marketing and product analytics, both fed from the same staging. It suits companies whose customer questions are about sequences and journeys. A unified bridge can be added on top of the stars where self-service users combine processes.</p>
+
+<h2 id="s17-4"><span class="num">17.4</span>Building a combination for Lantern</h2>
+<p>The exercise lets you combine one core with any serving patterns. For each test, it shows the best result that any chosen layer gives, and which layer gives it, and it adds up the effort.</p>
+<div class="lab" id="lab-hybrid">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Combine a core with serving patterns</h4><span class="lab-tip">choose a core and toggle serving</span></div>
+  <p>This is a simplification, and it is the author's heuristic, not a measurement. In a real hybrid, a test is only as good as the layer that the question uses, and data must flow between layers. It still shows which layer carries which strength.</p>
+  <div class="row" role="group" aria-label="Core"><span class="lab-tip" style="min-width:90px">Core</span>
+    <button class="btn" type="button" data-core="">None</button><button class="btn" type="button" data-core="normalized">Normalized</button><button class="btn on" type="button" data-core="vault">Data Vault</button><button class="btn" type="button" data-core="anchor">Anchor</button>
+  </div>
+  <div class="row" role="group" aria-label="Serving"><span class="lab-tip" style="min-width:90px">Serving</span>
+    <button class="btn on" type="button" data-serve="star">Star</button><button class="btn" type="button" data-serve="obt">Wide tables</button><button class="btn" type="button" data-serve="activity">Activity stream</button><button class="btn" type="button" data-serve="uss">Unified bridge</button>
+  </div>
+  <div class="tbl" style="margin:0"><table id="hyTable"></table></div>
+  <div class="log" id="hyLog" aria-live="polite"></div>
+</div>
+<p>For Lantern, a Data Vault core with stars for finance, wide tables for store dashboards, and an activity stream for marketing covers every test that the business cares about. Its effort is the highest of any combination, and it is justified by Lantern's seven sources, its acquisition, and its legal duties. A company with one point-of-sale system and no audit pressure gets most of the benefit from persistent staging and stars, at a fraction of the cost.</p>
+
+<h2 id="s17-5"><span class="num">17.5</span>The costs of combining</h2>
+<p><strong>More tables and more loads.</strong> Every layer is another set of tables and another set of loads, in a fixed order. A failure in the core delays every layer above it.</p>
+<p><strong>Copies of data.</strong> Serving layers copy values from the core. Each copy must be refreshed, and each copy of personal data must be deleted on request.</p>
+<p><strong>Two vocabularies.</strong> Core tables and serving tables use different names and shapes. The team must keep a clear map from one to the other, or analysts and engineers stop understanding each other.</p>
+<p><strong>Latency.</strong> Data reaches users only after it passes through every layer. Questions that need fresh data, such as today's grooming bookings, need a faster path, such as the operational data store from <a href="../part-2/06-normalized.html#s6-7">section 6.7</a>.</p>
+<p>None of these costs is a reason to avoid layers. Each is a reason to add a layer only when a stress test that matters to the business needs it.</p>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>Core patterns absorb change and keep records. Serving patterns answer questions. Most warehouses combine them.</li>
+    <li>The most important line separates records, which are kept, from decisions, which can be rebuilt.</li>
+    <li>A persistent staging area is the cheapest record, and it makes any later layer rebuildable.</li>
+    <li>Common combinations are persistent staging with stars, a normalized core with marts, a vault with stars and wide tables, an anchor core with views and stars, and stars with an activity stream.</li>
+    <li>Every layer adds tables, loads, copies, vocabulary, and latency. Add a layer only for a test that matters.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 17 · Hybrid architectures · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var B = window.Book, esc = B.esc, TESTS = B.tests, S = B.scores;
+  var NAME = { normalized: "Normalized core", vault: "Data Vault", anchor: "Anchor core", star: "Star", obt: "Wide tables", activity: "Activity stream", uss: "Unified bridge" };
+  var EFFORT = { normalized: 2, vault: 3, anchor: 3, star: 1, obt: 1, activity: 1, uss: 2 };
+  var core = "vault", serve = { star: true };
+  var CH = [["c-fail", "Fails"], ["c-cost", "Costly"], ["c-good", "Good"]];
+  var tab = document.getElementById("hyTable"), log = document.getElementById("hyLog");
+  function render() {
+    var layers = (core ? [core] : []).concat(Object.keys(serve).filter(function (k) { return serve[k]; }));
+    if (!layers.length) { tab.innerHTML = ""; log.innerHTML = '<span class="warn">Choose at least one layer.</span>'; }
+    else {
+      tab.innerHTML = "<thead><tr><th>Test</th><th>Best result</th><th>From</th></tr></thead><tbody>" + TESTS.map(function (t, i) {
+        var best = -1, who = [];
+        layers.forEach(function (l) { var v = S[l][i][0]; if (v > best) { best = v; who = [NAME[l]]; } else if (v === best) who.push(NAME[l]); });
+        return "<tr><td>" + (i + 1) + " " + esc(t) + '</td><td><span class="chip ' + CH[best][0] + '">' + CH[best][1] + "</span></td><td>" + esc(who.join(", ")) + "</td></tr>";
+      }).join("") + "</tbody>";
+      var e = layers.reduce(function (s, l) { return s + EFFORT[l]; }, 0);
+      var lvl = e <= 2 ? "Low" : e <= 4 ? "Medium" : e <= 6 ? "High" : "Very high";
+      log.innerHTML = '<span class="m">' + layers.length + " layers: " + esc(layers.map(function (l) { return NAME[l]; }).join(", ")) + ".</span><br><span class=\"" + (e <= 4 ? "ok" : "warn") + '">Combined build and run effort: ' + lvl + " (" + e + " points).</span>";
+    }
+    [].slice.call(document.querySelectorAll("[data-core]")).forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-core") === core); });
+    [].slice.call(document.querySelectorAll("[data-serve]")).forEach(function (b) { b.classList.toggle("on", !!serve[b.getAttribute("data-serve")]); });
+  }
+  [].slice.call(document.querySelectorAll("[data-core]")).forEach(function (b) { b.addEventListener("click", function () { core = b.getAttribute("data-core"); render(); }); });
+  [].slice.call(document.querySelectorAll("[data-serve]")).forEach(function (b) { b.addEventListener("click", function () { var k = b.getAttribute("data-serve"); serve[k] = !serve[k]; render(); }); });
+  render();
+})();
+</script>
+</body>
+</html>

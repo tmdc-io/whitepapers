@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>14 · Activity schema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="14">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part II · Chapter 14</div>
+<h1>Activity schema</h1>
+<p class="glance"><i><span>Origin</span>Ahmed Elsamadisi, specification 2.0, December 2022</i><i><span>Shape</span>one narrow table of events per entity</i><i><span>Best at</span>customer journeys and sequences</i><i><span>Costs</span>one entity per stream, temporal joins</i></p>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s14-1">Modeling what customers did instead of what things are</a></li>
+    <li><a href="#s14-2">The activity stream and its columns</a></li>
+    <li><a href="#s14-3">Building the stream, and why activities never change</a></li>
+    <li><a href="#s14-4">Temporal joins: first ever, last before, first after, and in between</a></li>
+    <li><a href="#s14-5">Journeys and funnels</a></li>
+    <li><a href="#s14-6">What does not fit in one stream</a></li>
+    <li><a href="#s14-8">Strengths and limits on the twelve stress tests</a></li>
+  </ul>
+</div>
+
+<p>Lantern's marketing team asks a question that every other model in this book makes painful: "Of the customers who bought dog food online, how many booked a grooming visit within 30 days, and how much did they spend before their next order?" In a star, the answer needs the sales fact, the grooming fact, the customer dimension, and a careful set of date comparisons between rows of different tables. In a vault, it needs links, satellites, and the same comparisons.</p>
+<p>The activity schema is built for questions like this one. It stores everything that a customer did as rows in one narrow table, ordered by time, and answers questions with a small set of temporal joins. This chapter builds Lantern's customer stream and shows where the pattern shines and where it stops.</p>
+
+<h2 id="s14-1"><span class="num">14.1</span>The idea</h2>
+<p>Most patterns in this book model what things are: a customer with an address, a product in a category, an order with lines. The activity schema models what an entity did: viewed a product, completed an order, booked grooming, updated an address. Each of those is an <em class="term">activity</em>, and all activities of one kind of entity go into one table, the <em class="term">activity stream</em>.</p>
+<p>Ahmed Elsamadisi created the pattern and implemented it at his company, Narrator. The <a href="https://github.com/ActivitySchema/ActivitySchema">public specification</a> reached version 2.0 in December 2022. The specification's central claim is that most analytical questions about customers are questions about the order of events: what happened first, what happened before or after something else, and what happened in between. A single time-ordered table makes those questions uniform.</p>
+
+<h2 id="s14-2"><span class="num">14.2</span>The activity stream</h2>
+<p>The specification defines eight columns. Every activity, of every kind, uses the same eight.</p>
+<p class="tblcap"><b>Table 14.1</b> The columns of an activity stream</p>
+<div class="tbl"><table>
+<thead><tr><th>Column</th><th>Meaning</th><th>Required</th></tr></thead>
+<tbody>
+<tr><td><code>activity_id</code></td><td>A unique ID for the activity row</td><td>Yes</td></tr>
+<tr><td><code>ts</code></td><td>When the activity happened, in UTC by convention</td><td>Yes</td></tr>
+<tr><td><code>customer</code></td><td>The global ID of the entity. It can be empty only if the anonymous ID is set</td><td>Usually</td></tr>
+<tr><td><code>activity</code></td><td>The activity name, such as <code>completed_order</code></td><td>Yes</td></tr>
+<tr><td><code>anonymous_customer_id</code></td><td>A local ID used before the global ID is known, such as a web visitor ID</td><td>No</td></tr>
+<tr><td><code>feature_json</code></td><td>The activity's own details, as key-value pairs</td><td>Yes</td></tr>
+<tr><td><code>revenue_impact</code></td><td>Money in, or money out, in one currency for the whole stream</td><td>No</td></tr>
+<tr><td><code>link</code></td><td>A URL to the source record</td><td>No</td></tr>
+</tbody></table></div>
+<p>The specification recommends naming activities as a verb and a noun from the entity's point of view, such as <code>viewed_product</code>, and naming streams after their entity, such as <code>customer_stream</code>. An optional entity table, with the customer as its key, can hold attributes that are not activities. Table 14.2 shows part of Maria's stream.</p>
+<p class="tblcap"><b>Table 14.2</b> Maria in customer_stream</p>
+<div class="tbl"><table class="rows">
+<thead><tr><th>ts</th><th>activity</th><th>customer</th><th>anonymous_customer_id</th><th>feature_json</th><th>revenue_impact</th></tr></thead>
+<tbody>
+<tr><td>2025-02-10 19:02</td><td>viewed_product</td><td>·</td><td>web_7f31</td><td class="wrap">{"sku": "SKU-30118"}</td><td>·</td></tr>
+<tr><td>2025-02-14 10:21</td><td>completed_order</td><td>C-000123</td><td>·</td><td class="wrap">{"order": "O-5001", "store": "Oakland", "lots": ["L24-0917"]}</td><td>64.99</td></tr>
+<tr><td>2025-03-14 02:00</td><td>updated_address</td><td>C-000123</td><td>·</td><td class="wrap">{"city": "San Jose", "moved_on": "2025-03-10"}</td><td>·</td></tr>
+<tr><td>2025-04-02 18:40</td><td>started_autoship</td><td>C-000123</td><td>web_7f31</td><td class="wrap">{"sku": "SKU-30118", "every_weeks": 4}</td><td>·</td></tr>
+<tr><td>2025-05-20 08:15</td><td>completed_order</td><td>C-000123</td><td>·</td><td class="wrap">{"order": "O-5102", "store": "web"}</td><td>64.99</td></tr>
+<tr><td>2025-06-02 12:30</td><td>booked_grooming</td><td>C-000123</td><td>·</td><td class="wrap">{"pet": "Biscuit", "store": "Oakland"}</td><td>·</td></tr>
+<tr><td>2025-06-09 11:05</td><td>groomed</td><td>C-000123</td><td>·</td><td class="wrap">{"pet": "Biscuit", "minutes": 95}</td><td>68.00</td></tr>
+<tr><td>2025-09-05 16:48</td><td>completed_order</td><td>C-000123</td><td>·</td><td class="wrap">{"order": "O-5203", "store": "HT Sacramento 3"}</td><td>82.40</td></tr>
+</tbody></table></div>
+<p>Three things stand out. Everything about Maria, from browsing to grooming, is in one table, in time order. Each activity's details live in <code>feature_json</code>, so a new detail needs no new column. And the first row has no customer, only a web visitor ID: Maria browsed before she logged in.</p>
+<p>That last point is how the pattern handles identity. When a row carries both a <code>customer</code> and an <code>anonymous_customer_id</code>, as the autoship row does, it links the two. Earlier rows with only the anonymous ID can then be credited to Maria, and the common practice is to fill in the customer column on those older rows once the link is known.</p>
+
+<h2 id="s14-3"><span class="num">14.3</span>Building the stream</h2>
+<p>Each activity comes from a transformation: a query over a source that produces rows in the eight columns. The <code>completed_order</code> activity reads the store POS, the web shop, and the Happy Tails POS, and unions them. The <code>groomed</code> activity reads the grooming system. The stream is the union of all activity transformations.</p>
+<p class="lstcap"><b>Listing 14.1</b> The completed_order activity from the web shop</p>
+<pre class="sql"><span class="k">INSERT INTO</span> customer_stream
+       (activity_id, ts, customer, activity, anonymous_customer_id, feature_json, revenue_impact, link)
+<span class="k">SELECT</span> 'web_order_' || o.order_id,                              <span class="c">-- stable, unique per activity</span><i class="ann">1</i>
+       o.ordered_at,
+       x.customer_id,                                             <span class="c">-- global ID, when known</span>
+       'completed_order',
+       'webshop_' || <span class="k">LOWER</span>(<span class="k">TRIM</span>(o.email)),                         <span class="c">-- local ID, prefixed by source</span><i class="ann">2</i>
+       '{"order": "' || o.order_id || '", "store": "web"}',         <span class="c">-- engines have JSON builders</span>
+       o.total_amount,
+       <span class="k">NULL</span>
+<span class="k">FROM</span>   stg_web_order o
+<span class="k">LEFT JOIN</span> customer_key_map x <span class="k">ON</span> x.email = <span class="k">LOWER</span>(<span class="k">TRIM</span>(o.email))
+<span class="k">WHERE</span>  <span class="k">NOT EXISTS</span> (<span class="k">SELECT</span> 1 <span class="k">FROM</span> customer_stream s
+                   <span class="k">WHERE</span> s.activity_id = 'web_order_' || o.order_id);<i class="ann">3</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>A deterministic ID makes the load safe to repeat.</span></li>
+<li><i class="ann">2</i><span>The specification suggests prefixing anonymous IDs with the name of the system that issued them, so IDs from two systems never collide.</span></li>
+<li><i class="ann">3</i><span>Only new activities are inserted. Existing rows are never changed.</span></li>
+</ol>
+<p>The specification states the pattern's one hard rule: an activity never changes. If something changes, such as an order that is later refunded, that is a new activity, <code>refunded_order</code>, not an update of the old row. The stream is an append-only record of events, which makes it simple to load and safe to reload.</p>
+<div class="callout"><span class="lbl">Note</span>A changing attribute becomes an event too. Maria's move is not an address column that changes. It is an <code>updated_address</code> activity with the new city in its features. Her address on any date is the last <code>updated_address</code> before that date, which is exactly the kind of question the next section answers.</div>
+
+<h2 id="s14-4"><span class="num">14.4</span>Temporal joins</h2>
+<p>Every query on an activity stream has the same structure. A <em class="term">cohort activity</em> decides the rows of the result: for example, one row per <code>completed_order</code>. <em class="term">Append activities</em> add columns to those rows, through a <em class="term">relationship</em> that says which occurrence of the append activity to use. Appending never adds or removes rows. The specification compares the cohort to a FROM clause and each relationship to a LEFT JOIN.</p>
+<p class="tblcap"><b>Table 14.3</b> The relationships in the specification</p>
+<div class="tbl"><table>
+<thead><tr><th>Relationship</th><th>Which append occurrence it uses</th></tr></thead>
+<tbody>
+<tr><td>First ever</td><td>The customer's first, at any time</td></tr>
+<tr><td>Last ever</td><td>The customer's last, at any time</td></tr>
+<tr><td>First before</td><td>The first before the cohort row</td></tr>
+<tr><td>Last before</td><td>The most recent before the cohort row</td></tr>
+<tr><td>First after</td><td>The first after the cohort row</td></tr>
+<tr><td>Last after</td><td>The last after the cohort row</td></tr>
+<tr><td>First in between</td><td>The first after the cohort row and before the customer's next cohort row</td></tr>
+<tr><td>Last in between</td><td>The last in that same window</td></tr>
+<tr><td>Aggregate in between</td><td>A count or sum over that window</td></tr>
+<tr><td>Aggregate before</td><td>A count or sum over everything before the cohort row</td></tr>
+</tbody></table></div>
+
+<div class="lab" id="lab-tj">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Build a dataset from Maria's stream</h4><span class="lab-tip">choose cohort, append, relationship</span></div>
+  <p>The cohort activity decides the rows. The append activity and its relationship add one column. The data is Maria's stream from Table 14.2.</p>
+  <div class="row" role="group" aria-label="Cohort"><span class="lab-tip" style="min-width:110px">Cohort</span><button class="btn on" type="button" data-coh="completed_order">completed_order</button><button class="btn" type="button" data-coh="groomed">groomed</button></div>
+  <div class="row" role="group" aria-label="Append"><span class="lab-tip" style="min-width:110px">Append</span><button class="btn" type="button" data-app="updated_address">updated_address</button><button class="btn on" type="button" data-app="booked_grooming">booked_grooming</button><button class="btn" type="button" data-app="viewed_product">viewed_product</button></div>
+  <div class="row" role="group" aria-label="Relationship"><span class="lab-tip" style="min-width:110px">Relationship</span><button class="btn" type="button" data-rel="first_ever">first ever</button><button class="btn" type="button" data-rel="last_before">last before</button><button class="btn" type="button" data-rel="first_after">first after</button><button class="btn on" type="button" data-rel="first_between">first in between</button><button class="btn" type="button" data-rel="agg_between">count in between</button></div>
+  <div class="tbl" style="margin:0"><table class="rows" id="tjTable"></table></div>
+  <div class="log" id="tjLog" aria-live="polite"></div>
+</div>
+<p>Two relationships carry most real questions. "Last before" gives the state of something at the time of an event, such as the city where Maria lived when she ordered. "First in between" answers "what happened next, before the same thing happened again", such as whether a grooming booking followed an order before the next order.</p>
+<p class="lstcap"><b>Listing 14.2</b> Last before: the city at the time of each order</p>
+<pre class="sql"><span class="k">SELECT</span> o.activity_id, o.ts <span class="k">AS</span> order_ts,
+       (<span class="k">SELECT</span> a.feature_json                                  <span class="c">-- the latest address activity</span>
+        <span class="k">FROM</span>   customer_stream a
+        <span class="k">WHERE</span>  a.customer = o.customer
+        <span class="k">AND</span>    a.activity = 'updated_address'
+        <span class="k">AND</span>    a.ts &lt; o.ts                                     <span class="c">-- strictly before the order</span><i class="ann">1</i>
+        <span class="k">ORDER BY</span> a.ts <span class="k">DESC</span>
+        <span class="k">FETCH FIRST</span> 1 <span class="k">ROW ONLY</span>) <span class="k">AS</span> address_then
+<span class="k">FROM</span>   customer_stream o
+<span class="k">WHERE</span>  o.activity = 'completed_order';                       <span class="c">-- the cohort: one row per order</span><i class="ann">2</i></pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>The time comparison is the whole join condition. No dimension table, no surrogate key, no validity range.</span></li>
+<li><i class="ann">2</i><span>The cohort sets the rows. The subquery returns at most one value per row, so appending cannot multiply rows.</span></li>
+</ol>
+<p class="lstcap"><b>Listing 14.3</b> First in between: a grooming booking before the next order</p>
+<pre class="sql"><span class="k">WITH</span> orders <span class="k">AS</span> (
+  <span class="k">SELECT</span> customer, activity_id, ts,
+         <span class="k">LEAD</span>(ts) <span class="k">OVER</span> (<span class="k">PARTITION BY</span> customer <span class="k">ORDER BY</span> ts) <span class="k">AS</span> next_order_ts<i class="ann">1</i>
+  <span class="k">FROM</span>   customer_stream
+  <span class="k">WHERE</span>  activity = 'completed_order'
+)
+<span class="k">SELECT</span> o.activity_id, o.ts,
+       (<span class="k">SELECT</span> <span class="k">MIN</span>(b.ts) <span class="k">FROM</span> customer_stream b
+        <span class="k">WHERE</span>  b.customer = o.customer
+        <span class="k">AND</span>    b.activity = 'booked_grooming'
+        <span class="k">AND</span>    b.ts &gt; o.ts
+        <span class="k">AND</span>    (o.next_order_ts <span class="k">IS NULL OR</span> b.ts &lt; o.next_order_ts)) <span class="k">AS</span> first_booking_between<i class="ann">2</i>
+<span class="k">FROM</span>   orders o;</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span><code>LEAD</code> finds the customer's next order, which closes the window.</span></li>
+<li><i class="ann">2</i><span>The first booking inside the window, or nothing. The last order has an open window.</span></li>
+</ol>
+<p>The SQL is not short, but it is always the same shape, which is why implementations generate it from three choices: cohort, append, and relationship. With one table and one time column, every question is a combination of those three choices.</p>
+
+<h2 id="s14-5"><span class="num">14.5</span>Journeys and funnels</h2>
+<p>The marketing question from the start of the chapter is a cohort, two appends, and a filter. The cohort is <code>completed_order</code> where the store is the web and the product is dog food. The first append is <code>booked_grooming</code>, first in between. The second is <code>completed_order</code> revenue, aggregate in between. A filter keeps rows where the booking happened within 30 days.</p>
+<p>A <em class="term">funnel</em> chains such appends: of customers who viewed a product, how many added it to the cart, then completed an order, then started autoship. Each step is a "first after" append on the previous step. In a star, each funnel step is a different fact table with different grain. In an activity stream, it is the same table, read again with a different activity name.</p>
+<div class="callout tip"><span class="lbl">Tip</span>Keep activity names few and stable. A stream with 30 well-named activities answers more questions than one with 300 activities that differ by a channel or a flag. Put the channel and the flags in the features.</div>
+
+<h2 id="s14-6"><span class="num">14.6</span>What does not fit</h2>
+<p>The specification is explicit that each stream holds one kind of entity. Lantern's customer stream answers customer questions well. Several Lantern questions are not about customers.</p>
+<p><strong>Other entities.</strong> Payroll is about employees, stock is about products in stores, recalls are about lots. Each needs its own stream, such as <code>employee_stream</code> with <code>punched_in</code> and <code>was_paid</code> activities. Questions that cross entities, such as grooming revenue per groomer hour, need two streams joined, and the pattern gives no special help there.</p>
+<p><strong>Many-to-many relationships.</strong> Biscuit's two owners do not fit a customer-centric stream directly. Each owner can have <code>groomed</code> activities for Biscuit, but then a revenue total counts the visit twice, the fan-out problem from <a href="10-one-big-table.html#s10-5">section 10.5</a>. Either one owner gets the revenue, or a pet stream holds the visit.</p>
+<p><strong>Record time.</strong> The <code>ts</code> column is business time: when the activity happened. The specification has no load-time column. A team that needs audits adds one with an underscore prefix, which the specification lets implementations add, such as <code>_loaded_at</code>.</p>
+<p><strong>Current state.</strong> "Maria's current phones" is three temporal lookups, one per phone type, or a list in the features of an <code>updated_phones</code> activity. State-shaped questions are possible and less natural than event-shaped ones.</p>
+
+<h2 id="s14-7"><span class="num">14.7</span>Common mistakes</h2>
+<p><strong>Updating activities.</strong> A refund that edits the original order row breaks every past answer. Add a new activity instead.</p>
+<p><strong>Mixing entities in one stream.</strong> Employee punches in the customer stream make every customer query filter them out, and every count wrong when someone forgets. One entity per stream.</p>
+<p><strong>Too many activity names.</strong> See the tip in <a href="#s14-5">section 14.5</a>.</p>
+<p><strong>Burying the measure in the features.</strong> Revenue belongs in <code>revenue_impact</code>, in one currency, so every revenue question has one column to add up.</p>
+<p><strong>Forgetting identity stitching.</strong> Rows with only an anonymous ID are lost to customer-level questions until someone links and backfills them. Make stitching part of every load.</p>
+
+<h2 id="s14-8"><span class="num">14.8</span>Strengths and limits</h2>
+<p>The activity schema is the simplest pattern in this book to extend and the best at questions about sequences. A new source adds activities, not tables. A new detail goes into the features. History is natural, because every change is an event. Rules are queries over immutable activities, so old and new definitions run side by side. Simple totals, such as revenue by store and month, read one table. And deletion of a customer's data is one statement on one key.</p>
+<p>Its limits come from its focus. It models one entity per stream, so payroll, inventory, and relationships between entities need other streams or other patterns. Identity must be resolved into one global customer column, so key conflicts still need matching work. Many-to-many data and current-state questions are awkward. Without an added column, it keeps no record time, so the audit test needs extra design.</p>
+<div class="strip-wrap" data-pattern="activity"></div>
+<p><strong>Choose the activity schema</strong> for customer analytics, journeys, funnels, and features for models that predict behavior. Pair it with another pattern for finance, payroll, and inventory.</p>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>The activity schema models what an entity did, as rows of one narrow, time-ordered table per entity.</li>
+    <li>Every activity uses the same eight columns. Details go into feature_json, and money into revenue_impact.</li>
+    <li>Activities never change. A change in the world is a new activity.</li>
+    <li>The anonymous customer ID links identities before and after a customer is known.</li>
+    <li>Queries start from a cohort activity and append other activities through relationships such as last before and first in between, without adding rows.</li>
+    <li>Journeys and funnels are chains of appends on one table.</li>
+    <li>Other entities, many-to-many data, record time, and current state need extra streams, extra columns, or other patterns.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 14 · Activity schema · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  function $$(s) { return [].slice.call(document.querySelectorAll(s)); }
+  var S = [
+    { ts: "2025-02-10 19:02", a: "viewed_product", f: "SKU-30118" },
+    { ts: "2025-02-14 10:21", a: "completed_order", f: "O-5001, Oakland" },
+    { ts: "2025-03-14 02:00", a: "updated_address", f: "San Jose" },
+    { ts: "2025-04-02 18:40", a: "started_autoship", f: "SKU-30118" },
+    { ts: "2025-05-20 08:15", a: "completed_order", f: "O-5102, web" },
+    { ts: "2025-06-02 12:30", a: "booked_grooming", f: "Biscuit, Oakland" },
+    { ts: "2025-06-09 11:05", a: "groomed", f: "Biscuit, 95 min" },
+    { ts: "2025-08-05 02:00", a: "updated_address", f: "Sacramento" },
+    { ts: "2025-09-05 16:48", a: "completed_order", f: "O-5203, HT Sacramento 3" },
+    { ts: "2025-10-20 14:10", a: "booked_grooming", f: "Biscuit, Sacramento" },
+    { ts: "2025-10-27 10:00", a: "groomed", f: "Biscuit, 90 min" }
+  ];
+  var coh = "completed_order", app = "booked_grooming", rel = "first_between";
+  var tab = document.getElementById("tjTable"), log = document.getElementById("tjLog");
+  var REL = { first_ever: "first ever", last_before: "last before", first_after: "first after", first_between: "first in between", agg_between: "count in between" };
+  function render() {
+    var cohort = S.filter(function (x) { return x.a === coh; });
+    var appends = S.filter(function (x) { return x.a === app; });
+    var rows = cohort.map(function (c, i) {
+      var next = cohort[i + 1] ? cohort[i + 1].ts : null, v;
+      if (rel === "first_ever") v = appends[0];
+      if (rel === "last_before") v = appends.filter(function (a) { return a.ts < c.ts; }).pop();
+      if (rel === "first_after") v = appends.filter(function (a) { return a.ts > c.ts; })[0];
+      if (rel === "first_between") v = appends.filter(function (a) { return a.ts > c.ts && (!next || a.ts < next); })[0];
+      if (rel === "agg_between") return [c.ts, c.f, String(appends.filter(function (a) { return a.ts > c.ts && (!next || a.ts < next); }).length)];
+      return [c.ts, c.f, v ? v.ts.slice(0, 10) + " · " + v.f : "·"];
+    });
+    tab.innerHTML = "<thead><tr><th>" + coh + " ts</th><th>features</th><th>" + REL[rel] + " " + app + "</th></tr></thead><tbody>" + rows.map(function (r) {
+      return "<tr><td>" + r[0] + "</td><td>" + esc(r[1]) + "</td><td>" + esc(r[2]) + "</td></tr>";
+    }).join("") + "</tbody>";
+    log.innerHTML = '<span class="ok">' + rows.length + " rows, one per " + coh + ".</span> " + '<span class="m">The append added one column and no rows, whatever the relationship.</span>';
+    $$("[data-coh]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-coh") === coh); });
+    $$("[data-app]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-app") === app); });
+    $$("[data-rel]").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-rel") === rel); });
+  }
+  $$("[data-coh]").forEach(function (b) { b.addEventListener("click", function () { coh = b.getAttribute("data-coh"); render(); }); });
+  $$("[data-app]").forEach(function (b) { b.addEventListener("click", function () { app = b.getAttribute("data-app"); render(); }); });
+  $$("[data-rel]").forEach(function (b) { b.addEventListener("click", function () { rel = b.getAttribute("data-rel"); render(); }); });
+  render();
+})();
+</script>
+</body>
+</html>

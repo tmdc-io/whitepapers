@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>A · Glossary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="A">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Appendix A</div>
+<h1>Glossary</h1>
+<p>Every term that the book defines, in alphabetical order, with the chapter or section where it is introduced.</p>
+<div class="tbl"><table>
+<thead><tr><th>Term</th><th>Meaning</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td>Accumulating snapshot</td><td>A fact table with one row per process instance, updated at each milestone.</td><td><a href="../part-2/07-dimensional-modeling.html#s7-2-2">7.2.2</a></td></tr>
+<tr><td>Activity</td><td>Something an entity did at one moment, stored as one row of an activity stream.</td><td><a href="../part-2/14-activity-schema.html#s14-1">14.1</a></td></tr>
+<tr><td>Activity stream</td><td>One narrow, time-ordered table of all activities of one kind of entity.</td><td><a href="../part-2/14-activity-schema.html#s14-2">14.2</a></td></tr>
+<tr><td>Additive measure</td><td>A measure that can be added up across every dimension.</td><td><a href="../part-2/07-dimensional-modeling.html#s7-2-1">7.2.1</a></td></tr>
+<tr><td>Aggregate table</td><td>A table of totals stored in advance, built from a base fact.</td><td><a href="../part-2/08-advanced-dimensional.html#s8-8">8.8</a></td></tr>
+<tr><td>Anchor</td><td>An anchor modeling table that holds only identities.</td><td><a href="../part-2/13-anchor.html#s13-2">13.2</a></td></tr>
+<tr><td>Annex table</td><td>A CRT anchor table that holds assertions: positor, positing time, and reliability.</td><td><a href="../part-2/13-anchor.html#s13-6-3">13.6.3</a></td></tr>
+<tr><td>As-of query</td><td>A query for data as it was at a point in time, on one clock or both.</td><td><a href="../part-1/04-time-and-history.html#s4-5">4.5</a></td></tr>
+<tr><td>Assertion</td><td>A positor's opinion of a posit: assert(P, p, α, T).</td><td><a href="../part-2/13-anchor.html#s13-6-2">13.6.2</a></td></tr>
+<tr><td>Atomic grain</td><td>The finest grain that a source provides.</td><td><a href="../part-1/03-core-concepts.html#s3-3">3.3</a></td></tr>
+<tr><td>Audit dimension</td><td>A dimension that describes the load that produced each fact row.</td><td><a href="../part-2/08-advanced-dimensional.html#s8-7">8.7</a></td></tr>
+<tr><td>Bitemporal</td><td>Keeping both business time and record time on every row.</td><td><a href="../part-1/04-time-and-history.html#s4-4">4.4</a></td></tr>
+<tr><td>Bridge table (dimensional)</td><td>A table between a fact and a dimension for many-to-many relationships, often with weights.</td><td><a href="../part-2/08-advanced-dimensional.html#s8-3">8.3</a></td></tr>
+<tr><td>Bridge table (Data Vault)</td><td>A query helper that stores a path across several links.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-8">12.8</a></td></tr>
+<tr><td>Build and run effort</td><td>The thirteenth measure: tables, load code, and learning needed.</td><td><a href="../part-1/05-stress-tests.html#s5-5">5.5</a></td></tr>
+<tr><td>Business key</td><td>The identifier that the business uses, such as a SKU. Also natural key.</td><td><a href="../part-1/03-core-concepts.html#s3-4">3.4</a></td></tr>
+<tr><td>Business key collision code</td><td>A short code added to a key so that keys from two sources cannot collide.</td><td><a href="../part-2/11-data-vault-core.html#s11-2">11.2</a></td></tr>
+<tr><td>Business time</td><td>When something was true in the real world. Also valid time.</td><td><a href="../part-1/04-time-and-history.html#s4-1">4.1</a></td></tr>
+<tr><td>Business vault</td><td>Vault tables built by business rules over the raw vault, with versions.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-9">12.9</a></td></tr>
+<tr><td>Cardinality</td><td>How many members of one side of a relationship connect to the other side.</td><td><a href="../part-1/03-core-concepts.html#s3-5">3.5</a></td></tr>
+<tr><td>Changing time</td><td>In anchor modeling, when a value took effect.</td><td><a href="../part-2/13-anchor.html#s13-6-1">13.6.1</a></td></tr>
+<tr><td>Chasm trap</td><td>Wrong totals from joining two facts through a shared dimension.</td><td><a href="../part-2/15-unified-star-schema.html#s15-2">15.2</a></td></tr>
+<tr><td>Cohort activity</td><td>The activity that decides the rows of an activity schema query.</td><td><a href="../part-2/14-activity-schema.html#s14-4">14.4</a></td></tr>
+<tr><td>Column-oriented storage</td><td>Storage that keeps each column separately, so queries read only the columns they need.</td><td><a href="../part-2/10-one-big-table.html#s10-1">10.1</a></td></tr>
+<tr><td>Computed satellite</td><td>A business vault satellite that holds the result of a rule.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-9">12.9</a></td></tr>
+<tr><td>Concurrent-reliance-temporal (CRT)</td><td>The anchor modeling setting that records sources, reliability, and both clocks.</td><td><a href="../part-2/13-anchor.html#s13-6">13.6</a></td></tr>
+<tr><td>Conformed dimension</td><td>A dimension shared by several facts, with the same keys and meaning.</td><td><a href="../part-2/07-dimensional-modeling.html#s7-7">7.7</a></td></tr>
+<tr><td>Conformed fact</td><td>A measure with one definition everywhere it appears.</td><td><a href="../part-2/07-dimensional-modeling.html#s7-7">7.7</a></td></tr>
+<tr><td>Crypto-shredding</td><td>Deleting personal data by destroying the key that encrypts it.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-11">12.11</a></td></tr>
+<tr><td>Data model</td><td>The decisions that turn raw source data into data that answers questions.</td><td><a href="../part-1/01-why-a-model.html#s1-3">1.3</a></td></tr>
+<tr><td>Data warehouse</td><td>A separate store built for analysis of a company's data.</td><td><a href="../part-1/01-why-a-model.html#s1-1">1.1</a></td></tr>
+<tr><td>Degenerate dimension</td><td>A dimension value with no other attributes, stored on the fact row.</td><td><a href="../part-2/07-dimensional-modeling.html#s7-4">7.4</a></td></tr>
+<tr><td>Denormalization</td><td>Copying values into a table on purpose, so queries need fewer joins.</td><td><a href="../part-1/03-core-concepts.html#s3-7">3.7</a></td></tr>
+<tr><td>Dependent data mart</td><td>A mart built only from the integrated core.</td><td><a href="../part-2/06-normalized.html#s6-1">6.1</a></td></tr>
+<tr><td>Dereferencing set</td><td>The set of identity and role pairs that a posit is about.</td><td><a href="../part-2/13-anchor.html#s13-6-1">13.6.1</a></td></tr>
+<tr><td>Dimension</td><td>The context of a fact: who, what, where, when, and how.</td><td><a href="../part-1/03-core-concepts.html#s3-2">3.2</a></td></tr>
+<tr><td>Drilling across</td><td>Totaling each fact separately, then joining the results on conformed dimensions.</td><td><a href="../part-2/07-dimensional-modeling.html#s7-6-1">7.6.1</a></td></tr>
+<tr><td>Driving key</td><td>The side of a link that defines when a relationship has changed.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-2">12.2</a></td></tr>
+<tr><td>Durable key</td><td>A key that stays the same for one entity across all its versions.</td><td><a href="../part-2/08-advanced-dimensional.html#s8-1">8.1</a></td></tr>
+<tr><td>Effective dating</td><td>Giving each row the start and end of the period when it was true.</td><td><a href="../part-1/04-time-and-history.html#s4-3">4.3</a></td></tr>
+<tr><td>Effectivity satellite</td><td>A satellite on a link that records when the relationship was valid.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-2">12.2</a></td></tr>
+<tr><td>Fact</td><td>The record of an event or state that carries measures.</td><td><a href="../part-1/03-core-concepts.html#s3-2">3.2</a></td></tr>
+<tr><td>Factless fact table</td><td>A fact table that records that something happened or was true, with no measure.</td><td><a href="../part-2/07-dimensional-modeling.html#s7-2-2">7.2.2</a></td></tr>
+<tr><td>Fan trap</td><td>Wrong totals from joining a measure to the many side of a relationship.</td><td><a href="../part-2/15-unified-star-schema.html#s15-2">15.2</a></td></tr>
+<tr><td>Fan-out</td><td>A join that multiplies rows, silently changing sums.</td><td><a href="../part-2/10-one-big-table.html#s10-5">10.5</a></td></tr>
+<tr><td>Feature table</td><td>A wide table at the grain of a prediction, used for machine learning.</td><td><a href="../part-2/10-one-big-table.html#s10-6">10.6</a></td></tr>
+<tr><td>Funnel</td><td>A chain of activities, each appended as "first after" the previous one.</td><td><a href="../part-2/14-activity-schema.html#s14-5">14.5</a></td></tr>
+<tr><td>Galaxy schema</td><td>Several fact tables that share conformed dimensions. Also fact constellation.</td><td><a href="../part-2/07-dimensional-modeling.html#s7-7-1">7.7.1</a></td></tr>
+<tr><td>Ghost record</td><td>A dummy satellite row that lets PIT queries use inner joins.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-7">12.7</a></td></tr>
+<tr><td>Grain</td><td>What one row of a table means.</td><td><a href="../part-1/03-core-concepts.html#s3-3">3.3</a></td></tr>
+<tr><td>Hash diff</td><td>One hash over all descriptive columns of a satellite row.</td><td><a href="../part-2/11-data-vault-core.html#s11-5">11.5</a></td></tr>
+<tr><td>Hierarchical link</td><td>A link from a hub to itself that stores parent and child.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-4-2">12.4.2</a></td></tr>
+<tr><td>Hierarchy bridge</td><td>A table of every ancestor-descendant pair in a tree.</td><td><a href="../part-2/08-advanced-dimensional.html#s8-4">8.4</a></td></tr>
+<tr><td>Historized attribute</td><td>An anchor attribute that keeps one row per value, with its changing time.</td><td><a href="../part-2/13-anchor.html#s13-2">13.2</a></td></tr>
+<tr><td>Hub</td><td>A Data Vault table of unique business keys for one concept.</td><td><a href="../part-2/11-data-vault-core.html#s11-1">11.1</a></td></tr>
+<tr><td>Idempotent</td><td>Safe to run twice, with the same result as running once.</td><td><a href="../part-2/11-data-vault-core.html#s11-6">11.6</a></td></tr>
+<tr><td>Inferred member</td><td>A placeholder dimension row created when a fact arrives before its dimension.</td><td><a href="../part-2/07-dimensional-modeling.html#s7-5-1">7.5.1</a></td></tr>
+<tr><td>Information mart</td><td>A star, wide table, or summary built from a vault for people to query.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-10">12.10</a></td></tr>
+<tr><td>Insert-only storage</td><td>Storage that never changes a row and adds a new row for every change.</td><td><a href="../part-1/04-time-and-history.html#s4-6">4.6</a></td></tr>
+<tr><td>Join elimination</td><td>An engine skipping a joined table that a query does not need.</td><td><a href="../part-2/13-anchor.html#s13-5">13.5</a></td></tr>
+<tr><td>Junk dimension</td><td>A dimension of combinations of small flags.</td><td><a href="../part-2/08-advanced-dimensional.html#s8-6">8.6</a></td></tr>
+<tr><td>Key cross-reference</td><td>A table that maps each source key to one core key.</td><td><a href="../part-2/06-normalized.html#s6-4">6.4</a></td></tr>
+<tr><td>Knot</td><td>An anchor modeling table of a small shared set of values.</td><td><a href="../part-2/13-anchor.html#s13-2">13.2</a></td></tr>
+<tr><td>Link</td><td>A Data Vault table that records a relationship between hubs.</td><td><a href="../part-2/11-data-vault-core.html#s11-3">11.3</a></td></tr>
+<tr><td>Measure</td><td>A number in a question, such as net sales or hours worked.</td><td><a href="../part-1/03-core-concepts.html#s3-2">3.2</a></td></tr>
+<tr><td>Mini-dimension</td><td>A small dimension of combinations of fast-changing attributes.</td><td><a href="../part-2/08-advanced-dimensional.html#s8-2">8.2</a></td></tr>
+<tr><td>Multi-active satellite</td><td>A satellite that holds several valid values per key at once.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-1">12.1</a></td></tr>
+<tr><td>Non-historized link</td><td>A link for events that never change, with values in the link row.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-5">12.5</a></td></tr>
+<tr><td>Normalization</td><td>Splitting tables so that each fact is stored in exactly one place.</td><td><a href="../part-1/03-core-concepts.html#s3-6">3.6</a></td></tr>
+<tr><td>OLAP, OLTP</td><td>Analytical processing, and the transaction processing that runs a business.</td><td><a href="../part-1/01-why-a-model.html#s1-1">1.1</a></td></tr>
+<tr><td>One big table</td><td>A single wide table with every attribute copied onto every row.</td><td><a href="../part-2/10-one-big-table.html">10</a></td></tr>
+<tr><td>Operational data store</td><td>An integrated, current, frequently refreshed store without history.</td><td><a href="../part-2/06-normalized.html#s6-7">6.7</a></td></tr>
+<tr><td>Outrigger</td><td>A small table that a dimension points to.</td><td><a href="../part-2/08-advanced-dimensional.html#s8-6">8.6</a></td></tr>
+<tr><td>Party</td><td>Any person or organization that the business deals with, with roles such as customer.</td><td><a href="../part-2/06-normalized.html#s6-5">6.5</a></td></tr>
+<tr><td>Passive integration</td><td>Loading keys for one concept into one hub before anyone matches them.</td><td><a href="../part-2/11-data-vault-core.html#s11-2">11.2</a></td></tr>
+<tr><td>Periodic snapshot</td><td>A fact table that records a state at regular intervals.</td><td><a href="../part-2/07-dimensional-modeling.html#s7-2-2">7.2.2</a></td></tr>
+<tr><td>Persistent staging area</td><td>An append-only copy of every source extract, with load times.</td><td><a href="../part-1/01-why-a-model.html#s1-4">1.4</a></td></tr>
+<tr><td>Point-in-time table (PIT)</td><td>A query helper that stores, per key and date, which satellite rows were valid.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-7">12.7</a></td></tr>
+<tr><td>Posit</td><td>A statement: a dereferencing set, a value, and a changing time.</td><td><a href="../part-2/13-anchor.html#s13-6-1">13.6.1</a></td></tr>
+<tr><td>Positing time</td><td>When a positor held an opinion, usually when the warehouse recorded it.</td><td><a href="../part-2/13-anchor.html#s13-6-2">13.6.2</a></td></tr>
+<tr><td>Positor</td><td>The source that holds an opinion in an assertion.</td><td><a href="../part-2/13-anchor.html#s13-6-2">13.6.2</a></td></tr>
+<tr><td>Puppini bridge</td><td>The central bridge of a unified star schema.</td><td><a href="../part-2/15-unified-star-schema.html#s15-1">15.1</a></td></tr>
+<tr><td>Record source</td><td>The column that names the system and table a row came from.</td><td><a href="../part-2/11-data-vault-core.html#s11-1">11.1</a></td></tr>
+<tr><td>Record time</td><td>When a database learned something. Also transaction or system time.</td><td><a href="../part-1/04-time-and-history.html#s4-1">4.1</a></td></tr>
+<tr><td>Record-tracking satellite</td><td>A satellite that records that a key was present in a load.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-3">12.3</a></td></tr>
+<tr><td>Reference table</td><td>A small lookup table, such as minimum wages by city.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-6">12.6</a></td></tr>
+<tr><td>Reliability</td><td>A number from −1 to 1 for a positor's certainty. Zero is a retraction.</td><td><a href="../part-2/13-anchor.html#s13-6-2">13.6.2</a></td></tr>
+<tr><td>Role-playing dimension</td><td>One dimension used in several roles in one fact.</td><td><a href="../part-2/08-advanced-dimensional.html#s8-5">8.5</a></td></tr>
+<tr><td>Same-as link</td><td>A link from a hub to itself that records which keys are one entity.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-4-1">12.4.1</a></td></tr>
+<tr><td>Satellite</td><td>A Data Vault table of descriptive values for one hub or link, with history.</td><td><a href="../part-2/11-data-vault-core.html#s11-4">11.4</a></td></tr>
+<tr><td>Semi-additive measure</td><td>A measure that adds up across some dimensions but not over time.</td><td><a href="../part-2/07-dimensional-modeling.html#s7-2-1">7.2.1</a></td></tr>
+<tr><td>Slowly changing dimension (SCD)</td><td>A dimension with a defined rule for each kind of change, numbered by type.</td><td><a href="../part-2/08-advanced-dimensional.html#s8-1">8.1</a></td></tr>
+<tr><td>Smart key</td><td>A key that packs meaning into its value.</td><td><a href="../part-1/03-core-concepts.html#s3-4">3.4</a></td></tr>
+<tr><td>Snowflake schema</td><td>A star whose dimensions are split into normalized chains.</td><td><a href="../part-2/09-snowflake.html#s9-1">9.1</a></td></tr>
+<tr><td>Stage layer</td><td>The Data Vault layer that computes keys, hashes, and load metadata once.</td><td><a href="../part-2/11-data-vault-core.html#s11-6">11.6</a></td></tr>
+<tr><td>Star schema</td><td>A fact table with denormalized dimension tables around it.</td><td><a href="../part-2/07-dimensional-modeling.html">7</a></td></tr>
+<tr><td>Status-tracking satellite</td><td>A satellite that records when a key disappears from or returns to a source.</td><td><a href="../part-2/12-data-vault-advanced.html#s12-3">12.3</a></td></tr>
+<tr><td>Surrogate key</td><td>A key that the warehouse creates, with no meaning outside it.</td><td><a href="../part-1/03-core-concepts.html#s3-4">3.4</a></td></tr>
+<tr><td>Temporal join</td><td>A join on time order, such as last before or first in between.</td><td><a href="../part-2/14-activity-schema.html#s14-4">14.4</a></td></tr>
+<tr><td>Tie</td><td>An anchor modeling table that holds a relationship between anchors.</td><td><a href="../part-2/13-anchor.html#s13-2">13.2</a></td></tr>
+<tr><td>Transaction fact table</td><td>A fact table with one row per event, never updated.</td><td><a href="../part-2/07-dimensional-modeling.html#s7-2-2">7.2.2</a></td></tr>
+<tr><td>Unit of work</td><td>A set of keys that appear together in one event and stay together in one link.</td><td><a href="../part-2/11-data-vault-core.html#s11-3">11.3</a></td></tr>
+<tr><td>Weighting factor</td><td>A share on a bridge row that keeps many-to-many totals correct.</td><td><a href="../part-2/08-advanced-dimensional.html#s8-3">8.3</a></td></tr>
+</tbody></table></div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · A · Glossary · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+
+</body>
+</html>

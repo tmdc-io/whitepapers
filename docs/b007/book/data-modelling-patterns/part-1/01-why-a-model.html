@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>1 · Why a warehouse needs a model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="01">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part I · Chapter 1</div>
+<h1>Why a warehouse needs a model</h1>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s1-1">The difference between operational and analytical data</a></li>
+    <li><a href="#s1-2">Why a copy of the source tables is not enough</a></li>
+    <li><a href="#s1-3">The four decisions that every model makes</a></li>
+    <li><a href="#s1-4">The layers of a warehouse, and where each pattern fits</a></li>
+    <li><a href="#s1-5">A short history of the patterns in this book</a></li>
+  </ul>
+</div>
+
+<p>Every company already has data. It sits in the systems that run the business: the till in each store, the web shop, the customer database, the payroll system. So the first question in this book is a fair one. Why build anything else? Why not ask those systems directly?</p>
+<p>This chapter answers that question. It separates the systems that run a business from the stores that explain it, shows why a plain copy of the source tables fails, and names the four decisions that a model makes instead. It ends with the layers of a typical warehouse and a short history of the eight patterns that the rest of the book teaches.</p>
+
+<h2 id="s1-1"><span class="num">1.1</span>Two kinds of database</h2>
+<p>An <em class="term">operational database</em> runs the business. It records a sale, charges a card, books a grooming slot, and updates stock. Its work is many small reads and writes, one row at a time, thousands of times a second. People call this kind of work OLTP, for online transaction processing. An operational database keeps the current state of things, and it usually overwrites the old state. When a customer changes address, the old address is gone.</p>
+<p>An <em class="term">analytical database</em> explains the business. It answers questions such as "Which stores lose money on grooming?" or "Did we pay overtime correctly last July?" Its work is a few large reads, each across millions of rows, many sources, and many years. People call this OLAP, for online analytical processing. The term goes back to a 1993 paper by Edgar F. Codd, the inventor of the relational model.</p>
+<p class="tblcap"><b>Table 1.1</b> Operational and analytical work</p>
+<div class="tbl"><table>
+<thead><tr><th></th><th>Operational (OLTP)</th><th>Analytical (OLAP)</th></tr></thead>
+<tbody>
+<tr><td>Typical work</td><td>Insert one order, update one stock level</td><td>Total all orders for a quarter, by region</td></tr>
+<tr><td>Rows per request</td><td>One to a few</td><td>Thousands to billions</td></tr>
+<tr><td>Data covered</td><td>One system, mostly now</td><td>Many systems, many years</td></tr>
+<tr><td>History</td><td>Usually overwritten</td><td>Kept on purpose</td></tr>
+<tr><td>Main users</td><td>Applications and staff at the till</td><td>Analysts, finance, compliance, data science</td></tr>
+<tr><td>Design goal</td><td>Fast, safe single changes</td><td>Correct, understandable answers</td></tr>
+</tbody></table></div>
+<p>The two kinds of work fight each other. A query that scans three years of sales slows down the till in every store. So companies copy data out of the operational systems into a separate store, built for analysis. That store is a <em class="term">data warehouse</em>. The rest of this book is about how to shape the data inside it.</p>
+
+<h2 id="s1-2"><span class="num">1.2</span>Why a copy of the source tables fails</h2>
+<p>The obvious first warehouse is a copy. Every night, copy every source table into one analytical database, and let analysts query the copies. Many teams start this way, and it works for a few weeks. Then four problems appear.</p>
+<p><strong>The sources disagree about identity.</strong> The CRM calls a customer <code>C-000123</code>. The web shop calls the same person <code>maria.lopez@example.com</code>. The till knows her only by a phone number. The copies keep all three, and nothing says that they are one person. Every question about customers now starts with a matching problem.</p>
+<p><strong>The sources forget.</strong> When Maria moves, the CRM overwrites her address. A copy taken tonight cannot tell you where she lived when she ordered in February. Unless someone kept the old copies, that history is gone.</p>
+<p><strong>The sources change shape.</strong> A vendor adds a column, renames another, or splits a table into two. Every query that reads the copy breaks the next morning, and nobody knows which reports are affected.</p>
+<p><strong>The questions cross systems.</strong> "Is grooming profitable per groomer hour?" needs the booking system, the store sales, and payroll. On raw copies, that is a long chain of joins through codes that only one person understands. Two analysts write it two ways and get two answers.</p>
+
+<div class="lab" id="lab-raw">
+  <div class="lab-head"><h4><span class="pill">Try it</span>Answer it from raw copies</h4><span class="lab-tip">pick a question</span></div>
+  <p>Each button is a real Lantern question. See what it takes to answer it from copies of the source tables alone.</p>
+  <div class="row" role="group" aria-label="Question">
+    <button class="btn on" type="button" data-q="0">Dog food sales by region</button>
+    <button class="btn" type="button" data-q="1">Customers who buy in both channels</button>
+    <button class="btn" type="button" data-q="2">Maria's city on her May order</button>
+    <button class="btn" type="button" data-q="3">Grooming revenue per groomer hour</button>
+  </div>
+  <div class="tbl" style="margin:0"><table id="rawTable"></table></div>
+  <div class="log" id="rawLog" aria-live="polite"></div>
+</div>
+<p>Two of the four questions are slow and fragile on raw copies. One cannot be answered at all, because the data no longer exists. None of the four is unusual. They are the questions that Lantern's finance, marketing, and HR teams ask every week.</p>
+
+<h2 id="s1-3"><span class="num">1.3</span>What a model decides</h2>
+<p>A <em class="term">data model</em> for a warehouse is a set of decisions that turns raw copies into data that answers questions. Every pattern in this book makes the same four decisions. The patterns differ in how they make them, and when.</p>
+<p><strong>Identity.</strong> What is one customer, one product, one store? How do the keys from different systems become one identity, and what happens when a match turns out to be wrong?</p>
+<p><strong>History.</strong> Which changes does the warehouse keep? Does it keep only when something was true in the world, or also when the warehouse learned about it? <a href="04-time-and-history.html">Chapter 4</a> shows why these are two different questions.</p>
+<p><strong>Integration.</strong> When a new source arrives, what must change? Does the model absorb it with new tables, or must existing tables and loads be rebuilt?</p>
+<p><strong>Shape.</strong> What do people actually query? A shape that is easy to load is often hard to query, and the other way round.</p>
+<p>A useful way to compare patterns is to ask when each one decides. Some patterns decide identity and meaning while the data loads: they match customers and resolve codes on the way in. Others store what the sources said first and decide later, in a separate layer. The first approach gives simpler tables. The second keeps the facts behind each decision, so a decision can change without losing data. This difference returns in every pattern chapter.</p>
+
+<h2 id="s1-4"><span class="num">1.4</span>The layers of a warehouse</h2>
+<p>Most warehouses have the same broad layers, whatever pattern they use. Figure 1.1 shows them from left to right, with the patterns that usually live in each layer.</p>
+<figure class="diag" id="fig-1-1">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four layers from left to right: sources, landing, integrated core and serving marts. Normalized, Data Vault and anchor models usually form the core. Star, snowflake, one big table, activity schema and unified star schema usually serve users.">
+  <defs><marker id="m11" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <g font-size="12" class="mono t-s" letter-spacing="1.3">
+    <text x="24" y="30">SOURCES</text><text x="186" y="30">LANDING</text><text x="334" y="30">INTEGRATED CORE</text><text x="534" y="30">SERVING MARTS</text>
+  </g>
+  <rect x="24" y="44" width="134" height="262" rx="9" class="bx-s"/>
+  <g font-size="12.5">
+    <rect x="36" y="58" width="110" height="34" rx="6" class="bx-n"/><text x="46" y="80">CRM</text>
+    <rect x="36" y="100" width="110" height="34" rx="6" class="bx-n"/><text x="46" y="122">Web shop</text>
+    <rect x="36" y="142" width="110" height="34" rx="6" class="bx-n"/><text x="46" y="164">Store POS</text>
+    <rect x="36" y="184" width="110" height="34" rx="6" class="bx-n"/><text x="46" y="206">ERP</text>
+    <rect x="36" y="226" width="110" height="34" rx="6" class="bx-n"/><text x="46" y="248">HR and payroll</text>
+    <text x="46" y="285" font-size="11.5" class="t-s">and more</text>
+  </g>
+  <rect x="186" y="44" width="120" height="262" rx="9" class="bx-n"/>
+  <g font-size="12.5"><text x="198" y="150" font-weight="600">Raw copies</text><text x="198" y="168" font-size="11.5" class="t-s">as the source sent</text><text x="198" y="184" font-size="11.5" class="t-s">them, often with</text><text x="198" y="200" font-size="11.5" class="t-s">load times</text></g>
+  <rect x="334" y="44" width="170" height="262" rx="9" class="bx-a"/>
+  <g font-size="12.5"><text x="348" y="70" font-weight="600" class="t-a">One integrated record</text>
+    <rect x="348" y="86" width="142" height="40" rx="6" class="bx-w"/><text x="360" y="105" font-weight="600">Normalized</text><text x="360" y="119" font-size="11" class="t-s">chapter 6</text>
+    <rect x="348" y="136" width="142" height="40" rx="6" class="bx-w"/><text x="360" y="155" font-weight="600">Data Vault</text><text x="360" y="169" font-size="11" class="t-s">chapters 11 and 12</text>
+    <rect x="348" y="186" width="142" height="40" rx="6" class="bx-w"/><text x="360" y="205" font-weight="600">Anchor</text><text x="360" y="219" font-size="11" class="t-s">chapter 13</text>
+    <text x="348" y="258" font-size="11.5" class="t-s">history, identity,</text><text x="348" y="274" font-size="11.5" class="t-s">every source</text>
+  </g>
+  <rect x="534" y="44" width="162" height="262" rx="9" class="bx-n"/>
+  <g font-size="12.5"><text x="548" y="70" font-weight="600">Shaped for questions</text>
+    <rect x="548" y="82" width="134" height="34" rx="6" class="bx-w"/><text x="558" y="104">Star · 7, 8</text>
+    <rect x="548" y="122" width="134" height="34" rx="6" class="bx-w"/><text x="558" y="144">Snowflake · 9</text>
+    <rect x="548" y="162" width="134" height="34" rx="6" class="bx-w"/><text x="558" y="184">One big table · 10</text>
+    <rect x="548" y="202" width="134" height="34" rx="6" class="bx-w"/><text x="558" y="224">Activity schema · 14</text>
+    <rect x="548" y="242" width="134" height="34" rx="6" class="bx-w"/><text x="558" y="264">Unified star · 15</text>
+  </g>
+  <line class="ln" x1="158" y1="175" x2="182" y2="175" marker-end="url(#m11)"/>
+  <line class="ln" x1="306" y1="175" x2="330" y2="175" marker-end="url(#m11)"/>
+  <line class="ln" x1="504" y1="175" x2="530" y2="175" marker-end="url(#m11)"/>
+</svg>
+</div>
+<figcaption><b>Figure 1.1</b> The layers of a warehouse. Patterns in the core keep one integrated record of everything, and patterns on the right reshape that record for the people who ask questions.</figcaption>
+</figure>
+<p><strong>Sources</strong> are the operational systems. The warehouse reads from them and never writes back.</p>
+<p><strong>Landing</strong> holds raw copies of source extracts, as the sources sent them. Many teams keep every extract, with the time that it arrived. That append-only copy is called a persistent staging area, and it is a safety net: any later layer can be rebuilt from it.</p>
+<p><strong>The integrated core</strong> holds one record of the business across all sources, with history. The normalized warehouse, Data Vault, and anchor modeling are patterns for this layer. They optimize for absorbing change and keeping a complete record, not for easy queries.</p>
+<p><strong>Serving marts</strong> hold data shaped for the people who query it: a star for finance, a flat table for a dashboard, an event stream for customer journeys. The star schema, the snowflake, one big table, the activity schema, and the unified star schema are patterns for this layer.</p>
+<div class="callout"><span class="lbl">Note</span>The placement in Figure 1.1 is the usual one, not a rule. Some teams build a whole warehouse as stars, with no separate core. Others query a normalized core directly. Each pattern chapter says where its pattern works best, and <a href="../part-3/17-hybrid.html">chapter 17</a> shows how teams combine them.</div>
+
+<h2 id="s1-5"><span class="num">1.5</span>A short history of the patterns</h2>
+<p>The patterns in this book did not appear at once. Each one answered a problem that the earlier ones left open. Figure 1.2 puts them on one timeline.</p>
+<figure class="diag" id="fig-1-2">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A timeline from 1970 to 2022: the relational model in 1970, Inmon's book in 1992, the OLAP term in 1993, Kimball's book in 1996, Data Vault around 2000, sixth normal form in 2003, anchor modeling in 2009, Data Vault 2.0 in 2013, the unified star schema in 2020 and the activity schema 2.0 in 2022.">
+  <line x1="40" y1="124" x2="690" y2="124" class="ln"/>
+  <g font-size="11" class="mono t-s" text-anchor="middle">
+    <text x="40" y="146">1970</text><text x="170" y="146">1980</text><text x="300" y="146">1990</text><text x="430" y="146">2000</text><text x="560" y="146">2010</text><text x="690" y="146">2020</text>
+  </g>
+  <g class="arrowhead">
+    <circle cx="40" cy="124" r="5"/><circle cx="326" cy="124" r="5"/><circle cx="378" cy="124" r="5"/><circle cx="430" cy="124" r="5"/><circle cx="469" cy="124" r="5"/><circle cx="547" cy="124" r="5"/><circle cx="599" cy="124" r="5"/><circle cx="690" cy="124" r="5"/>
+  </g>
+  <g font-size="11.5">
+    <line x1="40" y1="118" x2="40" y2="60" class="ln"/><text x="46" y="48" font-weight="600">Relational model</text><text x="46" y="62" class="t-s">Codd, 1970</text>
+    <line x1="326" y1="118" x2="326" y2="96" class="ln"/><text x="320" y="70" font-weight="600" text-anchor="end">Inmon's warehouse</text><text x="320" y="84" class="t-s" text-anchor="end">1992 · normalized core</text>
+    <line x1="378" y1="118" x2="378" y2="28" class="ln"/><text x="384" y="26" font-weight="600">Kimball's star</text><text x="384" y="40" class="t-s">1996 · dimensional</text>
+    <line x1="430" y1="130" x2="430" y2="170" class="ln"/><text x="372" y="184" font-weight="600">Data Vault</text><text x="372" y="198" class="t-s">about 2000</text>
+    <line x1="469" y1="130" x2="469" y2="206" class="ln"/><text x="476" y="216" font-weight="600">Sixth normal form</text><text x="476" y="230" class="t-s">2003</text>
+    <line x1="547" y1="118" x2="547" y2="92" class="ln"/><text x="541" y="96" font-weight="600" text-anchor="end">Anchor modeling</text><text x="541" y="110" class="t-s" text-anchor="end">2009</text>
+    <line x1="599" y1="130" x2="599" y2="170" class="ln"/><text x="560" y="184" font-weight="600">Data Vault 2.0</text><text x="560" y="198" class="t-s">2013</text>
+    <line x1="690" y1="118" x2="690" y2="74" class="ln"/><text x="700" y="48" font-weight="600" text-anchor="end">Unified star schema</text><text x="700" y="62" class="t-s" text-anchor="end">2020 · activity schema 2.0, 2022</text>
+  </g>
+</svg>
+</div>
+<figcaption><b>Figure 1.2</b> The patterns on one timeline. The two schools of the 1990s still shape the field, and every later pattern responds to a limit of one of them.</figcaption>
+</figure>
+<p><strong>The relational foundations, 1970s.</strong> Edgar F. Codd described the relational model in 1970 and the first normal forms soon after. <a href="03-core-concepts.html">Chapter 3</a> explains normal forms. Every pattern in this book is built from relational tables.</p>
+<p><strong>The normalized warehouse, 1992.</strong> Bill Inmon described the data warehouse as an integrated, subject-oriented store of history in <a href="https://openlibrary.org/books/OL1560174M/Building_the_data_warehouse">Building the Data Warehouse</a>, first published in 1992. His core is normalized, and departmental marts are built from it. <a href="../part-2/06-normalized.html">Chapter 6</a> teaches this pattern.</p>
+<p><strong>The star schema, 1996.</strong> Ralph Kimball answered with dimensional modeling in The Data Warehouse Toolkit in 1996: deliver one business process at a time, in a shape that business users can read. <a href="../part-2/07-dimensional-modeling.html">Chapters 7</a> to 9 teach the star, its advanced techniques, and the snowflake variant.</p>
+<p><strong>Data Vault, around 2000.</strong> Dan Linstedt designed Data Vault to absorb new sources and keep an audit trail. He released it around 2000, and the first public article series ran in <a href="https://tdan.com/?p=5054">TDAN.com from July 2002</a>. Version 2.0, around 2013, added hash keys and a loading method. Chapters 11 and 12 teach it.</p>
+<p><strong>Sixth normal form and anchor modeling, 2003 and 2009.</strong> C. J. Date, Hugh Darwen, and Nikos Lorentzos defined sixth normal form for time-varying data in their 2003 book Temporal Data and the Relational Model. Lars Rönnbäck, Olle Regardt, and colleagues built a warehouse pattern on it, <a href="https://www.anchormodeling.com/2009/11/">anchor modeling</a>, which won the best paper award at the ER 2009 conference. Chapter 13 teaches it.</p>
+<p><strong>Wide tables, the 2010s.</strong> As column-oriented engines made very wide tables cheap to scan and compress, many teams started to serve data as one big table, with every attribute on every row. Chapter 10 teaches this pattern.</p>
+<p><strong>The unified star schema and the activity schema, 2020s.</strong> Francesco Puppini, with Bill Inmon, proposed the unified star schema in a 2020 book: one central bridge table that connects every fact and dimension, built to avoid the double counting of multi-fact queries. Ahmed Elsamadisi proposed the activity schema, one narrow table of customer events, and the <a href="https://github.com/ActivitySchema/ActivitySchema">public specification</a> reached version 2.0 in December 2022. Chapters 14 and 15 teach them.</p>
+<aside class="box">
+<h4>Two schools, still</h4>
+<p>The argument between Inmon and Kimball in the 1990s is often told as a fight between "top down" and "bottom up". The more useful difference is the one from <a href="#s1-3">section 1.3</a>: when the model decides. Inmon integrates first and serves later. Kimball serves first, one process at a time, and integrates through shared dimensions. Data Vault and anchor modeling push integration later still, by storing the sources' own view first. The newest serving patterns, the activity schema and the unified star schema, are mainly about the shape that people query. Most real warehouses combine more than one of these ideas.</p>
+</aside>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>Operational databases run the business and keep the current state. Analytical databases explain the business and keep history on purpose.</li>
+    <li>A plain copy of the source tables fails, because sources disagree about identity, forget old values, change shape, and split each question across systems.</li>
+    <li>Every data model decides four things: identity, history, integration, and the shape that people query. Patterns differ in how and when they decide.</li>
+    <li>A typical warehouse has sources, a landing layer, an integrated core, and serving marts. Normalized, Data Vault, and anchor models usually form the core. Star, snowflake, one big table, activity schema, and unified star schema usually serve users.</li>
+    <li>The patterns in this book span fifty years, and each one responds to a limit of the ones before it.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 1 · Why a warehouse needs a model · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  var Q = [
+    { t: [["POS.sale_line", "store sales"], ["POS.store", "store codes"], ["WEB.web_order_line", "web sales"], ["ERP.product", "SKU to product"], ["ERP.category", "product to category"], ["ops_regions.xlsx", "store to region, kept by hand"]],
+      joins: 6, keys: 2, verdict: ["warn", "Answerable, but fragile. Store sales and web sales live in two systems with different layouts, so you must union them first. Regions come from a spreadsheet. Web orders have no region at all, so someone must decide how to count them."] },
+    { t: [["CRM.customer", "C-000123"], ["WEB.web_account", "email"], ["POS.loyalty_scan", "phone number"], ["POS.register_sale", "store sales"], ["WEB.web_order", "web orders"]],
+      joins: 5, keys: 3, verdict: ["warn", "Answerable only after matching. The three systems use three different keys for one person, and no table says which keys belong together. Every analyst writes the match differently, and the counts disagree."] },
+    { t: [["CRM.customer", "today's address only"], ["WEB.web_order", "order on 20 May 2025"]],
+      joins: 1, keys: 1, verdict: ["bad", "Not answerable. The CRM overwrote Maria's San Jose address when she moved to Sacramento in August. Tonight's copy holds only her current city. The history is gone."] },
+    { t: [["GROOM.appointment", "revenue per visit"], ["GROOM.groomer_assignment", "groomer by name"], ["HR.employee", "employee_id"], ["HR.timesheet_punch", "hours"], ["POS.store", "store codes"], ["HR.position", "groomer or not"]],
+      joins: 7, keys: 2, verdict: ["warn", "Answerable, but slow and error-prone. The booking system knows groomers by name, payroll knows them by employee ID, and the two use different store codes. Punches must be paired into shifts before hours can be added up."] }
+  ];
+  var tab = document.getElementById("rawTable"), log = document.getElementById("rawLog");
+  function render(i) {
+    var q = Q[i];
+    tab.innerHTML = "<thead><tr><th>Source table needed</th><th>What it gives</th></tr></thead><tbody>" + q.t.map(function (r) {
+      return "<tr><td><code>" + esc(r[0]) + "</code></td><td>" + esc(r[1]) + "</td></tr>";
+    }).join("") + "</tbody>";
+    log.innerHTML = '<span class="m">' + q.t.length + " tables, " + q.joins + " joins, " + q.keys + " key translations.</span><br>" + '<span class="' + q.verdict[0] + '">' + esc(q.verdict[1]) + "</span>";
+    [].slice.call(document.querySelectorAll("[data-q]")).forEach(function (b) { b.classList.toggle("on", +b.getAttribute("data-q") === i); });
+  }
+  [].slice.call(document.querySelectorAll("[data-q]")).forEach(function (b) { b.addEventListener("click", function () { render(+b.getAttribute("data-q")); }); });
+  render(0);
+})();
+</script>
+</body>
+</html>

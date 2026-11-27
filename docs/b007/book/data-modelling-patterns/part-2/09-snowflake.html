@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>9 · The snowflake schema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="09">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Part II · Chapter 9</div>
+<h1>The snowflake schema</h1>
+<p class="glance"><i><span>Origin</span>dimensional practice, 1990s</i><i><span>Shape</span>star facts, normalized dimensions</i><i><span>Best at</span>hierarchies that change</i><i><span>Costs</span>longer join chains</i></p>
+<div class="covers">
+  <div class="lbl">This chapter covers</div>
+  <ul>
+    <li><a href="#s9-1">What a snowflake changes in a star, and what it keeps</a></li>
+    <li><a href="#s9-2">The Lantern snowflake, table by table</a></li>
+    <li><a href="#s9-3">Loading chained dimensions, and history across the chain</a></li>
+    <li><a href="#s9-4">Querying through join chains</a></li>
+    <li><a href="#s9-5">Snowflakes, outriggers, and stars: when each is right</a></li>
+    <li><a href="#s9-7">Strengths and limits on the twelve stress tests</a></li>
+  </ul>
+</div>
+
+<p>Every spring, Lantern's merchandising team reorganizes the product catalog. In 2025, cat litter moves out of the Cat department into a new Home and Hygiene department, together with odor sprays and cleaning supplies. In the star from <a href="07-dimensional-modeling.html">chapter 7</a>, the department name is copied onto every product row. About 1,800 rows change, and with type 2 history, 1,800 new versions appear in the product dimension overnight.</p>
+<p>The snowflake schema is the dimensional answer for cases like this. It keeps the star's fact tables, and normalizes the dimensions, so that each department exists once. This chapter shows how it works, what it costs, and why its strip looks almost the same as the star's.</p>
+
+<h2 id="s9-1"><span class="num">9.1</span>The idea</h2>
+<p>A <em class="term">snowflake schema</em> is a star schema in which some dimensions are split into normalized tables. The fact table does not change. It still has one row per event, with surrogate keys and measures. The change is in the dimensions. Instead of one wide <code>dim_product</code> with brand, category, and department columns, there is <code>dim_product</code>, which points to <code>dim_category</code>, which points to <code>dim_department</code>. Drawn out, the branches look like a snowflake.</p>
+<p>In the vocabulary of <a href="../part-1/03-core-concepts.html#s3-6">chapter 3</a>, a star's dimension is denormalized: the department depends on the category, not on the product, so it is a transitive dependency stored on the product row. A snowflake moves each dimension toward third normal form. Each level of a hierarchy becomes its own table, with its own key, and stores its own attributes once.</p>
+
+<h2 id="s9-2"><span class="num">9.2</span>The Lantern snowflake</h2>
+<p>Figure 9.1 shows Lantern's sales schema as a snowflake. The fact table in the middle is the same as in chapter 7. The product and store dimensions are now chains.</p>
+<figure class="diag" id="fig-9-1">
+<div class="diag-scroll">
+<svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The sales fact in the middle. The product dimension chains to category and department. The store dimension chains to city and region. The date and customer dimensions stay as in a star.">
+  <defs><marker id="m91" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle class="arrowhead" cx="3" cy="3" r="2.4"/></marker></defs>
+  <g font-size="13">
+    <rect x="270" y="110" width="180" height="70" rx="8" class="bx-a"/><text x="284" y="138" font-weight="600" class="t-a">fact_sales_line</text><text x="284" y="158" font-size="11" class="mono t-s">one order line</text>
+    <rect x="24" y="40" width="150" height="46" rx="7" class="bx-n"/><text x="36" y="60" font-weight="600">dim_product</text><text x="36" y="76" font-size="11" class="mono t-s">sku, brand, size</text>
+    <rect x="24" y="122" width="150" height="46" rx="7" class="bx-w"/><text x="36" y="142" font-weight="600">dim_category</text><text x="36" y="158" font-size="11" class="mono t-s">category name</text>
+    <rect x="24" y="204" width="150" height="46" rx="7" class="bx-w"/><text x="36" y="224" font-weight="600">dim_department</text><text x="36" y="240" font-size="11" class="mono t-s">department name</text>
+    <rect x="546" y="40" width="150" height="46" rx="7" class="bx-n"/><text x="558" y="60" font-weight="600">dim_store</text><text x="558" y="76" font-size="11" class="mono t-s">store, address</text>
+    <rect x="546" y="122" width="150" height="46" rx="7" class="bx-w"/><text x="558" y="142" font-weight="600">dim_city</text><text x="558" y="158" font-size="11" class="mono t-s">city, wage zone</text>
+    <rect x="546" y="204" width="150" height="46" rx="7" class="bx-w"/><text x="558" y="224" font-weight="600">dim_region</text><text x="558" y="240" font-size="11" class="mono t-s">region, district</text>
+    <rect x="200" y="232" width="140" height="44" rx="7" class="bx-n"/><text x="212" y="252" font-weight="600">dim_date</text><text x="212" y="268" font-size="11" class="mono t-s">as in a star</text>
+    <rect x="380" y="232" width="140" height="44" rx="7" class="bx-n"/><text x="392" y="252" font-weight="600">dim_customer</text><text x="392" y="268" font-size="11" class="mono t-s">as in a star</text>
+  </g>
+  <path class="ln" d="M270,130 C220,130 220,63 178,63" marker-end="url(#m91)"/>
+  <line class="ln" x1="99" y1="86" x2="99" y2="118" marker-end="url(#m91)"/>
+  <line class="ln" x1="99" y1="168" x2="99" y2="200" marker-end="url(#m91)"/>
+  <path class="ln" d="M450,130 C500,130 500,63 542,63" marker-end="url(#m91)"/>
+  <line class="ln" x1="621" y1="86" x2="621" y2="118" marker-end="url(#m91)"/>
+  <line class="ln" x1="621" y1="168" x2="621" y2="200" marker-end="url(#m91)"/>
+  <line class="ln" x1="320" y1="180" x2="290" y2="228" marker-end="url(#m91)"/>
+  <line class="ln" x1="400" y1="180" x2="430" y2="228" marker-end="url(#m91)"/>
+</svg>
+</div>
+<figcaption><b>Figure 9.1</b> The Lantern snowflake. The lighter boxes are the tables that the snowflake adds, and each one is another join between a fact and the label that a user wants.</figcaption>
+</figure>
+<p>Not every dimension needs to be snowflaked. Date and customer stay as wide, flat tables, because their hierarchies are shallow and stable. Product and store are chained, because merchandising reorganizes products every year, and operations redraws districts and wage zones. A model where only some dimensions are snowflaked is common, and it is the sensible default.</p>
+<p class="lstcap"><b>Listing 9.1</b> The product chain</p>
+<pre class="sql"><span class="k">CREATE TABLE</span> dim_department (
+  department_key  <span class="k">INTEGER</span>     <span class="k">PRIMARY KEY</span>,
+  department_name <span class="k">VARCHAR</span>(60) <span class="k">NOT NULL</span>                <span class="c">-- 'Home and Hygiene'</span>
+);
+<span class="k">CREATE TABLE</span> dim_category (
+  category_key    <span class="k">INTEGER</span>     <span class="k">PRIMARY KEY</span>,
+  category_name   <span class="k">VARCHAR</span>(60) <span class="k">NOT NULL</span>,               <span class="c">-- 'Cat litter'</span>
+  department_key  <span class="k">INTEGER</span>     <span class="k">NOT NULL REFERENCES</span> dim_department<i class="ann">1</i>
+);
+<span class="k">CREATE TABLE</span> dim_product (
+  product_key     <span class="k">INTEGER</span>     <span class="k">PRIMARY KEY</span>,
+  sku             <span class="k">VARCHAR</span>(20) <span class="k">NOT NULL</span>,
+  product_name    <span class="k">VARCHAR</span>(120),
+  brand           <span class="k">VARCHAR</span>(60),
+  category_key    <span class="k">INTEGER</span>     <span class="k">NOT NULL REFERENCES</span> dim_category<i class="ann">2</i>
+);</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>Moving cat litter to Home and Hygiene changes this one column on one category row.</span></li>
+<li><i class="ann">2</i><span>Products point to their category, not to their department. They do not change when the department changes.</span></li>
+</ol>
+
+<div class="lab" id="lab-reorg">
+  <div class="lab-head"><h4><span class="pill">Try it</span>The catalog reorganization</h4><span class="lab-tip">choose a model, then reorganize</span></div>
+  <p>Move cat litter from the Cat department to Home and Hygiene. Count the rows that change, with and without type 2 history.</p>
+  <div class="row" role="group" aria-label="Model">
+    <button class="btn on" type="button" data-rm="star">Star, type 1</button>
+    <button class="btn" type="button" data-rm="star2">Star, type 2</button>
+    <button class="btn" type="button" data-rm="snow">Snowflake, type 1</button>
+    <button class="btn" type="button" data-rm="snow2">Snowflake, type 2</button>
+  </div>
+  <div class="bars" id="rmBars"></div>
+  <div class="log" id="rmLog" aria-live="polite"></div>
+</div>
+<p>The snowflake's advantage is real, and it is narrow. It shows up when a level of a hierarchy changes, and grows with the number of members below that level. For a store dimension with 97 rows, the difference hardly matters. For a product dimension with 25,000 rows and a yearly reorganization, it matters every spring.</p>
+
+<h2 id="s9-3"><span class="num">9.3</span>Loading, and history across the chain</h2>
+<p>Chained dimensions load from the top down: departments first, then categories, then products, then facts. Each level looks up the surrogate key of the level above, just as a fact looks up its dimension keys in a star. The load order is longer, and a failure at the top stops everything below it.</p>
+<p>History needs one more decision. Suppose both <code>dim_category</code> and <code>dim_product</code> are type 2. When cat litter moves to a new department, the category gets a new version. Do the products now point to the new category version, or the old one?</p>
+<p>There are two answers, and both are used. If products point to the category's surrogate key, every product in the category needs a new version too, to point at the new category version. The cascade brings back the 1,800 new rows that the snowflake was meant to avoid. If products point to the category's durable key, the key that stays the same across versions, products do not change. A query then picks the category version valid on the sale date, with a date-range join. That keeps the snowflake's advantage, and makes every historical query longer.</p>
+<div class="callout warning"><span class="lbl">Warning</span>Decide the history rule for each link in a chain before the first load. A chain where some links use surrogate keys and others use durable keys gives answers that depend on which level a report starts from.</div>
+
+<h2 id="s9-4"><span class="num">9.4</span>Querying through join chains</h2>
+<p>Every label at the end of a chain costs one join per level. Listing 9.2 answers a department question in the snowflake.</p>
+<p class="lstcap"><b>Listing 9.2</b> Net sales by department and fiscal month</p>
+<pre class="sql"><span class="k">SELECT</span> dp.department_name, d.fiscal_month,
+       <span class="k">SUM</span>(f.net_amount) <span class="k">AS</span> net_sales
+<span class="k">FROM</span>   fact_sales_line f
+<span class="k">JOIN</span>   dim_product    p  <span class="k">ON</span> p.product_key     = f.product_key
+<span class="k">JOIN</span>   dim_category   c  <span class="k">ON</span> c.category_key    = p.category_key<i class="ann">1</i>
+<span class="k">JOIN</span>   dim_department dp <span class="k">ON</span> dp.department_key = c.department_key
+<span class="k">JOIN</span>   dim_date       d  <span class="k">ON</span> d.date_key        = f.date_key
+<span class="k">WHERE</span>  d.fiscal_year = 2025
+<span class="k">GROUP BY</span> dp.department_name, d.fiscal_month;</pre>
+<ol class="anns">
+<li><i class="ann">1</i><span>Two extra joins compared with a star, where <code>department_name</code> is a column on <code>dim_product</code>. Each one is cheap, but an analyst must know the chain.</span></li>
+</ol>
+<p>Many teams hide the chains behind views. A view <code>v_product</code> joins the three product tables and presents one flat row per product, like a star dimension. Analysts query the view, and the storage stays normalized. If query speed matters, the view can be stored as a table and refreshed after each load. At that point, the team has a star for querying and a snowflake for loading, which is a reasonable place to end up.</p>
+
+<h2 id="s9-5"><span class="num">9.5</span>Snowflakes, outriggers, and stars</h2>
+<p>The three shapes form a range. A star repeats every hierarchy level on the dimension row. A star with an <em class="term">outrigger</em> (<a href="08-advanced-dimensional.html#s8-6">section 8.6</a>) splits off one secondary table where it saves a lot, such as the wage zone of a store. A snowflake normalizes whole hierarchies.</p>
+<p class="tblcap"><b>Table 9.1</b> Choosing a dimension shape</p>
+<div class="tbl"><table>
+<thead><tr><th>Situation</th><th>Shape</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Shallow, stable hierarchy</td><td>Star</td><td>Few repeated values, and they rarely change</td></tr>
+<tr><td>One large attribute group shared by many rows</td><td>Star with outrigger</td><td>Stores the group once without chaining everything</td></tr>
+<tr><td>Deep hierarchy that is reorganized often</td><td>Snowflake</td><td>One row changes instead of thousands</td></tr>
+<tr><td>Ragged hierarchy of varying depth</td><td>Star with a hierarchy bridge</td><td>Fixed chains cannot hold varying depth (<a href="08-advanced-dimensional.html#s8-4">section 8.4</a>)</td></tr>
+<tr><td>Users query with a tool that needs flat tables</td><td>Star, or snowflake behind views</td><td>Users see flat rows either way</td></tr>
+</tbody></table></div>
+
+<h2 id="s9-6"><span class="num">9.6</span>Common mistakes</h2>
+<p><strong>Snowflaking by habit.</strong> Normalizing every dimension because normalization feels correct adds joins everywhere and saves almost nothing. Snowflake only where a hierarchy is large and changes.</p>
+<p><strong>Snowflaking the date dimension.</strong> A date dimension with separate month, quarter, and year tables saves a few kilobytes and adds joins to almost every query. Keep dates flat.</p>
+<p><strong>Mixing history rules along a chain.</strong> See the warning in <a href="#s9-3">section 9.3</a>. Choose surrogate or durable keys per link, on purpose.</p>
+<p><strong>Exposing the chains to every user.</strong> Analysts who must learn every chain write slower queries and make more mistakes. Put flat views on top.</p>
+
+<h2 id="s9-7"><span class="num">9.7</span>Strengths and limits</h2>
+<p>The snowflake's strength is the one in the exercise: a change to a hierarchy level touches one row. It also stores each shared value once, which means fewer copies to correct, and fewer copies of personal data to delete. When the dimension tables are very large and their hierarchies are reorganized often, those savings are real.</p>
+<p>On the twelve stress tests, the snowflake behaves almost exactly like the star, because it shares the star's facts, its load order, and its techniques from chapter 8. It matches customers on the way in, so new sources and wrong matches cost the same. It is scored with the same bridges and bitemporal dimensions, and those cost a little more on a chain. And it is slower to query, because every label sits at the end of a chain. No stress test measures hierarchy reorganization, so the snowflake's one clear advantage does not appear in the strip. Read the strip with that in mind.</p>
+<div class="strip-wrap" data-pattern="snowflake"></div>
+<p><strong>Choose a snowflake</strong> for the few dimensions with large, frequently reorganized hierarchies, and keep the rest of the model as a star. Put flat views on top for users.</p>
+
+<div class="summary">
+  <h2 id="summary">Summary</h2>
+  <ul>
+    <li>A snowflake schema keeps the star's facts and normalizes some dimensions into chains, one table per hierarchy level.</li>
+    <li>Its main benefit is that a change to a hierarchy level changes one row instead of every row below it.</li>
+    <li>Chains load from the top down, and each link needs a history rule: surrogate keys cascade versions, durable keys need date-range joins.</li>
+    <li>Every label at the end of a chain costs one join per level. Flat views hide the chains from users.</li>
+    <li>Use a star for shallow, stable hierarchies, an outrigger for one large shared group, a snowflake for large hierarchies that change, and a hierarchy bridge for ragged trees.</li>
+    <li>On the twelve stress tests, the snowflake scores like the star, slightly worse on fast queries. Its real advantage, cheap reorganizations, is outside the tests.</li>
+  </ul>
+</div>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · 9 · The snowflake schema · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+<script>
+(function () {
+  "use strict";
+  var esc = window.Book.esc;
+  var D = {
+    star:  { n: 1800, msg: ["warn", "Star, type 1: the department column is overwritten on 1,800 product rows. Old sales now report cat litter under Home and Hygiene, even for last year."] },
+    star2: { n: 3600, msg: ["bad", "Star, type 2: 1,800 product rows are closed and 1,800 new versions are inserted. Every product gets a new surrogate key, and new sales use it."] },
+    snow:  { n: 1, msg: ["ok", "Snowflake, type 1: one category row changes its department key. Every product follows through the chain."] },
+    snow2: { n: 2, msg: ["ok", "Snowflake, type 2 with durable keys: the category row is closed and one new version inserted. Products keep pointing at the category's durable key."] }
+  };
+  var bars = document.getElementById("rmBars"), log = document.getElementById("rmLog");
+  function render(k) {
+    bars.innerHTML = Object.keys(D).map(function (key) {
+      var lbl = { star: "Star, type 1", star2: "Star, type 2", snow: "Snowflake, type 1", snow2: "Snowflake, type 2" }[key];
+      var w = Math.max(0.6, D[key].n / 3600 * 100);
+      return '<div class="bar"><span' + (key === k ? ' style="font-weight:600"' : "") + ">" + lbl + '</span><div class="track"><div class="fill" style="width:' + w + "%;" + (key === k ? "" : "opacity:.35") + '"></div></div><span class="val">' + D[key].n.toLocaleString("en-US") + "</span></div>";
+    }).join("");
+    log.innerHTML = '<span class="m">Rows written in the dimension tables.</span><br><span class="' + D[k].msg[0] + '">' + esc(D[k].msg[1]) + "</span>";
+    [].slice.call(document.querySelectorAll("[data-rm]")).forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-rm") === k); });
+  }
+  [].slice.call(document.querySelectorAll("[data-rm]")).forEach(function (b) { b.addEventListener("click", function () { render(b.getAttribute("data-rm")); }); });
+  render("star");
+})();
+</script>
+</body>
+</html>

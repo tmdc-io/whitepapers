@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>How to read this book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/book.css">
+</head>
+<body data-root="../" data-chapter="front">
+<div class="layout">
+<nav class="book-nav" aria-label="Book contents">
+  <button class="toc-toggle" type="button" aria-expanded="false" aria-controls="bookToc">
+    <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span class="toc-toggle-label">Contents</span>
+    <span class="toc-current" id="tocCurrent"></span>
+  </button>
+  <div class="book-toc" id="bookToc"></div>
+</nav>
+<main>
+<div class="ch-eyebrow">Front matter</div>
+<h1>How to read this book</h1>
+<div class="covers">
+  <div class="lbl">This section covers</div>
+  <ul>
+    <li><a href="#who">Who the book is for, and what you need first</a></li>
+    <li><a href="#shape">How every pattern chapter works</a></li>
+    <li><a href="#conventions">The conventions in the text</a></li>
+    <li><a href="#paths">Three paths through the book</a></li>
+  </ul>
+</div>
+
+<p>This field guide teaches the main patterns for modeling analytical data. A pattern here is a repeatable way to shape tables, keys, and history, so that a business can answer questions about its own past. There are eight of them in this book: the normalized warehouse, the star schema, the snowflake schema, one big table, Data Vault, anchor modeling, the activity schema, and the unified star schema.</p>
+<p>Each pattern has its own chapter, and each chapter teaches the pattern from the beginning. You do not need to have seen any of them before. At the end, you can design with each pattern, and you can say which one fits a given situation and why.</p>
+
+<h2 id="who">Who the book is for</h2>
+<p>The book is for data engineers who build analytical models and for analysts who query them. You need to read SQL. You do not need to know any modeling pattern, and you do not need any particular database or tool. The book names no products. Every listing uses plain ANSI SQL, so that it reads the same on any engine. Where a statement differs between engines, a note says so.</p>
+<p>The book is not about how to run a database, how to schedule loads, or how to build dashboards. It is about the shape of the data, and the consequences of that shape.</p>
+
+<h2 id="shape">How a pattern chapter works</h2>
+<p>All eight patterns run against one business, Lantern Pet Supply, a made-up US pet retailer. <a href="../part-1/02-lantern-pet-supply.html">Chapter 2</a> introduces it. Because the business stays the same, you can compare the patterns directly. When one chapter shows Maria Lopez's address history in a star, the next chapter shows the same history in its own pattern.</p>
+<p>Every pattern chapter has the same shape, so you always know where to look:</p>
+<ol class="plain">
+<li>A short list of what the chapter covers, and a glance line with the pattern's origin, shape, strength, and cost.</li>
+<li>The idea in plain words, and where it came from.</li>
+<li>The building blocks, one table type at a time, with Lantern rows.</li>
+<li>The Lantern model as a diagram.</li>
+<li>How data gets in, and how people query it, with annotated SQL.</li>
+<li>How the pattern keeps history.</li>
+<li>Advanced techniques and common mistakes.</li>
+<li>Strengths and limits, with a strip of results on the twelve stress tests.</li>
+<li>A summary of the points to remember.</li>
+</ol>
+<p>The twelve stress tests are events at Lantern that every pattern must survive, such as a new source system, a change of relationship, or an audit. <a href="../part-1/05-stress-tests.html">Chapter 5</a> defines them. Each pattern chapter shows the results as a strip of twelve chips. <a href="../part-3/16-side-by-side.html">Chapter 16</a> gives the full reasoning for every result.</p>
+
+<h2 id="conventions">Conventions</h2>
+<p><strong>Numbered elements.</strong> Sections are numbered by chapter, such as 7.2 and 7.2.1. Figures, tables, and listings are numbered the same way, such as Figure 7.1 and Listing 7.3, and the text refers to them by number.</p>
+<p><strong>Annotated listings.</strong> Difficult lines in a SQL listing carry a small numbered marker <i class="ann">1</i>. The notes under the listing explain each marker.</p>
+<p><strong>Callouts.</strong> Three kinds of callout interrupt the text. A note adds context. A tip suggests a better way. A warning names a mistake that gives wrong answers.</p>
+<div class="callout"><span class="lbl">Note</span>This is what a note looks like.</div>
+<p><strong>Sidebars.</strong> A ruled box holds a side topic, such as the history of a pattern. You can skip sidebars without losing the thread.</p>
+<p><strong>Try it.</strong> Exercises with an amber rail on the left run inside the page. They let you step through a load, change a design choice, or ask a question of the data, and see the result at once. Nothing you do in them is saved.</p>
+<p><strong>New terms.</strong> A term appears in <em class="term">italics</em> where the book defines it. The glossary in <a href="../appendix/glossary.html">appendix A</a> lists every term.</p>
+
+<h2 id="paths">Three paths through the book</h2>
+<p><strong>If you are new to analytical modeling,</strong> read the book in order. Part I gives you the vocabulary and the case study, and each pattern chapter builds on the ones before it.</p>
+<p><strong>If you already model data,</strong> skim chapters 1 to 4, read <a href="../part-1/05-stress-tests.html">chapter 5</a> on the stress tests, then go straight to the patterns that you know least. Each pattern chapter stands on its own.</p>
+<p><strong>If you mostly query data,</strong> read <a href="../part-2/07-dimensional-modeling.html">chapter 7</a> on the star schema and chapter 10 on one big table, because those are the shapes that you query most often. Then read chapters 16 and 18, which compare the patterns and help you choose.</p>
+<nav class="ch-nav" id="chNav" aria-label="Previous and next chapter"></nav>
+<p class="footer">Data Modeling Patterns · How to read this book · Last updated 12 November 2026. Lantern Pet Supply and its data are made up.</p>
+</main>
+</div>
+<script src="../assets/book.js"></script>
+
+</body>
+</html>
